@@ -64,7 +64,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       case 'category_delete':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-100 dark:bg-gray-700 dark:text-gray-600 dark:text-gray-300'
     }
   }
 
@@ -172,12 +172,12 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-700">
+        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center space-x-3">
             <FileText className="h-5 w-5 text-emerald-400" />
-            <h2 className="text-lg font-semibold text-white">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-900 dark:text-white">
               Detalles del Registro
             </h2>
           </div>
@@ -185,18 +185,18 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-700"
+            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-100 dark:bg-gray-700"
           >
-            <X className="h-4 w-4 text-gray-300 hover:text-white" />
+            <X className="h-4 w-4 text-gray-500 dark:text-gray-600 dark:text-gray-300 hover:text-gray-700 dark:hover:text-gray-900 dark:text-white" />
           </Button>
         </div>
 
-        <div className="p-4 overflow-y-auto flex-1">
+        <div className="p-4 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
           <div className="space-y-4">
             {/* Información Principal */}
-            <div className="bg-gray-800 rounded-lg p-4 space-y-4">
+            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4 border border-gray-200 dark:border-gray-700">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Acción:</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Acción:</span>
                 <Badge className={getTypeColor(log.type)}>
                   <TypeIcon className="h-3 w-3 mr-1" />
                   {getActionLabel(log.action, (log as any).module)}
@@ -204,22 +204,22 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Realizado por:</span>
-                <span className="text-white font-medium">{(log as any).user_name || 'Desconocido'}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Realizado por:</span>
+                <span className="text-gray-900 dark:text-gray-900 dark:text-white font-medium">{(log as any).user_name || 'Desconocido'}</span>
               </div>
               
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Fecha:</span>
-                <span className="text-white">{formatDateTime((log as any).created_at)}</span>
+                <span className="text-sm text-gray-600 dark:text-gray-400">Fecha:</span>
+                <span className="text-gray-900 dark:text-gray-900 dark:text-white">{formatDateTime((log as any).created_at)}</span>
               </div>
               
               {/* Información específica según el tipo de acción */}
               {log.details && (
-                <div className="pt-2 border-t border-gray-700">
+                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
                   {log.action === 'Permisos Asignados' && (log.details as any).description && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Resumen de permisos:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Resumen de permisos:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-2">
                           {(() => {
                             const desc = (log.details as any).description
@@ -244,8 +244,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                 
                                 {changes && (
                                   <div className="mb-3">
-                                    <div className="text-gray-300 text-xs mb-1">Cambios realizados:</div>
-                                    <div className="text-yellow-300 text-xs bg-gray-600 p-2 rounded">
+                                    <div className="text-gray-600 dark:text-gray-300 text-xs mb-1">Cambios realizados:</div>
+                                    <div className="text-yellow-300 text-xs bg-gray-200 dark:bg-gray-600 p-2 rounded">
                                       {changes
                                         .replace(/Agregados:/g, 'Agregados:')
                                         .replace(/Removidos:/g, 'Removidos:')
@@ -268,7 +268,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                 
                                 {summary && (
                                   <div>
-                                    <div className="text-gray-300 text-xs mb-2">Permisos actuales:</div>
+                                    <div className="text-gray-600 dark:text-gray-300 text-xs mb-2">Permisos actuales:</div>
                                     <div className="space-y-1">
                                       {summary.split(' | ').map((module: any, index: number) => (
                                         <div key={index} className="flex items-center space-x-2">
@@ -304,8 +304,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'Usuario Creado' && (log.details as any).newUser && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Nuevo usuario:</span>
-                      <div className="text-white text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Nuevo usuario:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">
                         <strong>{(log.details as any).newUser.name}</strong> - {(log.details as any).newUser.email} ({(log.details as any).newUser.role})
                       </div>
                     </div>
@@ -313,8 +313,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'Usuario Editado' && (log.details as any).userName && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Usuario editado:</span>
-                      <div className="text-white text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Usuario editado:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">
                         <strong>{log.details.userName}</strong>
                         {log.details.changes && Object.keys(log.details.changes).length > 0 && (
                           <span className="text-gray-400 ml-2">
@@ -327,8 +327,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'Usuario Eliminado' && log.details.deletedUser && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Usuario eliminado:</span>
-                      <div className="text-white text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Usuario eliminado:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">
                         <strong>{log.details.deletedUser.name}</strong> - {log.details.deletedUser.email}
                       </div>
                     </div>
@@ -336,8 +336,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'Rol Cambiado' && log.details.userName && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Cambio de rol:</span>
-                      <div className="text-white text-sm">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Cambio de rol:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm">
                         <strong>{log.details.userName}</strong>
                         {log.details.changes?.role && (
                           <span className="text-gray-400 ml-2">
@@ -351,8 +351,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   {/* Información específica para productos */}
                   {log.action === 'product_create' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Producto creado:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto creado:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2 font-medium text-emerald-400 mb-3">
                             <Package className="h-4 w-4" />
@@ -361,53 +361,53 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <span className="text-gray-300 text-xs">Nombre:</span>
-                              <div className="text-white font-medium">{log.details.productName || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Nombre:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Referencia:</span>
-                              <div className="text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Marca:</span>
-                              <div className="text-white">{log.details.brand || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Marca:</span>
+                              <div className="text-gray-900 dark:text-white">{log.details.brand || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Categoría ID:</span>
-                              <div className="text-white font-mono text-xs">{log.details.category || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Categoría ID:</span>
+                              <div className="text-gray-900 dark:text-white font-mono text-xs">{log.details.category || 'N/A'}</div>
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Stock Inicial:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Stock Inicial:</span>
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="bg-gray-600 p-3 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 <div className="text-blue-400 text-xs">Bodega</div>
-                                <div className="text-white font-bold text-lg">{log.details.stockWarehouse || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.stockWarehouse || 0} unidades</div>
                               </div>
-                              <div className="bg-gray-600 p-3 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 <div className="text-green-400 text-xs">Local</div>
-                                <div className="text-white font-bold text-lg">{log.details.stockStore || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.stockStore || 0} unidades</div>
                               </div>
                             </div>
                             <div className="mt-2 text-center">
-                              <span className="text-gray-300 text-xs">Total: </span>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Total: </span>
                               <span className="text-emerald-400 font-bold">
                                 {(log.details.stockWarehouse || 0) + (log.details.stockStore || 0)} unidades
                               </span>
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Precios:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Precios:</span>
                             <div className="grid grid-cols-2 gap-4">
                               <div>
                                 <span className="text-gray-400 text-xs">Precio de Venta:</span>
-                                <div className="text-white font-medium">${(log.details.price || 0).toLocaleString('es-CO')}</div>
+                                <div className="text-gray-900 dark:text-white font-medium">${(log.details.price || 0).toLocaleString('es-CO')}</div>
                               </div>
                               <div>
                                 <span className="text-gray-400 text-xs">Costo:</span>
-                                <div className="text-white font-medium">${(log.details.cost || 0).toLocaleString('es-CO')}</div>
+                                <div className="text-gray-900 dark:text-white font-medium">${(log.details.cost || 0).toLocaleString('es-CO')}</div>
                               </div>
                             </div>
                           </div>
@@ -418,8 +418,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'product_update' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Producto actualizado:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto actualizado:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2 font-medium text-yellow-400 mb-3">
                             <Package className="h-4 w-4" />
@@ -428,29 +428,29 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <span className="text-gray-300 text-xs">Producto:</span>
-                              <div className="text-white font-medium">{log.details.productName || 'ID: ' + (log.details.productId || 'N/A')}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Producto:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'ID: ' + (log.details.productId || 'N/A')}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Referencia:</span>
-                              <div className="text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
                             </div>
                           </div>
                           
                           <div>
-                            <span className="text-gray-300 text-xs">Campos modificados:</span>
+                            <span className="text-gray-600 dark:text-gray-300 text-xs">Campos modificados:</span>
                             <div className="text-yellow-300 text-sm">
                               {log.details.changes ? log.details.changes.join(', ') : 'N/A'}
                             </div>
                           </div>
                           
                           {log.details.updatedFields && (
-                            <div className="border-t border-gray-600 pt-3">
-                              <span className="text-gray-300 text-xs block mb-2">Valores actualizados:</span>
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Valores actualizados:</span>
                               <div className="space-y-2">
                                 {Object.entries(log.details.updatedFields).map(([field, value]) => (
-                                  <div key={field} className="flex justify-between items-center bg-gray-600 p-2 rounded">
-                                    <span className="text-gray-300 text-xs capitalize">
+                                  <div key={field} className="flex justify-between items-center bg-gray-200 dark:bg-gray-600 p-2 rounded">
+                                    <span className="text-gray-600 dark:text-gray-300 text-xs capitalize">
                                       {field === 'name' ? 'Nombre' :
                                        field === 'reference' ? 'Referencia' :
                                        field === 'brand' ? 'Marca' :
@@ -461,7 +461,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                        field === 'stock' ? 'Stock' :
                                        field}
                                     </span>
-                                    <span className="text-white text-xs">
+                                    <span className="text-gray-900 dark:text-white text-xs">
                                       {field === 'price' || field === 'cost' ? 
                                         `$${(value as number).toLocaleString('es-CO')}` :
                                         field === 'stock' ? 
@@ -476,24 +476,24 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           )}
                           
                           {log.details.previousValues && (
-                            <div className="border-t border-gray-600 pt-3">
-                              <span className="text-gray-300 text-xs block mb-2">Valores anteriores:</span>
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Valores anteriores:</span>
                               <div className="grid grid-cols-2 gap-4 text-xs">
                                 <div>
                                   <span className="text-gray-400">Nombre:</span>
-                                  <div className="text-gray-300">{log.details.previousValues.name || 'N/A'}</div>
+                                  <div className="text-gray-600 dark:text-gray-300">{log.details.previousValues.name || 'N/A'}</div>
                                 </div>
                                 <div>
                                   <span className="text-gray-400">Referencia:</span>
-                                  <div className="text-gray-300 font-mono">{log.details.previousValues.reference || 'N/A'}</div>
+                                  <div className="text-gray-600 dark:text-gray-300 font-mono">{log.details.previousValues.reference || 'N/A'}</div>
                                 </div>
                                 <div>
                                   <span className="text-gray-400">Marca:</span>
-                                  <div className="text-gray-300">{log.details.previousValues.brand || 'N/A'}</div>
+                                  <div className="text-gray-600 dark:text-gray-300">{log.details.previousValues.brand || 'N/A'}</div>
                                 </div>
                                 <div>
                                   <span className="text-gray-400">Precio:</span>
-                                  <div className="text-gray-300">${(log.details.previousValues.price || 0).toLocaleString('es-CO')}</div>
+                                  <div className="text-gray-600 dark:text-gray-300">${(log.details.previousValues.price || 0).toLocaleString('es-CO')}</div>
                                 </div>
                               </div>
                             </div>
@@ -505,8 +505,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'product_delete' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Producto eliminado:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto eliminado:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2 font-medium text-red-400 mb-3">
                             <Package className="h-4 w-4" />
@@ -514,8 +514,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           </div>
                           
                           <div>
-                            <span className="text-gray-300 text-xs">ID del Producto:</span>
-                            <div className="text-white font-mono text-sm">{log.details.productId || 'N/A'}</div>
+                            <span className="text-gray-600 dark:text-gray-300 text-xs">ID del Producto:</span>
+                            <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productId || 'N/A'}</div>
                           </div>
                         </div>
                       </div>
@@ -524,8 +524,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'stock_transfer' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Transferencia de stock:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Transferencia de stock:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2 font-medium text-blue-400 mb-3">
                             <ArrowRightLeft className="h-4 w-4" />
@@ -534,55 +534,55 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <span className="text-gray-300 text-xs">Producto:</span>
-                              <div className="text-white font-medium">{log.details.productName || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Producto:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Referencia:</span>
-                              <div className="text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Detalles de la Transferencia:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Detalles de la Transferencia:</span>
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="bg-gray-600 p-3 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 <div className="text-red-400 text-xs">Desde:</div>
-                                <div className="text-white font-bold text-lg">{log.details.fromLocationLabel || 'N/A'}</div>
-                                <div className="text-gray-300 text-xs">-{log.details.quantity || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromLocationLabel || 'N/A'}</div>
+                                <div className="text-gray-600 dark:text-gray-300 text-xs">-{log.details.quantity || 0} unidades</div>
                               </div>
-                              <div className="bg-gray-600 p-3 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 <div className="text-green-400 text-xs">Hacia:</div>
-                                <div className="text-white font-bold text-lg">{log.details.toLocationLabel || 'N/A'}</div>
-                                <div className="text-gray-300 text-xs">+{log.details.quantity || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.toLocationLabel || 'N/A'}</div>
+                                <div className="text-gray-600 dark:text-gray-300 text-xs">+{log.details.quantity || 0} unidades</div>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Stock Anterior:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Stock Anterior:</span>
                             <div className="grid grid-cols-2 gap-4 text-xs">
                               <div>
                                 <span className="text-gray-400">Bodega:</span>
-                                <div className="text-gray-300">{log.details.previousStock?.warehouse || 0} unidades</div>
+                                <div className="text-gray-600 dark:text-gray-300">{log.details.previousStock?.warehouse || 0} unidades</div>
                               </div>
                               <div>
                                 <span className="text-gray-400">Local:</span>
-                                <div className="text-gray-300">{log.details.previousStock?.store || 0} unidades</div>
+                                <div className="text-gray-600 dark:text-gray-300">{log.details.previousStock?.store || 0} unidades</div>
                               </div>
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Stock Después:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Stock Después:</span>
                             <div className="grid grid-cols-2 gap-4 text-xs">
                               <div>
                                 <span className="text-gray-400">Bodega:</span>
-                                <div className="text-white font-medium">{log.details.newStock?.warehouse || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{log.details.newStock?.warehouse || 0} unidades</div>
                               </div>
                               <div>
                                 <span className="text-gray-400">Local:</span>
-                                <div className="text-white font-medium">{log.details.newStock?.store || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{log.details.newStock?.store || 0} unidades</div>
                               </div>
                             </div>
                           </div>
@@ -593,8 +593,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'stock_adjustment' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Ajuste de stock:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Ajuste de stock:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2 font-medium text-orange-400 mb-3">
                             <Package className="h-4 w-4" />
@@ -603,23 +603,23 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <span className="text-gray-300 text-xs">Producto:</span>
-                              <div className="text-white font-medium">{log.details.productName || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Producto:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Referencia:</span>
-                              <div className="text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Detalles del Ajuste:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Detalles del Ajuste:</span>
                             <div className="grid grid-cols-2 gap-4">
-                              <div className="bg-gray-600 p-3 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 <div className="text-gray-400 text-xs">Ubicación:</div>
-                                <div className="text-white font-bold text-lg">{log.details.locationLabel || 'N/A'}</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.locationLabel || 'N/A'}</div>
                               </div>
-                              <div className="bg-gray-600 p-3 rounded-lg">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 <div className="text-gray-400 text-xs">Tipo de Ajuste:</div>
                                 <div className={`font-bold text-lg ${
                                   log.details.actionType === 'incremento' ? 'text-green-400' : 'text-red-400'
@@ -630,16 +630,16 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Cantidades:</span>
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Cantidades:</span>
                             <div className="grid grid-cols-2 gap-4 text-xs">
                               <div>
                                 <span className="text-gray-400">Anterior:</span>
-                                <div className="text-gray-300">{log.details.previousQuantity || 0} unidades</div>
+                                <div className="text-gray-600 dark:text-gray-300">{log.details.previousQuantity || 0} unidades</div>
                               </div>
                               <div>
                                 <span className="text-gray-400">Nueva:</span>
-                                <div className="text-white font-medium">{log.details.newQuantity || 0} unidades</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{log.details.newQuantity || 0} unidades</div>
                               </div>
                             </div>
                             <div className="mt-2">
@@ -652,9 +652,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             </div>
                           </div>
                           
-                          <div className="border-t border-gray-600 pt-3">
-                            <span className="text-gray-300 text-xs block mb-2">Razón del Ajuste:</span>
-                            <div className="text-white bg-gray-600 p-3 rounded-lg">
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Razón del Ajuste:</span>
+                            <div className="text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                               {log.details.reason || 'No especificada'}
                             </div>
                           </div>
@@ -666,8 +666,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   {/* Información específica para categorías */}
                   {log.action === 'category_create' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Categoría creada:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Categoría creada:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2 font-medium text-indigo-400 mb-3">
                             <Tag className="h-4 w-4" />
@@ -676,11 +676,11 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <span className="text-gray-300 text-xs">Nombre:</span>
-                              <div className="text-white font-medium">{log.details.categoryName || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Nombre:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.categoryName || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Estado:</span>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Estado:</span>
                               <div className={`font-medium ${log.details.status === 'active' ? 'text-green-400' : 'text-red-400'}`}>
                                 {log.details.status === 'active' ? 'Activa' : 'Inactiva'}
                               </div>
@@ -688,9 +688,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           </div>
                           
                           {log.details.description && (
-                            <div className="border-t border-gray-600 pt-3">
-                              <span className="text-gray-300 text-xs block mb-2">Descripción:</span>
-                              <div className="text-white bg-gray-600 p-3 rounded-lg">
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Descripción:</span>
+                              <div className="text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 {log.details.description}
                               </div>
                             </div>
@@ -702,8 +702,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'category_update' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Categoría actualizada:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Categoría actualizada:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
                           <div className="flex items-center space-x-2 font-medium text-purple-400 mb-3">
                             <Tag className="h-4 w-4" />
@@ -712,11 +712,11 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div className="grid grid-cols-2 gap-4">
                             <div>
-                              <span className="text-gray-300 text-xs">Nombre:</span>
-                              <div className="text-white font-medium">{log.details.categoryName || 'N/A'}</div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Nombre:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.categoryName || 'N/A'}</div>
                             </div>
                             <div>
-                              <span className="text-gray-300 text-xs">Estado:</span>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Estado:</span>
                               <div className={`font-medium ${log.details.status === 'active' ? 'text-green-400' : 'text-red-400'}`}>
                                 {log.details.status === 'active' ? 'Activa' : 'Inactiva'}
                               </div>
@@ -724,9 +724,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           </div>
                           
                           {log.details.changes && (
-                            <div className="border-t border-gray-600 pt-3">
-                              <span className="text-gray-300 text-xs block mb-2">Cambios realizados:</span>
-                              <div className="text-white bg-gray-600 p-3 rounded-lg">
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Cambios realizados:</span>
+                              <div className="text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
                                 {log.details.changes}
                               </div>
                             </div>
@@ -738,8 +738,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'category_delete' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-400 block mb-2">Categoría eliminada:</span>
-                      <div className="text-white text-sm bg-gray-700 p-4 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Categoría eliminada:</span>
+                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-2">
                           <div className="flex items-center space-x-2 font-medium text-red-400 mb-3">
                             <Tag className="h-4 w-4" />
@@ -747,8 +747,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           </div>
                           
                           <div>
-                            <span className="text-gray-300 text-xs">Nombre:</span>
-                            <div className="text-white font-medium">{log.details.categoryName || 'N/A'}</div>
+                            <span className="text-gray-600 dark:text-gray-300 text-xs">Nombre:</span>
+                            <div className="text-gray-900 dark:text-white font-medium">{log.details.categoryName || 'N/A'}</div>
                           </div>
                         </div>
                       </div>
@@ -761,10 +761,10 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end p-4 border-t border-gray-700">
+        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <Button
             onClick={onClose}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6"
+            className="bg-emerald-600 hover:bg-emerald-700 text-gray-900 dark:text-white px-6"
           >
             Cerrar
           </Button>
