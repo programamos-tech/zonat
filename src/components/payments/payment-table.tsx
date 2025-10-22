@@ -12,18 +12,75 @@ import {
   DollarSign,
   Calendar,
   User,
-  FileText
+  FileText,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  XCircle
 } from 'lucide-react'
-import { Payment } from '@/types'
+import { Credit } from '@/types'
 
-interface PaymentTableProps {
-  payments: Payment[]
-  onView: (payment: Payment) => void
-  onPayment: (payment: Payment) => void
-  onCreate: () => void
+// Funciones para manejar estados
+const getStatusColor = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'bg-green-100 text-green-800 border-green-200'
+    case 'partial':
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+    case 'pending':
+      return 'bg-blue-100 text-blue-800 border-blue-200'
+    case 'overdue':
+      return 'bg-red-100 text-red-800 border-red-200'
+    case 'cancelled':
+      return 'bg-red-100 text-red-800 border-red-200'
+    default:
+      return 'bg-gray-100 text-gray-800 border-gray-200'
+  }
 }
 
-export function PaymentTable({ payments, onView, onPayment, onCreate }: PaymentTableProps) {
+const getStatusIcon = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return <CheckCircle className="h-4 w-4" />
+    case 'partial':
+      return <Clock className="h-4 w-4" />
+    case 'pending':
+      return <AlertCircle className="h-4 w-4" />
+    case 'overdue':
+      return <XCircle className="h-4 w-4" />
+    case 'cancelled':
+      return <XCircle className="h-4 w-4" />
+    default:
+      return <AlertCircle className="h-4 w-4" />
+  }
+}
+
+const getStatusText = (status: string) => {
+  switch (status) {
+    case 'completed':
+      return 'Completado'
+    case 'partial':
+      return 'Parcial'
+    case 'pending':
+      return 'Pendiente'
+    case 'overdue':
+      return 'Vencido'
+    case 'cancelled':
+      return 'Anulado'
+    default:
+      return status
+  }
+}
+
+interface CreditTableProps {
+  credits: Credit[]
+  onView: (credit: Credit) => void
+  onPayment: (credit: Credit) => void
+  onCreate: () => void
+  isLoading?: boolean
+}
+
+export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = false }: CreditTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -43,6 +100,29 @@ export function PaymentTable({ payments, onView, onPayment, onCreate }: PaymentT
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-CO', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  }
+
+  const getDueDateColor = (dueDate: string) => {
+    const today = new Date()
+    const due = new Date(dueDate)
+    const diffTime = due.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0) {
+      return 'text-red-600 dark:text-red-400 font-bold' // Vencido
+    } else if (diffDays <= 7) {
+      return 'text-orange-600 dark:text-orange-400 font-bold' // Cercano (0 a 7 días)
+    } else {
+      return 'text-green-600 dark:text-green-400 font-bold' // Lejano (> 7 días)
+    }
   }
 
   const getStatusColor = (status: string) => {
@@ -75,151 +155,216 @@ export function PaymentTable({ payments, onView, onPayment, onCreate }: PaymentT
     }
   }
 
-  const totalDebt = payments.reduce((sum, payment) => sum + payment.pendingAmount, 0)
+  const totalDebt = credits
+    .filter(credit => credit.status !== 'cancelled')
+    .reduce((sum, credit) => sum + credit.pendingAmount, 0)
 
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch = payment.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         payment.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || payment.status === filterStatus
+  const filteredCredits = credits.filter(credit => {
+    const matchesSearch = credit.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         credit.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' || credit.status === filterStatus
     return matchesSearch && matchesStatus
   })
 
   return (
-    <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-gray-900 dark:text-white">
-            <CreditCard className="h-5 w-5 mr-2 text-emerald-600" />
-            Gestión de Abonos
-          </CardTitle>
-          <div className="flex items-center space-x-4">
-            <div className="text-right">
-              <div className="text-sm text-gray-600 dark:text-gray-300">Total Deuda:</div>
-              <div className="text-2xl font-bold text-emerald-600">
-                {formatCurrency(totalDebt)}
-              </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <CreditCard className="h-6 w-6 text-pink-600" />
+              Gestión de Créditos
+            </CardTitle>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
+                Administra los créditos y pagos pendientes de tus clientes
+              </p>
             </div>
-            <Button onClick={onCreate} className="bg-emerald-700 hover:bg-emerald-800">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Abono
-            </Button>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="text-right">
+                <div className="text-sm text-gray-600 dark:text-gray-300">Total Deuda:</div>
+                <div className="text-2xl font-bold text-pink-600">
+                  {formatCurrency(totalDebt)}
+                </div>
+              </div>
+              <Button onClick={onCreate} className="bg-pink-600 hover:bg-pink-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Crédito
+              </Button>
+            </div>
           </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-            <input
-              type="text"
-              placeholder="Buscar factura o cliente..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
-            />
-          </div>
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-          >
-            <option value="all">Todos los estados</option>
-            <option value="pending">Pendiente</option>
-            <option value="partial">Parcial</option>
-            <option value="completed">Completado</option>
-            <option value="overdue">Vencido</option>
-          </select>
-        </div>
+        </CardHeader>
+      </Card>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[1000px]">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Factura</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Cliente</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Total Compra</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Saldo Pendiente</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Último Abono</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Registrado Por</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Fecha/Hora Abono</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredPayments.map((payment) => (
-                <tr key={payment.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <td className="py-4 px-4">
-                    <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-                      #{payment.invoiceNumber}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">
-                      {payment.clientName}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                      {formatCurrency(payment.totalAmount)}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="text-sm font-semibold text-red-600 dark:text-red-400">
-                      {formatCurrency(payment.pendingAmount)}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="text-sm text-gray-900 dark:text-white">
-                      {payment.lastPaymentAmount ? formatCurrency(payment.lastPaymentAmount) : '-'}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                      {payment.lastPaymentUser || '-'}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                      {payment.lastPaymentDate ? formatDateTime(payment.lastPaymentDate) : '-'}
-                    </div>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onView(payment)}
-                        className="h-8 w-8 p-0 text-blue-500 hover:text-blue-700 hover:bg-blue-100 dark:hover:bg-blue-900/20"
-                        title="Ver detalles"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => onPayment(payment)}
-                        className="h-8 w-8 p-0 text-yellow-500 hover:text-yellow-700 hover:bg-yellow-100 dark:hover:bg-yellow-900/20"
-                        title="Registrar abono"
-                      >
-                        <DollarSign className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredPayments.length === 0 && (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-            <CreditCard className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-            <p>No se encontraron facturas pendientes</p>
+      {/* Search and Filters */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar factura o cliente..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="pending">Pendiente</option>
+              <option value="partial">Parcial</option>
+              <option value="completed">Completado</option>
+              <option value="overdue">Vencido</option>
+              <option value="cancelled">Anulado</option>
+            </select>
           </div>
-        )}
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardContent className="p-0">
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                Cargando créditos...
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400">
+                Por favor espera mientras cargamos la información.
+              </p>
+            </div>
+          ) : filteredCredits.length === 0 ? (
+            <div className="text-center py-12">
+              <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No se encontraron créditos pendientes
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                No hay créditos registrados en el sistema
+              </p>
+              <Button 
+                onClick={onCreate}
+                className="bg-pink-600 hover:bg-pink-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Crédito
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Factura
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Cliente
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Total Compra
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Saldo Pendiente
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Último Abono
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Registrado Por
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Fecha Vencimiento
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Acciones
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredCredits.map((credit) => (
+                    <tr key={credit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                          {credit.invoiceNumber}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          {credit.clientName}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <Badge className={`${getStatusColor(credit.status)} flex items-center gap-1 w-fit`}>
+                          {getStatusIcon(credit.status)}
+                          {getStatusText(credit.status)}
+                        </Badge>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          {formatCurrency(credit.totalAmount)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm font-semibold ${credit.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {formatCurrency(credit.pendingAmount)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-900 dark:text-white">
+                          {credit.lastPaymentAmount ? formatCurrency(credit.lastPaymentAmount) : '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          {credit.lastPaymentUser || credit.createdByName || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm ${credit.status === 'completed' ? 'text-green-600 dark:text-green-400 font-bold' : (credit.dueDate ? getDueDateColor(credit.dueDate) : 'text-gray-600 dark:text-gray-300')}`}>
+                          {credit.status === 'completed' ? 'Completado' : (credit.dueDate ? formatDate(credit.dueDate) : '-')}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onView(credit)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                            title="Ver detalles"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onPayment(credit)}
+                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100"
+                            title="Registrar abono"
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

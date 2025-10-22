@@ -17,9 +17,10 @@ import {
   CreditCard as CreditCardIcon,
   Building2,
   Shield,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react'
-import { Sale, SaleItem, Product, Client } from '@/types'
+import { Sale, SaleItem, Product, Client, SalePayment } from '@/types'
 import { useClients } from '@/contexts/clients-context'
 import { useProducts } from '@/contexts/products-context'
 import { ClientModal } from '@/components/clients/client-modal'
@@ -34,6 +35,14 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
   const { products, refreshProducts } = useProducts()
   
+  // Debug: Log products when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('SaleModal opened - products:', products.length)
+      console.log('Products data:', products)
+    }
+  }, [isOpen, products])
+  
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit' | 'transfer' | 'warranty' | 'mixed' | ''>('')
@@ -43,11 +52,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [includeTax, setIncludeTax] = useState(true)
-  const [discount, setDiscount] = useState(0)
-  const [discountType, setDiscountType] = useState<'percentage' | 'amount'>('percentage')
+  const [totalDiscount, setTotalDiscount] = useState(0)
+  const [totalDiscountType, setTotalDiscountType] = useState<'percentage' | 'amount'>('percentage')
   const [invoiceNumber, setInvoiceNumber] = useState<string>('Pendiente') // Número de factura
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [stockAlert, setStockAlert] = useState<{show: boolean, message: string, productId?: string}>({show: false, message: ''})
+  
+  // Estados para pagos mixtos
+  const [mixedPayments, setMixedPayments] = useState<SalePayment[]>([])
+  const [showMixedPayments, setShowMixedPayments] = useState(false)
+  const [paymentError, setPaymentError] = useState('')
 
   // Cargar clientes y productos cuando se abre el modal
   useEffect(() => {
@@ -56,6 +70,21 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       refreshProducts()
     }
   }, [isOpen, getAllClients, refreshProducts])
+
+  // Manejar cambio de método de pago
+  useEffect(() => {
+    if (paymentMethod === 'mixed') {
+      setShowMixedPayments(true)
+      // Inicializar con efectivo y transferencia
+      setMixedPayments([
+        { id: '', saleId: '', paymentType: 'cash', amount: 0, reference: '', notes: '', createdAt: '', updatedAt: '' },
+        { id: '', saleId: '', paymentType: 'transfer', amount: 0, reference: '', notes: '', createdAt: '', updatedAt: '' }
+      ])
+    } else {
+      setShowMixedPayments(false)
+      setMixedPayments([])
+    }
+  }, [paymentMethod])
 
   // Debounce para la búsqueda de productos
   useEffect(() => {
@@ -73,9 +102,14 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   }, [clients, clientSearch])
 
   const filteredProducts = useMemo(() => {
-    // Mostrar todos los productos activos si no hay búsqueda
+    console.log('filteredProducts - products:', products.length, 'search:', debouncedProductSearch)
+    
+    // Si no hay búsqueda, mostrar solo los primeros 5 productos como sugerencias
     if (!debouncedProductSearch.trim()) {
-      return products.filter(product => product && product.status === 'active')
+      const activeProducts = products.filter(product => product && product.status === 'active')
+      const suggestions = activeProducts.slice(0, 5)
+      console.log('filteredProducts - suggestions:', suggestions.length)
+      return suggestions
     }
     
     // Buscar en nombre, marca y referencia
@@ -93,16 +127,24 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     })
   }, [products, debouncedProductSearch])
 
+  // Debug: Log filtered products
+  useEffect(() => {
+    console.log('filteredProducts changed:', filteredProducts.length, 'products')
+    if (filteredProducts.length > 0) {
+      console.log('First product:', filteredProducts[0])
+    }
+  }, [filteredProducts])
+
   const getClientTypeColor = (type: string) => {
     switch (type) {
       case 'mayorista':
-        return 'bg-blue-900/20 text-blue-400 border-blue-700'
+        return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
       case 'minorista':
-        return 'bg-purple-900/20 text-purple-400 border-purple-700'
+        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600'
       case 'consumidor_final':
-        return 'bg-green-900/20 text-green-400 border-green-700'
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600'
       default:
-        return 'bg-gray-700 text-gray-300 border-gray-600'
+        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
     }
   }
 
@@ -202,20 +244,57 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     setStockAlert({ show: false, message: '' })
   }
 
+  // Funciones para manejar pagos mixtos
+  const updateMixedPayment = (index: number, field: keyof SalePayment, value: any) => {
+    const updatedPayments = [...mixedPayments]
+    updatedPayments[index] = { ...updatedPayments[index], [field]: value }
+    setMixedPayments(updatedPayments)
+    // Limpiar error cuando el usuario actualiza los pagos
+    if (paymentError) {
+      setPaymentError('')
+    }
+  }
+
+  const getPaymentTypeLabel = (type: string) => {
+    switch (type) {
+      case 'cash': return 'Efectivo'
+      case 'transfer': return 'Transferencia'
+      case 'credit': return 'Crédito'
+      case 'warranty': return 'Garantía'
+      default: return type
+    }
+  }
+
+  const getTotalMixedPayments = () => {
+    return mixedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+  }
+
+  const getRemainingAmount = () => {
+    return total - getTotalMixedPayments()
+  }
+
   // Solo considerar productos con cantidad > 0 para cálculos
   const validProducts = selectedProducts.filter(item => item.quantity > 0)
-  const subtotal = validProducts.reduce((sum, item) => sum + item.total, 0)
   
-  // Calcular descuento
-  const discountAmount = discountType === 'percentage' 
-    ? (subtotal * discount) / 100 
-    : discount
+  // Calcular subtotal (suma de precios sin descuentos por producto)
+  const subtotal = validProducts.reduce((sum, item) => {
+    const baseTotal = item.quantity * item.unitPrice
+    const itemDiscountAmount = item.discountType === 'percentage' 
+      ? (baseTotal * (item.discount || 0)) / 100 
+      : (item.discount || 0)
+    return sum + Math.max(0, baseTotal - itemDiscountAmount)
+  }, 0)
   
-  const subtotalAfterDiscount = Math.max(0, subtotal - discountAmount)
+  // Calcular descuento por total de venta
+  const totalDiscountAmount = totalDiscountType === 'percentage' 
+    ? (subtotal * totalDiscount) / 100 
+    : totalDiscount
   
-  // IVA opcional
-  const tax = includeTax ? subtotalAfterDiscount * 0.16 : 0
-  const total = subtotalAfterDiscount + tax
+  const subtotalAfterTotalDiscount = Math.max(0, subtotal - totalDiscountAmount)
+  
+  // IVA automático sobre el total (19% en Colombia)
+  const tax = includeTax ? subtotalAfterTotalDiscount * 0.19 : 0
+  const total = subtotalAfterTotalDiscount + tax
 
   const handleAddProduct = (product: Product) => {
     const availableStock = getAvailableStock(product.id)
@@ -237,11 +316,19 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     
     if (existingItem) {
       setSelectedProducts(prev => 
-        prev.map(item => 
-          item.productId === product.id 
-            ? { ...item, quantity: item.quantity + 1, total: (item.quantity + 1) * item.unitPrice }
-            : item
-        )
+        prev.map(item => {
+          if (item.productId === product.id) {
+            const updatedItem = { ...item, quantity: item.quantity + 1 }
+            // Recalcular total con descuento (sin IVA por producto)
+            const baseTotal = updatedItem.quantity * updatedItem.unitPrice
+            const discountAmount = updatedItem.discountType === 'percentage' 
+              ? (baseTotal * (updatedItem.discount || 0)) / 100 
+              : (updatedItem.discount || 0)
+            updatedItem.total = Math.max(0, baseTotal - discountAmount)
+            return updatedItem
+          }
+          return item
+        })
       )
     } else {
       const newItem: SaleItem = {
@@ -250,6 +337,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         productName: product.name,
         quantity: 1,
         unitPrice: product.price,
+        discount: 0,
+        discountType: 'amount',
+        tax: 0,
         total: product.price
       }
       setSelectedProducts(prev => [...prev, newItem])
@@ -282,11 +372,19 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     }
 
     setSelectedProducts(prev =>
-      prev.map(item =>
-        item.id === itemId
-          ? { ...item, quantity: newQuantity, total: newQuantity * item.unitPrice }
-          : item
-      )
+      prev.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, quantity: newQuantity }
+          // Recalcular total con descuento (sin IVA por producto)
+          const baseTotal = newQuantity * updatedItem.unitPrice
+          const discountAmount = updatedItem.discountType === 'percentage' 
+            ? (baseTotal * (updatedItem.discount || 0)) / 100 
+            : (updatedItem.discount || 0)
+          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          return updatedItem
+        }
+        return item
+      })
     )
   }
 
@@ -314,13 +412,40 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     
     // Permitir 0, no eliminar el producto
     setSelectedProducts(prev =>
-      prev.map(item =>
-        item.id === itemId
-          ? { ...item, quantity: quantity, total: quantity * item.unitPrice }
-          : item
-      )
+      prev.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, quantity: quantity }
+          // Recalcular total con descuento (sin IVA por producto)
+          const baseTotal = quantity * updatedItem.unitPrice
+          const discountAmount = updatedItem.discountType === 'percentage' 
+            ? (baseTotal * (updatedItem.discount || 0)) / 100 
+            : (updatedItem.discount || 0)
+          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          return updatedItem
+        }
+        return item
+      })
     )
   }
+
+  const handleUpdateDiscount = (itemId: string, discount: number, discountType: 'percentage' | 'amount') => {
+    setSelectedProducts(prev => 
+      prev.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, discount, discountType }
+          // Recalcular total con descuento (sin IVA por producto)
+          const baseTotal = updatedItem.quantity * updatedItem.unitPrice
+          const discountAmount = discountType === 'percentage' 
+            ? (baseTotal * discount) / 100 
+            : discount
+          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          return updatedItem
+        }
+        return item
+      })
+    )
+  }
+
 
   const handleSave = () => {
     // Validar que hay cliente, productos, método de pago y que todos tengan cantidad > 0
@@ -328,15 +453,29 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     
     if (!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod) return
 
+    // Validar pagos mixtos si es necesario
+    if (paymentMethod === 'mixed') {
+      const totalMixedPayments = getTotalMixedPayments()
+      if (Math.abs(totalMixedPayments - total) > 0.01) {
+        setPaymentError(`Los pagos mixtos ($${totalMixedPayments.toLocaleString()}) deben sumar exactamente el total ($${total.toLocaleString()})`)
+        return
+      }
+    }
+
+    // Lógica especial para garantías
+    const isWarranty = paymentMethod === 'warranty'
+    
     const newSale: Omit<Sale, 'id' | 'createdAt'> = {
       clientId: selectedClient.id,
       clientName: selectedClient.name,
-      total,
-      subtotal: subtotalAfterDiscount,
-      tax,
-      discount,
+      total: isWarranty ? 0 : total, // Garantías siempre en $0
+      subtotal: isWarranty ? 0 : subtotalAfterTotalDiscount, // Garantías siempre en $0
+      tax: isWarranty ? 0 : tax, // Garantías siempre en $0
+      discount: isWarranty ? 0 : totalDiscount, // Garantías sin descuentos
+      discountType: isWarranty ? 'amount' : totalDiscountType,
       status: 'completed',
       paymentMethod,
+      payments: paymentMethod === 'mixed' ? mixedPayments : undefined,
       items: validProducts // Solo incluir productos con cantidad > 0
     }
 
@@ -357,9 +496,12 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     setShowClientDropdown(false)
     setShowProductDropdown(false)
     setIncludeTax(true)
-    setDiscount(0)
-    setDiscountType('percentage')
+    setTotalDiscount(0)
+    setTotalDiscountType('percentage')
     setInvoiceNumber('Pendiente')
+    setMixedPayments([])
+    setShowMixedPayments(false)
+    setPaymentError('')
     hideStockAlert()
     onClose()
   }
@@ -383,14 +525,14 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20">
           <div className="flex items-center space-x-3">
-            <Calculator className="h-6 w-6 text-emerald-500" />
+            <Calculator className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Nueva Venta</h2>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Nueva Venta</h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">Factura {invoiceNumber}</p>
             </div>
           </div>
@@ -409,15 +551,15 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             {/* Left Column - Client and Products */}
             <div className="space-y-6">
               {/* Client Selection */}
-              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <CardHeader>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
-                    <User className="h-5 w-5 mr-2 text-emerald-500" />
+                    <User className="h-5 w-5 mr-2 text-blue-600" />
                     Cliente
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="p-3">
+                  <div className="space-y-2">
                     <div className="relative">
                       <div className="relative">
                         <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
@@ -489,11 +631,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                   </div>
 
                   {selectedClient && (
-                    <div className="mt-3 p-3 bg-blue-900/20 rounded-xl border border-blue-500/30">
+                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
-                          <div className="font-bold text-blue-300">{selectedClient.name}</div>
-                          <div className="text-sm text-blue-400 font-semibold">{selectedClient.email}</div>
+                          <div className="font-bold text-gray-900 dark:text-white">{selectedClient.name}</div>
+                          <div className="text-sm text-gray-700 dark:text-gray-300 font-semibold">{selectedClient.email}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <Badge className={`${getClientTypeColor(selectedClient.type)} font-semibold`}>
@@ -504,7 +646,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             onClick={handleRemoveClient}
                             size="sm"
                             variant="ghost"
-                            className="h-6 w-6 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20"
+                            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-600 transition-all duration-200"
                           >
                             <X className="h-4 w-4" />
                           </Button>
@@ -516,11 +658,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               </Card>
 
               {/* Product Selection */}
-              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <CardHeader>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between text-lg text-gray-900 dark:text-white">
                     <div className="flex items-center">
-                      <Package className="h-5 w-5 mr-2 text-emerald-500" />
+                      <Package className="h-5 w-5 mr-2 text-blue-600" />
                       Agregar Productos
                     </div>
                     <Badge variant="outline" className="text-xs text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-500">
@@ -529,36 +671,58 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-3">
                     {/* Search Input */}
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
                       <input
                         type="text"
-                        placeholder="Buscar productos por nombre..."
+                        placeholder="Buscar por nombre o referencia..."
                         value={productSearch}
                         onChange={(e) => {
                           const value = e.target.value
                           setProductSearch(value)
-                          setShowProductDropdown(value.length > 0)
+                          setShowProductDropdown(true) // Siempre mostrar dropdown
                         }}
                         onFocus={() => setShowProductDropdown(true)}
+                        onClick={() => setShowProductDropdown(true)}
                         className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
                       />
                     </div>
                     
+                    {/* Debug: Mostrar siempre el estado */}
+                    <div className="text-xs text-gray-500 mt-1">
+                      Debug: {filteredProducts.length} productos disponibles
+                    </div>
+                    
                     {/* Product Dropdown */}
                     {showProductDropdown && (
-                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-20">
+                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-50 mt-2">
+                        {/* Botón para cerrar */}
+                        <div className="flex justify-end p-2 border-b border-gray-200 dark:border-gray-600">
+                          <button
+                            onClick={() => setShowProductDropdown(false)}
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm"
+                          >
+                            ✕ Cerrar
+                          </button>
+                        </div>
                         {filteredProducts.length === 0 ? (
                           <div className="px-4 py-6 text-center">
                             <Package className="h-8 w-8 text-gray-500 mx-auto mb-2" />
                             <div className="text-gray-500 dark:text-gray-400 text-sm">
-                              {productSearch.trim() ? 'No se encontraron productos' : 'Escribe para buscar productos'}
+                              {productSearch.trim() ? 'No se encontraron productos' : 'No hay productos disponibles'}
                             </div>
                           </div>
                         ) : (
                           <div className="p-2">
+                            {!productSearch.trim() && (
+                              <div className="px-2 py-1 mb-2">
+                                <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                  Productos sugeridos
+                                </div>
+                              </div>
+                            )}
                             {filteredProducts.map(product => (
                               <button
                                 key={product.id}
@@ -581,19 +745,19 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                       </div>
                                       <div className={`px-2 py-1 rounded-full text-xs font-medium ${
                                         getStockStatus(product.id) === 'Disponible Local' 
-                                          ? 'bg-green-900/20 text-green-400' 
+                                          ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600' 
                                           : getStockStatus(product.id).includes('Bodega')
-                                          ? 'bg-blue-900/20 text-blue-400'
+                                          ? 'bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
                                           : getStockStatus(product.id).includes('Bajo')
-                                          ? 'bg-yellow-900/20 text-yellow-400'
-                                          : 'bg-red-900/20 text-red-400'
+                                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600'
+                                          : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
                                       }`}>
                                         {getStockStatus(product.id)}
                                       </div>
                                     </div>
                                   </div>
                                   <div className="flex-shrink-0 text-right ml-3">
-                                    <div className="font-bold text-emerald-400 text-sm">
+                                    <div className="font-bold text-gray-900 dark:text-white text-sm">
                                       ${product.price.toLocaleString()}
                                     </div>
                                     <div className="text-xs text-gray-500">c/u</div>
@@ -621,19 +785,19 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                     <div className="mt-6">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
-                        <Badge variant="secondary" className="bg-emerald-900/20 text-emerald-400 border-emerald-700">
+                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600">
                           {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
-                      <div className="space-y-3">
+                      <div className="space-y-1">
                         {selectedProducts.map(item => (
-                          <div key={item.id} className="bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                          <div key={item.id} className="bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
                             {/* Product Info Header */}
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
                                 <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
                                 <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
-                                  <span>Precio: <span className="font-medium text-emerald-400">${item.unitPrice.toLocaleString()}</span></span>
+                                  <span>Precio: <span className="font-medium text-gray-900 dark:text-white">${item.unitPrice.toLocaleString()}</span></span>
                                   <span>Stock: <span className="font-medium">{getAvailableStock(item.productId)} unidades</span></span>
                                 </div>
                               </div>
@@ -644,7 +808,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             </div>
                             
                             {/* Quantity Controls */}
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between mb-2">
                               <div className="flex items-center space-x-3">
                                 <span className="text-sm text-gray-300 font-medium">Cantidad:</span>
                                 <div className="flex items-center space-x-2">
@@ -679,11 +843,37 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                 size="sm"
                                 variant="outline"
                                 onClick={() => handleUpdateQuantity(item.id, 0)}
-                                className="h-8 px-3 text-red-400 border-red-500 hover:bg-red-900/20 hover:text-red-300"
+                                className="h-8 px-3 text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700 hover:border-gray-400 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 dark:hover:border-gray-500 transition-all duration-200"
                               >
                                 <X className="h-4 w-4 mr-1" />
                                 Quitar
                               </Button>
+                            </div>
+
+                            {/* Discount Control */}
+                            <div>
+                              <label className="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">
+                                Descuento por producto
+                              </label>
+                              <div className="flex space-x-1">
+                                <input
+                                  type="number"
+                                  value={item.discount || ''}
+                                  onChange={(e) => handleUpdateDiscount(item.id, parseFloat(e.target.value) || 0, item.discountType || 'amount')}
+                                  className="flex-1 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
+                                  min="0"
+                                  step="0.01"
+                                  placeholder="0"
+                                />
+                                <select
+                                  value={item.discountType || 'amount'}
+                                  onChange={(e) => handleUpdateDiscount(item.id, item.discount || 0, e.target.value as 'percentage' | 'amount')}
+                                  className="h-8 text-xs border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white px-2"
+                                >
+                                  <option value="amount">$</option>
+                                  <option value="percentage">%</option>
+                                </select>
+                              </div>
                             </div>
                             
                             {/* Stock Alert */}
@@ -704,17 +894,17 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             </div>
 
             {/* Right Column - Payment and Summary */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Payment Method */}
-              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <CardHeader>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
-                    <CreditCard className="h-5 w-5 mr-2 text-emerald-500" />
+                    <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
                     Método de Pago
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
+                <CardContent className="p-3">
+                  <div className="space-y-2">
                     {/* Selector de Método de Pago */}
                     <div className="relative">
                       <select
@@ -735,78 +925,177 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                         </svg>
                       </div>
                     </div>
+
+                    {/* Sección de Pagos Mixtos */}
+                    {showMixedPayments && (
+                      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                          Desglose de Pago Mixto
+                        </h4>
+                        <div className="space-y-3">
+                          {mixedPayments.map((payment, index) => (
+                            <div key={index} className="space-y-2">
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                                  {getPaymentTypeLabel(payment.paymentType)}
+                                </label>
+                                <input
+                                  type="text"
+                                  value={payment.amount ? payment.amount.toLocaleString('es-CO') : ''}
+                                  onChange={(e) => {
+                                    // Remover todos los caracteres no numéricos excepto puntos
+                                    const cleanValue = e.target.value.replace(/[^\d]/g, '')
+                                    const numericValue = cleanValue ? parseInt(cleanValue, 10) : 0
+                                    updateMixedPayment(index, 'amount', numericValue)
+                                  }}
+                                  placeholder="0"
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                                />
+                              </div>
+                            </div>
+                          ))}
+                          
+                          {/* Campo de observaciones generales */}
+                          <div className="pt-2">
+                            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+                              Observaciones Generales
+                            </label>
+                            <input
+                              type="text"
+                              value={mixedPayments[0]?.notes || ''}
+                              onChange={(e) => {
+                                // Actualizar las notas en todos los pagos
+                                const updatedPayments = mixedPayments.map(payment => ({
+                                  ...payment,
+                                  notes: e.target.value
+                                }))
+                                setMixedPayments(updatedPayments)
+                              }}
+                              placeholder="Notas sobre el pago mixto..."
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                            />
+                          </div>
+                          
+                          {/* Resumen de pagos mixtos */}
+                          <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-gray-600 dark:text-gray-400">Total asignado:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                ${getTotalMixedPayments().toLocaleString('es-CO')}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm">
+                              <span className="text-gray-600 dark:text-gray-400">Total de la venta:</span>
+                              <span className="font-medium text-gray-900 dark:text-white">
+                                ${total.toLocaleString('es-CO')}
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center text-sm font-medium">
+                              <span className={getRemainingAmount() === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {getRemainingAmount() === 0 ? '✅ Pago completo' : `Faltante: $${getRemainingAmount().toLocaleString('es-CO')}`}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Alerta de error de pagos mixtos */}
+                    {paymentError && (
+                      <div className="mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                        <div className="flex items-center">
+                          <AlertTriangle className="h-4 w-4 text-red-500 mr-2 flex-shrink-0" />
+                          <span className="text-sm text-red-700 dark:text-red-300">{paymentError}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
 
               {/* Summary */}
-              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900 dark:text-white">Resumen de Venta</CardTitle>
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                    <DollarSign className="h-5 w-5 mr-2 text-blue-600" />
+                    {paymentMethod === 'warranty' ? '🛡️ Resumen de Garantía' : 'Resumen de Venta'}
+                  </CardTitle>
+                  {paymentMethod === 'warranty' && (
+                    <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">
+                      ⚠️ Garantía: Factura en $0 - Solo descuenta inventario
+                    </p>
+                  )}
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {/* Subtotal */}
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">${subtotal.toLocaleString()}</span>
+                      <span className={`font-semibold ${paymentMethod === 'warranty' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
+                        {paymentMethod === 'warranty' ? '$0' : `$${subtotal.toLocaleString()}`}
+                      </span>
                     </div>
 
-                    {/* Descuento */}
-                    <div className="space-y-2">
+                    {/* Descuento por total */}
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento:</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
                         <div className="flex items-center space-x-2">
                           <input
                             type="number"
-                            value={discount}
-                            onChange={(e) => setDiscount(Number(e.target.value))}
-                            className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
+                            value={paymentMethod === 'warranty' ? 0 : (totalDiscount || '')}
+                            onChange={(e) => setTotalDiscount(Number(e.target.value) || 0)}
+                            disabled={paymentMethod === 'warranty'}
+                            className={`w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600 ${paymentMethod === 'warranty' ? 'opacity-50 cursor-not-allowed' : ''}`}
                             min="0"
-                            step={discountType === 'percentage' ? '0.1' : '1'}
+                            step={totalDiscountType === 'percentage' ? '0.1' : '1'}
                             placeholder="0"
                           />
                           <select
-                            value={discountType}
-                            onChange={(e) => setDiscountType(e.target.value as 'percentage' | 'amount')}
-                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
+                            value={totalDiscountType}
+                            onChange={(e) => setTotalDiscountType(e.target.value as 'percentage' | 'amount')}
+                            disabled={paymentMethod === 'warranty'}
+                            className={`px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600 ${paymentMethod === 'warranty' ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <option value="percentage" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">%</option>
                             <option value="amount" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">$</option>
                           </select>
                         </div>
                       </div>
-                      {discountAmount > 0 && (
+                      {totalDiscountAmount > 0 && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-400">Descuento aplicado:</span>
-                          <span className="font-medium text-red-500 dark:text-red-400">-${discountAmount.toLocaleString()}</span>
+                          <span className="font-medium text-red-500 dark:text-red-400">-${totalDiscountAmount.toLocaleString()}</span>
                         </div>
                       )}
                     </div>
 
                     {/* Subtotal después del descuento */}
-                    {discountAmount > 0 && (
+                    {totalDiscountAmount > 0 && (
                       <div className="flex justify-between border-t border-gray-600 pt-2">
                         <span className="text-gray-300 font-medium">Subtotal con descuento:</span>
-                        <span className="font-semibold text-white">${subtotalAfterDiscount.toLocaleString()}</span>
+                        <span className="font-semibold text-white">${subtotalAfterTotalDiscount.toLocaleString()}</span>
                       </div>
                     )}
 
                     {/* IVA */}
-                    <div className="space-y-2">
+                    <div className="space-y-1">
                       <div className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (16%):</span>
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
                         <div className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            checked={includeTax}
+                            checked={paymentMethod === 'warranty' ? false : includeTax}
                             onChange={(e) => setIncludeTax(e.target.checked)}
-                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
+                            disabled={paymentMethod === 'warranty'}
+                            className={`h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 ${paymentMethod === 'warranty' ? 'opacity-50 cursor-not-allowed' : ''}`}
                           />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">Incluir IVA</span>
+                          <span className={`text-sm text-gray-700 dark:text-gray-300 ${paymentMethod === 'warranty' ? 'opacity-50' : ''}`}>
+                            {paymentMethod === 'warranty' ? 'No aplica en garantías' : 'Incluir IVA'}
+                          </span>
                         </div>
                       </div>
-                      {includeTax && (
+                      {includeTax && paymentMethod !== 'warranty' && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-400">IVA calculado:</span>
                           <span className="font-medium text-gray-900 dark:text-white">${tax.toLocaleString()}</span>
@@ -818,8 +1107,15 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                     <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
                       <div className="flex justify-between text-lg font-semibold">
                         <span className="text-gray-900 dark:text-white">Total:</span>
-                        <span className="text-emerald-500 dark:text-emerald-400 font-bold">${total.toLocaleString()}</span>
+                        <span className={`font-bold ${paymentMethod === 'warranty' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
+                          {paymentMethod === 'warranty' ? '$0' : `$${total.toLocaleString()}`}
+                        </span>
                       </div>
+                      {paymentMethod === 'warranty' && (
+                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
+                          🛡️ Garantía: Solo descuenta inventario, no genera ingresos
+                        </p>
+                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -829,20 +1125,24 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-8 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg">
+        <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg">
           <Button
             onClick={handleClose}
             variant="outline"
-            className="border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium px-6 py-2"
+            className="border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium px-4 py-2"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-            className="bg-gray-600 hover:bg-gray-700 text-white font-medium px-6 py-2 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed"
+            className={`font-medium px-4 py-2 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed ${
+              paymentMethod === 'warranty' 
+                ? 'bg-orange-600 hover:bg-orange-700 text-white' 
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
-            Crear Venta
+            {paymentMethod === 'warranty' ? '🛡️ Crear Garantía' : 'Crear Venta'}
           </Button>
         </div>
       </div>

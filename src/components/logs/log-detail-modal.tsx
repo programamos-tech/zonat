@@ -172,12 +172,12 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[80vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700 mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900/20">
           <div className="flex items-center space-x-3">
-            <FileText className="h-5 w-5 text-emerald-400" />
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-900 dark:text-white">
+            <FileText className="h-6 w-6 text-gray-600" />
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">
               Detalles del Registro
             </h2>
           </div>
@@ -191,35 +191,47 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
           </Button>
         </div>
 
-        <div className="p-4 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
-          <div className="space-y-4">
-            {/* Información Principal */}
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 space-y-4 border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Acción:</span>
-                <Badge className={getTypeColor(log.type)}>
-                  <TypeIcon className="h-3 w-3 mr-1" />
-                  {getActionLabel(log.action, (log as any).module)}
-                </Badge>
+        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
+          <div className="space-y-6">
+            {/* Información General */}
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-lg">
+              <div className="flex items-center space-x-3 p-4 border-b border-gray-200 dark:border-gray-700">
+                <FileText className="h-5 w-5 text-gray-600" />
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Información General</h3>
               </div>
-              
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Realizado por:</span>
-                <span className="text-gray-900 dark:text-gray-900 dark:text-white font-medium">{(log as any).user_name || 'Desconocido'}</span>
+              <div className="p-4 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Acción:</span>
+                  <Badge className={getTypeColor(log.type)}>
+                    <TypeIcon className="h-3 w-3 mr-1" />
+                    {getActionLabel(log.action, (log as any).module)}
+                  </Badge>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Realizado por:</span>
+                  <span className="text-gray-900 dark:text-white font-medium">{(log as any).user_name || 'Desconocido'}</span>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">Fecha:</span>
+                  <span className="text-gray-900 dark:text-white">{formatDateTime((log as any).created_at)}</span>
+                </div>
               </div>
+            </div>
               
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600 dark:text-gray-400">Fecha:</span>
-                <span className="text-gray-900 dark:text-gray-900 dark:text-white">{formatDateTime((log as any).created_at)}</span>
-              </div>
-              
-              {/* Información específica según el tipo de acción */}
-              {log.details && (
-                <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+            {/* Información específica según el tipo de acción */}
+            {log.details && (
+              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 shadow-sm rounded-lg">
+                <div className="flex items-center space-x-3 p-4 border-b border-gray-200 dark:border-gray-700">
+                  <TypeIcon className="h-5 w-5 text-gray-600" />
+                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Detalles de la Acción</h3>
+                </div>
+                <div className="p-4">
                   {log.action === 'Permisos Asignados' && (log.details as any).description && (
                     <div>
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Resumen de permisos:</span>
-                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
+                      <div className="text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-2">
                           {(() => {
                             const desc = (log.details as any).description
@@ -237,7 +249,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             
                             return (
                               <>
-                                <div className="flex items-center space-x-2 font-medium text-emerald-400 mb-3">
+                                <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                                   <UserCheck className="h-4 w-4" />
                                   <span>{userName}</span>
                                 </div>
@@ -272,7 +284,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                     <div className="space-y-1">
                                       {summary.split(' | ').map((module: any, index: number) => (
                                         <div key={index} className="flex items-center space-x-2">
-                                          <div className="w-2 h-2 bg-emerald-400 rounded-full flex-shrink-0"></div>
+                                          <div className="w-2 h-2 bg-gray-600 rounded-full flex-shrink-0"></div>
                                           <span className="text-xs">
                                             {module
                                               .replace(/Productos:/g, 'Productos:')
@@ -354,7 +366,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto creado:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-emerald-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Package className="h-4 w-4" />
                             <span>Resumen del Producto</span>
                           </div>
@@ -392,7 +404,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             </div>
                             <div className="mt-2 text-center">
                               <span className="text-gray-600 dark:text-gray-300 text-xs">Total: </span>
-                              <span className="text-emerald-400 font-bold">
+                              <span className="text-gray-600 font-bold">
                                 {(log.details.stockWarehouse || 0) + (log.details.stockStore || 0)} unidades
                               </span>
                             </div>
@@ -421,7 +433,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto actualizado:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-yellow-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Package className="h-4 w-4" />
                             <span>Cambios Realizados</span>
                           </div>
@@ -439,7 +451,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           
                           <div>
                             <span className="text-gray-600 dark:text-gray-300 text-xs">Campos modificados:</span>
-                            <div className="text-yellow-300 text-sm">
+                            <div className="text-gray-600 text-sm">
                               {log.details.changes ? log.details.changes.join(', ') : 'N/A'}
                             </div>
                           </div>
@@ -508,7 +520,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto eliminado:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-2">
-                          <div className="flex items-center space-x-2 font-medium text-red-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Package className="h-4 w-4" />
                             <span>Producto Eliminado</span>
                           </div>
@@ -527,7 +539,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Transferencia de stock:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-blue-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <ArrowRightLeft className="h-4 w-4" />
                             <span>Transferencia de Stock</span>
                           </div>
@@ -596,7 +608,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Ajuste de stock:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-orange-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Package className="h-4 w-4" />
                             <span>Ajuste de Stock</span>
                           </div>
@@ -669,7 +681,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Categoría creada:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-indigo-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Tag className="h-4 w-4" />
                             <span>Nueva Categoría</span>
                           </div>
@@ -705,7 +717,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Categoría actualizada:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-purple-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Tag className="h-4 w-4" />
                             <span>Categoría Actualizada</span>
                           </div>
@@ -741,7 +753,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Categoría eliminada:</span>
                       <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
                         <div className="space-y-2">
-                          <div className="flex items-center space-x-2 font-medium text-red-400 mb-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
                             <Tag className="h-4 w-4" />
                             <span>Categoría Eliminada</span>
                           </div>
@@ -755,8 +767,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                     </div>
                   )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -764,7 +776,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
           <Button
             onClick={onClose}
-            className="bg-emerald-600 hover:bg-emerald-700 text-gray-900 dark:text-white px-6"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-6"
           >
             Cerrar
           </Button>

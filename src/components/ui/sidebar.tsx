@@ -13,7 +13,8 @@ import {
   Activity,
   Menu,
   X,
-  LogOut
+  LogOut,
+  ShieldCheck
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -26,7 +27,8 @@ const navigation = [
   { name: 'Productos', href: '/products', icon: Package, module: 'products' },
   { name: 'Clientes', href: '/clients', icon: Users, module: 'clients' },
   { name: 'Ventas', href: '/sales', icon: Receipt, module: 'sales' },
-  { name: 'Abonos', href: '/payments', icon: CreditCard, module: 'payments' },
+  { name: 'Garantías', href: '/warranties', icon: ShieldCheck, module: 'warranties' },
+  { name: 'Créditos', href: '/payments', icon: CreditCard, module: 'payments' },
   { name: 'Roles', href: '/roles', icon: Shield, module: 'roles' },
   { name: 'Registro de Actividades', href: '/logs', icon: Activity, module: 'logs' },
 ]

@@ -93,7 +93,84 @@ export interface Client {
   creditLimit: number
   currentDebt: number
   status: 'active' | 'inactive'
+  nit?: string
   createdAt: string
+}
+
+export interface CompanyConfig {
+  id: string
+  name: string
+  nit: string
+  address: string
+  phone: string
+  email: string
+  logo?: string
+  dianResolution?: string
+  numberingRange?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SalePayment {
+  id: string
+  saleId: string
+  paymentType: 'cash' | 'transfer' | 'credit' | 'warranty'
+  amount: number
+  reference?: string
+  notes?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface Warranty {
+  id: string
+  originalSaleId: string
+  clientId: string
+  clientName: string
+  productReceivedId: string
+  productReceivedName: string
+  productReceivedSerial?: string
+  productDeliveredId?: string
+  productDeliveredName?: string
+  reason: string
+  status: 'pending' | 'in_progress' | 'completed' | 'rejected' | 'discarded'
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  completedAt?: string
+  createdBy?: string
+  // Relaciones
+  originalSale?: Sale
+  client?: Client
+  productReceived?: Product
+  productDelivered?: Product
+  warrantyProducts?: WarrantyProduct[]
+  statusHistory?: WarrantyStatusHistory[]
+}
+
+export interface WarrantyProduct {
+  id: string
+  warrantyId: string
+  productId: string
+  serialNumber?: string
+  condition: 'defective' | 'repaired' | 'discarded'
+  notes?: string
+  createdAt: string
+  updatedAt: string
+  // Relaciones
+  product?: Product
+}
+
+export interface WarrantyStatusHistory {
+  id: string
+  warrantyId: string
+  previousStatus?: string
+  newStatus: string
+  notes?: string
+  changedBy?: string
+  changedAt: string
+  // Relaciones
+  changedByUser?: User
 }
 
 export interface Sale {
@@ -104,9 +181,14 @@ export interface Sale {
   subtotal: number
   tax: number
   discount: number
+  discountType?: 'percentage' | 'amount'
   status: 'pending' | 'completed' | 'cancelled'
   paymentMethod: 'cash' | 'credit' | 'transfer' | 'warranty' | 'mixed'
+  payments?: SalePayment[] // Para pagos mixtos
   invoiceNumber?: string
+  sellerId?: string
+  sellerName?: string
+  sellerEmail?: string
   createdAt: string
   items: SaleItem[]
 }
@@ -115,12 +197,16 @@ export interface SaleItem {
   id: string
   productId: string
   productName: string
+  productReferenceCode?: string
   quantity: number
   unitPrice: number
+  discount?: number
+  discountType?: 'percentage' | 'amount'
+  tax?: number
   total: number
 }
 
-export interface Payment {
+export interface Credit {
   id: string
   saleId: string
   clientId: string
@@ -134,21 +220,28 @@ export interface Payment {
   lastPaymentUser?: string
   status: 'pending' | 'partial' | 'completed' | 'overdue'
   dueDate?: string
+  createdBy?: string
+  createdByName?: string
   createdAt: string
   updatedAt: string
 }
 
 export interface PaymentRecord {
   id: string
-  paymentId: string
+  creditId: string
   amount: number
   paymentDate: string
-  paymentMethod: 'cash' | 'transfer' | 'card'
+  paymentMethod: 'cash' | 'transfer' | 'mixed'
+  cashAmount?: number
+  transferAmount?: number
   description?: string
   userId: string
   userName: string
   createdAt: string
 }
+
+// Mantener Payment para compatibilidad
+export interface Payment extends Credit {}
 
 export interface DashboardStats {
   totalSales: number

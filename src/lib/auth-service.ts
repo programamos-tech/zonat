@@ -472,4 +472,51 @@ export class AuthService {
       console.error('Error inicializando datos:', error)
     }
   }
+
+  // Obtener usuario actual
+  static async getCurrentUser(): Promise<User | null> {
+    try {
+      if (typeof window === 'undefined') {
+        console.log('🔍 DEBUG getCurrentUser: window is undefined')
+        return null
+      }
+
+      const userData = localStorage.getItem('zonat_user')
+      
+      if (!userData) {
+        return null
+      }
+
+      const user = JSON.parse(userData)
+      
+      // Verificar que el usuario sigue activo en la base de datos
+      const { data: dbUser, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .eq('is_active', true)
+        .single()
+
+      if (error || !dbUser) {
+        // Si el usuario no existe o no está activo, limpiar localStorage
+        localStorage.removeItem('zonat_user')
+        return null
+      }
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        role: dbUser.role,
+        permissions: dbUser.permissions || [],
+        isActive: dbUser.is_active,
+        lastLogin: dbUser.last_login,
+        createdAt: dbUser.created_at,
+        updatedAt: dbUser.updated_at
+      }
+    } catch (error) {
+      console.error('Error getting current user:', error)
+      return null
+    }
+  }
 }

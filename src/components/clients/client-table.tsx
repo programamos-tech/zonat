@@ -34,20 +34,20 @@ export function ClientTable({
 
   const getStatusColor = (status: string) => {
     return status === 'active' 
-      ? 'bg-green-900/20 text-green-400 border-green-700' 
-      : 'bg-red-900/20 text-red-400 border-red-700'
+      ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300' 
+      : 'bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300'
   }
 
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'mayorista':
-        return 'bg-blue-900/20 text-blue-400 border-blue-700'
+        return 'bg-blue-100 text-blue-800 hover:bg-blue-200 hover:text-blue-900 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/30 dark:hover:text-blue-300'
       case 'minorista':
-        return 'bg-purple-900/20 text-purple-400 border-purple-700'
+        return 'bg-purple-100 text-purple-800 hover:bg-purple-200 hover:text-purple-900 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30 dark:hover:text-purple-300'
       case 'consumidor_final':
-        return 'bg-green-900/20 text-green-400 border-green-700'
+        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 hover:text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-400 dark:hover:bg-emerald-900/30 dark:hover:text-emerald-300'
       default:
-        return 'bg-gray-700 text-gray-300 border-gray-600'
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-200'
     }
   }
 
@@ -91,144 +91,185 @@ export function ClientTable({
   })
 
   return (
-    <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center text-gray-900 dark:text-white">
-            <Users className="h-5 w-5 mr-2 text-emerald-600" />
-            Gestión de Clientes
-          </CardTitle>
-          <Button onClick={onCreate} className="bg-gray-700 hover:bg-gray-800">
-            <Plus className="h-4 w-4 mr-2" />
-            Nuevo Cliente
-          </Button>
-        </div>
-      </CardHeader>
-      <CardContent>
-        {/* Filters */}
-        <div className="flex flex-col sm:flex-row gap-4 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 h-4 w-4" />
-                    <input
-                      type="text"
-                      placeholder="Buscar clientes..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
-                    />
+    <div className="space-y-6">
+      {/* Header */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <Users className="h-6 w-6 text-purple-600" />
+              Gestión de Clientes
+            </CardTitle>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
+                Administra tus clientes minoristas, mayoristas y consumidores finales
+              </p>
+            </div>
+            <Button onClick={onCreate} className="bg-purple-600 hover:bg-purple-700 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Cliente
+            </Button>
           </div>
-          <select
-            value={filterType}
-            onChange={(e) => setFilterType(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-          >
-            {types.map(type => (
-              <option key={type} value={type}>
-                {type === 'all' ? 'Todos los tipos' : getTypeLabel(type)}
-              </option>
-            ))}
-          </select>
-        </div>
+        </CardHeader>
+      </Card>
 
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-[800px]">
-            <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Cliente</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300 min-w-[120px]">Cédula/NIT</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Tipo</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Contacto</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Ubicación</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Estado</th>
-                <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Acciones</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredClients.map((client) => {
-                const TypeIcon = getTypeIcon(client.type)
-                return (
-                  <tr key={client.id} className="border-b border-gray-100 dark:border-gray-700">
-                    <td className="py-4 px-4">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 mr-3">
-                          <div className="w-8 h-8 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                            <TypeIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
-                          </div>
-                        </div>
-                        <div>
-                          <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 min-w-[120px]">
-                      <div className="text-sm">
-                        <div 
-                          className="font-mono text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis cursor-help px-2 py-1 rounded" 
-                          title={`Cédula/NIT: ${client.document}`}
-                        >
-                          {client.document}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge className={getTypeColor(client.type)}>
-                        {getTypeLabel(client.type)}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm">
-                        <div className="text-gray-900 dark:text-white">{client.email}</div>
-                        <div className="text-gray-500 dark:text-gray-400">{client.phone}</div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="text-sm">
-                        <div className="text-gray-900 dark:text-white">{client.address}</div>
-                        <div className="text-gray-500 dark:text-gray-400">{client.city}, {client.state}</div>
-                      </div>
-                    </td>
-                    <td className="py-4 px-4">
-                      <Badge className={getStatusColor(client.status)}>
-                        {client.status === 'active' ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                    </td>
-                    <td className="py-4 px-4">
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onEdit(client)}
-                          className="h-8 w-8 p-0 text-gray-400 dark:text-gray-400"
-                          title="Editar cliente"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => onDelete(client)}
-                          className="h-8 w-8 p-0 text-red-400 dark:text-red-400"
-                          title="Eliminar cliente"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
+      {/* Search and Filters */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardContent className="p-4">
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Buscar clientes..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              />
+            </div>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+            >
+              {types.map(type => (
+                <option key={type} value={type}>
+                  {type === 'all' ? 'Todos los tipos' : getTypeLabel(type)}
+                </option>
+              ))}
+            </select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Table */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardContent className="p-0">
+          {filteredClients.length === 0 ? (
+            <div className="text-center py-12">
+              <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No se encontraron clientes
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Comienza creando un nuevo cliente
+              </p>
+              <Button 
+                onClick={onCreate}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Cliente
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50 dark:bg-gray-700">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Cliente
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Cédula/NIT
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Tipo
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Contacto
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Ubicación
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Estado
+                    </th>
+                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      Acciones
+                    </th>
                   </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-
-                {filteredClients.length === 0 && (
-                  <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <Users className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-                    <p>No se encontraron clientes</p>
-                  </div>
-                )}
-      </CardContent>
-    </Card>
+                </thead>
+                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  {filteredClients.map((client) => {
+                    const TypeIcon = getTypeIcon(client.type)
+                    return (
+                      <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="flex items-center">
+                            <div className="flex-shrink-0 mr-3">
+                              <div className="w-8 h-8 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                                <TypeIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                              </div>
+                            </div>
+                            <div>
+                              <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm">
+                            <div 
+                              className="font-mono text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis cursor-help px-2 py-1 rounded" 
+                              title={`Cédula/NIT: ${client.document}`}
+                            >
+                              {client.document}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge className={getTypeColor(client.type)}>
+                            {getTypeLabel(client.type)}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm">
+                            <div className="text-gray-900 dark:text-white">{client.email}</div>
+                            <div className="text-gray-500 dark:text-gray-400">{client.phone}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm">
+                            <div className="text-gray-900 dark:text-white">{client.address}</div>
+                            <div className="text-gray-500 dark:text-gray-400">{client.city}, {client.state}</div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <Badge className={getStatusColor(client.status)}>
+                            {client.status === 'active' ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onEdit(client)}
+                              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                              title="Editar cliente"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onDelete(client)}
+                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                              title="Eliminar cliente"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   )
 }

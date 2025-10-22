@@ -7,6 +7,7 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useClients } from '@/contexts/clients-context'
 import { Client } from '@/types'
 import { toast } from 'sonner'
+import { Users } from 'lucide-react'
 
 export default function ClientsPage() {
   const { clients, loading, createClient, updateClient, deleteClient } = useClients()
@@ -77,13 +78,6 @@ export default function ClientsPage() {
 
   return (
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-      <div className="xl:ml-0 ml-20">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Clientes</h1>
-        <p className="text-gray-600 dark:text-gray-300 mt-2">
-          Administra tus clientes minoristas, mayoristas y consumidores finales
-        </p>
-      </div>
-
       <ClientTable
         clients={clients}
         onEdit={handleEdit}

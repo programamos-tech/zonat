@@ -70,13 +70,13 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'mayorista':
-        return 'bg-blue-900/20 text-blue-400 border-blue-700'
+        return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
       case 'minorista':
-        return 'bg-purple-900/20 text-purple-400 border-purple-700'
+        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600'
       case 'consumidor_final':
-        return 'bg-green-900/20 text-green-400 border-green-700'
+        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600'
       default:
-        return 'bg-gray-700 text-gray-300 border-gray-600'
+        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
     }
   }
 
@@ -109,34 +109,14 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
+    // Solo el nombre es obligatorio
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es requerido'
     }
 
-    if (!formData.email.trim()) {
-      newErrors.email = 'El email es requerido'
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    // Validar email solo si se proporciona
+    if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
       newErrors.email = 'El email no es válido'
-    }
-
-    if (!formData.phone.trim()) {
-      newErrors.phone = 'El teléfono es requerido'
-    }
-
-    if (!formData.document.trim()) {
-      newErrors.document = 'La cédula/NIT es requerida'
-    }
-
-    if (!formData.address.trim()) {
-      newErrors.address = 'La dirección es requerida'
-    }
-
-    if (!formData.city.trim()) {
-      newErrors.city = 'La ciudad es requerida'
-    }
-
-    if (!formData.state.trim()) {
-      newErrors.state = 'El estado es requerido'
     }
 
     setErrors(newErrors)
@@ -194,14 +174,14 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const isEdit = !!client
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-purple-50 dark:bg-purple-900/20">
           <div className="flex items-center space-x-3">
-            <Users className="h-6 w-6 text-emerald-400" />
+            <Users className="h-6 w-6 text-purple-600" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-300">
@@ -219,19 +199,19 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
-          <div className="space-y-6">
+        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Información Básica */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <User className="h-5 w-5 mr-2 text-emerald-400" />
+                  <User className="h-5 w-5 mr-2 text-purple-600" />
                   Información Básica
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                     Nombre del Cliente *
                   </label>
                   <input
@@ -249,8 +229,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tipo de Cliente *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Tipo de Cliente
                   </label>
                   <div className="flex space-x-3">
                             {[
@@ -265,7 +245,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                                   onClick={() => handleInputChange('type', type.value)}
                                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                                     formData.type === type.value
-                                      ? 'border-emerald-500 bg-emerald-600 text-white'
+                                      ? 'border-purple-500 bg-purple-600 text-white'
                                       : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
                                   }`}
                                 >
@@ -277,28 +257,22 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                               )
                             })}
                   </div>
-                  <div className="mt-2">
-                    <Badge className={getTypeColor(formData.type)}>
-                      <TypeIcon className="h-3 w-3 mr-1" />
-                      {getTypeLabel(formData.type)}
-                    </Badge>
-                  </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Información de Contacto */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Mail className="h-5 w-5 mr-2 text-emerald-400" />
+                  <Mail className="h-5 w-5 mr-2 text-purple-600" />
                   Información de Contacto
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Cédula/NIT *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Cédula/NIT
                   </label>
                   <input
                     type="text"
@@ -315,8 +289,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Teléfono *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Teléfono
                   </label>
                   <input
                     type="tel"
@@ -333,8 +307,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Email *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Email
                   </label>
                   <input
                     type="email"
@@ -353,17 +327,17 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             </Card>
 
             {/* Información de Ubicación */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-emerald-400" />
+                  <MapPin className="h-5 w-5 mr-2 text-purple-600" />
                   Información de Ubicación
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Dirección *
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    Dirección
                   </label>
                   <input
                     type="text"
@@ -381,8 +355,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Ciudad *
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Ciudad
                     </label>
                     <input
                       type="text"
@@ -399,8 +373,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Estado *
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Estado
                     </label>
                     <input
                       type="text"
@@ -420,9 +394,12 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             </Card>
 
             {/* Estado */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white">Estado del Cliente</CardTitle>
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                  <Phone className="h-5 w-5 mr-2 text-purple-600" />
+                  Estado del Cliente
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="flex items-center space-x-4">
@@ -455,7 +432,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="flex items-center justify-end space-x-4 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
           <Button
             onClick={handleClose}
             variant="outline"
@@ -465,7 +442,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-6 py-2 shadow-md"
+            className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2 shadow-md"
           >
             {isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
           </Button>

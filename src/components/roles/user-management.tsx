@@ -312,150 +312,172 @@ export function UserManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Gestión de Usuarios</h2>
-          <p className="text-gray-600 dark:text-gray-400">Administra los usuarios y sus permisos del sistema</p>
-        </div>
-        
-        <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-emerald-600 hover:bg-emerald-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Usuario
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Crear Nuevo Usuario</DialogTitle>
-              <DialogDescription>
-                Completa la información del nuevo usuario y asigna los permisos correspondientes.
-              </DialogDescription>
-            </DialogHeader>
-            
-                      <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          <div className="space-y-2">
-                            <Label htmlFor="name">Nombre Completo</Label>
-                            <Input
-                              id="name"
-                              value={formData.name}
-                              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                              placeholder="Ej: Juan Pérez"
-                            />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input
-                              id="email"
-                              type="email"
-                              value={formData.email}
-                              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                              placeholder="juan@zonat.com"
-                            />
-                          </div>
-                        </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="password">Contraseña</Label>
-                  <Input
-                    id="password"
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Mínimo 6 caracteres"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="role">Rol</Label>
-                  <Select value={formData.role} onValueChange={applyRolePermissions}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {roleOptions.map(role => (
-                        <SelectItem key={role.value} value={role.value}>
-                          {role.label}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
-                    <span className="font-semibold text-blue-700 dark:text-blue-300">
-                      {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
-                    </span>
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center space-x-3 p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                <Switch
-                  id="isActive"
-                  checked={formData.isActive}
-                  onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                />
-                <Label htmlFor="isActive" className="text-base font-medium">Usuario Activo</Label>
-              </div>
-
-              {/* Permisos */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <Label className="text-lg font-bold text-gray-900 dark:text-white">Permisos del Sistema</Label>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-lg">
-                    Rol: <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                      {roleOptions.find(r => r.value === formData.role)?.label}
-                    </span>
-                  </div>
-                </div>
-                <div className="mt-4 space-y-4">
-                  {moduleOptions.map(module => (
-                    <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                      <div className="font-semibold text-base mb-3 text-gray-900 dark:text-white">{module.label}</div>
-                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {(module.value === 'dashboard' || module.value === 'logs' 
-                          ? actionOptions.filter(action => action.value === 'view')
-                          : actionOptions
-                        ).map(action => (
-                          <label key={action.value} className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={hasPermission(module.value, action.value)}
-                              onChange={() => togglePermission(module.value, action.value)}
-                              className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
-                              disabled={module.value === 'dashboard' || module.value === 'logs' ? action.value !== 'view' : false}
-                            />
-                            <span className={`text-gray-700 dark:text-gray-300 ${(module.value === 'dashboard' || module.value === 'logs') && action.value !== 'view' ? 'opacity-50' : ''}`}>
-                              {action.label}
-                            </span>
-                          </label>
-                        ))}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <UserCheck className="h-6 w-6 text-indigo-600" />
+                Gestión de Usuarios
+              </CardTitle>
+              <p className="text-gray-600 dark:text-gray-300 mt-1">
+                Administra los usuarios y sus permisos del sistema
+              </p>
+            </div>
+            <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+              <DialogTrigger asChild>
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Usuario
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader className="bg-indigo-50 dark:bg-indigo-900/20 p-6 -m-6 mb-6">
+                  <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <UserCheck className="h-6 w-6 mr-2 text-indigo-600" />
+                    Crear Nuevo Usuario
+                  </DialogTitle>
+                  <DialogDescription className="text-gray-600 dark:text-gray-300 mt-2">
+                    Completa la información del nuevo usuario y asigna los permisos correspondientes.
+                  </DialogDescription>
+                </DialogHeader>
+                
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Columna Izquierda - Información del Usuario */}
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Nombre Completo</Label>
+                        <Input
+                          id="name"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          placeholder="Ej: Juan Pérez"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          placeholder="juan@zonat.com"
+                        />
                       </div>
                     </div>
-                  ))}
+          
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="password">Contraseña</Label>
+                        <Input
+                          id="password"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="Mínimo 6 caracteres"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="role">Rol</Label>
+                        <Select value={formData.role} onValueChange={applyRolePermissions}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roleOptions.map(role => (
+                              <SelectItem key={role.value} value={role.value}>
+                                {role.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <span className="font-semibold text-indigo-700 dark:text-indigo-300">
+                          {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
+                        </span>
+                      </p>
+                    </div>
+
+                    <div className="flex items-center space-x-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                      <Switch
+                        id="isActive"
+                        checked={formData.isActive}
+                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                        className="data-[state=checked]:bg-indigo-600"
+                      />
+                      <Label htmlFor="isActive" className="text-base font-medium text-indigo-700 dark:text-indigo-300">Usuario Activo</Label>
+                    </div>
+                  </div>
+
+                  {/* Columna Derecha - Permisos */}
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <Label className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
+                        <UserCheck className="h-5 w-5 mr-2 text-indigo-600" />
+                        Permisos del Sistema
+                      </Label>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-indigo-100 dark:bg-indigo-900/30 px-3 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                        Rol: <span className="font-semibold text-indigo-600 dark:text-indigo-400">
+                          {roleOptions.find(r => r.value === formData.role)?.label}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="space-y-3">
+                      {moduleOptions.map(module => (
+                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
+                          <div className="font-semibold text-base mb-3 text-gray-900 dark:text-white">{module.label}</div>
+                          <div className="grid grid-cols-1 gap-2">
+                            {(module.value === 'dashboard' || module.value === 'logs' 
+                              ? actionOptions.filter(action => action.value === 'view')
+                              : actionOptions
+                            ).map(action => (
+                              <label key={action.value} className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={hasPermission(module.value, action.value)}
+                                  onChange={() => togglePermission(module.value, action.value)}
+                                  className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                                  disabled={module.value === 'dashboard' || module.value === 'logs' ? action.value !== 'view' : false}
+                                />
+                                <span className={`text-gray-700 dark:text-gray-300 ${(module.value === 'dashboard' || module.value === 'logs') && action.value !== 'view' ? 'opacity-50' : ''}`}>
+                                  {action.label}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-              </div>
 
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setIsCreateModalOpen(false)}
-                >
-                  Cancelar
-                </Button>
-                <Button 
-                  onClick={handleCreateUser}
-                >
-                  Crear Usuario
-                </Button>
-              </div>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </div>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button 
+                    variant="outline" 
+                    onClick={() => setIsCreateModalOpen(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button 
+                    onClick={handleCreateUser}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                  >
+                    Crear Usuario
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </CardHeader>
+      </Card>
 
-      {/* Filtros */}
-      <Card>
+      {/* Search and Filters */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
@@ -506,65 +528,80 @@ export function UserManagement() {
         </CardContent>
       </Card>
 
-      {/* Lista de usuarios */}
-      <div className="grid gap-4">
-        {filteredUsers.map(user => (
-          <Card key={user.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
-                    </div>
-                    <Badge variant={user.isActive ? "default" : "secondary"}>
-                      {user.isActive ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
-                      {user.isActive ? 'Activo' : 'Inactivo'}
-                    </Badge>
-                    <Badge variant="outline">
-                      {roleOptions.find(r => r.value === user.role)?.label || user.role}
-                    </Badge>
-                  </div>
-                  
-                  <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                    Último acceso: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditModal(user)}
-                  >
-                    <Edit className="h-4 w-4" />
+      {/* Users List */}
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardContent className="p-0">
+          {filteredUsers.length === 0 ? (
+            <div className="text-center py-12">
+              <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+                No se encontraron usuarios
+              </h3>
+              <p className="text-gray-500 dark:text-gray-400 mb-4">
+                Comienza creando un nuevo usuario
+              </p>
+              <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
+                <DialogTrigger asChild>
+                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                    <Plus className="h-4 w-4 mr-2" />
+                    Nuevo Usuario
                   </Button>
-                  
-                  {user.id !== currentUser?.id && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openDeleteModal(user)}
-                      className="text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
+                </DialogTrigger>
+              </Dialog>
+            </div>
+          ) : (
+            <div className="divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredUsers.map(user => (
+                <div key={user.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-3">
+                        <div>
+                          <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
+                          <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                        </div>
+                        <Badge variant={user.isActive ? "default" : "secondary"}>
+                          {user.isActive ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
+                          {user.isActive ? 'Activo' : 'Inactivo'}
+                        </Badge>
+                        <Badge variant="outline">
+                          {roleOptions.find(r => r.value === user.role)?.label || user.role}
+                        </Badge>
+                      </div>
+                      
+                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                        Último acceso: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => openEditModal(user)}
+                        className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      
+                      {user.id !== currentUser?.id && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openDeleteModal(user)}
+                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredUsers.length === 0 && (
-        <Card>
-          <CardContent className="p-8 text-center">
-            <p className="text-gray-500 dark:text-gray-400">No se encontraron usuarios</p>
-          </CardContent>
-        </Card>
-      )}
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Modal de edición */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -674,7 +711,7 @@ export function UserManagement() {
               <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
                 Cancelar
               </Button>
-              <Button onClick={handleUpdateUser} className="bg-emerald-600 hover:bg-emerald-700">
+              <Button onClick={handleUpdateUser} className="bg-indigo-600 hover:bg-indigo-700">
                 Actualizar Usuario
               </Button>
             </div>

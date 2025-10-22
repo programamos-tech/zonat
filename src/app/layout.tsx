@@ -7,6 +7,7 @@ import { ClientsProvider } from "@/contexts/clients-context";
 import { ProductsProvider } from "@/contexts/products-context";
 import { CategoriesProvider } from "@/contexts/categories-context";
 import { SalesProvider } from "@/contexts/sales-context";
+import { WarrantyProvider } from "@/contexts/warranty-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { GlobalLoading } from "@/components/ui/global-loading";
@@ -48,11 +49,13 @@ export default function RootLayout({
               <ProductsProvider>
                 <CategoriesProvider>
                   <SalesProvider>
-                    <GlobalLoading />
-                    <ConditionalLayout>
-                      {children}
-                    </ConditionalLayout>
-                    <Toaster />
+                    <WarrantyProvider>
+                      <GlobalLoading />
+                      <ConditionalLayout>
+                        {children}
+                      </ConditionalLayout>
+                      <Toaster />
+                    </WarrantyProvider>
                   </SalesProvider>
                 </CategoriesProvider>
               </ProductsProvider>

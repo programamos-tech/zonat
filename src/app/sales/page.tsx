@@ -1,17 +1,59 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { SalesTable } from '@/components/sales/sales-table'
 import { SaleModal } from '@/components/sales/sale-modal'
-import { SaleDetailModal } from '@/components/sales/sale-detail-modal'
+import SaleDetailModal from '@/components/sales/sale-detail-modal'
 import { useSales } from '@/contexts/sales-context'
 import { Sale } from '@/types'
+import { CreditsService } from '@/lib/credits-service'
 
 export default function SalesPage() {
-  const { sales, loading, createSale, deleteSale, cancelSale } = useSales()
+  const router = useRouter()
+  const { 
+    sales, 
+    loading, 
+    currentPage, 
+    totalSales, 
+    hasMore, 
+    createSale, 
+    deleteSale, 
+    cancelSale, 
+    goToPage,
+    searchSales
+  } = useSales()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+
+  // Verificar si hay una factura seleccionada en sessionStorage
+  useEffect(() => {
+    const selectedInvoice = sessionStorage.getItem('selectedInvoice')
+    if (selectedInvoice) {
+      // Buscar la venta correspondiente a esta factura
+      const foundSale = sales.find(sale => 
+        sale.invoiceNumber.toLowerCase().includes(selectedInvoice.toLowerCase())
+      )
+      if (foundSale) {
+        setSelectedSale(foundSale)
+        setIsDetailModalOpen(true)
+        // Limpiar el sessionStorage después de usarlo
+        sessionStorage.removeItem('selectedInvoice')
+      }
+    }
+  }, [sales])
+
+  // Sincronizar selectedSale con el estado actualizado del contexto
+  useEffect(() => {
+    if (selectedSale) {
+      const updatedSale = sales.find(sale => sale.id === selectedSale.id)
+      if (updatedSale && updatedSale.status !== selectedSale.status) {
+        console.log('Updating selectedSale status:', selectedSale.status, '->', updatedSale.status)
+        setSelectedSale(updatedSale)
+      }
+    }
+  }, [sales, selectedSale])
 
   const handleEdit = (sale: Sale) => {
     console.log('Edit sale:', sale)
@@ -34,6 +76,35 @@ export default function SalesPage() {
     setIsDetailModalOpen(true)
   }
 
+  const handleViewCredit = async (invoiceNumber: string) => {
+    try {
+      // Buscar el crédito correspondiente a esta factura
+      const credits = await CreditsService.getAllCredits()
+      const foundCredit = credits.find(credit => 
+        credit.invoiceNumber.toLowerCase().includes(invoiceNumber.toLowerCase())
+      )
+      
+      if (foundCredit) {
+        // Cerrar el modal de detalle de venta
+        setIsDetailModalOpen(false)
+        setSelectedSale(null)
+        
+        // Navegar al módulo de créditos
+        router.push('/payments')
+        
+        // Guardar el crédito en sessionStorage para que la página de créditos lo pueda usar
+        sessionStorage.setItem('selectedCredit', JSON.stringify(foundCredit))
+      } else {
+        // Si no se encuentra el crédito, solo navegar al módulo de créditos
+        router.push('/payments')
+      }
+    } catch (error) {
+      console.error('Error al buscar el crédito:', error)
+      // En caso de error, solo navegar al módulo de créditos
+      router.push('/payments')
+    }
+  }
+
   const handleCreate = () => {
     setIsModalOpen(true)
   }
@@ -48,19 +119,350 @@ export default function SalesPage() {
     }
   }
 
-  const handlePrint = (sale: Sale) => {
-    console.log('Print sale:', sale)
-    // TODO: Implement print functionality
+  const handlePrint = async (sale: Sale) => {
+    try {
+      // Importar el servicio de empresa dinámicamente
+      const { CompanyService } = await import('@/lib/company-service')
+      
+      // Obtener configuración de empresa
+      let companyConfig = await CompanyService.getCompanyConfig()
+      if (!companyConfig) {
+        companyConfig = await CompanyService.initializeDefaultConfig()
+      }
+      
+      if (!companyConfig) {
+        alert('Error: No se pudo cargar la configuración de la empresa')
+        return
+      }
+
+      // Crear datos del cliente (usar datos de la venta o valores por defecto)
+      const client = {
+        id: sale.clientId,
+        name: sale.clientName,
+        email: 'N/A',
+        phone: 'N/A',
+        document: 'N/A',
+        address: 'N/A',
+        city: 'N/A',
+        state: 'N/A',
+        type: 'consumidor_final' as const,
+        creditLimit: 0,
+        currentDebt: 0,
+        status: 'active' as const,
+        nit: 'N/A',
+        createdAt: sale.createdAt
+      }
+
+      // Crear ventana de impresión
+      const printWindow = window.open('', '_blank', 'width=400,height=600,scrollbars=yes,resizable=yes')
+      if (!printWindow) {
+        alert('No se pudo abrir la ventana de impresión. Verifica que los pop-ups estén habilitados.')
+        return
+      }
+
+      // Función para formatear moneda
+      const formatCurrency = (amount: number) => {
+        return new Intl.NumberFormat('es-CO', {
+          style: 'currency',
+          currency: 'COP',
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 0
+        }).format(amount)
+      }
+
+      // Generar HTML del ticket tipo colombiano
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Zona T - Ticket</title>
+          <style>
+            body { 
+              font-family: 'Courier New', monospace; 
+              margin: 0; 
+              padding: 5px; 
+              color: #000; 
+              background: #fff;
+              font-size: 12px;
+              line-height: 1.2;
+            }
+            .ticket { 
+              width: 300px; 
+              margin: 0 auto; 
+              border: 1px solid #000;
+            }
+            .header { 
+              text-align: center; 
+              padding: 10px 5px; 
+              border-bottom: 1px dashed #000;
+            }
+            .company-name { 
+              font-size: 16px; 
+              font-weight: bold; 
+              margin-bottom: 5px;
+            }
+            .company-info { 
+              font-size: 10px; 
+              line-height: 1.1;
+            }
+            .invoice-title { 
+              text-align: center; 
+              font-size: 14px; 
+              font-weight: bold; 
+              padding: 8px 0;
+              border-bottom: 1px dashed #000;
+            }
+            .invoice-details { 
+              padding: 8px 5px; 
+              border-bottom: 1px dashed #000;
+            }
+            .detail-row { 
+              display: flex; 
+              justify-content: space-between; 
+              margin: 2px 0; 
+              font-size: 11px;
+            }
+            .client-info { 
+              padding: 8px 5px; 
+              border-bottom: 1px dashed #000;
+            }
+            .client-title { 
+              font-weight: bold; 
+              margin-bottom: 5px; 
+              font-size: 11px;
+            }
+            .client-details { 
+              font-size: 10px; 
+              line-height: 1.1;
+            }
+            .products { 
+              border-bottom: 1px dashed #000;
+            }
+            .product-item { 
+              padding: 5px; 
+              border-bottom: 1px dotted #ccc;
+            }
+            .product-name { 
+              font-weight: bold; 
+              font-size: 11px; 
+              margin-bottom: 2px;
+            }
+            .product-details { 
+              display: flex; 
+              justify-content: space-between; 
+              font-size: 10px;
+            }
+            .product-ref { 
+              font-size: 9px; 
+              color: #666; 
+              margin-top: 2px;
+            }
+            .summary { 
+              padding: 8px 5px; 
+              border-bottom: 1px dashed #000;
+            }
+            .summary-row { 
+              display: flex; 
+              justify-content: space-between; 
+              margin: 2px 0; 
+              font-size: 11px;
+            }
+            .total-row { 
+              border-top: 1px solid #000; 
+              padding-top: 5px; 
+              margin-top: 5px; 
+              font-weight: bold; 
+              font-size: 12px;
+            }
+            .payment-info { 
+              padding: 8px 5px; 
+              border-bottom: 1px dashed #000;
+            }
+            .footer { 
+              text-align: center; 
+              padding: 10px 5px; 
+              font-size: 9px; 
+              line-height: 1.1;
+            }
+            .separator { 
+              text-align: center; 
+              margin: 5px 0; 
+              font-size: 10px;
+            }
+            @media print {
+              body { margin: 0; padding: 0; }
+              .ticket { border: none; }
+              .no-print { display: none !important; }
+            }
+            @page {
+              margin: 0;
+              size: 80mm auto;
+            }
+            @media print {
+              @page {
+                margin: 0;
+                size: 80mm auto;
+              }
+              body {
+                margin: 0 !important;
+                padding: 0 !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .ticket {
+                border: none !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="ticket">
+            <!-- Header -->
+            <div class="header">
+              <div class="company-name">${companyConfig.name}</div>
+              <div class="company-info">
+                NIT: ${companyConfig.nit}<br>
+                ${companyConfig.address}<br>
+                Tel: ${companyConfig.phone}
+              </div>
+            </div>
+
+            <!-- Título de Factura -->
+            <div class="invoice-title">FACTURA DE VENTA</div>
+
+            <!-- Información del Cliente -->
+            <div class="client-info">
+              <div class="client-title">CLIENTE:</div>
+              <div class="client-details">
+                ${client.name}<br>
+                ${client.nit && client.nit !== 'N/A' ? `NIT: ${client.nit}` : ''}
+              </div>
+            </div>
+
+            <!-- Productos -->
+            <div class="products">
+              ${sale.items.map(item => {
+                const baseTotal = item.quantity * item.unitPrice
+                const discountAmount = item.discountType === 'percentage' 
+                  ? (baseTotal * (item.discount || 0)) / 100 
+                  : (item.discount || 0)
+                const subtotalAfterDiscount = Math.max(0, baseTotal - discountAmount)
+                
+                return `
+                  <div class="product-item">
+                    <div class="product-name">${item.productName}</div>
+                    <div class="product-details">
+                      <span>${item.quantity} x ${formatCurrency(item.unitPrice)}</span>
+                      <span>${formatCurrency(subtotalAfterDiscount)}</span>
+                    </div>
+                    ${item.discount && item.discount > 0 ? `
+                      <div style="font-size: 9px; color: #d32f2f;">
+                        Desc: ${item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}
+                      </div>
+                    ` : ''}
+                    <div class="product-ref">Ref: ${item.productReferenceCode || 'N/A'}</div>
+                  </div>
+                `
+              }).join('')}
+            </div>
+
+            <!-- Resumen -->
+            <div class="summary">
+              <div class="summary-row">
+                <span>Subtotal:</span>
+                <span>${formatCurrency(sale.items.reduce((sum, item) => {
+                  const baseTotal = item.quantity * item.unitPrice
+                  const discountAmount = item.discountType === 'percentage' 
+                    ? (baseTotal * (item.discount || 0)) / 100 
+                    : (item.discount || 0)
+                  return sum + Math.max(0, baseTotal - discountAmount)
+                }, 0))}</span>
+              </div>
+              ${sale.discount && sale.discount > 0.001 ? `
+                <div class="summary-row" style="color: #d32f2f;">
+                  <span>Descuento:</span>
+                  <span>${sale.discountType === 'percentage' ? `-${sale.discount}%` : `-${formatCurrency(sale.discount)}`}</span>
+                </div>
+              ` : ''}
+              ${sale.tax && sale.tax > 0 ? `
+                <div class="summary-row">
+                  <span>IVA (19%):</span>
+                  <span>${formatCurrency(sale.tax)}</span>
+                </div>
+              ` : ''}
+              <div class="summary-row total-row">
+                <span>TOTAL:</span>
+                <span>${formatCurrency(sale.total)}</span>
+              </div>
+            </div>
+
+            <!-- Información de Pago -->
+            <div class="payment-info">
+              <div class="detail-row">
+                <span>Método de Pago:</span>
+                <span>${sale.paymentMethod === 'cash' ? 'Efectivo' : sale.paymentMethod === 'credit' ? 'Crédito' : sale.paymentMethod === 'transfer' ? 'Transferencia' : sale.paymentMethod === 'warranty' ? 'Garantía' : 'Mixto'}</span>
+              </div>
+              ${sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 ? `
+                <div style="margin-top: 8px;">
+                  <div style="font-weight: bold; margin-bottom: 4px;">Desglose de Pago:</div>
+                  ${sale.payments.map(payment => `
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 2px; font-size: 11px;">
+                      <span>${payment.paymentType === 'cash' ? 'Efectivo' : payment.paymentType === 'transfer' ? 'Transferencia' : payment.paymentType === 'credit' ? 'Crédito' : 'Garantía'}${payment.notes ? ` (${payment.notes})` : ''}:</span>
+                      <span>${formatCurrency(payment.amount)}</span>
+                    </div>
+                  `).join('')}
+                </div>
+              ` : ''}
+              <div class="detail-row">
+                <span>Estado:</span>
+                <span>${sale.status === 'completed' ? 'Completada' : sale.status === 'pending' ? 'Pendiente' : 'Anulada'}</span>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <div class="separator">═══════════════════════════════</div>
+              <div>¡Gracias por su compra!</div>
+              <div>${companyConfig.name}</div>
+              <div class="separator">═══════════════════════════════</div>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+
+      // Escribir el HTML en la ventana
+      printWindow.document.write(invoiceHTML)
+      printWindow.document.close()
+
+      // Esperar a que se cargue y luego imprimir
+      printWindow.onload = () => {
+        setTimeout(() => {
+          printWindow.print()
+          printWindow.close()
+        }, 500)
+      }
+
+    } catch (error) {
+      console.error('Error generando factura:', error)
+      alert('Error al generar la factura. Intenta nuevamente.')
+    }
   }
 
   const handleCancelSale = async (saleId: string, reason: string) => {
     try {
-      await cancelSale(saleId, reason)
-      setIsDetailModalOpen(false)
-      setSelectedSale(null)
+      const result = await cancelSale(saleId, reason)
+      // NO cerrar el modal, mantenerlo abierto para ver el resultado
+      // setIsDetailModalOpen(false)
+      // setSelectedSale(null)
+      return result
     } catch (error) {
       console.error('Error cancelling sale:', error)
       alert('Error al cancelar la venta')
+      throw error
     }
   }
 
@@ -77,20 +479,19 @@ export default function SalesPage() {
 
   return (
     <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen">
-      <div className="xl:ml-0 ml-20">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Gestión de Ventas</h1>
-        <p className="text-gray-600 dark:text-gray-300 mt-2">
-          Administra tus ventas y genera facturas
-        </p>
-      </div>
-
       <SalesTable
         sales={sales}
+        loading={loading}
+        currentPage={currentPage}
+        totalSales={totalSales}
+        hasMore={hasMore}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onView={handleView}
         onCreate={handleCreate}
         onPrint={handlePrint}
+        onPageChange={goToPage}
+        onSearch={searchSales}
       />
 
       <SaleModal
@@ -108,6 +509,7 @@ export default function SalesPage() {
         sale={selectedSale}
         onCancel={handleCancelSale}
         onPrint={handlePrint}
+        onViewCredit={handleViewCredit}
       />
     </div>
   )

@@ -12,72 +12,122 @@ import {
   CreditCard, 
   AlertTriangle,
   Printer,
-  Download
+  Download,
+  DollarSign,
+  Package,
+  Eye
 } from 'lucide-react'
-import { Sale } from '@/types'
+import { Sale, CompanyConfig, Client } from '@/types'
+import { CompanyService } from '@/lib/company-service'
+import { InvoiceTemplate } from './invoice-template'
 
 interface SaleDetailModalProps {
   isOpen: boolean
   onClose: () => void
   sale: Sale | null
-  onCancel?: (saleId: string, reason: string) => void
+  onCancel?: (saleId: string, reason: string) => Promise<{ success: boolean, totalRefund?: number }>
   onPrint?: (sale: Sale) => void
+  onViewCredit?: (invoiceNumber: string) => void
 }
 
-export function SaleDetailModal({ 
+export default function SaleDetailModal({ 
   isOpen, 
   onClose, 
   sale, 
   onCancel,
-  onPrint 
+  onPrint,
+  onViewCredit
 }: SaleDetailModalProps) {
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [companyConfig, setCompanyConfig] = useState<CompanyConfig | null>(null)
+  const [clientData, setClientData] = useState<Client | null>(null)
+  const [isLoadingPrint, setIsLoadingPrint] = useState(false)
+  const [cancelSuccessMessage, setCancelSuccessMessage] = useState<string | null>(null)
   const cancelFormRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (showCancelForm && cancelFormRef.current) {
+      cancelFormRef.current.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [showCancelForm])
+
+  // Cargar configuración de empresa cuando se abre el modal
+  useEffect(() => {
+    if (isOpen && sale) {
+      const loadCompanyConfig = async () => {
+        try {
+          let config = await CompanyService.getCompanyConfig()
+          if (!config) {
+            // Si no existe configuración, crear la por defecto
+            config = await CompanyService.initializeDefaultConfig()
+          }
+          setCompanyConfig(config)
+        } catch (error) {
+          console.error('Error loading company config:', error)
+        }
+      }
+      
+      loadCompanyConfig()
+    }
+  }, [isOpen, sale])
+
+  // Limpiar mensaje de confirmación cuando la venta se anula
+  useEffect(() => {
+    console.log('Sale status changed:', sale?.status)
+    if (sale?.status === 'cancelled') {
+      setShowCancelForm(false)
+      setCancelReason('')
+      setCancelSuccessMessage(null)
+    }
+  }, [sale?.status])
 
   if (!isOpen || !sale) return null
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('es-CO', {
       style: 'currency',
-      currency: 'MXN'
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
     }).format(amount)
   }
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
-    const dateStr = date.toLocaleDateString('es-MX', {
-      year: 'numeric',
+    return date.toLocaleString('es-CO', {
+      day: '2-digit',
       month: '2-digit',
-      day: '2-digit'
-    })
-    const timeStr = date.toLocaleTimeString('es-MX', {
+      year: 'numeric',
       hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
+      minute: '2-digit'
     })
-    return `${dateStr} ${timeStr}`
   }
 
   const generateInvoiceNumber = (sale: Sale) => {
-    // Usar el invoiceNumber de la base de datos si existe
-    if (sale.invoiceNumber) {
-      return sale.invoiceNumber
+    return `#${sale.invoiceNumber?.toString().padStart(3, '0') || '000'}`
+  }
+
+  const getInvoiceNumber = (sale: Sale) => {
+    // Si invoiceNumber ya incluye #, devolverlo tal como está
+    if (sale.invoiceNumber?.toString().startsWith('#')) {
+      return sale.invoiceNumber.toString()
     }
-    // Fallback: usar los últimos 4 caracteres del ID como último recurso
-    return `#FV${sale.id.slice(-4)}`
+    // Si no incluye #, agregarlo
+    return `#${sale.invoiceNumber?.toString().padStart(3, '0') || '000'}`
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'bg-green-900/20 text-green-400 border-green-700'
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       case 'pending':
-        return 'bg-yellow-900/20 text-yellow-400 border-yellow-700'
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
       case 'cancelled':
-        return 'bg-red-900/20 text-red-400 border-red-700'
+        return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
       default:
-        return 'bg-gray-700 text-gray-300 border-gray-600'
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
     }
   }
 
@@ -97,17 +147,17 @@ export function SaleDetailModal({
   const getPaymentMethodColor = (method: string) => {
     switch (method) {
       case 'cash':
-        return 'bg-green-900/20 text-green-400 border-green-700'
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       case 'credit':
-        return 'bg-blue-900/20 text-blue-400 border-blue-700'
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
       case 'transfer':
-        return 'bg-purple-900/20 text-purple-400 border-purple-700'
+        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
       case 'warranty':
-        return 'bg-orange-900/20 text-orange-400 border-orange-700'
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
       case 'mixed':
-        return 'bg-indigo-900/20 text-indigo-400 border-indigo-700'
+        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
       default:
-        return 'bg-gray-700 text-gray-300 border-gray-600'
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
     }
   }
 
@@ -128,41 +178,371 @@ export function SaleDetailModal({
     }
   }
 
-  const handleCancel = () => {
-    if (cancelReason.trim() && onCancel) {
-      onCancel(sale.id, cancelReason)
+  const handleShowCancelForm = () => {
+    setShowCancelForm(true)
       setCancelReason('')
+    setCancelSuccessMessage(null)
+  }
+
+  const handleCancel = async () => {
+    if (!cancelReason.trim() || !onCancel) return
+
+    // Validar que el motivo tenga al menos 10 caracteres
+    if (cancelReason.trim().length < 10) {
+      setCancelSuccessMessage('El motivo de anulación debe tener al menos 10 caracteres para mayor claridad.')
+      return
+    }
+
+    setIsCancelling(true)
+    setCancelSuccessMessage(null)
+    try {
+      const result = await onCancel(sale.id, cancelReason)
+      
+      // Mostrar mensaje de confirmación con información del reembolso
+      if (result && result.totalRefund && result.totalRefund > 0) {
+        setCancelSuccessMessage(`Venta anulada exitosamente.\n\nReembolso total: $${result.totalRefund.toLocaleString()}\nProductos devueltos al stock\nCrédito y abonos anulados`)
+      } else {
+        setCancelSuccessMessage('Venta anulada exitosamente.\n\nProductos devueltos al stock')
+      }
+      
+      // Cerrar solo el formulario de anulación después de 3 segundos
+      setTimeout(() => {
       setShowCancelForm(false)
-      onClose()
+        setCancelReason('')
+        setCancelSuccessMessage(null)
+        // NO cerrar el modal, mantenerlo abierto para ver el resultado
+      }, 3000)
+    } catch (error) {
+      console.error('Error cancelling sale:', error)
+      setCancelSuccessMessage('Error al anular la venta. Por favor, inténtalo de nuevo.')
+    } finally {
+      setIsCancelling(false)
     }
   }
 
-  const handleShowCancelForm = () => {
-    setShowCancelForm(true)
-    // Scroll to cancel form after a brief delay to ensure it's rendered
-    setTimeout(() => {
-      cancelFormRef.current?.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-      })
-    }, 100)
-  }
+  const handlePrint = async () => {
+    if (!sale || !companyConfig) {
+      console.error('No hay datos de venta o configuración de empresa')
+      return
+    }
 
-  // Mock seller email - in a real app this would come from the sale data
-  const getSellerEmail = () => {
-    return 'admin@zonat.com' // Default admin email
+    setIsLoadingPrint(true)
+    
+    try {
+      // Crear datos del cliente (usar datos de la venta o valores por defecto)
+      const client: Client = {
+        id: sale.clientId,
+        name: sale.clientName,
+        email: 'N/A',
+        phone: 'N/A',
+        document: 'N/A',
+        address: 'N/A',
+        city: 'N/A',
+        state: 'N/A',
+        type: 'consumidor_final',
+        creditLimit: 0,
+        currentDebt: 0,
+        status: 'active',
+        nit: 'N/A',
+        createdAt: sale.createdAt
+      }
+
+      // Crear ventana de impresión
+      const printWindow = window.open('', '_blank')
+      if (!printWindow) {
+        alert('No se pudo abrir la ventana de impresión. Verifica que los pop-ups estén habilitados.')
+        return
+      }
+
+      // Generar HTML de la factura
+      const invoiceHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <title>Factura ${sale.invoiceNumber}</title>
+          <style>
+            body { 
+              font-family: Arial, sans-serif; 
+              margin: 0; 
+              padding: 20px; 
+              color: #000; 
+              background: #fff;
+            }
+            .invoice-template { 
+              max-width: 800px; 
+              margin: 0 auto; 
+            }
+            .header { 
+              display: flex; 
+              justify-content: space-between; 
+              margin-bottom: 30px; 
+              border-bottom: 2px solid #000; 
+              padding-bottom: 20px; 
+            }
+            .company-info h1 { 
+              font-size: 24px; 
+              margin: 0 0 10px 0; 
+            }
+            .company-info p { 
+              margin: 2px 0; 
+              font-size: 12px; 
+            }
+            .invoice-info { 
+              text-align: right; 
+            }
+            .invoice-info h2 { 
+              font-size: 20px; 
+              margin: 0 0 15px 0; 
+            }
+            .invoice-info p { 
+              margin: 2px 0; 
+              font-size: 12px; 
+            }
+            .section { 
+              margin-bottom: 25px; 
+            }
+            .section h3 { 
+              font-size: 16px; 
+              margin-bottom: 10px; 
+              border-bottom: 1px solid #ccc; 
+              padding-bottom: 5px; 
+            }
+            .client-info { 
+              display: grid; 
+              grid-template-columns: 1fr 1fr; 
+              gap: 20px; 
+            }
+            .client-info p { 
+              margin: 3px 0; 
+              font-size: 12px; 
+            }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-bottom: 20px; 
+            }
+            th, td { 
+              border: 1px solid #000; 
+              padding: 8px; 
+              text-align: left; 
+              font-size: 12px; 
+            }
+            th { 
+              background-color: #f0f0f0; 
+              font-weight: bold; 
+            }
+            .summary { 
+              display: flex; 
+              justify-content: flex-end; 
+            }
+            .summary-box { 
+              width: 300px; 
+              border: 1px solid #000; 
+              padding: 15px; 
+            }
+            .summary h3 { 
+              margin: 0 0 10px 0; 
+              font-size: 14px; 
+            }
+            .summary-row { 
+              display: flex; 
+              justify-content: space-between; 
+              margin: 5px 0; 
+              font-size: 12px; 
+            }
+            .total-row { 
+              border-top: 2px solid #000; 
+              padding-top: 10px; 
+              font-weight: bold; 
+              font-size: 14px; 
+            }
+            .footer { 
+              border-top: 2px solid #000; 
+              padding-top: 15px; 
+              text-align: center; 
+              font-size: 11px; 
+              color: #666; 
+            }
+            @media print {
+              body { margin: 0; padding: 10px; }
+              .no-print { display: none !important; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-template">
+            <!-- Header -->
+            <div class="header">
+              <div class="company-info">
+                <h1>${companyConfig.name}</h1>
+                <p><strong>NIT:</strong> ${companyConfig.nit}</p>
+                <p><strong>Dirección:</strong> ${companyConfig.address}</p>
+                <p><strong>Teléfono:</strong> ${companyConfig.phone}</p>
+                <p><strong>Email:</strong> ${companyConfig.email}</p>
+                ${companyConfig.dianResolution ? `<p><strong>${companyConfig.dianResolution}</strong></p>` : ''}
+                ${companyConfig.numberingRange ? `<p><strong>Rango autorizado:</strong> ${companyConfig.numberingRange}</p>` : ''}
+              </div>
+              <div class="invoice-info">
+                <h2>FACTURA DE VENTA</h2>
+                <p><strong>No. Factura:</strong> ${sale.invoiceNumber}</p>
+                <p><strong>Fecha:</strong> ${new Date(sale.createdAt).toLocaleDateString('es-CO')}</p>
+                <p><strong>Hora:</strong> ${new Date(sale.createdAt).toLocaleTimeString('es-CO')}</p>
+              </div>
+            </div>
+
+            <!-- Información del Cliente -->
+            <div class="section">
+              <h3>INFORMACIÓN DEL CLIENTE</h3>
+              <div class="client-info">
+                <div>
+                  <p><strong>Nombre:</strong> ${client.name}</p>
+                  <p><strong>NIT:</strong> ${client.nit || 'N/A'}</p>
+                  <p><strong>Email:</strong> ${client.email || 'N/A'}</p>
+                </div>
+                <div>
+                  <p><strong>Teléfono:</strong> ${client.phone || 'N/A'}</p>
+                  <p><strong>Dirección:</strong> ${client.address || 'N/A'}</p>
+                  <p><strong>Tipo:</strong> ${client.type === 'mayorista' ? 'Mayorista' : client.type === 'minorista' ? 'Minorista' : 'Consumidor Final'}</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Productos -->
+            <div class="section">
+              <h3>DETALLE DE PRODUCTOS</h3>
+              <table>
+                <thead>
+                  <tr>
+                    <th>Producto</th>
+                    <th style="text-align: center;">Cantidad</th>
+                    <th style="text-align: right;">Precio Unit.</th>
+                    <th style="text-align: center;">Descuento</th>
+                    <th style="text-align: right;">Subtotal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${sale.items.map(item => {
+                    const baseTotal = item.quantity * item.unitPrice
+                    const discountAmount = item.discountType === 'percentage' 
+                      ? (baseTotal * (item.discount || 0)) / 100 
+                      : (item.discount || 0)
+                    const subtotalAfterDiscount = Math.max(0, baseTotal - discountAmount)
+                    
+                    return `
+                      <tr>
+                        <td>
+                          <div style="font-weight: bold;">${item.productName}</div>
+                          <div style="font-size: 10px; color: #666;">Ref: ${item.productReferenceCode || 'N/A'}</div>
+                        </td>
+                        <td style="text-align: center;">${item.quantity}</td>
+                        <td style="text-align: right;">${formatCurrency(item.unitPrice)}</td>
+                        <td style="text-align: center; color: #d32f2f;">
+                          ${item.discount && item.discount > 0 
+                            ? (item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount))
+                            : '-'
+                          }
+                        </td>
+                        <td style="text-align: right; font-weight: bold;">${formatCurrency(subtotalAfterDiscount)}</td>
+                      </tr>
+                    `
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Resumen Financiero -->
+            <div class="summary">
+              <div class="summary-box">
+                <h3>RESUMEN FINANCIERO</h3>
+                <div class="summary-row">
+                  <span>Subtotal de productos:</span>
+                  <span>${formatCurrency(sale.items.reduce((sum, item) => {
+                    const baseTotal = item.quantity * item.unitPrice
+                    const discountAmount = item.discountType === 'percentage' 
+                      ? (baseTotal * (item.discount || 0)) / 100 
+                      : (item.discount || 0)
+                    return sum + Math.max(0, baseTotal - discountAmount)
+                  }, 0))}</span>
+                </div>
+                ${sale.discount && sale.discount > 0.001 ? `
+                  <div class="summary-row" style="color: #d32f2f;">
+                    <span>Descuento por total:</span>
+                    <span>${sale.discountType === 'percentage' ? `-${sale.discount}%` : `-${formatCurrency(sale.discount)}`}</span>
+                  </div>
+                ` : ''}
+                <div class="summary-row" style="border-top: 1px solid #ccc; padding-top: 5px;">
+                  <span>Subtotal después de descuentos:</span>
+                  <span>${formatCurrency(sale.subtotal)}</span>
+                </div>
+                ${sale.tax && sale.tax > 0 ? `
+                  <div class="summary-row" style="color: #1976d2;">
+                    <span>IVA (19%):</span>
+                    <span>${formatCurrency(sale.tax)}</span>
+                  </div>
+                ` : ''}
+                <div class="summary-row total-row">
+                  <span>TOTAL:</span>
+                  <span>${formatCurrency(sale.total)}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Información Adicional -->
+            <div class="section">
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; font-size: 12px;">
+                <div>
+                  <p><strong>Método de Pago:</strong> ${sale.paymentMethod === 'cash' ? 'Efectivo/Contado' : sale.paymentMethod === 'credit' ? 'Crédito' : sale.paymentMethod === 'transfer' ? 'Transferencia' : sale.paymentMethod === 'warranty' ? 'Garantía' : 'Mixto'}</p>
+                  <p><strong>Estado:</strong> ${sale.status === 'completed' ? 'Completada' : sale.status === 'pending' ? 'Pendiente' : 'Anulada'}</p>
+                </div>
+                <div>
+                  <p><strong>Vendedor:</strong> ${sale.sellerName || 'No especificado'}</p>
+                  ${sale.sellerEmail ? `<p><strong>Email Vendedor:</strong> ${sale.sellerEmail}</p>` : ''}
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="footer">
+              <p>Esta factura cumple con los requisitos legales establecidos por la DIAN</p>
+              <p>Gracias por su compra - ${companyConfig.name}</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `
+
+      // Escribir el HTML en la ventana
+      printWindow.document.write(invoiceHTML)
+      printWindow.document.close()
+
+      // Esperar a que se cargue y luego imprimir
+      printWindow.onload = () => {
+    setTimeout(() => {
+          printWindow.print()
+          printWindow.close()
+        }, 500)
+      }
+
+    } catch (error) {
+      console.error('Error generando factura:', error)
+      alert('Error al generar la factura. Intenta nuevamente.')
+    } finally {
+      setIsLoadingPrint(false)
+    }
   }
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+        
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-blue-50 dark:bg-blue-900/20">
           <div className="flex items-center space-x-3">
-            <Receipt className="h-6 w-6 text-emerald-500" />
+            <Receipt className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Detalle de Venta</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{generateInvoiceNumber(sale)}</p>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Detalle de Venta</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">{getInvoiceNumber(sale)}</p>
             </div>
           </div>
           <Button
@@ -175,24 +555,59 @@ export function SaleDetailModal({
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800">
-          {/* Sale Information - Single Card */}
-          <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 mb-6">
-            <CardHeader>
-              <CardTitle className="text-lg text-gray-900 dark:text-white">Información de la Venta</CardTitle>
+        {/* Mensaje de confirmación de anulación */}
+        {cancelSuccessMessage && (
+          <div className="mx-6 mb-4 p-4 rounded-lg border-2 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+            <div className="flex items-start">
+              <div className="flex-shrink-0">
+                {cancelSuccessMessage.includes('exitosamente') ? (
+                  <div className="w-6 h-6 rounded-full bg-green-500 flex items-center justify-center">
+                    <span className="text-white text-sm">✓</span>
+                  </div>
+                ) : (
+                  <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
+                    <span className="text-white text-sm">✕</span>
+                  </div>
+                )}
+              </div>
+              <div className="ml-3">
+                <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                  {cancelSuccessMessage.split('\n').map((line, index) => (
+                    <div key={index} className={index === 0 ? 'font-semibold' : ''}>
+                      {line}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Content */}
+        <div className="p-4 overflow-y-auto flex-1 bg-white dark:bg-gray-800 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            
+            {/* Left Column - Sale Information */}
+            <div className="space-y-4">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                <Receipt className="h-5 w-5 mr-2 text-blue-600" />
+                Información de la Venta
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-3">
-                  <Receipt className="h-5 w-5 text-emerald-400" />
+                  <Receipt className="h-5 w-5 text-blue-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
-                    <div className="font-bold text-blue-400 text-lg">{generateInvoiceNumber(sale)}</div>
+                        <div className="font-bold text-blue-600 text-lg">{getInvoiceNumber(sale)}</div>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-emerald-400" />
+                  <User className="h-5 w-5 text-blue-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Cliente</div>
                     <div className="font-semibold text-gray-900 dark:text-white">{sale.clientName}</div>
@@ -200,7 +615,7 @@ export function SaleDetailModal({
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-emerald-400" />
+                  <Calendar className="h-5 w-5 text-blue-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Fecha</div>
                     <div className="font-semibold text-gray-900 dark:text-white">{formatDateTime(sale.createdAt)}</div>
@@ -208,68 +623,215 @@ export function SaleDetailModal({
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <CreditCard className="h-5 w-5 text-emerald-400" />
+                  <CreditCard className="h-5 w-5 text-blue-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Tipo de Pago</div>
-                    <Badge className={getPaymentMethodColor(sale.paymentMethod)}>
+                        <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} mt-1`}>
                       {getPaymentMethodLabel(sale.paymentMethod)}
                     </Badge>
                   </div>
                 </div>
               </div>
               
-              <div className="mt-8 pt-6 border-t border-gray-600">
-                <div className="flex justify-between items-center">
+              {/* Sección de Pagos Mixtos */}
+              {sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 && (
+                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                    Desglose de Pago Mixto
+                  </h4>
+                  <div className="space-y-2">
+                    {sale.payments.map((payment, index) => (
+                      <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500">
+                        <div className="flex items-center space-x-3">
+                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                            {getPaymentMethodLabel(payment.paymentType)}
+                          </Badge>
+                          {payment.notes && (
+                            <span className="text-xs text-gray-500 dark:text-gray-400">
+                              {payment.notes}
+                            </span>
+                          )}
+                        </div>
+                        <span className="font-medium text-gray-900 dark:text-white">
+                          ${payment.amount.toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    ))}
+                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className="flex justify-between items-center font-medium">
+                        <span className="text-gray-900 dark:text-white">Total:</span>
+                        <span className="text-emerald-600 dark:text-emerald-400">
+                          ${sale.payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+                  <div className="mt-4 pt-4 border-t border-gray-600">
                   <div className="flex items-center space-x-3">
                     <div className="h-5 w-5 flex items-center justify-center">
                       <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">Estado</div>
-                      <Badge className={getStatusColor(sale.status)}>
+                        <Badge className={`${getStatusColor(sale.status)} mt-1`}>
                         {getStatusLabel(sale.status)}
                       </Badge>
+                      </div>
                     </div>
                   </div>
-                  
-                  <div className="text-right">
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Total</div>
-                    <div className="text-2xl font-bold text-emerald-400">{formatCurrency(sale.total)}</div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Right Column - Financial Summary */}
+            <div className="space-y-4">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                    <DollarSign className="h-5 w-5 mr-2 text-blue-600" />
+                    Resumen Financiero
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {/* Subtotal de productos */}
+                    <div className="flex justify-between items-center py-2">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal de productos:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {formatCurrency(sale.items.reduce((sum, item) => {
+                          const baseTotal = item.quantity * item.unitPrice
+                          const discountAmount = item.discountType === 'percentage' 
+                            ? (baseTotal * (item.discount || 0)) / 100 
+                            : (item.discount || 0)
+                          return sum + Math.max(0, baseTotal - discountAmount)
+                        }, 0))}
+                      </span>
+                    </div>
+
+                    {/* Descuento por total */}
+                    {sale.discount && sale.discount > 0.001 && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
+                        <span className="font-semibold text-red-500">
+                          {sale.discountType === 'percentage' 
+                            ? `-${sale.discount}%` 
+                            : `-${formatCurrency(sale.discount)}`
+                          }
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Subtotal después de descuentos */}
+                    <div className="flex justify-between items-center py-2 border-t border-gray-600 pt-3">
+                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal después de descuentos:</span>
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        {formatCurrency(sale.subtotal)}
+                      </span>
+                    </div>
+
+                    {/* IVA */}
+                    {sale.tax && sale.tax > 0 && (
+                      <div className="flex justify-between items-center py-2">
+                        <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
+                        <span className="font-semibold text-blue-500">
+                          {formatCurrency(sale.tax)}
+                        </span>
+                      </div>
+                    )}
+
+                    {/* Total Final */}
+                    <div className="flex justify-between items-center py-3 border-t-2 border-emerald-500 pt-4">
+                      <span className="text-lg font-bold text-gray-900 dark:text-white">Total Final:</span>
+                      <span className="text-2xl font-bold text-emerald-400">
+                        {formatCurrency(sale.total)}
+                      </span>
+                    </div>
                   </div>
+                </CardContent>
+              </Card>
                 </div>
               </div>
-            </CardContent>
-          </Card>
 
-          {/* Products Table */}
-          <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
-            <CardHeader>
-              <CardTitle className="text-lg text-gray-900 dark:text-white">Productos Vendidos</CardTitle>
+          {/* Products Table - Full Width */}
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                <Package className="h-5 w-5 mr-2 text-blue-600" />
+                Productos Vendidos
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-96">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-600">
                       <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Producto</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Cant</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Precio</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Subtotal</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Cantidad</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Precio Unit.</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Descuento</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Subtotal</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Vendedor</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {sale.items.map((item) => (
-                      <tr key={item.id} className="border-b border-gray-600">
-                        <td className="py-4 px-4">
+                    {sale.items.map((item, index) => {
+                      const baseTotal = item.quantity * item.unitPrice
+                      const discountAmount = item.discountType === 'percentage' 
+                        ? (baseTotal * (item.discount || 0)) / 100 
+                        : (item.discount || 0)
+                      const subtotalAfterDiscount = Math.max(0, baseTotal - discountAmount)
+                      
+                      return (
+                        <tr key={item.id} className={`border-b border-gray-600 ${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-600' : ''}`}>
+                          <td className="py-6 px-4">
                           <div className="font-medium text-gray-900 dark:text-white">{item.productName}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">Ref: {item.productReferenceCode || 'N/A'}</div>
+                          </td>
+                          <td className="py-6 px-4 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded-full text-sm font-medium">
+                              {item.quantity}
+                            </span>
+                          </td>
+                          <td className="py-6 px-4 text-right text-gray-600 dark:text-gray-300">
+                            {formatCurrency(item.unitPrice)}
+                          </td>
+                          <td className="py-6 px-4 text-center">
+                            {item.discount && item.discount > 0 ? (
+                              <div className="flex flex-col items-center">
+                                <span className="text-red-500 font-medium">
+                                  {item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}
+                                </span>
+                                {discountAmount > 0 && (
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                                    ({formatCurrency(discountAmount)})
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="py-6 px-4 text-right">
+                            <div className="font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(subtotalAfterDiscount)}
+                            </div>
+                          </td>
+                          <td className="py-6 px-4">
+                            <div className="text-sm text-gray-600 dark:text-gray-300">
+                              {sale.sellerName || 'No especificado'}
+                            </div>
+                            {sale.sellerEmail && (
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {sale.sellerEmail}
+                              </div>
+                            )}
                         </td>
-                        <td className="py-4 px-4 text-gray-600 dark:text-gray-300">{item.quantity}</td>
-                        <td className="py-4 px-4 text-gray-600 dark:text-gray-300">{formatCurrency(item.unitPrice)}</td>
-                        <td className="py-4 px-4 font-semibold text-gray-900 dark:text-white">{formatCurrency(item.total)}</td>
-                        <td className="py-4 px-4 text-sm text-gray-600 dark:text-gray-300">{getSellerEmail()}</td>
                       </tr>
-                    ))}
+                      )
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -278,8 +840,8 @@ export function SaleDetailModal({
 
           {/* Cancel Form */}
           {showCancelForm && (
-            <div ref={cancelFormRef}>
-              <Card className="mt-6 bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+            <div ref={cancelFormRef} className="mt-4">
+              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
               <CardHeader>
                 <CardTitle className="text-lg text-red-500 dark:text-red-400 flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2 text-red-400" />
@@ -289,15 +851,20 @@ export function SaleDetailModal({
               <CardContent className="space-y-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Motivo de anulación:
+                    Motivo de anulación: <span className="text-red-500">*</span>
                   </label>
                   <textarea
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
-                    placeholder="Ingrese el motivo de la anulación..."
+                    placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600"
                     rows={4}
                   />
+                  <div className="mt-1 text-right">
+                    <span className={`text-xs ${cancelReason.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {cancelReason.length}/10 caracteres mínimo
+                    </span>
+                  </div>
                 </div>
                 <div className="flex justify-end space-x-3">
                   <Button
@@ -309,14 +876,14 @@ export function SaleDetailModal({
                   </Button>
                   <Button
                     onClick={handleCancel}
-                    disabled={!cancelReason.trim()}
-                    className="bg-red-600 hover:bg-red-700 text-white disabled:bg-red-900/30 disabled:text-red-500/50 disabled:cursor-not-allowed"
-                    style={{ backgroundColor: !cancelReason.trim() ? '#991b1b' : '#dc2626' }}
+                      disabled={!cancelReason.trim() || isCancelling}
+                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
                   >
-                    <AlertTriangle className="h-4 w-4 mr-2 text-white" />
-                    Anular Factura
+                      <AlertTriangle className="h-4 w-4 mr-2" />
+                      {isCancelling ? 'Anulando...' : 'Anular Factura'}
                   </Button>
                 </div>
+                
               </CardContent>
             </Card>
             </div>
@@ -324,32 +891,51 @@ export function SaleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700">
+        <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
           <div className="flex space-x-3">
             {sale.status !== 'cancelled' && (
               <Button
                 onClick={handleShowCancelForm}
-                className="bg-red-600 hover:bg-red-700 text-white border-red-600 hover:border-red-700 font-medium"
-                style={{ backgroundColor: '#dc2626' }}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg"
               >
-                <AlertTriangle className="h-4 w-4 mr-2 text-white" />
+                <AlertTriangle className="h-4 w-4 mr-2" />
                 Anular Factura
               </Button>
             )}
           </div>
           
           <div className="flex space-x-3">
+            {/* Botón para ver detalles del crédito (solo para facturas de crédito) */}
+            {sale?.paymentMethod === 'credit' && onViewCredit && (
+              <Button
+                onClick={() => onViewCredit(sale.invoiceNumber)}
+                disabled={sale.status === 'cancelled'}
+                className="bg-white hover:bg-blue-50 text-blue-500 border-2 border-blue-400 hover:border-blue-500 font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Ver Crédito
+              </Button>
+            )}
             <Button
-              onClick={() => onPrint?.(sale)}
-              variant="outline"
-              className="border-orange-500 text-orange-500 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/20"
+              onClick={handlePrint}
+              disabled={isLoadingPrint || !companyConfig || sale.status === 'cancelled'}
+              className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600 hover:border-gray-700 font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
+              {isLoadingPrint ? (
+                <>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                  Generando...
+                </>
+              ) : (
+                <>
               <Printer className="h-4 w-4 mr-2" />
               Imprimir
+                </>
+              )}
             </Button>
             <Button
               onClick={onClose}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2"
             >
               Cerrar
             </Button>

@@ -531,4 +531,81 @@ export class ProductsService {
       return false
     }
   }
+
+  // Actualizar stock (método simplificado para garantías)
+  static async updateProductStock(productId: string, stockUpdate: { local: number; warehouse: number }): Promise<boolean> {
+    try {
+      const { error } = await supabase
+        .from('products')
+        .update({
+          stock_store: stockUpdate.local,
+          stock_warehouse: stockUpdate.warehouse
+        })
+        .eq('id', productId)
+
+      if (error) {
+        console.error('Error updating product stock:', error)
+        return false
+      }
+
+      return true
+    } catch (error) {
+      console.error('Error in updateProductStock:', error)
+      return false
+    }
+  }
+
+  // Devolver stock de una venta cancelada
+  static async returnStockFromSale(productId: string, quantity: number): Promise<boolean> {
+    try {
+      console.log('Returning stock for product:', productId, 'quantity:', quantity)
+      
+      // Obtener el producto actual
+      const { data: product, error: fetchError } = await supabase
+        .from('products')
+        .select('id, name, stock_warehouse, stock_store')
+        .eq('id', productId)
+        .single()
+
+      if (fetchError) {
+        console.error('Error fetching product for stock return:', {
+          productId,
+          error: fetchError,
+          errorCode: fetchError.code,
+          errorMessage: fetchError.message
+        })
+        return false
+      }
+
+      if (!product) {
+        console.error('Product not found for stock return:', productId)
+        return false
+      }
+
+      console.log('Product found:', product.name, 'warehouse stock:', product.stock_warehouse, 'store stock:', product.stock_store)
+
+      const currentStoreStock = product.stock_store || 0
+      const newStoreStock = currentStoreStock + quantity
+
+      // Actualizar el stock del local (asumiendo que las ventas se hacen desde el local)
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ 
+          stock_store: newStoreStock,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', productId)
+
+      if (updateError) {
+        console.error('Error returning stock to product:', updateError)
+        return false
+      }
+
+      console.log('Stock returned successfully:', quantity, 'units to store')
+      return true
+    } catch (error) {
+      console.error('Error in returnStockFromSale:', error)
+      return false
+    }
+  }
 }

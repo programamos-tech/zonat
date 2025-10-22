@@ -1,16 +1,14 @@
--- Agregar campos de vendedor a la tabla de ventas
+-- Agregar campos del vendedor a la tabla sales
 ALTER TABLE sales 
-ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-ADD COLUMN IF NOT EXISTS user_name VARCHAR(255),
-ADD COLUMN IF NOT EXISTS user_email VARCHAR(255);
+ADD COLUMN IF NOT EXISTS seller_id TEXT,
+ADD COLUMN IF NOT EXISTS seller_name TEXT,
+ADD COLUMN IF NOT EXISTS seller_email TEXT;
 
--- Crear índice para mejor rendimiento
-CREATE INDEX IF NOT EXISTS idx_sales_user_id ON sales(user_id);
-
--- Actualizar ventas existentes con un usuario por defecto (admin)
+-- Actualizar ventas existentes con información del vendedor por defecto
+-- (Esto asume que el usuario admin es el que hizo las ventas anteriores)
 UPDATE sales 
 SET 
-  user_id = (SELECT id FROM users WHERE email = 'admin@zonat.com' LIMIT 1),
-  user_name = 'Admin',
-  user_email = 'admin@zonat.com'
-WHERE user_id IS NULL;
+  seller_id = 'admin-user-id', -- Reemplaza con el ID real del usuario admin
+  seller_name = 'Admin',
+  seller_email = 'admin@zonat.com'
+WHERE seller_id IS NULL;
