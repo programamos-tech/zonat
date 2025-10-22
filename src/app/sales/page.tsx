@@ -7,7 +7,6 @@ import { SaleModal } from '@/components/sales/sale-modal'
 import SaleDetailModal from '@/components/sales/sale-detail-modal'
 import { useSales } from '@/contexts/sales-context'
 import { Sale } from '@/types'
-import { CreditsService } from '@/lib/credits-service'
 
 export default function SalesPage() {
   const router = useRouter()
@@ -76,34 +75,6 @@ export default function SalesPage() {
     setIsDetailModalOpen(true)
   }
 
-  const handleViewCredit = async (invoiceNumber: string) => {
-    try {
-      // Buscar el crédito correspondiente a esta factura
-      const credits = await CreditsService.getAllCredits()
-      const foundCredit = credits.find(credit => 
-        credit.invoiceNumber.toLowerCase().includes(invoiceNumber.toLowerCase())
-      )
-      
-      if (foundCredit) {
-        // Cerrar el modal de detalle de venta
-        setIsDetailModalOpen(false)
-        setSelectedSale(null)
-        
-        // Navegar al módulo de créditos
-        router.push('/payments')
-        
-        // Guardar el crédito en sessionStorage para que la página de créditos lo pueda usar
-        sessionStorage.setItem('selectedCredit', JSON.stringify(foundCredit))
-      } else {
-        // Si no se encuentra el crédito, solo navegar al módulo de créditos
-        router.push('/payments')
-      }
-    } catch (error) {
-      console.error('Error al buscar el crédito:', error)
-      // En caso de error, solo navegar al módulo de créditos
-      router.push('/payments')
-    }
-  }
 
   const handleCreate = () => {
     setIsModalOpen(true)
@@ -509,7 +480,6 @@ export default function SalesPage() {
         sale={selectedSale}
         onCancel={handleCancelSale}
         onPrint={handlePrint}
-        onViewCredit={handleViewCredit}
       />
     </div>
   )

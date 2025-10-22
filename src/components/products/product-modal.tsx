@@ -216,17 +216,17 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between p-6 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
           <div className="flex items-center space-x-3">
-            <Package className="h-6 w-6 text-emerald-400" />
+            <Package className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-xl font-semibold text-emerald-800 dark:text-emerald-200">
                 {product ? 'Editar Producto' : 'Nuevo Producto'}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-sm text-emerald-700 dark:text-emerald-300">
                 {product ? `Editando ${product.name}` : 'Crea un nuevo producto en tu inventario'}
               </p>
             </div>
@@ -235,16 +235,19 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="h-8 w-8 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-800/30"
           >
-            <X className="h-5 w-5 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white" />
+            <X className="h-5 w-5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200" />
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="space-y-6">
-            {/* Información Básica */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <div className="p-6 flex-1 bg-white dark:bg-gray-900 overflow-hidden">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+              {/* Columna Izquierda */}
+              <div className="space-y-6">
+                {/* Información Básica */}
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <Package className="h-5 w-5 mr-2 text-emerald-400" />
@@ -353,8 +356,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
               </CardContent>
             </Card>
 
-            {/* Información Financiera */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                {/* Información Financiera */}
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <DollarSign className="h-5 w-5 mr-2 text-emerald-400" />
@@ -415,9 +418,12 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 </div>
               </CardContent>
             </Card>
+              </div>
 
-            {/* Control de Stock */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              {/* Columna Derecha */}
+              <div className="space-y-6">
+                {/* Control de Stock */}
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <BarChart3 className="h-5 w-5 mr-2 text-emerald-400" />
@@ -556,8 +562,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
               </CardContent>
             </Card>
 
-            {/* Estado del Producto */}
-            <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                {/* Estado del Producto */}
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2 text-emerald-400" />
@@ -587,22 +593,25 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 </div>
               </CardContent>
             </Card>
+              </div>
+            </div>
           </form>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-700 bg-gray-900">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
           <Button
             onClick={handleClose}
             variant="outline"
-            className="border-gray-500 text-gray-300 hover:bg-gray-700 hover:text-white font-medium px-6 py-2"
+            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-blue-600 hover:bg-blue-700 font-medium px-6 py-2 shadow-md"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white"
           >
+            <Package className="h-4 w-4 mr-2" />
             {product ? 'Guardar Cambios' : 'Crear Producto'}
           </Button>
         </div>

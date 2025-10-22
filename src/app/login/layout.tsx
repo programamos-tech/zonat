@@ -28,14 +28,8 @@ export default function LoginLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        <div className="min-h-screen">
-          {children}
-        </div>
-      </body>
-    </html>
+    <div className="min-h-screen">
+      {children}
+    </div>
   );
 }

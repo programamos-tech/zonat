@@ -8,7 +8,6 @@ import {
   Plus, 
   Search, 
   Eye, 
-  Edit, 
   CheckCircle, 
   XCircle, 
   Trash2,
@@ -254,14 +253,6 @@ export function WarrantyTable({
                             className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
                           >
                             <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            onClick={() => onEdit(warranty)}
-                            variant="ghost"
-                            size="sm"
-                            className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
-                          >
-                            <Edit className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>

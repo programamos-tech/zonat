@@ -17,7 +17,6 @@ import {
   AlertTriangle,
   Trash2,
   History,
-  Edit
 } from 'lucide-react'
 import { Warranty } from '@/types'
 
@@ -36,9 +35,6 @@ export function WarrantyDetailModal({
   onEdit,
   onStatusChange 
 }: WarrantyDetailModalProps) {
-  const [showStatusModal, setShowStatusModal] = useState(false)
-  const [newStatus, setNewStatus] = useState('')
-  const [statusNotes, setStatusNotes] = useState('')
 
   useEffect(() => {
     if (isOpen) {
@@ -105,26 +101,6 @@ export function WarrantyDetailModal({
     }
   }
 
-  const getStatusOptions = (currentStatus: string) => {
-    const allStatuses = [
-      { value: 'pending', label: 'Pendiente', icon: <Clock className="h-4 w-4" /> },
-      { value: 'in_progress', label: 'En Proceso', icon: <AlertTriangle className="h-4 w-4" /> },
-      { value: 'completed', label: 'Completado', icon: <CheckCircle className="h-4 w-4" /> },
-      { value: 'rejected', label: 'Rechazado', icon: <XCircle className="h-4 w-4" /> },
-      { value: 'discarded', label: 'Descartado', icon: <Trash2 className="h-4 w-4" /> }
-    ]
-
-    return allStatuses.filter(status => status.value !== currentStatus)
-  }
-
-  const handleStatusChange = () => {
-    if (newStatus) {
-      onStatusChange(warranty.id, newStatus, statusNotes)
-      setShowStatusModal(false)
-      setNewStatus('')
-      setStatusNotes('')
-    }
-  }
 
   return (
     <>
@@ -300,10 +276,33 @@ export function WarrantyDetailModal({
                     </>
                   ) : (
                     <div className="text-center py-4">
-                      <Package className="h-12 w-12 text-gray-400 mx-auto mb-2" />
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {warranty.status === 'completed' ? 'Producto entregado' : 'Pendiente de entrega'}
-                      </p>
+                      {warranty.notes?.includes('Devolución de dinero') ? (
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-center">
+                            <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full">
+                              <span className="text-2xl">💰</span>
+                            </div>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                              Devolución de Dinero
+                            </p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400">
+                              {warranty.productReceived?.price ? 
+                                `Valor devuelto: $${(warranty.productReceived.price).toLocaleString()}` : 
+                                'Valor del producto defectuoso devuelto'
+                              }
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <>
+                          <Package className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {warranty.status === 'completed' ? 'Producto entregado' : 'Pendiente de entrega'}
+                          </p>
+                        </>
+                      )}
                     </div>
                   )}
                 </CardContent>
@@ -392,21 +391,7 @@ export function WarrantyDetailModal({
           {/* Footer */}
           <div className="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
             <div className="flex items-center gap-3">
-              <Button
-                onClick={() => onEdit(warranty)}
-                variant="outline"
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editar
-              </Button>
-              <Button
-                onClick={() => setShowStatusModal(true)}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
-              >
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Cambiar Estado
-              </Button>
+              {/* Botón de cambiar estado eliminado */}
             </div>
             <Button
               onClick={onClose}
@@ -418,63 +403,6 @@ export function WarrantyDetailModal({
         </div>
       </div>
 
-      {/* Modal de Cambio de Estado */}
-      {showStatusModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 w-full max-w-md">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Cambiar Estado de Garantía
-            </h3>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Nuevo Estado
-                </label>
-                <select
-                  value={newStatus}
-                  onChange={(e) => setNewStatus(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                >
-                  <option value="">Seleccionar estado...</option>
-                  {getStatusOptions(warranty.status).map((status) => (
-                    <option key={status.value} value={status.value}>
-                      {status.label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Notas (opcional)
-                </label>
-                <textarea
-                  value={statusNotes}
-                  onChange={(e) => setStatusNotes(e.target.value)}
-                  rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  placeholder="Agregar notas sobre el cambio de estado..."
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <Button
-                onClick={() => setShowStatusModal(false)}
-                variant="outline"
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-              >
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleStatusChange}
-                disabled={!newStatus}
-                className="bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400"
-              >
-                Confirmar Cambio
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
     </>
   )
 }

@@ -135,6 +135,8 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       case 'overdue':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+      case 'cancelled':
+        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     }
@@ -150,6 +152,8 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
         return 'Completado'
       case 'overdue':
         return 'Vencido'
+      case 'cancelled':
+        return 'Anulado'
       default:
         return status
     }
@@ -350,8 +354,13 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             size="sm"
                             variant="ghost"
                             onClick={() => onPayment(credit)}
-                            className="text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100"
-                            title="Registrar abono"
+                            disabled={credit.status === 'cancelled'}
+                            className={`${
+                              credit.status === 'cancelled' 
+                                ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                                : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
+                            }`}
+                            title={credit.status === 'cancelled' ? 'Crédito anulado' : 'Registrar abono'}
                           >
                             <DollarSign className="h-4 w-4" />
                           </Button>

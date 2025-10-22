@@ -27,7 +27,6 @@ interface SaleDetailModalProps {
   sale: Sale | null
   onCancel?: (saleId: string, reason: string) => Promise<{ success: boolean, totalRefund?: number }>
   onPrint?: (sale: Sale) => void
-  onViewCredit?: (invoiceNumber: string) => void
 }
 
 export default function SaleDetailModal({ 
@@ -35,8 +34,7 @@ export default function SaleDetailModal({
   onClose, 
   sale, 
   onCancel,
-  onPrint,
-  onViewCredit
+  onPrint
 }: SaleDetailModalProps) {
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
@@ -905,17 +903,6 @@ export default function SaleDetailModal({
           </div>
           
           <div className="flex space-x-3">
-            {/* Botón para ver detalles del crédito (solo para facturas de crédito) */}
-            {sale?.paymentMethod === 'credit' && onViewCredit && (
-              <Button
-                onClick={() => onViewCredit(sale.invoiceNumber)}
-                disabled={sale.status === 'cancelled'}
-                className="bg-white hover:bg-blue-50 text-blue-500 border-2 border-blue-400 hover:border-blue-500 font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-100 disabled:text-gray-400 disabled:border-gray-300"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Ver Crédito
-              </Button>
-            )}
             <Button
               onClick={handlePrint}
               disabled={isLoadingPrint || !companyConfig || sale.status === 'cancelled'}

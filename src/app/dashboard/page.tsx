@@ -1,67 +1,101 @@
 'use client'
 
 import { useState, useMemo, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { 
-  BarChart3, 
   DollarSign, 
-  CreditCard, 
   TrendingUp,
+  Users,
+  Package,
+  Shield,
+  CreditCard,
+  ShoppingCart,
+  BarChart3,
   Calendar,
-  Download,
-  Filter
+  ArrowUpRight,
+  ArrowDownRight,
+  Activity
 } from 'lucide-react'
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  Area,
+  AreaChart
+} from 'recharts'
 import { useSales } from '@/contexts/sales-context'
 import { Sale } from '@/types'
 
 type DateFilter = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
 
 export default function DashboardPage() {
-  const { sales, refreshSales } = useSales()
-  const [dateFilter, setDateFilter] = useState<DateFilter>('all')
+  const { sales } = useSales()
+  const [dateFilter, setDateFilter] = useState<DateFilter>('month')
   const [allSales, setAllSales] = useState<Sale[]>([])
+  const [allWarranties, setAllWarranties] = useState<any[]>([])
+  const [allCredits, setAllCredits] = useState<any[]>([])
+  const [allClients, setAllClients] = useState<any[]>([])
+  const [allProducts, setAllProducts] = useState<any[]>([])
 
-  // Cargar todas las ventas para el dashboard
+  // Cargar todos los datos para el dashboard
   useEffect(() => {
-    const loadAllSales = async () => {
+    const loadDashboardData = async () => {
       try {
-        // Importar SalesService directamente para obtener todas las ventas
         const { SalesService } = await import('@/lib/sales-service')
+        const { WarrantyService } = await import('@/lib/warranty-service')
+        const { CreditsService } = await import('@/lib/credits-service')
+        const { ClientsService } = await import('@/lib/clients-service')
+        const { ProductsService } = await import('@/lib/products-service')
         
-        // Cargar todas las ventas sin paginación
-        let allSalesData: Sale[] = []
+        // Cargar ventas
+        let salesData: Sale[] = []
         let page = 1
         let hasMore = true
-        
         while (hasMore) {
-          const result = await SalesService.getAllSales(page, 50) // 50 por página para ser más eficiente
-          allSalesData = [...allSalesData, ...result.sales]
+          const result = await SalesService.getAllSales(page, 50)
+          salesData = [...salesData, ...result.sales]
           hasMore = result.hasMore
           page++
         }
         
-        console.log(`Dashboard: Cargadas ${allSalesData.length} ventas totales`)
-        setAllSales(allSalesData)
+        // Cargar otros datos
+        const [warrantiesResult, creditsResult, clientsResult, productsResult] = await Promise.all([
+          WarrantyService.getAllWarranties(),
+          CreditsService.getAllCredits(),
+          ClientsService.getAllClients(),
+          ProductsService.getAllProducts()
+        ])
+        
+        setAllSales(salesData)
+        setAllWarranties(warrantiesResult.warranties || [])
+        setAllCredits(creditsResult.credits || [])
+        setAllClients(clientsResult.clients || [])
+        setAllProducts(productsResult.products || [])
       } catch (error) {
-        console.error('Error cargando todas las ventas:', error)
-        // Fallback a las ventas del context si hay error
+        console.error('Error cargando datos del dashboard:', error)
         setAllSales(sales)
       }
     }
     
-    loadAllSales()
+    loadDashboardData()
   }, [sales])
 
-  // Filtrar ventas por período
-  const filteredSales = useMemo(() => {
-    if (dateFilter === 'all') return allSales
-
+  // Función para obtener fechas de filtro
+  const getDateRange = (filter: DateFilter) => {
     const now = new Date()
     let startDate: Date
     let endDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
 
-    switch (dateFilter) {
+    switch (filter) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
         break
@@ -69,7 +103,6 @@ export default function DashboardPage() {
         startDate = new Date(now)
         startDate.setDate(now.getDate() - now.getDay())
         startDate.setHours(0, 0, 0, 0)
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
         break
       case 'month':
         startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
@@ -85,125 +118,232 @@ export default function DashboardPage() {
         endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
         break
       default:
-        return sales
+        return { startDate: null, endDate: null }
     }
 
-    const filtered = allSales.filter(sale => {
-      const saleDate = new Date(sale.createdAt)
-      return saleDate >= startDate && saleDate <= endDate
-    })
+    return { startDate, endDate }
+  }
 
-    // Debug log para verificar el filtrado
-    console.log(`Filtro: ${dateFilter}, Ventas totales: ${allSales.length}, Ventas filtradas: ${filtered.length}`)
-    console.log(`Rango: ${startDate.toLocaleString('es-CO')} - ${endDate.toLocaleString('es-CO')}`)
-    
-    // Debug: mostrar fechas de las primeras 3 ventas
-    if (allSales.length > 0) {
-      console.log('Fechas de ventas (primeras 3):')
-      allSales.slice(0, 3).forEach((sale, index) => {
-        console.log(`Venta ${index + 1}: ${new Date(sale.createdAt).toLocaleString('es-CO')}`)
-      })
+  // Filtrar datos por período
+  const filteredData = useMemo(() => {
+    if (dateFilter === 'all') {
+      return {
+        sales: allSales,
+        warranties: allWarranties,
+        credits: allCredits
+      }
     }
 
-    return filtered
-  }, [allSales, dateFilter])
-
-  // Calcular ingresos detallados por método de pago
-  const incomeData = useMemo(() => {
-    const incomeByMethod: { [key: string]: { amount: number; count: number } } = {}
-    let totalAmount = 0
-    let totalCount = 0
-
-    console.log(`Calculando ingresos para ${filteredSales.length} ventas filtradas`)
-
-    filteredSales.forEach(sale => {
-      totalCount++
-      
-      // Debug específico para garantías
-      if (sale.paymentMethod === 'warranty') {
-        console.log(`🔍 GARANTÍA ENCONTRADA:`, {
-          id: sale.id,
-          invoiceNumber: sale.invoiceNumber,
-          clientName: sale.clientName,
-          total: sale.total,
-          subtotal: sale.subtotal,
-          tax: sale.tax,
-          createdAt: sale.createdAt
-        })
+    const { startDate, endDate } = getDateRange(dateFilter)
+    if (!startDate || !endDate) {
+      return {
+        sales: allSales,
+        warranties: allWarranties,
+        credits: allCredits
       }
-      
-      if (sale.paymentMethod === 'mixed' && sale.payments) {
-        // Para ventas mixtas, sumar cada método de pago
-        sale.payments.forEach(payment => {
-          if (!incomeByMethod[payment.paymentType]) {
-            incomeByMethod[payment.paymentType] = { amount: 0, count: 0 }
-          }
-          incomeByMethod[payment.paymentType].amount += payment.amount
-          incomeByMethod[payment.paymentType].count++
-          totalAmount += payment.amount
-        })
-      } else {
-        // Para ventas normales, sumar al método correspondiente
-        if (!incomeByMethod[sale.paymentMethod]) {
-          incomeByMethod[sale.paymentMethod] = { amount: 0, count: 0 }
-        }
-        incomeByMethod[sale.paymentMethod].amount += sale.total
-        incomeByMethod[sale.paymentMethod].count++
-        totalAmount += sale.total
-      }
-    })
+    }
 
-    console.log(`Resultado: Total ${totalAmount}, Transacciones ${totalCount}`)
-    console.log('Ingresos por método:', incomeByMethod)
-    
+    const filterByDate = (item: any) => {
+      const itemDate = new Date(item.createdAt)
+      return itemDate >= startDate && itemDate <= endDate
+    }
+
     return {
-      incomeByMethod,
-      totalAmount,
-      totalCount
+      sales: allSales.filter(filterByDate),
+      warranties: allWarranties.filter(filterByDate),
+      credits: allCredits.filter(filterByDate)
     }
-  }, [filteredSales])
+  }, [allSales, allWarranties, allCredits, dateFilter])
 
-  // Obtener etiqueta del método de pago
-  const getPaymentMethodLabel = (method: string) => {
-    const labels: { [key: string]: string } = {
-      cash: 'Efectivo',
-      transfer: 'Transferencia',
-      credit: 'Crédito',
-      warranty: 'Garantía',
-      mixed: 'Mixto'
-    }
-    return labels[method] || method
-  }
+  // Calcular métricas del dashboard
+  const metrics = useMemo(() => {
+    const { sales, warranties, credits } = filteredData
+    
+    // Ingresos por ventas (nuevas ventas)
+    const salesRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
+    
+    // Ingresos por abonos de créditos
+    const creditPaymentsRevenue = credits
+      .filter(credit => credit.payments && credit.payments.length > 0)
+      .reduce((sum, credit) => {
+        const totalPayments = credit.payments.reduce((paymentSum, payment) => paymentSum + payment.amount, 0)
+        return sum + totalPayments
+      }, 0)
+    
+    // Ingresos totales (ventas + abonos)
+    const totalRevenue = salesRevenue + creditPaymentsRevenue
+    
+    // Ingresos por método de pago
+    const cashRevenue = sales
+      .filter(s => s.paymentMethod === 'cash')
+      .reduce((sum, sale) => sum + sale.total, 0)
+    
+    const transferRevenue = sales
+      .filter(s => s.paymentMethod === 'transfer')
+      .reduce((sum, sale) => sum + sale.total, 0)
 
-  // Obtener color del método de pago
-  const getPaymentMethodColor = (method: string) => {
-    const colors: { [key: string]: string } = {
-      cash: 'text-green-600 bg-green-100 dark:bg-green-900/20 dark:text-green-400',
-      transfer: 'text-blue-600 bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400',
-      credit: 'text-orange-600 bg-orange-100 dark:bg-orange-900/20 dark:text-orange-400',
-      warranty: 'text-purple-600 bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400',
-      mixed: 'text-indigo-600 bg-indigo-100 dark:bg-indigo-900/20 dark:text-indigo-400'
-    }
-    return colors[method] || 'text-gray-600 bg-gray-100 dark:bg-gray-900/20 dark:text-gray-400'
-  }
+    const creditRevenue = sales
+      .filter(s => s.paymentMethod === 'credit')
+      .reduce((sum, sale) => sum + sale.total, 0)
 
-  // Obtener icono del método de pago
-  const getPaymentMethodIcon = (method: string) => {
-    switch (method) {
-      case 'cash':
-        return <DollarSign className="h-4 w-4" />
-      case 'transfer':
-        return <TrendingUp className="h-4 w-4" />
-      case 'credit':
-        return <CreditCard className="h-4 w-4" />
-      case 'warranty':
-        return <CreditCard className="h-4 w-4" />
-      case 'mixed':
-        return <CreditCard className="h-4 w-4" />
-      default:
-        return <DollarSign className="h-4 w-4" />
+    // Calcular el total real de métodos de pago conocidos
+    const knownPaymentMethodsTotal = cashRevenue + transferRevenue + creditRevenue
+    
+    // Productos más vendidos
+    const productSales: { [key: string]: { name: string; quantity: number; revenue: number } } = {}
+    sales.forEach(sale => {
+      if (sale.items) {
+        sale.items.forEach(item => {
+          if (!productSales[item.productId]) {
+            productSales[item.productId] = {
+              name: item.productName,
+              quantity: 0,
+              revenue: 0
+            }
+          }
+          productSales[item.productId].quantity += item.quantity
+          productSales[item.productId].revenue += item.price * item.quantity
+        })
+      }
+    })
+
+    const topProducts = Object.entries(productSales)
+      .map(([id, data]) => ({ id, ...data }))
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5)
+
+    // Garantías
+    const completedWarranties = warranties.filter(w => w.status === 'completed').length
+    const pendingWarranties = warranties.filter(w => w.status === 'pending').length
+
+    // Créditos pendientes
+    const pendingCredits = credits.filter(c => c.status === 'pending')
+    const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.remainingAmount || credit.total), 0)
+
+    // Clientes únicos
+    const uniqueClients = new Set(sales.map(sale => sale.clientId)).size
+
+    // Productos con stock bajo
+    const lowStockProducts = allProducts.filter(p => p.stock <= 5).length
+
+    // Datos para gráficos - Mejorado para mostrar todos los días del período
+    console.log('🔍 Datos de ventas para el gráfico:', {
+      totalSales: sales.length,
+      dateFilter,
+      sampleSales: sales.slice(0, 3).map(s => ({
+        id: s.id,
+        total: s.total,
+        createdAt: s.createdAt,
+        dateFormatted: new Date(s.createdAt).toLocaleDateString('es-CO', { 
+          weekday: 'short',
+          day: '2-digit', 
+          month: '2-digit' 
+        })
+      }))
+    })
+
+    const salesByDay = sales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
+      const date = new Date(sale.createdAt).toLocaleDateString('es-CO', { 
+        weekday: 'short',
+        day: '2-digit', 
+        month: '2-digit' 
+      })
+      if (!acc[date]) {
+        acc[date] = { amount: 0, count: 0 }
+      }
+      acc[date].amount += sale.total
+      acc[date].count += 1
+      return acc
+    }, {})
+
+    console.log('📊 Ventas agrupadas por día:', salesByDay)
+
+    // Generar todos los días del período seleccionado
+    const generateAllDays = () => {
+      const days = []
+      const today = new Date()
+      const startDate = new Date(today)
+      
+      // Ajustar la fecha de inicio según el filtro
+      switch (dateFilter) {
+        case 'today':
+          startDate.setDate(today.getDate())
+          break
+        case 'week':
+          startDate.setDate(today.getDate() - 6)
+          break
+        case 'month':
+          startDate.setDate(today.getDate() - 29)
+          break
+        case 'quarter':
+          startDate.setDate(today.getDate() - 89)
+          break
+        case 'year':
+          startDate.setDate(today.getDate() - 364)
+          break
+        default:
+          startDate.setDate(today.getDate() - 6) // Por defecto, última semana
+      }
+      
+      for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+        const dateStr = d.toLocaleDateString('es-CO', { 
+          weekday: 'short',
+          day: '2-digit', 
+          month: '2-digit' 
+        })
+        days.push(dateStr)
+      }
+      return days
     }
-  }
+
+    const allDays = generateAllDays()
+    const salesChartData = allDays
+      .map(date => {
+        const data = salesByDay[date] || { amount: 0, count: 0 }
+        return { 
+          date, 
+          amount: data.amount,
+          count: data.count,
+          average: data.count > 0 ? data.amount / data.count : 0
+        }
+      })
+      .filter(day => day.amount > 0) // Solo mostrar días con ventas
+
+    const paymentMethodData = [
+      { name: 'Efectivo', value: cashRevenue, color: '#10B981' },
+      { name: 'Transferencia', value: transferRevenue, color: '#3B82F6' },
+      { name: 'Crédito', value: creditRevenue, color: '#F59E0B' }
+    ].filter(item => item.value > 0)
+
+    const topProductsChart = topProducts.slice(0, 5).map(product => ({
+      name: product.name.length > 15 ? product.name.substring(0, 15) + '...' : product.name,
+      cantidad: product.quantity,
+      ingresos: product.revenue
+    }))
+
+    return {
+      totalRevenue,
+      salesRevenue,
+      creditPaymentsRevenue,
+      cashRevenue,
+      transferRevenue,
+      creditRevenue,
+      knownPaymentMethodsTotal,
+      totalSales: sales.length,
+      topProducts,
+      completedWarranties,
+      pendingWarranties,
+      totalDebt,
+      pendingCreditsCount: pendingCredits.length,
+      uniqueClients,
+      lowStockProducts,
+      totalProducts: allProducts.length,
+      totalClients: allClients.length,
+      salesChartData,
+      paymentMethodData,
+      topProductsChart
+    }
+  }, [filteredData, allProducts, allClients])
 
   // Obtener etiqueta del filtro de fecha
   const getDateFilterLabel = (filter: DateFilter) => {
@@ -218,220 +358,407 @@ export default function DashboardPage() {
     return labels[filter] || filter
   }
 
-  // Exportar a CSV
-  const handleExportCSV = () => {
-    const csvContent = [
-      ['Método de Pago', 'Cantidad', 'Monto Total', 'Porcentaje'],
-      ...Object.entries(incomeData.incomeByMethod).map(([method, data]) => [
-        getPaymentMethodLabel(method),
-        data.count.toString(),
-        new Intl.NumberFormat('es-CO', { 
-          style: 'currency', 
-          currency: 'COP',
-          minimumFractionDigits: 0 
-        }).format(data.amount),
-        `${((data.amount / incomeData.totalAmount) * 100).toFixed(1)}%`
-      ]),
-      ['TOTAL', incomeData.totalCount.toString(), 
-        new Intl.NumberFormat('es-CO', { 
-          style: 'currency', 
-          currency: 'COP',
-          minimumFractionDigits: 0 
-        }).format(incomeData.totalAmount), '100%']
-    ].map(row => row.join(',')).join('\n')
-
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
-    const link = document.createElement('a')
-    const url = URL.createObjectURL(blob)
-    link.setAttribute('href', url)
-    link.setAttribute('download', `resumen-ingresos-${dateFilter}-${new Date().toISOString().split('T')[0]}.csv`)
-    link.style.visibility = 'hidden'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-  }
-
 
   return (
-    <div className="p-6 space-y-6 bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 min-h-screen">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-        <div className="xl:ml-0 ml-20">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-          <p className="text-gray-600 dark:text-gray-300 mt-2">
-            Resumen de ingresos y ventas - ZONA T
+    <div className="p-6 bg-white dark:bg-gray-900 min-h-screen">
+      {/* Header con estilo de las otras páginas */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+                <BarChart3 className="h-5 w-5 text-white" />
+              </div>
+              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 dark:text-gray-400 text-sm">
+              Resumen ejecutivo y métricas de rendimiento
           </p>
         </div>
-        <div className="flex items-center gap-4 mt-4 sm:mt-0">
-          {/* Filtros */}
+          
+          {/* Filtros con estilo de dropdown */}
           <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              Período:
-            </span>
-            <div className="flex gap-1">
+            <div className="relative">
+              <select
+                value={dateFilter}
+                onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+                className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+              >
               {(['today', 'week', 'month', 'quarter', 'year', 'all'] as DateFilter[]).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => setDateFilter(filter)}
-                  className={`px-3 py-1.5 text-sm rounded-md transition-all duration-200 ${
-                    dateFilter === filter 
-                      ? 'bg-emerald-600 text-white shadow-sm' 
-                      : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
-                  }`}
-                >
+                  <option key={filter} value={filter}>
                   {getDateFilterLabel(filter)}
-                </button>
-              ))}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+        </div>
+      </div>
         </div>
       </div>
 
-          <Button
-            onClick={handleExportCSV}
-            variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Exportar CSV
-          </Button>
-        </div>
-      </div>
-
-      {/* Resumen General */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card className="bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 border-emerald-200 dark:border-emerald-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                  Total Ingresos
-                </p>
-                <p className="text-3xl font-bold text-emerald-900 dark:text-emerald-100">
+      {/* Métricas principales con estilo de cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Total Ingresos */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
                     minimumFractionDigits: 0 
-                  }).format(incomeData.totalAmount)}
+            }).format(metrics.totalRevenue)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+            {metrics.totalSales} ventas realizadas
                 </p>
               </div>
-              <DollarSign className="h-10 w-10 text-emerald-600" />
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 border-blue-200 dark:border-blue-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                  Total Transacciones
-                </p>
-                <p className="text-3xl font-bold text-blue-900 dark:text-blue-100">
-                  {incomeData.totalCount}
+        {/* Efectivo */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
+            }).format(metrics.cashRevenue)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+            {metrics.knownPaymentMethodsTotal > 0 ? ((metrics.cashRevenue / metrics.knownPaymentMethodsTotal) * 100).toFixed(1) : 0}% de métodos conocidos
                 </p>
               </div>
-              <CreditCard className="h-10 w-10 text-blue-600" />
-            </div>
-          </CardContent>
-        </Card>
 
-        <Card className="bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 border-purple-200 dark:border-purple-700">
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-purple-700 dark:text-purple-300">
-                  Promedio por Transacción
-                </p>
-                <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">
+        {/* Transferencia */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
                     minimumFractionDigits: 0 
-                  }).format(incomeData.totalCount > 0 ? incomeData.totalAmount / incomeData.totalCount : 0)}
+            }).format(metrics.transferRevenue)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+            {metrics.knownPaymentMethodsTotal > 0 ? ((metrics.transferRevenue / metrics.knownPaymentMethodsTotal) * 100).toFixed(1) : 0}% de métodos conocidos
                 </p>
               </div>
-              <TrendingUp className="h-10 w-10 text-purple-600" />
+
+        {/* Dinero Afuera */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
-          </CardContent>
-        </Card>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
+            }).format(metrics.totalDebt)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+            {metrics.pendingCreditsCount} créditos pendientes
+          </p>
+        </div>
       </div>
 
-      {/* Desglose por Método de Pago */}
-      <div className="space-y-4">
-        <h3 className="text-xl font-semibold text-gray-900 dark:text-white">
-          📊 Desglose por Método de Pago
-        </h3>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Object.entries(incomeData.incomeByMethod).map(([method, data]) => (
-            <Card key={method} className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardContent className="p-6">
+      {/* Segunda fila de métricas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Garantías Completadas */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {metrics.completedWarranties}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+            {metrics.pendingWarranties} pendientes
+          </p>
+        </div>
+
+        {/* Clientes Únicos */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className={`p-3 rounded-lg ${getPaymentMethodColor(method)}`}>
-                      {getPaymentMethodIcon(method)}
+            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
+              <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Clientes Únicos</span>
                     </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 dark:text-white text-lg">
-                        {getPaymentMethodLabel(method)}
-                      </h4>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">
-                        {data.count} transacciones
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {metrics.uniqueClients}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+            {metrics.totalClients} clientes totales
                       </p>
                     </div>
+
+        {/* Productos en Stock */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+              <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
                   </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {metrics.totalProducts}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+            {metrics.lowStockProducts} con stock bajo
+          </p>
                 </div>
                 
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                      Monto Total:
-                    </span>
-                    <span className="font-bold text-gray-900 dark:text-white text-lg">
+        {/* Promedio por Venta */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
+              <BarChart3 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            </div>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Promedio por Venta</span>
+          </div>
+          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                       {new Intl.NumberFormat('es-CO', { 
                         style: 'currency', 
                         currency: 'COP',
                         minimumFractionDigits: 0 
-                      }).format(data.amount)}
-                    </span>
+            }).format(metrics.totalSales > 0 ? metrics.totalRevenue / metrics.totalSales : 0)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+            Por transacción
+          </p>
                   </div>
-                  
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-300">
-                      Porcentaje:
-                    </span>
-                    <span className="font-semibold text-emerald-600 text-lg">
-                      {incomeData.totalAmount > 0 ? ((data.amount / incomeData.totalAmount) * 100).toFixed(1) : '0'}%
-                    </span>
       </div>
 
-                  {/* Barra de progreso */}
-                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-3">
+      {/* Gráficos y estadísticas */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        {/* Gráfico de ventas por día - Mejorado */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-100 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-blue-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Ventas por Día</h2>
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 mt-1">
+              {metrics.salesChartData.length > 0 
+                ? `${metrics.salesChartData.length} días con ventas en el período seleccionado`
+                : 'No hay ventas en el período seleccionado'
+              }
+            </p>
+          </div>
+          <div className="p-6">
+            {metrics.salesChartData.length > 0 ? (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={metrics.salesChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                  <XAxis 
+                    dataKey="date" 
+                    stroke="#666"
+                    fontSize={11}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <YAxis 
+                    stroke="#666"
+                    fontSize={11}
+                    tickFormatter={(value) => {
+                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+                      return `$${value}`
+                    }}
+                  />
+                  <Tooltip 
+                    formatter={(value: number, name: string) => {
+                      if (name === 'amount') {
+                        return [
+                          new Intl.NumberFormat('es-CO', { 
+                            style: 'currency', 
+                            currency: 'COP',
+                            minimumFractionDigits: 0 
+                          }).format(value),
+                          'Total Ventas'
+                        ]
+                      }
+                      if (name === 'count') {
+                        return [value, 'Número de Ventas']
+                      }
+                      return [value, name]
+                    }}
+                    labelFormatter={(label) => `Día: ${label}`}
+                    labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '8px',
+                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    }}
+                  />
+                  <Bar 
+                    dataKey="amount" 
+                    fill="url(#colorAmount)" 
+                    radius={[4, 4, 0, 0]}
+                    stroke="#3B82F6"
+                    strokeWidth={1}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="text-center py-12">
+                <TrendingUp className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No hay ventas en este período</p>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Gráfico de métodos de pago */}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-100 rounded-lg">
+                <CreditCard className="h-5 w-5 text-green-600" />
+              </div>
+              <h2 className="text-lg font-bold text-gray-900">Métodos de Pago</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={metrics.paymentMethodData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={100}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {metrics.paymentMethodData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value: number) => [
+                    new Intl.NumberFormat('es-CO', { 
+                      style: 'currency', 
+                      currency: 'COP',
+                      minimumFractionDigits: 0 
+                    }).format(value),
+                    'Monto'
+                  ]}
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="mt-4 space-y-2">
+              {metrics.paymentMethodData.map((item, index) => (
+                <div key={index} className="flex items-center justify-between text-sm">
+                  <div className="flex items-center gap-2">
                     <div 
-                      className="bg-emerald-600 h-3 rounded-full transition-all duration-300"
-                      style={{ 
-                        width: `${incomeData.totalAmount > 0 ? (data.amount / incomeData.totalAmount) * 100 : 0}%` 
-                      }}
-                    />
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: item.color }}
+                    ></div>
+                    <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
                   </div>
+                  <span className="font-medium text-gray-900">
+                    {new Intl.NumberFormat('es-CO', { 
+                      style: 'currency', 
+                      currency: 'COP',
+                      minimumFractionDigits: 0 
+                    }).format(item.value)}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
           ))}
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Información adicional */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-          <span>Última actualización: {new Date().toLocaleString('es-CO')}</span>
-          <div className="flex items-center gap-4">
-            <span>
-              Período: <span className="font-semibold text-emerald-600">{getDateFilterLabel(dateFilter)}</span>
-            </span>
-            <span>
-              Mostrando <span className="font-semibold text-blue-600">{incomeData.totalCount}</span> de <span className="font-semibold text-gray-600">{allSales.length}</span> transacciones
-            </span>
+      {/* Productos más vendidos con gráfico de barras */}
+      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Productos Más Vendidos</h2>
           </div>
+        </div>
+        <div className="p-6">
+          {metrics.topProductsChart.length > 0 ? (
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={metrics.topProductsChart} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis 
+                  dataKey="name" 
+                  stroke="#666"
+                  fontSize={12}
+                  angle={-45}
+                  textAnchor="end"
+                  height={80}
+                />
+                <YAxis 
+                  stroke="#666"
+                  fontSize={12}
+                />
+                <Tooltip 
+                  formatter={(value: number, name: string) => [
+                    value,
+                    name === 'cantidad' ? 'Unidades' : 'Ingresos'
+                  ]}
+                  labelStyle={{ color: '#374151' }}
+                  contentStyle={{ 
+                    backgroundColor: 'white', 
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                  }}
+                />
+                <Bar dataKey="cantidad" fill="#10B981" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="text-center py-12">
+              <Package className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <p className="text-gray-500 dark:text-gray-400">No hay productos vendidos en este período</p>
+            </div>
+          )}
         </div>
       </div>
     </div>

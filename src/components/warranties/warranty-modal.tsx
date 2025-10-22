@@ -13,7 +13,11 @@ import {
   Plus, 
   Trash2,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle,
+  Lock,
+  Lightbulb,
+  DollarSign
 } from 'lucide-react'
 import { Warranty, Sale, Client, Product } from '@/types'
 import { SalesService } from '@/lib/sales-service'
@@ -124,7 +128,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     setSearchReplacement('')
     setSaleResults([])
     setReplacementResults([])
-    setShowReplacementSearch(false)
     setStockValidation({ hasStock: false, checking: false, stockCount: 0 })
     setErrors({})
   }
@@ -191,10 +194,22 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       const result = await WarrantyService.getAllWarranties()
       // WarrantyService.getAllWarranties() devuelve { warranties, total, hasMore }
       const warranties = result.warranties || []
-      const existingWarranty = warranties.find(w => 
+      
+      // Contar garantías existentes para este producto específico en esta venta
+      const existingWarrantiesCount = warranties.filter(w => 
         w.originalSaleId === saleId && w.productReceivedId === productId
-      )
-      setHasExistingWarranty(!!existingWarranty)
+      ).length
+      
+      // Obtener la cantidad comprada de este producto específico en la venta
+      const sale = await SalesService.getSaleById(saleId)
+      const productInSale = sale?.items?.find(item => item.productId === productId)
+      const quantityPurchased = productInSale?.quantity || 0
+      
+      // Solo bloquear si ya se alcanzó el límite de garantías para este producto específico
+      const hasReachedLimit = existingWarrantiesCount >= quantityPurchased
+      setHasExistingWarranty(hasReachedLimit)
+      
+      console.log(`Producto ${productId}: ${existingWarrantiesCount}/${quantityPurchased} garantías utilizadas`)
     } catch (error) {
       console.error('Error checking existing warranty:', error)
       setHasExistingWarranty(false)
@@ -255,7 +270,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         productDeliveredName: selectedReplacementProduct?.name,
         reason: formData.reason,
         notes: `${formData.notes || ''}\n\nCantidades:\n- Defectuosos: ${defectiveQuantity}\n- A entregar: ${replacementQuantity}`.trim(),
-        status: warranty?.status || 'pending'
+        status: selectedReplacementProduct ? 'completed' : 'pending'
       }
 
       await onSave(warrantyData)
@@ -322,6 +337,18 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
+                    
+                    {/* Mensaje informativo sobre facturas canceladas */}
+                    <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
+                      <div className="flex items-start space-x-2">
+                        <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+                        <div className="text-sm text-blue-800 dark:text-blue-300">
+                          <p className="font-medium mb-1">ℹ️ Información importante:</p>
+                          <p>Las facturas canceladas no aparecen en esta búsqueda porque no pueden tener garantías. Solo se muestran facturas activas y válidas.</p>
+                        </div>
+                      </div>
+                    </div>
+                    
                     {saleResults.length > 0 && (
                       <div className="max-h-48 overflow-y-auto space-y-2">
                         {saleResults.map((sale) => (
@@ -351,12 +378,26 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                               Total: ${sale.total.toLocaleString()}
                             </div>
                             {!isWarrantyValid(sale.createdAt) && (
-                              <div className="text-xs text-red-600 dark:text-red-400 font-medium">
-                                ⚠️ Garantía vencida
+                              <div className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
+                                <AlertTriangle className="h-3 w-3" />
+                                Garantía vencida
                               </div>
                             )}
                           </div>
                         ))}
+                      </div>
+                    )}
+                    
+                    {/* Mensaje cuando no hay resultados */}
+                    {searchSale.length >= 2 && saleResults.length === 0 && (
+                      <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                        <div className="flex items-start space-x-2">
+                          <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
+                          <div className="text-sm text-yellow-800 dark:text-yellow-300">
+                            <p className="font-medium mb-1">🔍 No se encontraron facturas</p>
+                            <p>No hay facturas activas que coincidan con tu búsqueda. Recuerda que las facturas canceladas no pueden tener garantías.</p>
+                          </div>
+                        </div>
                       </div>
                     )}
                   </div>
@@ -368,31 +409,48 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     </span>
                   </div>
                 ) : hasExistingWarranty ? (
-                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="text-red-600 dark:text-red-400">
-                        ⚠️
+                  <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium text-gray-900 dark:text-white">
+                          {selectedSale.invoiceNumber}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          Cliente: {selectedSale.clientName}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          Total: ${(selectedSale.total || 0).toLocaleString()}
+                        </div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                          Fecha: {new Date(selectedSale.createdAt).toLocaleDateString('es-CO')}
+                        </div>
                       </div>
-                      <h4 className="font-medium text-red-800 dark:text-red-200">
-                        Garantía Ya Registrada
-                      </h4>
+                      <div className="text-right">
+                        <div className="text-xs text-green-600 dark:text-green-400 mb-1 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Información cargada automáticamente
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setSelectedSale(null)
+                            setSelectedProduct(null)
+                            setSelectedReplacementProduct(null)
+                            setHasExistingWarranty(false)
+                          }}
+                          variant="outline"
+                          size="sm"
+                          className="text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-600 dark:hover:bg-orange-900/20"
+                        >
+                          Cambiar Venta
+                        </Button>
+                      </div>
                     </div>
-                    <p className="text-sm text-red-700 dark:text-red-300 mb-3">
-                      Este producto ya tiene una garantía registrada. No se puede crear otra garantía para el mismo producto.
-                    </p>
-                    <Button
-                      onClick={() => {
-                        setSelectedSale(null)
-                        setSelectedProduct(null)
-                        setSelectedReplacementProduct(null)
-                        setHasExistingWarranty(false)
-                      }}
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-600 dark:hover:bg-red-900/20"
-                    >
-                      Seleccionar Otro Producto
-                    </Button>
+                    <div className="mt-3 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                      <p className="text-sm text-red-700 dark:text-red-300 flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4" />
+                        Este producto ya tiene una garantía registrada. Selecciona otra venta o producto.
+                      </p>
+                    </div>
                   </div>
                 ) : (
                   <div className="p-4 bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-lg">
@@ -411,8 +469,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           Total: ${selectedSale.total.toLocaleString()}
                         </div>
                         {!isWarrantyValid(selectedSale.createdAt) && (
-                          <div className="text-xs text-red-600 dark:text-red-400 font-medium mt-1">
-                            ⚠️ Garantía vencida (más de 30 días)
+                          <div className="text-xs text-red-600 dark:text-red-400 font-medium mt-1 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            Garantía vencida (más de 30 días)
                           </div>
                         )}
                       </div>
@@ -464,8 +523,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     <div className="text-sm text-gray-600 dark:text-gray-300">
                       Cliente de la factura #{selectedSale.invoiceNumber}
                     </div>
-                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                      ✅ Información cargada automáticamente
+                    <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                      <CheckCircle className="h-3 w-3" />
+                      Información cargada automáticamente
                     </div>
                   </div>
                 ) : (
@@ -479,6 +539,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             </Card>
 
             {/* Selección de Producto Defectuoso */}
+            {!hasExistingWarranty && (
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
@@ -498,11 +559,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                       Selecciona el producto que tiene defecto:
                     </div>
-                    <div className="max-h-48 overflow-y-auto space-y-2">
+                    <div className={`max-h-48 overflow-y-auto space-y-2 ${hasExistingWarranty ? 'opacity-50 pointer-events-none' : ''}`}>
                       {selectedSale.items && selectedSale.items.length > 0 ? selectedSale.items.map((item) => (
                         <div
                           key={item.productId}
-                          onClick={async () => {
+                          onClick={hasExistingWarranty ? undefined : async () => {
                             setSelectedProduct({
                               id: item.productId,
                               name: item.productName,
@@ -522,50 +583,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             // Verificar si ya existe una garantía para este producto específico
                             await checkExistingWarranty(selectedSale.id, item.productId)
                             
-                            // Validar stock antes de cargar automáticamente
-                            setStockValidation({ hasStock: false, checking: true, stockCount: 0 })
-                            
-                            try {
-                              const hasStock = await checkProductStock(item.productId)
-                              const product = await ProductsService.getProductById(item.productId)
-                              const totalStock = (product?.stock?.local || 0) + (product?.stock?.warehouse || 0)
-                              
-                              setStockValidation({ 
-                                hasStock, 
-                                checking: false, 
-                                stockCount: totalStock 
-                              })
-                              
-                              if (hasStock) {
-                                // Cargar automáticamente el mismo producto como reemplazo
-                                setSelectedReplacementProduct({
-                                  id: item.productId,
-                                  name: item.productName,
-                                  reference: item.productReferenceCode || 'N/A',
-                                  price: item.price,
-                                  cost: 0,
-                                  stock: { local: 0, warehouse: 0 },
-                                  categoryId: '',
-                                  brand: '',
-                                  description: '',
-                                  status: 'active',
-                                  createdAt: '',
-                                  updatedAt: ''
-                                })
-                                setReplacementQuantity(1) // Resetear cantidad de reemplazo
-                              } else {
-                                // No hay stock, limpiar producto de reemplazo
-                                setSelectedReplacementProduct(null)
-                                setShowReplacementSearch(true) // Mostrar opción de búsqueda
-                              }
-                            } catch (error) {
-                              console.error('Error validating stock:', error)
-                              setStockValidation({ hasStock: false, checking: false, stockCount: 0 })
-                              setSelectedReplacementProduct(null)
-                              setShowReplacementSearch(true)
-                            }
+                            // Limpiar producto de reemplazo y mostrar búsqueda
+                            setSelectedReplacementProduct(null)
+                            setShowReplacementSearch(true)
+                            setStockValidation({ hasStock: false, checking: false, stockCount: 0 })
                           }}
-                          className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer transition-colors"
+                          className={`p-3 border border-gray-200 dark:border-gray-600 rounded-lg transition-colors ${
+                            hasExistingWarranty 
+                              ? 'cursor-not-allowed bg-gray-100 dark:bg-gray-800' 
+                              : 'hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer'
+                          }`}
                         >
                           <div className="font-medium text-gray-900 dark:text-white">
                             {item.productName}
@@ -576,8 +603,22 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <div className="text-sm text-gray-600 dark:text-gray-300">
                             Cantidad comprada: {item.quantity || 0} | Precio: ${(item.price || 0).toLocaleString()}
                           </div>
-                          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1">
-                            💡 Haz clic para seleccionar este producto
+                          <div className={`text-xs mt-1 ${
+                            hasExistingWarranty 
+                              ? 'text-gray-400 dark:text-gray-500' 
+                              : 'text-blue-600 dark:text-blue-400'
+                          }`}>
+                            {hasExistingWarranty ? (
+                              <span className="flex items-center gap-1">
+                                <Lock className="h-3 w-3" />
+                                Selección deshabilitada
+                              </span>
+                            ) : (
+                              <span className="flex items-center gap-1">
+                                <Lightbulb className="h-3 w-3" />
+                                Haz clic para seleccionar este producto
+                              </span>
+                            )}
                           </div>
                         </div>
                       )) : (
@@ -602,25 +643,29 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         <div className="text-sm text-gray-600 dark:text-gray-300">
                           Precio: ${(selectedProduct.price || 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-red-600 dark:text-red-400 mt-1">
-                          🔴 Producto defectuoso
+                        <div className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                          <Package className="h-3 w-3" />
+                          Producto defectuoso
                         </div>
                         {stockValidation.hasStock && (
-                          <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                            ✅ Stock disponible: {stockValidation.stockCount} unidades
+                          <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Stock disponible: {stockValidation.stockCount} unidades
                           </div>
                         )}
                         {!stockValidation.hasStock && !stockValidation.checking && (
-                          <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                            ⚠️ Sin stock suficiente: {stockValidation.stockCount} disponibles
+                          <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            Sin stock suficiente: {stockValidation.stockCount} disponibles
                           </div>
                         )}
                       </div>
                       <Button
-                        onClick={() => setSelectedProduct(null)}
+                        onClick={hasExistingWarranty ? undefined : () => setSelectedProduct(null)}
                         variant="ghost"
                         size="sm"
-                        className="text-gray-500 hover:text-gray-700"
+                        disabled={hasExistingWarranty}
+                        className={`text-gray-500 hover:text-gray-700 ${hasExistingWarranty ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <X className="h-4 w-4" />
                       </Button>
@@ -632,11 +677,12 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Cantidad defectuosa *
                         </label>
-                        <div className="flex items-center gap-3">
+                        <div className={`flex items-center gap-3 ${hasExistingWarranty ? 'opacity-50 pointer-events-none' : ''}`}>
                           <Button
-                            onClick={() => setDefectiveQuantity(Math.max(1, defectiveQuantity - 1))}
+                            onClick={hasExistingWarranty ? undefined : () => setDefectiveQuantity(Math.max(1, defectiveQuantity - 1))}
                             variant="outline"
                             size="sm"
+                            disabled={hasExistingWarranty}
                             className="w-8 h-8 p-0"
                           >
                             -
@@ -646,13 +692,15 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             min="1"
                             max={selectedProduct.stock?.local || 1}
                             value={defectiveQuantity}
-                            onChange={(e) => setDefectiveQuantity(Math.max(1, Math.min(selectedProduct.stock?.local || 1, parseInt(e.target.value) || 1)))}
-                            className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            disabled={hasExistingWarranty}
+                            onChange={hasExistingWarranty ? undefined : (e) => setDefectiveQuantity(Math.max(1, Math.min(selectedProduct.stock?.local || 1, parseInt(e.target.value) || 1)))}
+                            className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                           <Button
-                            onClick={() => setDefectiveQuantity(Math.min(selectedProduct.stock?.local || 1, defectiveQuantity + 1))}
+                            onClick={hasExistingWarranty ? undefined : () => setDefectiveQuantity(Math.min(selectedProduct.stock?.local || 1, defectiveQuantity + 1))}
                             variant="outline"
                             size="sm"
+                            disabled={hasExistingWarranty}
                             className="w-8 h-8 p-0"
                           >
                             +
@@ -679,8 +727,10 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Selección de Producto de Reemplazo */}
+            {!hasExistingWarranty && (
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
@@ -695,88 +745,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       Primero selecciona el producto defectuoso
                     </div>
                   </div>
-                ) : !selectedReplacementProduct || showReplacementSearch ? (
-                  <div className="space-y-3">
-                    {stockValidation.checking ? (
-                      <div className="flex items-center justify-center py-4">
-                        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
-                        <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">
-                          Verificando stock...
-                        </span>
-                      </div>
-                    ) : !stockValidation.hasStock && selectedProduct && !showReplacementSearch ? (
-                      <div className="p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-                        <div className="flex items-start gap-3">
-                          <div className="text-yellow-600 dark:text-yellow-400 mt-0.5">
-                            ⚠️
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-medium text-yellow-800 dark:text-yellow-200 mb-1">
-                              Sin Stock Disponible
-                            </h4>
-                            <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-3">
-                              El producto <strong>{selectedProduct.name}</strong> no tiene stock suficiente 
-                              ({stockValidation.stockCount} disponibles, necesitas {defectiveQuantity}).
-                            </p>
-                            <div className="space-y-2">
-                              <Button
-                                onClick={() => {
-                                  setShowReplacementSearch(true)
-                                  setSearchReplacement('')
-                                  setReplacementResults([])
-                                }}
-                                className="w-full bg-blue-600 hover:bg-blue-700 text-white"
-                              >
-                                <Search className="h-4 w-4 mr-2" />
-                                Buscar Producto Alternativo
-                              </Button>
-                              <div>
-                                <Button
-                                  onClick={() => {
-                                    // Validar que el motivo esté lleno
-                                    if (!formData.reason.trim()) {
-                                      setErrors({ reason: 'El motivo de la garantía es obligatorio' })
-                                      return
-                                    }
-                                    
-                                    // Crear garantía con devolución de dinero
-                                    const warrantyData = {
-                                      originalSaleId: selectedSale.id,
-                                      clientId: selectedSale.clientId,
-                                      clientName: selectedSale.clientName,
-                                      productReceivedId: selectedProduct.id,
-                                      productReceivedName: selectedProduct.name,
-                                      productReceivedSerial: '',
-                                      productDeliveredId: undefined,
-                                      productDeliveredName: undefined,
-                                      reason: formData.reason,
-                                      status: 'completed' as const,
-                                      notes: `Devolución de dinero - Producto sin stock. Cantidad defectuosa: ${defectiveQuantity}. Motivo: ${formData.reason}`,
-                                      defectiveQuantity,
-                                      replacementQuantity: 0
-                                    }
-                                    
-                                    onSave(warrantyData)
-                                    onClose()
-                                  }}
-                                  variant="outline"
-                                  className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-600 dark:hover:bg-orange-900/20"
-                                >
-                                  💰 Devolver Dinero
-                                </Button>
-                                {errors.reason && (
-                                  <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-2">
-                                    <AlertTriangle className="h-4 w-4" />
-                                    {errors.reason}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ) : showReplacementSearch ? (
-                      <div className="space-y-3">
+                ) : !selectedReplacementProduct ? (
+                  <div className={`space-y-3 ${hasExistingWarranty ? 'opacity-50 pointer-events-none' : ''}`}>
                         <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
                           Buscar producto alternativo:
                         </div>
@@ -786,15 +756,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             type="text"
                             placeholder="Buscar producto de reemplazo..."
                             value={searchReplacement}
-                            onChange={(e) => {
+                            disabled={hasExistingWarranty}
+                            onChange={hasExistingWarranty ? undefined : (e) => {
                               setSearchReplacement(e.target.value)
                               searchReplacementProducts(e.target.value)
                             }}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
-                          <div className="text-yellow-500">💡</div>
+                          <Lightbulb className="h-3 w-3 text-yellow-500" />
                           Busca el mismo producto o uno equivalente para reemplazar
                         </div>
                         {replacementResults.length > 0 && (
@@ -804,7 +775,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                                 key={product.id}
                                 onClick={() => {
                                   setSelectedReplacementProduct(product)
-                                  setShowReplacementSearch(false)
                                   setSearchReplacement('')
                                   setReplacementResults([])
                                 }}
@@ -827,20 +797,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           </div>
                         )}
                         <div className="flex gap-2">
-                          <Button
-                            onClick={() => {
-                              setShowReplacementSearch(false)
-                              setSearchReplacement('')
-                              setReplacementResults([])
-                            }}
-                            variant="outline"
-                            className="flex-1"
-                          >
-                            Cancelar búsqueda
-                          </Button>
                           <div className="flex-1">
                             <Button
-                              onClick={() => {
+                              onClick={hasExistingWarranty ? undefined : () => {
                                 // Validar que el motivo esté lleno
                                 if (!formData.reason.trim()) {
                                   setErrors({ reason: 'El motivo de la garantía es obligatorio' })
@@ -868,9 +827,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                                 onClose()
                               }}
                               variant="outline"
-                              className="w-full text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-600 dark:hover:bg-orange-900/20"
+                              disabled={hasExistingWarranty}
+                              className={`w-full text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-600 dark:hover:bg-orange-900/20 ${hasExistingWarranty ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
-                              💰 Devolver Dinero
+                              <DollarSign className="h-4 w-4 mr-2" />
+                              Devolver Dinero
                             </Button>
                             {errors.reason && (
                               <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-2">
@@ -880,12 +841,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             )}
                           </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-                        Selecciona el producto nuevo para entregar:
-                      </div>
-                    )}
                   </div>
                 ) : (
                   <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
@@ -900,8 +855,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         <div className="text-sm text-gray-600 dark:text-gray-300">
                           Precio: ${(selectedReplacementProduct.price || 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-green-600 dark:text-green-400 mt-1">
-                          ✅ Producto de reemplazo (cargado automáticamente)
+                        <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                          <CheckCircle className="h-3 w-3" />
+                          Producto de reemplazo (cargado automáticamente)
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
@@ -970,6 +926,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                 )}
               </CardContent>
             </Card>
+            )}
 
             {/* Información Adicional */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -979,7 +936,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                   Información Adicional
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className={`space-y-4 ${hasExistingWarranty ? 'opacity-50 pointer-events-none' : ''}`}>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Número de Serie (opcional)
@@ -987,9 +944,10 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                   <input
                     type="text"
                     value={formData.productSerial}
-                    onChange={(e) => setFormData(prev => ({ ...prev, productSerial: e.target.value }))}
+                    disabled={hasExistingWarranty}
+                    onChange={hasExistingWarranty ? undefined : (e) => setFormData(prev => ({ ...prev, productSerial: e.target.value }))}
                     placeholder="Ingrese el número de serie del producto defectuoso"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -998,10 +956,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                   </label>
                   <textarea
                     value={formData.reason}
-                    onChange={(e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
+                    disabled={hasExistingWarranty}
+                    onChange={hasExistingWarranty ? undefined : (e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                     placeholder="Describa el problema o defecto del producto..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   {errors.reason && (
                     <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
@@ -1016,10 +975,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                   </label>
                   <textarea
                     value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                    disabled={hasExistingWarranty}
+                    onChange={hasExistingWarranty ? undefined : (e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Agregue cualquier información adicional relevante..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </CardContent>
@@ -1038,8 +998,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
           </Button>
           <Button
             onClick={handleSave}
-            disabled={loading}
-            className="bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400"
+            disabled={loading || hasExistingWarranty}
+            className={`bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400 ${hasExistingWarranty ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? (
               <div className="flex items-center gap-2">

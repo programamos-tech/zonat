@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { WarrantyTable } from '@/components/warranties/warranty-table'
 import { WarrantyDetailModal } from '@/components/warranties/warranty-detail-modal'
 import { WarrantyModal } from '@/components/warranties/warranty-modal'
-import { WarrantyEditModal } from '@/components/warranties/warranty-edit-modal'
 import { useWarranties } from '@/contexts/warranty-context'
 import { Warranty } from '@/types'
 
@@ -21,7 +20,6 @@ export default function WarrantiesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showDetailModal, setShowDetailModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
-  const [showWarrantyEditModal, setShowWarrantyEditModal] = useState(false)
   const [selectedWarranty, setSelectedWarranty] = useState<Warranty | null>(null)
   const [searchResults, setSearchResults] = useState<Warranty[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -37,8 +35,8 @@ export default function WarrantiesPage() {
   }
 
   const handleEditWarranty = (warranty: Warranty) => {
-    setSelectedWarranty(warranty)
-    setShowWarrantyEditModal(true)
+    // Modal de edición eliminado - las garantías se completan automáticamente
+    console.log('Edición de garantía deshabilitada:', warranty.id)
   }
 
   const handleSaveWarranty = async (warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -52,14 +50,6 @@ export default function WarrantiesPage() {
     }
   }
 
-  const handleWarrantyEditSave = async (warranty: Warranty) => {
-    try {
-      await refreshWarranties()
-      setShowWarrantyEditModal(false)
-    } catch (error) {
-      console.error('Error refreshing warranties:', error)
-    }
-  }
 
   const handleStatusChange = async (warrantyId: string, newStatus: string, notes?: string) => {
     try {
@@ -131,14 +121,6 @@ export default function WarrantiesPage() {
           />
         )}
 
-        {showWarrantyEditModal && selectedWarranty && (
-          <WarrantyEditModal
-            warranty={selectedWarranty}
-            isOpen={showWarrantyEditModal}
-            onClose={() => setShowWarrantyEditModal(false)}
-            onSave={handleWarrantyEditSave}
-          />
-        )}
     </div>
   )
 }

@@ -279,6 +279,39 @@ export class WarrantyService {
           notes: warrantyData.reason
         }])
 
+      // Si la garantía está completada y tiene producto de reemplazo, descontar del inventario
+      if (warrantyData.status === 'completed' && warrantyData.productDeliveredId) {
+        try {
+          // Importar el servicio de productos dinámicamente para evitar dependencias circulares
+          const { ProductsService } = await import('./products-service')
+          
+          // Obtener el producto actual para verificar el stock
+          const product = await ProductsService.getProductById(warrantyData.productDeliveredId)
+          if (product) {
+            const currentStock = (product.stock?.local || 0) + (product.stock?.warehouse || 0)
+            const quantityToDeduct = warrantyData.replacementQuantity || 1
+            
+            if (currentStock >= quantityToDeduct) {
+              // Descontar del stock local primero, luego del warehouse
+              let localDeduction = Math.min(quantityToDeduct, product.stock?.local || 0)
+              let warehouseDeduction = quantityToDeduct - localDeduction
+              
+              await ProductsService.updateProductStock(warrantyData.productDeliveredId, {
+                local: (product.stock?.local || 0) - localDeduction,
+                warehouse: (product.stock?.warehouse || 0) - warehouseDeduction
+              })
+              
+              console.log(`✅ Producto de reemplazo descontado del inventario: ${warrantyData.productDeliveredName} (${quantityToDeduct} unidades)`)
+            } else {
+              console.warn(`⚠️ Stock insuficiente para el producto de reemplazo: ${warrantyData.productDeliveredName}`)
+            }
+          }
+        } catch (stockError) {
+          console.error('Error al descontar producto del inventario:', stockError)
+          // No lanzar el error para no interrumpir la creación de la garantía
+        }
+      }
+
       return this.getWarrantyById(data.id) as Promise<Warranty>
     } catch (error) {
       console.error('Error creating warranty:', error)

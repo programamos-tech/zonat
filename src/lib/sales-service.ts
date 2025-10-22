@@ -597,7 +597,9 @@ export class SalesService {
         }
       }
 
-      const { data, error } = await searchQuery.or(searchConditions.join(','))
+      const { data, error } = await searchQuery
+        .or(searchConditions.join(','))
+        .neq('status', 'cancelled') // Excluir ventas canceladas
         .order('created_at', { ascending: false })
 
       if (error) {
