@@ -317,29 +317,29 @@ export function LogsTable({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-hidden">
+              <table className="w-full table-fixed">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-16 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       #
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-40 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Tipo
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-32 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acción
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-80 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Descripción
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-32 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Usuario
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-32 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-20 px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -397,65 +397,65 @@ export function LogsTable({
                     const TypeIcon = getTypeIcon(logType)
                     return (
                       <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
                             {filteredLogs.length - index}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4">
                           <div className="flex items-center space-x-3">
                             <div className={`p-2 rounded-lg ${getTypeColor(logType)} flex-shrink-0`}>
                               <TypeIcon className="h-4 w-4" />
                             </div>
-                            <div className="flex flex-col justify-center min-h-[40px]">
-                              <span className="text-sm font-medium text-gray-900 dark:text-white leading-tight">
+                            <div className="min-w-0 flex-1">
+                              <div className="text-sm font-medium text-gray-900 dark:text-white">
                                 {getTypeLabel(logType)}
-                              </span>
-                              <span className="text-xs text-gray-500 dark:text-gray-400 leading-tight">
-                                {log.module === 'roles' ? 'Gestión de Usuarios' : 
+                              </div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {log.module === 'roles' ? 'Usuarios' : 
                                  log.module === 'products' ? 'Productos' :
                                  log.module === 'clients' ? 'Clientes' :
                                  log.module === 'sales' ? 'Ventas' :
                                  log.module === 'payments' ? 'Abonos' :
                                  log.module === 'logs' ? 'Logs' :
-                                 log.module === 'auth' ? 'Inicio de Sesión' :
+                                 log.module === 'auth' ? 'Login' :
                                  log.module || 'Sistema'}
-                              </span>
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {log.module === 'auth' ? 'Acceso al Sistema' : 
+                            {log.module === 'auth' ? 'Acceso' : 
                              log.module === 'products' ? 
-                               (log.action === 'product_create' ? 'Crear Producto' :
-                                log.action === 'product_update' ? 'Actualizar Producto' :
-                                log.action === 'product_delete' ? 'Eliminar Producto' :
-                                log.action === 'stock_transfer' ? 'Transferir Stock' :
-                                log.action === 'stock_adjustment' ? 'Ajustar Stock' :
+                               (log.action === 'product_create' ? 'Crear' :
+                                log.action === 'product_update' ? 'Actualizar' :
+                                log.action === 'product_delete' ? 'Eliminar' :
+                                log.action === 'stock_transfer' ? 'Transferir' :
+                                log.action === 'stock_adjustment' ? 'Ajustar' :
                                 log.action) :
                              log.module === 'categories' ?
-                               (log.action === 'category_create' ? 'Crear Categoría' :
-                                log.action === 'category_update' ? 'Actualizar Categoría' :
-                                log.action === 'category_delete' ? 'Eliminar Categoría' :
+                               (log.action === 'category_create' ? 'Crear' :
+                                log.action === 'category_update' ? 'Actualizar' :
+                                log.action === 'category_delete' ? 'Eliminar' :
                                 log.action) :
                              log.action}
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm text-gray-600 dark:text-gray-300 max-w-xs truncate" title={log.details ? JSON.stringify(log.details) : log.action}>
+                        <td className="px-4 py-4">
+                          <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
                             {log.details ? 
                               (log.module === 'roles' ? 
-                                (log.action === 'Usuario Creado' ? `Nuevo usuario: ${log.details.newUser?.name || 'Usuario'} - Rol: ${log.details.newUser?.role || 'Desconocido'}` :
-                                 log.action === 'Usuario Editado' ? `Actualización: ${log.details.userName || 'Usuario'} - Cambios: ${Object.keys(log.details.changes || {}).join(', ')}` :
-                                 log.action === 'Usuario Eliminado' ? `Usuario eliminado: ${log.details.deletedUser?.name || 'Usuario'} - Email: ${log.details.deletedUser?.email || 'Desconocido'}` :
+                                (log.action === 'Usuario Creado' ? `Nuevo usuario: ${log.details.newUser?.name || 'Usuario'}` :
+                                 log.action === 'Usuario Editado' ? `Actualización: ${log.details.userName || 'Usuario'}` :
+                                 log.action === 'Usuario Eliminado' ? `Usuario eliminado: ${log.details.deletedUser?.name || 'Usuario'}` :
                                  log.action === 'Permisos Asignados' ? `${log.details.description || 'Permisos asignados'}` :
                                  log.action) :
                                 log.module === 'products' ?
                                   (log.details.description || log.action) :
                                 log.module === 'categories' ?
-                                  (log.action === 'category_create' ? `Nueva categoría: "${log.details.categoryName || 'Categoría'}" - Estado: ${log.details.status || 'Activa'}` :
-                                   log.action === 'category_update' ? `Categoría actualizada: "${log.details.categoryName || 'Categoría'}" - Cambios: ${log.details.changes || 'Estado modificado'}` :
+                                  (log.action === 'category_create' ? `Nueva categoría: "${log.details.categoryName || 'Categoría'}"` :
+                                   log.action === 'category_update' ? `Categoría actualizada: "${log.details.categoryName || 'Categoría'}"` :
                                    log.action === 'category_delete' ? `Categoría eliminada: "${log.details.categoryName || 'Categoría'}"` :
                                    log.details.description || log.action) :
                                 log.module === 'auth' ? 
@@ -466,28 +466,31 @@ export function LogsTable({
                               log.action}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4">
                           <div className="text-sm text-gray-900 dark:text-white">
-                            {log.user_name || 'Usuario Desconocido'}
+                            {log.user_name || 'Desconocido'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-4 py-4">
                           <div className="text-sm text-gray-600 dark:text-gray-300">
-                            {formatDateTime(log.created_at)}
+                            {new Date(log.created_at).toLocaleDateString('es-CO', {
+                              month: '2-digit',
+                              day: '2-digit',
+                              hour: '2-digit',
+                              minute: '2-digit'
+                            })}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onViewDetails(log)}
-                              className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
-                              title="Ver detalles"
-                            >
-                              <Eye className="h-4 w-4" />
-                            </Button>
-                          </div>
+                        <td className="px-4 py-4 text-center">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onViewDetails(log)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                            title="Ver detalles"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </td>
                       </tr>
                     )
