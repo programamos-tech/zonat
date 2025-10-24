@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { X, ArrowRightLeft, Package, Store, AlertTriangle } from 'lucide-react'
+import { X, ArrowRightLeft, Package, Store, AlertTriangle, FileText } from 'lucide-react'
 import { Product, StockTransfer } from '@/types'
 
 interface StockTransferModalProps {
@@ -22,6 +22,25 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+
+  // Función para formatear números con separadores de miles
+  const formatNumber = (value: number | string): string => {
+    const numValue = typeof value === 'string' ? parseFloat(value) : value
+    if (isNaN(numValue)) return '0'
+
+    // Para números enteros, no mostrar decimales
+    if (Number.isInteger(numValue)) {
+      return numValue.toLocaleString('es-CO', {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      })
+    }
+    // Para números con decimales, mostrar hasta 2 decimales
+    return numValue.toLocaleString('es-CO', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2
+    })
+  }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
@@ -46,6 +65,8 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
 
     if (!formData.reason.trim()) {
       newErrors.reason = 'El motivo es requerido'
+    } else if (formData.reason.trim().length < 10) {
+      newErrors.reason = 'El motivo debe tener al menos 10 caracteres para mayor claridad'
     }
 
     setErrors(newErrors)
@@ -104,17 +125,17 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <div className="flex items-center space-x-3">
-            <ArrowRightLeft className="h-6 w-6 text-emerald-400" />
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+          <div className="flex items-center gap-3">
+            <ArrowRightLeft className="h-8 w-8 text-green-600" />
             <div>
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Transferir Stock
               </h2>
-              <p className="text-sm text-gray-300">
+              <p className="text-gray-600 dark:text-gray-300">
                 {product.name} - {product.reference}
               </p>
             </div>
@@ -123,57 +144,100 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
-            <X className="h-5 w-5 text-gray-300 hover:text-white" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
-          <form onSubmit={(e) => { e.preventDefault(); handleTransfer() }} className="space-y-6">
-            {/* Stock Actual */}
-            <Card className="bg-gray-800 border-gray-700">
+        {/* Content */}
+        <form onSubmit={(e) => { e.preventDefault(); handleTransfer() }} className="flex-1 p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Columna Izquierda */}
+            <div className="space-y-6">
+              {/* Stock Actual */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center">
-                  <Package className="h-5 w-5 mr-2 text-emerald-400" />
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-600" />
                   Stock Actual
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                    <Package className="h-5 w-5 text-blue-400" />
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <Package className="h-5 w-5 text-blue-600" />
                     <div>
-                      <div className="text-sm text-gray-300">Bodega</div>
-                      <div className="text-xl font-bold text-white">{product.stock.warehouse}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Bodega</div>
+                      <div className="text-xl font-bold text-gray-900 dark:text-white">{formatNumber(product.stock.warehouse)}</div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-3 p-3 bg-gray-700 rounded-lg">
-                    <Store className="h-5 w-5 text-green-400" />
+                  <div className="flex items-center space-x-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <Store className="h-5 w-5 text-green-600" />
                     <div>
-                      <div className="text-sm text-gray-300">Local</div>
-                      <div className="text-xl font-bold text-white">{product.stock.store}</div>
+                      <div className="text-sm text-gray-500 dark:text-gray-400">Local</div>
+                      <div className="text-xl font-bold text-gray-900 dark:text-white">{formatNumber(product.stock.store)}</div>
                     </div>
                   </div>
                 </div>
               </CardContent>
-            </Card>
+              </Card>
 
-            {/* Transferencia */}
-            <Card className="bg-gray-800 border-gray-700">
+              {/* Resumen de la Transferencia */}
+              {formData.quantity > 0 && (
+                <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                      <AlertTriangle className="h-5 w-5 text-green-600" />
+                      Resumen de la Transferencia
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                        <span className="text-gray-600 dark:text-gray-300">Producto:</span>
+                        <span className="text-gray-900 dark:text-white font-medium">{product.name}</span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                        <span className="text-gray-600 dark:text-gray-300">Transferir:</span>
+                        <span className="text-gray-900 dark:text-white font-medium">
+                          {formatNumber(formData.quantity)} unidades de {getLocationLabel(formData.fromLocation)} a {getLocationLabel(formData.toLocation)}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center p-3 bg-white dark:bg-gray-700 rounded-lg">
+                        <span className="text-gray-600 dark:text-gray-300">Stock después:</span>
+                        <div className="text-gray-900 dark:text-white font-medium">
+                          <div>Bodega: {formatNumber(formData.fromLocation === 'warehouse' 
+                            ? product.stock.warehouse - formData.quantity 
+                            : product.stock.warehouse + (formData.toLocation === 'warehouse' ? formData.quantity : 0)
+                          )}</div>
+                          <div>Local: {formatNumber(formData.fromLocation === 'store' 
+                            ? product.stock.store - formData.quantity 
+                            : product.stock.store + (formData.toLocation === 'store' ? formData.quantity : 0)
+                          )}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            {/* Detalles de la Transferencia */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center">
-                  <ArrowRightLeft className="h-5 w-5 mr-2 text-emerald-400" />
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <ArrowRightLeft className="h-5 w-5 text-green-600" />
                   Detalles de la Transferencia
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {/* Desde */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Desde *
                   </label>
-                  <div className="flex space-x-4">
+                  <div className="grid grid-cols-2 gap-3">
                     {(['warehouse', 'store'] as const).map((location) => {
                       const Icon = getLocationIcon(location)
                       const isSelected = formData.fromLocation === location
@@ -182,14 +246,23 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                           key={location}
                           type="button"
                           onClick={() => handleInputChange('fromLocation', location)}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                          className={`p-4 rounded-lg border-2 transition-all ${
                             isSelected
-                              ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                              : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                           }`}
                         >
-                          <Icon className="h-4 w-4" />
-                          <span className="text-sm font-medium">{getLocationLabel(location)}</span>
+                          <div className="flex items-center space-x-3">
+                            <Icon className={`h-5 w-5 ${isSelected ? 'text-green-600' : 'text-gray-400'}`} />
+                            <div className="text-left">
+                              <div className={`font-medium ${isSelected ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                                {getLocationLabel(location)}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Stock: {formatNumber(location === 'warehouse' ? product.stock.warehouse : product.stock.store)}
+                              </div>
+                            </div>
+                          </div>
                         </button>
                       )
                     })}
@@ -198,10 +271,10 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
 
                 {/* Hacia */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Hacia *
                   </label>
-                  <div className="flex space-x-4">
+                  <div className="grid grid-cols-2 gap-3">
                     {(['warehouse', 'store'] as const).map((location) => {
                       const Icon = getLocationIcon(location)
                       const isSelected = formData.toLocation === location
@@ -212,28 +285,49 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                           type="button"
                           onClick={() => !isDisabled && handleInputChange('toLocation', location)}
                           disabled={isDisabled}
-                          className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                          className={`p-4 rounded-lg border-2 transition-all ${
                             isDisabled
-                              ? 'border-gray-700 text-gray-500 cursor-not-allowed'
+                              ? 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
                               : isSelected
-                              ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                              : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                           }`}
                         >
-                          <Icon className="h-4 w-4" />
-                          <span className="text-sm font-medium">{getLocationLabel(location)}</span>
+                          <div className="flex items-center space-x-3">
+                            <Icon className={`h-5 w-5 ${
+                              isDisabled 
+                                ? 'text-gray-400' 
+                                : isSelected 
+                                ? 'text-green-600' 
+                                : 'text-gray-400'
+                            }`} />
+                            <div className="text-left">
+                              <div className={`font-medium ${
+                                isDisabled
+                                  ? 'text-gray-400 dark:text-gray-500'
+                                  : isSelected 
+                                  ? 'text-green-600' 
+                                  : 'text-gray-700 dark:text-gray-300'
+                              }`}>
+                                {getLocationLabel(location)}
+                              </div>
+                              <div className="text-sm text-gray-500 dark:text-gray-400">
+                                Stock: {formatNumber(location === 'warehouse' ? product.stock.warehouse : product.stock.store)}
+                              </div>
+                            </div>
+                          </div>
                         </button>
                       )
                     })}
                   </div>
                   {errors.toLocation && (
-                    <p className="mt-1 text-sm text-red-400">{errors.toLocation}</p>
+                    <p className="mt-1 text-sm text-red-500">{errors.toLocation}</p>
                   )}
                 </div>
 
                 {/* Cantidad */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Cantidad a Transferir *
                   </label>
                   <div className="flex items-center space-x-2">
@@ -243,92 +337,62 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                       max={getAvailableStock()}
                       value={formData.quantity || ''}
                       onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 0)}
-                      className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white bg-gray-800 placeholder-gray-400 ${
-                        errors.quantity ? 'border-red-500' : 'border-gray-600'
+                      className={`flex-1 px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                        errors.quantity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                       }`}
                       placeholder="Ingrese cantidad"
                     />
-                    <div className="text-sm text-gray-400">
-                      Máx: {getAvailableStock()}
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      Máx: {formatNumber(getAvailableStock())}
                     </div>
                   </div>
                   {errors.quantity && (
-                    <p className="mt-1 text-sm text-red-400">{errors.quantity}</p>
+                    <p className="mt-1 text-sm text-red-500">{errors.quantity}</p>
                   )}
                 </div>
 
                 {/* Motivo */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Motivo de la Transferencia *
                   </label>
                   <textarea
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white bg-gray-800 placeholder-gray-400 resize-y ${
-                      errors.reason ? 'border-red-500' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                      errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Ej: Reposición de tienda, devolución a bodega, etc."
                     rows={3}
                   />
-                  {errors.reason && (
-                    <p className="mt-1 text-sm text-red-400">{errors.reason}</p>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Resumen */}
-            <Card className="bg-gray-800 border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-yellow-400" />
-                  Resumen de la Transferencia
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300">Producto:</span>
-                    <span className="text-white font-medium">{product.name}</span>
-                  </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300">Transferir:</span>
-                    <span className="text-white font-medium">
-                      {formData.quantity} unidades de {getLocationLabel(formData.fromLocation)} a {getLocationLabel(formData.toLocation)}
+                  <div className="mt-1 flex justify-between items-center">
+                    {errors.reason && (
+                      <p className="text-sm text-red-500">{errors.reason}</p>
+                    )}
+                    <span className={`text-xs ml-auto ${formData.reason.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {formData.reason.length}/10 caracteres mínimo
                     </span>
                   </div>
-                  <div className="flex justify-between items-center p-3 bg-gray-700 rounded-lg">
-                    <span className="text-gray-300">Stock después:</span>
-                    <div className="text-white font-medium">
-                      <div>Bodega: {formData.fromLocation === 'warehouse' 
-                        ? product.stock.warehouse - formData.quantity 
-                        : product.stock.warehouse + (formData.toLocation === 'warehouse' ? formData.quantity : 0)
-                      }</div>
-                      <div>Local: {formData.fromLocation === 'store' 
-                        ? product.stock.store - formData.quantity 
-                        : product.stock.store + (formData.toLocation === 'store' ? formData.quantity : 0)
-                      }</div>
-                    </div>
-                  </div>
                 </div>
               </CardContent>
             </Card>
-          </form>
-        </div>
+          </div>
+        </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-700 bg-gray-800">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
           <Button
+            type="button"
             onClick={handleClose}
             variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             Cancelar
           </Button>
           <Button
+            type="button"
             onClick={handleTransfer}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
             <ArrowRightLeft className="h-4 w-4 mr-2" />
             Transferir Stock

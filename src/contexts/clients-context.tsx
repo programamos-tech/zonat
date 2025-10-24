@@ -3,13 +3,14 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { Client } from '@/types'
 import { ClientsService } from '@/lib/clients-service'
+import { useAuth } from './auth-context'
 
 interface ClientsContextType {
   clients: Client[]
   loading: boolean
   getAllClients: () => Promise<void>
   getClientById: (id: string) => Promise<Client | null>
-  createClient: (clientData: Omit<Client, 'id' | 'createdAt'>) => Promise<Client | null>
+  createClient: (clientData: Omit<Client, 'id' | 'createdAt'>) => Promise<{ client: Client | null, error: string | null }>
   updateClient: (id: string, updates: Partial<Client>) => Promise<boolean>
   deleteClient: (id: string) => Promise<boolean>
   searchClients: (query: string) => Promise<Client[]>
@@ -20,6 +21,7 @@ const ClientsContext = createContext<ClientsContextType | undefined>(undefined)
 export function ClientsProvider({ children }: { children: ReactNode }) {
   const [clients, setClients] = useState<Client[]>([])
   const [loading, setLoading] = useState(false)
+  const { user } = useAuth()
 
   const getAllClients = useCallback(async () => {
     setLoading(true)
@@ -43,23 +45,22 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const createClient = async (clientData: Omit<Client, 'id' | 'createdAt'>): Promise<Client | null> => {
+  const createClient = async (clientData: Omit<Client, 'id' | 'createdAt'>): Promise<{ client: Client | null, error: string | null }> => {
     try {
-      const newClient = await ClientsService.createClient(clientData)
-      if (newClient) {
-        setClients(prev => [newClient, ...prev])
-        return newClient
+      const result = await ClientsService.createClient(clientData, user?.id)
+      if (result.client) {
+        setClients(prev => [result.client!, ...prev])
       }
-      return null
+      return result
     } catch (error) {
       console.error('Error creating client:', error)
-      return null
+      return { client: null, error: 'Error inesperado al crear el cliente.' }
     }
   }
 
   const updateClient = async (id: string, updates: Partial<Client>): Promise<boolean> => {
     try {
-      const success = await ClientsService.updateClient(id, updates)
+      const success = await ClientsService.updateClient(id, updates, user?.id)
       if (success) {
         setClients(prev => 
           prev.map(client => 
@@ -77,7 +78,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
 
   const deleteClient = async (id: string): Promise<boolean> => {
     try {
-      const success = await ClientsService.deleteClient(id)
+      const success = await ClientsService.deleteClient(id, user?.id)
       if (success) {
         setClients(prev => prev.filter(client => client.id !== id))
         return true

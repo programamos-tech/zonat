@@ -58,12 +58,12 @@ export default function ClientsPage() {
       }
     } else {
       // Create new client
-      const success = await createClient(clientData)
-      if (success) {
+      const result = await createClient(clientData)
+      if (result.client) {
         toast.success('Cliente creado exitosamente')
         setIsModalOpen(false)
       } else {
-        toast.error('Error creando cliente')
+        toast.error(result.error || 'Error creando cliente')
       }
     }
   }

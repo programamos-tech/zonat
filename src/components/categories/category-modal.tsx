@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Tag, Plus, Trash2 } from 'lucide-react'
+import { X, Tag, Plus, Trash2, FileText } from 'lucide-react'
 import { Category } from '@/types'
 
 interface CategoryModalProps {
@@ -107,17 +107,17 @@ export function CategoryModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 rounded-lg shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-700">
-          <div className="flex items-center space-x-3">
-            <Tag className="h-6 w-6 text-emerald-400" />
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+          <div className="flex items-center gap-3">
+            <Tag className="h-8 w-8 text-green-600" />
             <div>
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Gestión de Categorías
               </h2>
-              <p className="text-sm text-gray-300">
+              <p className="text-gray-600 dark:text-gray-300">
                 Crea nuevas categorías y gestiona las existentes
               </p>
             </div>
@@ -126,124 +126,143 @@ export function CategoryModal({
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-700"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
           >
-            <X className="h-5 w-5 text-gray-300 hover:text-white" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="space-y-6">
-            {/* Información Básica */}
-            <Card className="bg-gray-800 border-gray-700">
+        {/* Content */}
+        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="flex-1 overflow-y-auto p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Información de la Categoría */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center">
-                  <Tag className="h-5 w-5 mr-2 text-emerald-400" />
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-600" />
                   Información de la Categoría
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Nombre de la Categoría *
                   </label>
                   <input
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white bg-gray-800 placeholder-gray-400 ${
-                      errors.name ? 'border-red-500' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                      errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Nombre de la categoría"
                   />
                   {errors.name && (
-                    <p className="mt-1 text-sm text-red-400">{errors.name}</p>
+                    <p className="mt-1 text-sm text-red-500">{errors.name}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Descripción *
                   </label>
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-white bg-gray-800 placeholder-gray-400 resize-y ${
-                      errors.description ? 'border-red-500' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                      errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Descripción de la categoría"
                     rows={3}
                   />
                   {errors.description && (
-                    <p className="mt-1 text-sm text-red-400">{errors.description}</p>
+                    <p className="mt-1 text-sm text-red-500">{errors.description}</p>
                   )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-2">
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Estado
                   </label>
-                  <div className="flex space-x-4">
+                  <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
                       onClick={() => handleInputChange('status', 'active')}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                      className={`p-4 rounded-lg border-2 transition-all ${
                         formData.status === 'active'
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                      <span className="text-sm font-medium">Activa</span>
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${formData.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <div className="text-left">
+                          <div className={`font-medium ${formData.status === 'active' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                            Activa
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Categoría disponible
+                          </div>
+                        </div>
+                      </div>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleInputChange('status', 'inactive')}
-                      className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
+                      className={`p-4 rounded-lg border-2 transition-all ${
                         formData.status === 'inactive'
-                          ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                          : 'border-gray-600 text-gray-300 hover:bg-gray-700'
+                          ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                       }`}
                     >
-                      <div className="w-2 h-2 bg-gray-500 rounded-full"></div>
-                      <span className="text-sm font-medium">Inactiva</span>
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-3 h-3 rounded-full ${formData.status === 'inactive' ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                        <div className="text-left">
+                          <div className={`font-medium ${formData.status === 'inactive' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                            Inactiva
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Categoría deshabilitada
+                          </div>
+                        </div>
+                      </div>
                     </button>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
-            {/* Lista de categorías existentes */}
-            <Card className="bg-gray-800 border-gray-700">
+            {/* Categorías Existentes */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
-                <CardTitle className="text-lg text-white flex items-center">
-                  <Tag className="h-5 w-5 mr-2 text-emerald-400" />
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <Tag className="h-5 w-5 text-green-600" />
                   Categorías Existentes
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2">
+                <div className="space-y-3 max-h-96 overflow-y-auto">
                   {categories
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-700 rounded-lg bg-gray-900 hover:bg-gray-700 transition-colors">
+                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
-                          <h4 className="font-medium text-white">{cat.name}</h4>
+                          <h4 className="font-medium text-gray-900 dark:text-white">{cat.name}</h4>
                           <Badge className={getStatusColor(cat.status)}>
                             {getStatusLabel(cat.status)}
                           </Badge>
                         </div>
-                        <p className="text-sm text-gray-400 mt-1">{cat.description}</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{cat.description}</p>
                       </div>
                       <div className="flex items-center space-x-3">
                         {/* Toggle estilo iOS */}
                         <button
                           onClick={() => onToggleStatus(cat.id, cat.status === 'active' ? 'inactive' : 'active')}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 ${
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 ${
                             cat.status === 'active' 
-                              ? 'bg-emerald-600' 
-                              : 'bg-gray-200 dark:bg-gray-700'
+                              ? 'bg-green-600' 
+                              : 'bg-gray-200 dark:bg-gray-600'
                           }`}
                           title={cat.status === 'active' ? 'Desactivar categoría' : 'Activar categoría'}
                         >
@@ -259,7 +278,7 @@ export function CategoryModal({
                           size="sm"
                           variant="ghost"
                           onClick={() => onDelete(cat.id)}
-                          className="h-8 w-8 p-0 text-red-400 hover:text-red-300 hover:bg-red-900/20 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                           title="Eliminar categoría"
                         >
                           <Trash2 className="h-4 w-4" />
@@ -268,30 +287,33 @@ export function CategoryModal({
                     </div>
                   ))}
                   {categories.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
-                      <Tag className="h-12 w-12 text-gray-600 mx-auto mb-4" />
+                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                      <Tag className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
                       <p>No hay categorías creadas</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
-          </form>
-        </div>
+          </div>
+        </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-6 border-t border-gray-700 bg-gray-800">
+        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
           <Button
+            type="button"
             onClick={handleClose}
             variant="outline"
-            className="border-gray-600 text-gray-300 hover:bg-gray-700"
+            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             Cancelar
           </Button>
           <Button
+            type="submit"
             onClick={handleSave}
-            className="bg-emerald-600 hover:bg-emerald-700"
+            className="bg-green-600 hover:bg-green-700 text-white"
           >
+            <Plus className="h-4 w-4 mr-2" />
             Crear Categoría
           </Button>
         </div>

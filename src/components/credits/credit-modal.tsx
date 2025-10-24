@@ -172,12 +172,18 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     setIsLoading(true)
 
     try {
+      // Validar que el usuario esté autenticado
+      if (!user?.id) {
+        throw new Error('Usuario no autenticado. Por favor, inicia sesión nuevamente.')
+      }
+
       console.log('🚀 Iniciando creación de venta a crédito...')
+      console.log('Usuario autenticado:', user)
       console.log('Cliente seleccionado:', selectedClient)
       console.log('Productos seleccionados:', selectedProducts)
       console.log('Fecha de vencimiento:', formData.dueDate)
 
-      // 1. Crear la venta
+      // Crear la venta (el crédito se crea automáticamente en SalesService.createSale)
       const saleData = {
         clientId: selectedClient.id,
         clientName: selectedClient.name,
@@ -190,17 +196,20 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         discountType: 'amount' as const,
         tax: 0,
         observations: formData.notes,
-        sellerId: user?.id || 'current-user-id',
-        sellerName: user?.name || 'Usuario Actual',
-        sellerEmail: user?.email || 'usuario@zonat.com'
+        dueDate: formData.dueDate, // Agregar fecha de vencimiento a la venta
+        sellerId: user.id,
+        sellerName: user.name || 'Usuario',
+        sellerEmail: user.email || ''
       }
 
       console.log('📋 Datos de la venta:', saleData)
-      const newSale = await SalesService.createSale(saleData)
-      console.log('✅ Venta creada:', newSale)
-
-      // 2. Crear el crédito
-      const creditData = {
+      const newSale = await SalesService.createSale(saleData, user.id)
+      console.log('✅ Venta creada con crédito automático:', newSale)
+      
+      // El crédito ya fue creado automáticamente por SalesService.createSale()
+      // Solo necesitamos notificar que se creó exitosamente
+      onCreateCredit({
+        id: 'auto-created',
         saleId: newSale.id,
         clientId: selectedClient.id,
         clientName: selectedClient.name,
@@ -208,19 +217,16 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         totalAmount: newSale.total,
         paidAmount: 0,
         pendingAmount: newSale.total,
-        status: 'pending' as const,
+        status: 'pending',
         dueDate: formData.dueDate,
-        createdBy: user?.id || 'current-user-id',
-        createdByName: user?.name || 'Usuario Actual',
+        lastPaymentAmount: null,
+        lastPaymentDate: null,
+        lastPaymentUser: null,
+        createdBy: user.id,
+        createdByName: user.name || 'Usuario',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
-      }
-
-      console.log('💳 Datos del crédito:', creditData)
-      const newCredit = await CreditsService.createCredit(creditData)
-      console.log('✅ Crédito creado:', newCredit)
-      
-      onCreateCredit(newCredit)
+      })
       onClose()
       resetForm()
     } catch (error) {

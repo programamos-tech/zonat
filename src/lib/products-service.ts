@@ -406,7 +406,7 @@ export class ProductsService {
         await AuthService.logActivity(
           currentUserId,
           'sale_stock_deduction',
-          'products',
+          'sales',
           {
             description,
             productId: productId,
@@ -433,8 +433,15 @@ export class ProductsService {
   // Devolver stock de una venta cancelada
   static async returnStockFromSale(productId: string, quantity: number, currentUserId?: string): Promise<boolean> {
     try {
+      console.log('🔄 returnStockFromSale llamado:', { productId, quantity, currentUserId })
+      
       const product = await this.getProductById(productId)
-      if (!product) return false
+      if (!product) {
+        console.error('❌ Producto no encontrado:', productId)
+        return false
+      }
+      
+      console.log('📦 Producto encontrado:', product.name)
 
       // Devolver el stock al local (store) por defecto
       const { error } = await supabase
@@ -453,22 +460,37 @@ export class ProductsService {
       if (currentUserId) {
         const description = `Cancelación de venta: Se devolvieron ${quantity} unidades del producto "${product.name}" al local`
         
-        await AuthService.logActivity(
+        console.log('🔄 Registrando log de retorno de stock:', {
           currentUserId,
-          'sale_cancellation_stock_return',
-          'products',
-          {
-            description,
-            productId: productId,
-            productName: product.name,
-            productReference: product.reference,
-            quantityReturned: quantity,
-            previousStoreStock: product.stock.store,
-            newStoreStock: (product.stock.store || 0) + quantity,
-            location: 'store',
-            reason: 'Venta cancelada'
-          }
-        )
+          productId,
+          productName: product.name,
+          quantity,
+          description
+        })
+        
+        try {
+          await AuthService.logActivity(
+            currentUserId,
+            'sale_cancellation_stock_return',
+            'products',
+            {
+              description,
+              productId: productId,
+              productName: product.name,
+              productReference: product.reference,
+              quantityReturned: quantity,
+              previousStoreStock: product.stock.store,
+              newStoreStock: (product.stock.store || 0) + quantity,
+              location: 'store',
+              reason: 'Venta cancelada'
+            }
+          )
+          console.log('✅ Log de retorno de stock registrado exitosamente')
+        } catch (logError) {
+          console.error('❌ Error registrando log de retorno de stock:', logError)
+        }
+      } else {
+        console.warn('⚠️ No se pudo registrar log de retorno de stock: currentUserId no disponible')
       }
 
       return true
@@ -555,57 +577,4 @@ export class ProductsService {
     }
   }
 
-  // Devolver stock de una venta cancelada
-  static async returnStockFromSale(productId: string, quantity: number): Promise<boolean> {
-    try {
-      console.log('Returning stock for product:', productId, 'quantity:', quantity)
-      
-      // Obtener el producto actual
-      const { data: product, error: fetchError } = await supabase
-        .from('products')
-        .select('id, name, stock_warehouse, stock_store')
-        .eq('id', productId)
-        .single()
-
-      if (fetchError) {
-        console.error('Error fetching product for stock return:', {
-          productId,
-          error: fetchError,
-          errorCode: fetchError.code,
-          errorMessage: fetchError.message
-        })
-        return false
-      }
-
-      if (!product) {
-        console.error('Product not found for stock return:', productId)
-        return false
-      }
-
-      console.log('Product found:', product.name, 'warehouse stock:', product.stock_warehouse, 'store stock:', product.stock_store)
-
-      const currentStoreStock = product.stock_store || 0
-      const newStoreStock = currentStoreStock + quantity
-
-      // Actualizar el stock del local (asumiendo que las ventas se hacen desde el local)
-      const { error: updateError } = await supabase
-        .from('products')
-        .update({ 
-          stock_store: newStoreStock,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', productId)
-
-      if (updateError) {
-        console.error('Error returning stock to product:', updateError)
-        return false
-      }
-
-      console.log('Stock returned successfully:', quantity, 'units to store')
-      return true
-    } catch (error) {
-      console.error('Error in returnStockFromSale:', error)
-      return false
-    }
-  }
 }

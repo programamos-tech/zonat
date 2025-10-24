@@ -254,8 +254,22 @@ export class CreditsService {
       paymentRecords = [data]
     }
 
-    // Actualizar el estado de la venta si el crédito se completó
+    // Actualizar el crédito con el nuevo monto pendiente
     const newPendingAmount = credit.pendingAmount - paymentData.amount!
+    const newPaidAmount = credit.paidAmount + paymentData.amount!
+    const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
+    
+    // Actualizar el crédito en la tabla credits
+    await this.updateCredit(credit.id, {
+      pendingAmount: newPendingAmount,
+      paidAmount: newPaidAmount,
+      status: newStatus,
+      lastPaymentAmount: paymentData.amount,
+      lastPaymentDate: paymentData.paymentDate,
+      lastPaymentUser: paymentData.userName
+    })
+
+    // Actualizar el estado de la venta si el crédito se completó
     if (newPendingAmount <= 0) {
       // El crédito se completó, actualizar el estado de la venta
       const { error: saleUpdateError } = await supabase
@@ -404,10 +418,126 @@ export class CreditsService {
         // No lanzamos error aquí para no interrumpir el flujo
       }
 
+      // RESTAURAR STOCK: Obtener la venta asociada y restaurar el stock de todos los productos
+      try {
+        const { SalesService } = await import('./sales-service')
+        const { ProductsService } = await import('./products-service')
+        
+        // Obtener la venta por sale_id
+        const sale = await SalesService.getSaleById(credit.saleId)
+        if (sale && sale.items && sale.items.length > 0) {
+          console.log('🔄 Restaurando stock para venta cancelada:', sale.invoiceNumber)
+          console.log('📦 Productos a restaurar:', sale.items.length)
+          
+          // Restaurar stock de todos los productos de la venta
+          const stockReturnResults = []
+          for (const item of sale.items) {
+            try {
+              console.log('🔄 Llamando returnStockFromSale desde credits-service:', { 
+                productId: item.productId, 
+                quantity: item.quantity, 
+                userId 
+              })
+              const result = await ProductsService.returnStockFromSale(item.productId, item.quantity, userId)
+              stockReturnResults.push({ 
+                productId: item.productId, 
+                productName: item.productName,
+                quantity: item.quantity,
+                success: result 
+              })
+              
+              if (result) {
+                console.log(`✅ Stock restaurado: ${item.productName} (+${item.quantity} unidades)`)
+              } else {
+                console.error(`❌ Error restaurando stock: ${item.productName}`)
+              }
+            } catch (error) {
+              console.error(`❌ Error returning stock for product ${item.productId}:`, error)
+              stockReturnResults.push({ 
+                productId: item.productId, 
+                productName: item.productName,
+                quantity: item.quantity,
+                success: false, 
+                error 
+              })
+            }
+          }
+          
+          // Verificar si hubo errores en el retorno de stock
+          const failedReturns = stockReturnResults.filter(r => !r.success)
+          if (failedReturns.length > 0) {
+            console.warn('⚠️ Algunos productos no pudieron ser restaurados al stock:', failedReturns)
+            // Continuar con la anulación aunque algunos productos no se pudieron devolver
+          } else {
+            console.log('✅ Stock restaurado exitosamente para todos los productos')
+          }
+        } else {
+          console.warn('⚠️ No se encontró la venta asociada al crédito o no tiene items')
+        }
+        
+        // ACTUALIZAR STATUS DE LA VENTA: Marcar la venta como cancelada
+        if (sale) {
+          try {
+            const { error: saleUpdateError } = await supabase
+              .from('sales')
+              .update({ 
+                status: 'cancelled',
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', credit.saleId)
+
+            if (saleUpdateError) {
+              console.error('❌ Error actualizando status de la venta:', saleUpdateError)
+            } else {
+              console.log('✅ Status de la venta actualizado a "cancelled"')
+            }
+          } catch (saleError) {
+            console.error('❌ Error actualizando venta:', saleError)
+          }
+        }
+      } catch (stockError) {
+        console.error('❌ Error restaurando stock al cancelar crédito:', stockError)
+        // No lanzamos error aquí para no interrumpir la cancelación del crédito
+      }
+
       return { success: true, totalRefund }
     } catch (error) {
       console.error('Error cancelando crédito:', error)
       throw error
+    }
+  }
+
+  // Obtener todos los registros de pago (abonos)
+  static async getAllPaymentRecords(): Promise<PaymentRecord[]> {
+    try {
+      const { data, error } = await supabase
+        .from('payment_records')
+        .select('*')
+        .order('payment_date', { ascending: false })
+
+      if (error) throw error
+
+      return data.map(payment => ({
+        id: payment.id,
+        creditId: null, // No hay credit_id directo en payment_records
+        amount: payment.amount,
+        paymentDate: payment.payment_date,
+        paymentMethod: payment.payment_method,
+        cashAmount: undefined, // La tabla no tiene este campo
+        transferAmount: undefined, // La tabla no tiene este campo
+        description: payment.description,
+        userId: payment.user_id,
+        userName: payment.user_name,
+        status: payment.status || 'active', // Incluir status, por defecto 'active'
+        cancelledAt: payment.cancelled_at,
+        cancelledBy: payment.cancelled_by,
+        cancelledByName: payment.cancelled_by_name,
+        cancellationReason: payment.cancellation_reason,
+        createdAt: payment.created_at
+      }))
+    } catch (error) {
+      console.error('Error fetching payment records:', error)
+      return []
     }
   }
 

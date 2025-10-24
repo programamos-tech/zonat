@@ -11,14 +11,15 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, Di
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Search, Edit, Trash2, Eye, UserCheck, UserX } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, UserCheck, UserX, X, User, Shield } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 
 const roleOptions = [
-  { value: 'superadmin', label: 'Super Administrador' },
+  { value: 'superadmin', label: 'Super Admin' },
   { value: 'admin', label: 'Administrador' },
-  { value: 'vendedor', label: 'Vendedor' }
+  { value: 'vendedor', label: 'Vendedor' },
+  { value: 'inventario', label: 'Inventario' }
 ]
 
 const moduleOptions = [
@@ -32,50 +33,47 @@ const moduleOptions = [
 ]
 
 const actionOptions = [
-  { value: 'view', label: 'Ver' },
-  { value: 'create', label: 'Crear' },
-  { value: 'edit', label: 'Editar' },
-  { value: 'delete', label: 'Eliminar' },
-  { value: 'cancel', label: 'Cancelar' }
+  { value: 'view', label: 'Ver' }
 ]
 
 // Permisos predefinidos por rol
 const rolePermissions = {
   'superadmin': [
     { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view', 'create', 'edit', 'delete'] },
-    { module: 'clients', actions: ['view', 'create', 'edit', 'delete'] },
-    { module: 'sales', actions: ['view', 'create', 'edit', 'delete', 'cancel'] },
-    { module: 'payments', actions: ['view', 'create', 'edit', 'delete', 'cancel'] },
-    { module: 'roles', actions: ['view', 'create', 'edit', 'delete'] },
+    { module: 'products', actions: ['view'] },
+    { module: 'clients', actions: ['view'] },
+    { module: 'sales', actions: ['view'] },
+    { module: 'payments', actions: ['view'] },
+    { module: 'roles', actions: ['view'] },
     { module: 'logs', actions: ['view'] }
   ],
   'admin': [
     { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view', 'create', 'edit', 'delete'] },
-    { module: 'clients', actions: ['view', 'create', 'edit', 'delete'] },
-    { module: 'sales', actions: ['view', 'create', 'edit', 'delete', 'cancel'] },
-    { module: 'payments', actions: ['view', 'create', 'edit', 'delete'] },
+    { module: 'products', actions: ['view'] },
+    { module: 'clients', actions: ['view'] },
+    { module: 'sales', actions: ['view'] },
+    { module: 'payments', actions: ['view'] },
     { module: 'logs', actions: ['view'] }
   ],
   'vendedor': [
+    { module: 'dashboard', actions: ['view'] },
     { module: 'products', actions: ['view'] },
-    { module: 'clients', actions: ['view', 'create', 'edit'] },
-    { module: 'sales', actions: ['view', 'create', 'edit'] },
-    { module: 'payments', actions: ['view', 'create', 'edit'] }
+    { module: 'clients', actions: ['view'] },
+    { module: 'sales', actions: ['view'] },
+    { module: 'payments', actions: ['view'] }
   ],
   'inventario': [
     { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view', 'create', 'edit'] },
+    { module: 'products', actions: ['view'] },
     { module: 'logs', actions: ['view'] }
   ]
 }
 
 // Descripciones de cada rol
 const roleDescriptions = {
-  'superadmin': 'Acceso completo a todos los módulos del sistema',
+  'superadmin': 'Acceso completo a todos los módulos del sistema (Diego)',
   'admin': 'Gestión completa de productos, clientes, ventas y abonos',
-  'vendedor': 'Puede crear facturas, gestionar clientes y recibir abonos',
+  'vendedor': 'Puede ver y gestionar ventas, clientes y abonos',
   'inventario': 'Gestiona productos y revisa logs del sistema'
 }
 
@@ -430,26 +428,15 @@ export function UserManagement() {
                     <div className="space-y-3">
                       {moduleOptions.map(module => (
                         <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                          <div className="font-semibold text-base mb-3 text-gray-900 dark:text-white">{module.label}</div>
-                          <div className="grid grid-cols-1 gap-2">
-                            {(module.value === 'dashboard' || module.value === 'logs' 
-                              ? actionOptions.filter(action => action.value === 'view')
-                              : actionOptions
-                            ).map(action => (
-                              <label key={action.value} className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
-                                <input
-                                  type="checkbox"
-                                  checked={hasPermission(module.value, action.value)}
-                                  onChange={() => togglePermission(module.value, action.value)}
-                                  className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
-                                  disabled={module.value === 'dashboard' || module.value === 'logs' ? action.value !== 'view' : false}
-                                />
-                                <span className={`text-gray-700 dark:text-gray-300 ${(module.value === 'dashboard' || module.value === 'logs') && action.value !== 'view' ? 'opacity-50' : ''}`}>
-                                  {action.label}
-                                </span>
-                              </label>
-                            ))}
-                          </div>
+                          <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={hasPermission(module.value, 'view')}
+                              onChange={() => togglePermission(module.value, 'view')}
+                              className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                            />
+                            <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
+                          </label>
                         </div>
                       ))}
                     </div>
@@ -604,120 +591,172 @@ export function UserManagement() {
       </Card>
 
       {/* Modal de edición */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Editar Usuario</DialogTitle>
-            <DialogDescription>
-              Modifica la información del usuario y sus permisos.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="editName">Nombre Completo</Label>
-                <Input
-                  id="editName"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                />
+      {isEditModalOpen && (
+        <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
+              <div className="flex items-center gap-3">
+                <UserCheck className="h-8 w-8 text-indigo-600" />
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    Editar Usuario
+                  </h2>
+                  <p className="text-gray-600 dark:text-gray-300">
+                    Modifica la información del usuario y sus permisos
+                  </p>
+                </div>
               </div>
-              <div>
-                <Label htmlFor="editEmail">Email</Label>
-                <Input
-                  id="editEmail"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="editPassword">Nueva Contraseña (opcional)</Label>
-                <Input
-                  id="editPassword"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                  placeholder="Dejar vacío para mantener la actual"
-                />
-              </div>
-              <div>
-                <Label htmlFor="editRole">Rol</Label>
-                <Select value={formData.role} onValueChange={applyRolePermissions}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {roleOptions.map(role => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-gray-600 dark:text-gray-400 bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
-                  <span className="font-semibold text-blue-700 dark:text-blue-300">
-                    {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
-                  </span>
-                </p>
-              </div>
+              <Button
+                onClick={() => setIsEditModalOpen(false)}
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </Button>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="editIsActive"
-                checked={formData.isActive}
-                onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-              />
-              <Label htmlFor="editIsActive">Usuario Activo</Label>
-            </div>
+            {/* Content */}
+            <div className="flex-1 overflow-y-auto p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Columna Izquierda - Información del Usuario */}
+                <div className="space-y-6">
+                  {/* Información Personal */}
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                        <User className="h-5 w-5 text-indigo-600" />
+                        Información Personal
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="editName">Nombre Completo</Label>
+                        <Input
+                          id="editName"
+                          value={formData.name}
+                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="editEmail">Email</Label>
+                        <Input
+                          id="editEmail"
+                          type="email"
+                          value={formData.email}
+                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                          className="mt-1"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="editPassword">Nueva Contraseña (opcional)</Label>
+                        <Input
+                          id="editPassword"
+                          type="password"
+                          value={formData.password}
+                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                          placeholder="Dejar vacío para mantener la actual"
+                          className="mt-1"
+                        />
+                      </div>
+                    </CardContent>
+                  </Card>
 
-            {/* Permisos */}
-            <div>
-              <Label className="text-base font-semibold">Permisos del Sistema</Label>
-              <div className="mt-2 space-y-3">
-                {moduleOptions.map(module => (
-                  <div key={module.value} className="border rounded-lg p-3">
-                    <div className="font-medium text-sm mb-2">{module.label}</div>
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                      {(module.value === 'dashboard' || module.value === 'logs' 
-                        ? actionOptions.filter(action => action.value === 'view')
-                        : actionOptions
-                      ).map(action => (
-                        <label key={action.value} className="flex items-center space-x-2 text-sm">
-                          <input
-                            type="checkbox"
-                            checked={hasPermission(module.value, action.value)}
-                            onChange={() => togglePermission(module.value, action.value)}
-                            className="rounded border-gray-300"
-                            disabled={module.value === 'dashboard' || module.value === 'logs' ? action.value !== 'view' : false}
-                          />
-                          <span className={module.value === 'dashboard' || module.value === 'logs' ? action.value !== 'view' ? 'opacity-50' : '' : ''}>
-                            {action.label}
-                          </span>
-                        </label>
+                  {/* Rol y Estado */}
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-indigo-600" />
+                        Rol y Estado
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label htmlFor="editRole">Rol</Label>
+                        <Select value={formData.role} onValueChange={applyRolePermissions}>
+                          <SelectTrigger className="mt-1">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {roleOptions.map(role => (
+                              <SelectItem key={role.value} value={role.value}>
+                                {role.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
+                          <div className="text-sm text-blue-800 dark:text-blue-300">
+                            <span className="font-semibold">
+                              {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                        <Switch
+                          id="editIsActive"
+                          checked={formData.isActive}
+                          onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                          className="data-[state=checked]:bg-indigo-600"
+                        />
+                        <Label htmlFor="editIsActive" className="text-base font-medium text-indigo-700 dark:text-indigo-300">
+                          Usuario Activo
+                        </Label>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Columna Derecha - Permisos */}
+                <div className="space-y-6">
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                        <Shield className="h-5 w-5 text-indigo-600" />
+                        Permisos del Sistema
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {moduleOptions.map(module => (
+                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
+                          <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                            <input
+                              type="checkbox"
+                              checked={hasPermission(module.value, 'view')}
+                              onChange={() => togglePermission(module.value, 'view')}
+                              className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                            />
+                            <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
+                          </label>
+                        </div>
                       ))}
-                    </div>
-                  </div>
-                ))}
+                    </CardContent>
+                  </Card>
+                </div>
               </div>
             </div>
 
-            <div className="flex justify-end space-x-2">
-              <Button variant="outline" onClick={() => setIsEditModalOpen(false)}>
+            {/* Footer */}
+            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+              <Button 
+                variant="outline" 
+                onClick={() => setIsEditModalOpen(false)}
+              >
                 Cancelar
               </Button>
-              <Button onClick={handleUpdateUser} className="bg-indigo-600 hover:bg-indigo-700">
+              <Button 
+                onClick={handleUpdateUser}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              >
                 Actualizar Usuario
               </Button>
             </div>
           </div>
-        </DialogContent>
-      </Dialog>
+        </div>
+      )}
 
       {/* Modal de confirmación de eliminación */}
       <ConfirmationModal

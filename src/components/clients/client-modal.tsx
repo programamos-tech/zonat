@@ -114,8 +114,9 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
       newErrors.name = 'El nombre es requerido'
     }
 
-    // Validar email solo si se proporciona
-    if (formData.email.trim() && !/\S+@\S+\.\S+/.test(formData.email)) {
+    // Validar email solo si se proporciona y no es 'N/A'
+    const emailValue = formData.email.trim()
+    if (emailValue && emailValue.toLowerCase() !== 'n/a' && !/\S+@\S+\.\S+/.test(emailValue)) {
       newErrors.email = 'El email no es válido'
     }
 
@@ -125,9 +126,13 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
 
   const handleSave = () => {
     if (validateForm()) {
+      // Manejar email vacío o 'N/A' - convertir a string vacío para que el servicio lo maneje
+      const emailValue = formData.email.trim()
+      const processedEmail = emailValue && emailValue.toLowerCase() !== 'n/a' ? emailValue : ''
+
       const clientData: Omit<Client, 'id'> = {
         name: formData.name.trim(),
-        email: formData.email.trim(),
+        email: processedEmail,
         phone: formData.phone.trim(),
         document: formData.document.trim(),
         address: formData.address.trim(),
@@ -308,7 +313,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email
+                    Email <span className="text-gray-500 text-xs">(opcional)</span>
                   </label>
                   <input
                     type="email"
@@ -317,11 +322,14 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                       errors.email ? 'border-red-400' : 'border-gray-600'
                     }`}
-                    placeholder="cliente@ejemplo.com"
+                    placeholder="cliente@ejemplo.com o déjalo vacío"
                   />
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-400">{errors.email}</p>
                   )}
+                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                    Si no tienes email, déjalo vacío o escribe "N/A"
+                  </p>
                 </div>
               </CardContent>
             </Card>

@@ -237,6 +237,11 @@ export interface PaymentRecord {
   description?: string
   userId: string
   userName: string
+  status?: 'active' | 'cancelled'
+  cancelledAt?: string
+  cancelledBy?: string
+  cancelledByName?: string
+  cancellationReason?: string
   createdAt: string
 }
 

@@ -14,7 +14,8 @@ import {
   Calendar,
   ArrowUpRight,
   ArrowDownRight,
-  Activity
+  Activity,
+  XCircle
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -33,18 +34,27 @@ import {
   AreaChart
 } from 'recharts'
 import { useSales } from '@/contexts/sales-context'
+import { useAuth } from '@/contexts/auth-context'
 import { Sale } from '@/types'
 
 type DateFilter = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
 
 export default function DashboardPage() {
   const { sales } = useSales()
-  const [dateFilter, setDateFilter] = useState<DateFilter>('month')
+  const { user } = useAuth()
+  const [dateFilter, setDateFilter] = useState<DateFilter>('today')
+  
+  // Verificar si el usuario es Super Admin (Diego)
+  const isSuperAdmin = user?.role === 'superadmin'
+  
+  // Para usuarios no-Super Admin, forzar el filtro a 'today' y mostrar dashboard completo
+  const effectiveDateFilter = isSuperAdmin ? dateFilter : 'today'
   const [allSales, setAllSales] = useState<Sale[]>([])
   const [allWarranties, setAllWarranties] = useState<any[]>([])
   const [allCredits, setAllCredits] = useState<any[]>([])
   const [allClients, setAllClients] = useState<any[]>([])
   const [allProducts, setAllProducts] = useState<any[]>([])
+  const [allPaymentRecords, setAllPaymentRecords] = useState<any[]>([])
 
   // Cargar todos los datos para el dashboard
   useEffect(() => {
@@ -56,7 +66,7 @@ export default function DashboardPage() {
         const { ClientsService } = await import('@/lib/clients-service')
         const { ProductsService } = await import('@/lib/products-service')
         
-        // Cargar ventas
+        // Cargar ventas completas (todas las páginas)
         let salesData: Sale[] = []
         let page = 1
         let hasMore = true
@@ -68,18 +78,20 @@ export default function DashboardPage() {
         }
         
         // Cargar otros datos
-        const [warrantiesResult, creditsResult, clientsResult, productsResult] = await Promise.all([
+        const [warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.all([
           WarrantyService.getAllWarranties(),
           CreditsService.getAllCredits(),
           ClientsService.getAllClients(),
-          ProductsService.getAllProducts()
+          ProductsService.getAllProducts(),
+          CreditsService.getAllPaymentRecords()
         ])
         
         setAllSales(salesData)
         setAllWarranties(warrantiesResult.warranties || [])
-        setAllCredits(creditsResult.credits || [])
+        setAllCredits(creditsResult || [])
         setAllClients(clientsResult.clients || [])
-        setAllProducts(productsResult.products || [])
+        setAllProducts(productsResult || [])
+        setAllPaymentRecords(paymentRecordsResult || [])
       } catch (error) {
         console.error('Error cargando datos del dashboard:', error)
         setAllSales(sales)
@@ -87,6 +99,14 @@ export default function DashboardPage() {
     }
     
     loadDashboardData()
+  }, [sales]) // Re-ejecutar cuando sales del contexto cambie
+  
+  // Log cuando sales del contexto cambie
+  useEffect(() => {
+    console.log('Dashboard: sales del contexto cambiaron:', {
+      salesCount: sales.length,
+      sales: sales.map(s => ({ id: s.id, total: s.total, paymentMethod: s.paymentMethod }))
+    })
   }, [sales])
 
   // Función para obtener fechas de filtro
@@ -126,20 +146,22 @@ export default function DashboardPage() {
 
   // Filtrar datos por período
   const filteredData = useMemo(() => {
-    if (dateFilter === 'all') {
+    if (effectiveDateFilter === 'all') {
       return {
         sales: allSales,
         warranties: allWarranties,
-        credits: allCredits
+        credits: allCredits,
+        paymentRecords: allPaymentRecords
       }
     }
 
-    const { startDate, endDate } = getDateRange(dateFilter)
+    const { startDate, endDate } = getDateRange(effectiveDateFilter)
     if (!startDate || !endDate) {
       return {
         sales: allSales,
         warranties: allWarranties,
-        credits: allCredits
+        credits: allCredits,
+        paymentRecords: allPaymentRecords
       }
     }
 
@@ -148,39 +170,92 @@ export default function DashboardPage() {
       return itemDate >= startDate && itemDate <= endDate
     }
 
+    const filterPaymentRecordsByDate = (payment: any) => {
+      const paymentDate = new Date(payment.paymentDate)
+      return paymentDate >= startDate && paymentDate <= endDate
+    }
+
     return {
       sales: allSales.filter(filterByDate),
       warranties: allWarranties.filter(filterByDate),
-      credits: allCredits.filter(filterByDate)
+      credits: allCredits.filter(filterByDate),
+      paymentRecords: allPaymentRecords.filter(filterPaymentRecordsByDate)
     }
-  }, [allSales, allWarranties, allCredits, dateFilter])
+  }, [allSales, allWarranties, allCredits, allPaymentRecords, effectiveDateFilter])
 
   // Calcular métricas del dashboard
   const metrics = useMemo(() => {
-    const { sales, warranties, credits } = filteredData
+    const { sales, warranties, credits, paymentRecords } = filteredData
+    
+    console.log('Dashboard metrics calculation:', {
+      salesCount: sales.length,
+      sales: sales.map(s => ({ id: s.id, total: s.total, paymentMethod: s.paymentMethod, createdAt: s.createdAt })),
+      paymentRecordsCount: paymentRecords.length,
+      paymentRecords: paymentRecords.map(p => ({ amount: p.amount, paymentMethod: p.paymentMethod, paymentDate: p.paymentDate })),
+      dateFilter: effectiveDateFilter,
+      allSalesCount: allSales.length,
+      allPaymentRecordsCount: allPaymentRecords.length
+    })
     
     // Ingresos por ventas (nuevas ventas)
     const salesRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
     
-    // Ingresos por abonos de créditos
-    const creditPaymentsRevenue = credits
-      .filter(credit => credit.payments && credit.payments.length > 0)
-      .reduce((sum, credit) => {
-        const totalPayments = credit.payments.reduce((paymentSum, payment) => paymentSum + payment.amount, 0)
-        return sum + totalPayments
-      }, 0)
+    // Filtrar abonos cancelados (los abonos de facturas canceladas se marcan como 'cancelled' en payment_records)
+    const validPaymentRecords = paymentRecords.filter(payment => {
+      // Excluir abonos que estén marcados como cancelados
+      return payment.status !== 'cancelled'
+    })
     
-    // Ingresos totales (ventas + abonos)
-    const totalRevenue = salesRevenue + creditPaymentsRevenue
+    // Ingresos por abonos de créditos (solo de facturas/créditos activos)
+    const creditPaymentsRevenue = validPaymentRecords.reduce((sum, payment) => sum + payment.amount, 0)
     
-    // Ingresos por método de pago
-    const cashRevenue = sales
-      .filter(s => s.paymentMethod === 'cash')
-      .reduce((sum, sale) => sum + sale.total, 0)
+    // Ingresos por método de pago (ventas + abonos válidos)
+    let cashRevenue = 0
+    let transferRevenue = 0
     
-    const transferRevenue = sales
-      .filter(s => s.paymentMethod === 'transfer')
-      .reduce((sum, sale) => sum + sale.total, 0)
+    // Procesar ventas
+    sales.forEach(sale => {
+      if (sale.paymentMethod === 'cash') {
+        cashRevenue += sale.total
+      } else if (sale.paymentMethod === 'transfer') {
+        transferRevenue += sale.total
+      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+        // Desglosar pagos mixtos
+        sale.payments.forEach(payment => {
+          if (payment.paymentType === 'cash') {
+            cashRevenue += payment.amount || 0
+          } else if (payment.paymentType === 'transfer') {
+            transferRevenue += payment.amount || 0
+          }
+        })
+      }
+    })
+    
+    // Agregar abonos de créditos
+    cashRevenue += validPaymentRecords
+      .filter(p => p.paymentMethod === 'cash')
+      .reduce((sum, payment) => sum + payment.amount, 0)
+    
+    transferRevenue += validPaymentRecords
+      .filter(p => p.paymentMethod === 'transfer')
+      .reduce((sum, payment) => sum + payment.amount, 0)
+
+    // Ingresos totales (solo efectivo + transferencia - dinero que realmente ha ingresado)
+    const totalRevenue = cashRevenue + transferRevenue
+    
+    console.log('Revenue calculations:', {
+      salesRevenue,
+      creditPaymentsRevenue,
+      cashRevenue,
+      transferRevenue,
+      totalRevenue,
+      validPaymentRecordsCount: validPaymentRecords.length,
+      mixedSales: sales.filter(s => s.paymentMethod === 'mixed').map(s => ({
+        id: s.id,
+        total: s.total,
+        payments: s.payments?.map(p => ({ type: p.paymentType, amount: p.amount }))
+      }))
+    })
 
     const creditRevenue = sales
       .filter(s => s.paymentMethod === 'credit')
@@ -216,31 +291,38 @@ export default function DashboardPage() {
     const completedWarranties = warranties.filter(w => w.status === 'completed').length
     const pendingWarranties = warranties.filter(w => w.status === 'pending').length
 
-    // Créditos pendientes
-    const pendingCredits = credits.filter(c => c.status === 'pending')
-    const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.remainingAmount || credit.total), 0)
+    // Créditos pendientes y parciales (dinero afuera) - solo del período seleccionado
+    const pendingCredits = credits.filter(c => c.status === 'pending' || c.status === 'partial')
+    const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
+    
+    console.log('Credits calculation:', {
+      allCreditsCount: credits.length,
+      pendingCreditsCount: pendingCredits.length,
+      totalDebt,
+      credits: credits.map(c => ({ id: c.id, status: c.status, pendingAmount: c.pendingAmount, totalAmount: c.totalAmount }))
+    })
 
-    // Clientes únicos
+    // Clientes únicos que han comprado en el período seleccionado
     const uniqueClients = new Set(sales.map(sale => sale.clientId)).size
 
+    // Facturas anuladas en el período seleccionado
+    const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
+
+    // Total de unidades en stock (local + bodega)
+    const totalStockUnits = allProducts.reduce((sum, p) => {
+      const localStock = p.stock?.store || 0;  // Corregido: usar 'store' en lugar de 'local'
+      const warehouseStock = p.stock?.warehouse || 0;
+      return sum + localStock + warehouseStock;
+    }, 0)
+    
     // Productos con stock bajo
-    const lowStockProducts = allProducts.filter(p => p.stock <= 5).length
+    const lowStockProducts = allProducts.filter(p => {
+      const localStock = p.stock?.store || 0;  // Corregido: usar 'store' en lugar de 'local'
+      const warehouseStock = p.stock?.warehouse || 0;
+      return (localStock + warehouseStock) <= 5 && (localStock + warehouseStock) > 0;
+    }).length
 
     // Datos para gráficos - Mejorado para mostrar todos los días del período
-    console.log('🔍 Datos de ventas para el gráfico:', {
-      totalSales: sales.length,
-      dateFilter,
-      sampleSales: sales.slice(0, 3).map(s => ({
-        id: s.id,
-        total: s.total,
-        createdAt: s.createdAt,
-        dateFormatted: new Date(s.createdAt).toLocaleDateString('es-CO', { 
-          weekday: 'short',
-          day: '2-digit', 
-          month: '2-digit' 
-        })
-      }))
-    })
 
     const salesByDay = sales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
       const date = new Date(sale.createdAt).toLocaleDateString('es-CO', { 
@@ -256,7 +338,6 @@ export default function DashboardPage() {
       return acc
     }, {})
 
-    console.log('📊 Ventas agrupadas por día:', salesByDay)
 
     // Generar todos los días del período seleccionado
     const generateAllDays = () => {
@@ -336,8 +417,9 @@ export default function DashboardPage() {
       totalDebt,
       pendingCreditsCount: pendingCredits.length,
       uniqueClients,
+      cancelledSales,
       lowStockProducts,
-      totalProducts: allProducts.length,
+      totalProducts: totalStockUnits,
       totalClients: allClients.length,
       salesChartData,
       paymentMethodData,
@@ -378,27 +460,37 @@ export default function DashboardPage() {
           
           {/* Filtros con estilo de dropdown */}
           <div className="flex items-center gap-3">
-            <div className="relative">
-              <select
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-                className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              >
-              {(['today', 'week', 'month', 'quarter', 'year', 'all'] as DateFilter[]).map((filter) => (
-                  <option key={filter} value={filter}>
-                  {getDateFilterLabel(filter)}
-                  </option>
-                ))}
-              </select>
-              <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
+            {isSuperAdmin ? (
+              <div className="relative">
+                <select
+                  value={dateFilter}
+                  onChange={(e) => setDateFilter(e.target.value as DateFilter)}
+                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                >
+                {(['today', 'week', 'month', 'quarter', 'year', 'all'] as DateFilter[]).map((filter) => (
+                    <option key={filter} value={filter}>
+                    {getDateFilterLabel(filter)}
+                    </option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
               </div>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                <Calendar className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  Vista del día actual
+                </span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
-        </div>
-      </div>
+
 
       {/* Métricas principales con estilo de cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -438,7 +530,7 @@ export default function DashboardPage() {
             }).format(metrics.cashRevenue)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
-            {metrics.knownPaymentMethodsTotal > 0 ? ((metrics.cashRevenue / metrics.knownPaymentMethodsTotal) * 100).toFixed(1) : 0}% de métodos conocidos
+            {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
 
@@ -458,7 +550,7 @@ export default function DashboardPage() {
             }).format(metrics.transferRevenue)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
-            {metrics.knownPaymentMethodsTotal > 0 ? ((metrics.transferRevenue / metrics.knownPaymentMethodsTotal) * 100).toFixed(1) : 0}% de métodos conocidos
+            {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
 
@@ -478,7 +570,7 @@ export default function DashboardPage() {
             }).format(metrics.totalDebt)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
-            {metrics.pendingCreditsCount} créditos pendientes
+            {metrics.pendingCreditsCount} créditos pendientes/parciales
           </p>
         </div>
       </div>
@@ -507,13 +599,13 @@ export default function DashboardPage() {
             <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
               <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Clientes Únicos</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Clientes que Compraron</span>
                     </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {metrics.uniqueClients}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
-            {metrics.totalClients} clientes totales
+            en el período seleccionado
                       </p>
                     </div>
 
@@ -533,30 +625,26 @@ export default function DashboardPage() {
           </p>
                 </div>
                 
-        {/* Promedio por Venta */}
+        {/* Facturas Anuladas */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-gray-100 dark:bg-gray-700 rounded-lg">
-              <BarChart3 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+              <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Promedio por Venta</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                      {new Intl.NumberFormat('es-CO', { 
-                        style: 'currency', 
-                        currency: 'COP',
-                        minimumFractionDigits: 0 
-            }).format(metrics.totalSales > 0 ? metrics.totalRevenue / metrics.totalSales : 0)}
+            {metrics.cancelledSales}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
-            Por transacción
+            de {metrics.totalSales} ventas totales
           </p>
-                  </div>
+        </div>
       </div>
 
       {/* Gráficos y estadísticas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Gráfico de ventas por día - Mejorado */}
+        {/* Gráfico de ventas por día */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
           <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">

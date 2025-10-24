@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { Warranty, WarrantyProduct, WarrantyStatusHistory } from '@/types'
+import { AuthService } from './auth-service'
 
 export class WarrantyService {
   // Obtener todas las garantías con paginación
@@ -268,6 +269,24 @@ export class WarrantyService {
       // Crear entrada en el historial de estados
       await this.addStatusHistory(data.id, null, warrantyData.status, 'Garantía creada', warrantyData.createdBy)
 
+      // Log de actividad
+      if (warrantyData.createdBy) {
+        await AuthService.logActivity(
+          warrantyData.createdBy,
+          'warranty_create',
+          'warranties',
+          {
+            description: `Nueva garantía creada: ${warrantyData.clientName} - Producto: ${warrantyData.productReceivedName}`,
+            warrantyId: data.id,
+            clientName: warrantyData.clientName,
+            productReceivedName: warrantyData.productReceivedName,
+            productDeliveredName: warrantyData.productDeliveredName || 'Sin producto de reemplazo',
+            status: warrantyData.status,
+            reason: warrantyData.reason
+          }
+        )
+      }
+
       // Crear entrada en warranty_products para el producto defectuoso
       await supabase
         .from('warranty_products')
@@ -362,6 +381,22 @@ export class WarrantyService {
 
       // Agregar al historial
       await this.addStatusHistory(warrantyId, previousStatus, newStatus, notes, userId)
+
+      // Log de actividad
+      if (userId) {
+        await AuthService.logActivity(
+          userId,
+          'warranty_status_update',
+          'warranties',
+          {
+            description: `Estado de garantía actualizado: ${previousStatus} → ${newStatus}`,
+            warrantyId: warrantyId,
+            previousStatus: previousStatus,
+            newStatus: newStatus,
+            notes: notes || 'Sin notas adicionales'
+          }
+        )
+      }
     } catch (error) {
       console.error('Error updating warranty status:', error)
       throw error

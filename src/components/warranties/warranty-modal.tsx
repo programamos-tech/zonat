@@ -16,8 +16,7 @@ import {
   AlertTriangle,
   CheckCircle,
   Lock,
-  Lightbulb,
-  DollarSign
+  Lightbulb
 } from 'lucide-react'
 import { Warranty, Sale, Client, Product } from '@/types'
 import { SalesService } from '@/lib/sales-service'
@@ -245,6 +244,14 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       newErrors.reason = 'El motivo de la garantía es requerido'
     }
 
+    if (!selectedReplacementProduct) {
+      newErrors.replacementProduct = 'Debe seleccionar un producto de reemplazo'
+    }
+
+    if (replacementQuantity <= 0) {
+      newErrors.replacementQuantity = 'La cantidad de reemplazo debe ser mayor a 0'
+    }
+
     // Validar vigencia de garantía
     if (selectedSale && !isWarrantyValid(selectedSale.createdAt)) {
       newErrors.warranty = 'La garantía ha vencido (más de 30 días)'
@@ -270,7 +277,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         productDeliveredName: selectedReplacementProduct?.name,
         reason: formData.reason,
         notes: `${formData.notes || ''}\n\nCantidades:\n- Defectuosos: ${defectiveQuantity}\n- A entregar: ${replacementQuantity}`.trim(),
-        status: selectedReplacementProduct ? 'completed' : 'pending'
+        status: 'completed'
       }
 
       await onSave(warrantyData)
@@ -768,6 +775,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <Lightbulb className="h-3 w-3 text-yellow-500" />
                           Busca el mismo producto o uno equivalente para reemplazar
                         </div>
+                        {errors.replacementProduct && (
+                          <p className="text-sm text-red-500">{errors.replacementProduct}</p>
+                        )}
                         {replacementResults.length > 0 && (
                           <div className="max-h-48 overflow-y-auto space-y-2">
                             {replacementResults.map((product) => (
@@ -777,6 +787,14 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                                   setSelectedReplacementProduct(product)
                                   setSearchReplacement('')
                                   setReplacementResults([])
+                                  // Limpiar error de producto de reemplazo
+                                  if (errors.replacementProduct) {
+                                    setErrors(prev => {
+                                      const newErrors = { ...prev }
+                                      delete newErrors.replacementProduct
+                                      return newErrors
+                                    })
+                                  }
                                 }}
                                 className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-colors"
                               >
@@ -798,41 +816,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         )}
                         <div className="flex gap-2">
                           <div className="flex-1">
-                            <Button
-                              onClick={hasExistingWarranty ? undefined : () => {
-                                // Validar que el motivo esté lleno
-                                if (!formData.reason.trim()) {
-                                  setErrors({ reason: 'El motivo de la garantía es obligatorio' })
-                                  return
-                                }
-                                
-                                // Crear garantía con devolución de dinero
-                                const warrantyData = {
-                                  originalSaleId: selectedSale.id,
-                                  clientId: selectedSale.clientId,
-                                  clientName: selectedSale.clientName,
-                                  productReceivedId: selectedProduct.id,
-                                  productReceivedName: selectedProduct.name,
-                                  productReceivedSerial: '',
-                                  productDeliveredId: undefined,
-                                  productDeliveredName: undefined,
-                                  reason: formData.reason,
-                                  status: 'completed' as const,
-                                  notes: `Devolución de dinero - No se encontraron productos alternativos. Cantidad defectuosa: ${defectiveQuantity}. Motivo: ${formData.reason}`,
-                                  defectiveQuantity,
-                                  replacementQuantity: 0
-                                }
-                                
-                                onSave(warrantyData)
-                                onClose()
-                              }}
-                              variant="outline"
-                              disabled={hasExistingWarranty}
-                              className={`w-full text-orange-600 border-orange-300 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-600 dark:hover:bg-orange-900/20 ${hasExistingWarranty ? 'opacity-50 cursor-not-allowed' : ''}`}
-                            >
-                              <DollarSign className="h-4 w-4 mr-2" />
-                              Devolver Dinero
-                            </Button>
                             {errors.reason && (
                               <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-2">
                                 <AlertTriangle className="h-4 w-4" />
@@ -866,6 +849,14 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             setShowReplacementSearch(true)
                             setSearchReplacement('')
                             setReplacementResults([])
+                            // Limpiar error de producto de reemplazo
+                            if (errors.replacementProduct) {
+                              setErrors(prev => {
+                                const newErrors = { ...prev }
+                                delete newErrors.replacementProduct
+                                return newErrors
+                              })
+                            }
                           }}
                           variant="outline"
                           size="sm"
@@ -893,7 +884,17 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         </label>
                         <div className="flex items-center gap-3">
                           <Button
-                            onClick={() => setReplacementQuantity(Math.max(1, replacementQuantity - 1))}
+                            onClick={() => {
+                              setReplacementQuantity(Math.max(1, replacementQuantity - 1))
+                              // Limpiar error de cantidad de reemplazo
+                              if (errors.replacementQuantity) {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev }
+                                  delete newErrors.replacementQuantity
+                                  return newErrors
+                                })
+                              }
+                            }}
                             variant="outline"
                             size="sm"
                             className="w-8 h-8 p-0"
@@ -905,11 +906,31 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             min="1"
                             max={defectiveQuantity}
                             value={replacementQuantity}
-                            onChange={(e) => setReplacementQuantity(Math.max(1, Math.min(defectiveQuantity, parseInt(e.target.value) || 1)))}
+                            onChange={(e) => {
+                              setReplacementQuantity(Math.max(1, Math.min(defectiveQuantity, parseInt(e.target.value) || 1)))
+                              // Limpiar error de cantidad de reemplazo
+                              if (errors.replacementQuantity) {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev }
+                                  delete newErrors.replacementQuantity
+                                  return newErrors
+                                })
+                              }
+                            }}
                             className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                           <Button
-                            onClick={() => setReplacementQuantity(Math.min(defectiveQuantity, replacementQuantity + 1))}
+                            onClick={() => {
+                              setReplacementQuantity(Math.min(defectiveQuantity, replacementQuantity + 1))
+                              // Limpiar error de cantidad de reemplazo
+                              if (errors.replacementQuantity) {
+                                setErrors(prev => {
+                                  const newErrors = { ...prev }
+                                  delete newErrors.replacementQuantity
+                                  return newErrors
+                                })
+                              }
+                            }}
                             variant="outline"
                             size="sm"
                             className="w-8 h-8 p-0"
@@ -920,6 +941,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             (máximo {defectiveQuantity} defectuosos)
                           </span>
                         </div>
+                        {errors.replacementQuantity && (
+                          <p className="text-sm text-red-500">{errors.replacementQuantity}</p>
+                        )}
                       </div>
                     </div>
                   </div>

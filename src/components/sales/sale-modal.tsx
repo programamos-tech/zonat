@@ -18,7 +18,8 @@ import {
   Building2,
   Shield,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  CheckCircle
 } from 'lucide-react'
 import { Sale, SaleItem, Product, Client, SalePayment } from '@/types'
 import { useClients } from '@/contexts/clients-context'
@@ -45,7 +46,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'credit' | 'transfer' | 'warranty' | 'mixed' | ''>('')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mixed' | ''>('')
   const [clientSearch, setClientSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
@@ -152,12 +153,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     switch (method) {
       case 'cash':
         return <DollarSign className="h-4 w-4" />
-      case 'credit':
-        return <CreditCardIcon className="h-4 w-4" />
       case 'transfer':
         return <Building2 className="h-4 w-4" />
-      case 'warranty':
-        return <Shield className="h-4 w-4" />
       case 'mixed':
         return <RefreshCw className="h-4 w-4" />
       case '':
@@ -171,12 +168,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     switch (method) {
       case 'cash':
         return 'Efectivo/Contado'
-      case 'credit':
-        return 'Crédito'
       case 'transfer':
         return 'Transferencia'
-      case 'warranty':
-        return 'Garantía'
       case 'mixed':
         return 'Mixto'
       case '':
@@ -259,8 +252,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     switch (type) {
       case 'cash': return 'Efectivo'
       case 'transfer': return 'Transferencia'
-      case 'credit': return 'Crédito'
-      case 'warranty': return 'Garantía'
       default: return type
     }
   }
@@ -270,6 +261,10 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   }
 
   const getRemainingAmount = () => {
+    // Si no hay productos seleccionados, no hay pago que completar
+    if (validProducts.length === 0) {
+      return total // Devolver el total (que será 0) para que no muestre "Pago completo"
+    }
     return total - getTotalMixedPayments()
   }
 
@@ -462,17 +457,14 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       }
     }
 
-    // Lógica especial para garantías
-    const isWarranty = paymentMethod === 'warranty'
-    
     const newSale: Omit<Sale, 'id' | 'createdAt'> = {
       clientId: selectedClient.id,
       clientName: selectedClient.name,
-      total: isWarranty ? 0 : total, // Garantías siempre en $0
-      subtotal: isWarranty ? 0 : subtotalAfterTotalDiscount, // Garantías siempre en $0
-      tax: isWarranty ? 0 : tax, // Garantías siempre en $0
-      discount: isWarranty ? 0 : totalDiscount, // Garantías sin descuentos
-      discountType: isWarranty ? 'amount' : totalDiscountType,
+      total: total,
+      subtotal: subtotalAfterTotalDiscount,
+      tax: tax,
+      discount: totalDiscount,
+      discountType: totalDiscountType,
       status: 'completed',
       paymentMethod,
       payments: paymentMethod === 'mixed' ? mixedPayments : undefined,
@@ -914,9 +906,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                       >
                         <option value="" className="bg-white dark:bg-gray-600 text-gray-500 dark:text-gray-400">Seleccionar método de pago</option>
                         <option value="cash" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Efectivo/Contado</option>
-                        <option value="credit" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Crédito</option>
                         <option value="transfer" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Transferencia</option>
-                        <option value="warranty" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Garantía</option>
                         <option value="mixed" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Mixto</option>
                       </select>
                       <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -991,8 +981,17 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                               </span>
                             </div>
                             <div className="flex justify-between items-center text-sm font-medium">
-                              <span className={getRemainingAmount() === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                                {getRemainingAmount() === 0 ? '✅ Pago completo' : `Faltante: $${getRemainingAmount().toLocaleString('es-CO')}`}
+                              <span className={getRemainingAmount() === 0 && validProducts.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
+                                {getRemainingAmount() === 0 && validProducts.length > 0 ? (
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle className="h-4 w-4 text-green-600" />
+                                    <span>Pago completo</span>
+                                  </div>
+                                ) : validProducts.length === 0 ? (
+                                  <span className="text-gray-500 dark:text-gray-400">Agregue productos para calcular el pago</span>
+                                ) : (
+                                  `Faltante: $${getRemainingAmount().toLocaleString('es-CO')}`
+                                )}
                               </span>
                             </div>
                           </div>
@@ -1018,21 +1017,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                     <DollarSign className="h-5 w-5 mr-2 text-blue-600" />
-                    {paymentMethod === 'warranty' ? '🛡️ Resumen de Garantía' : 'Resumen de Venta'}
+                    Resumen de Venta
                   </CardTitle>
-                  {paymentMethod === 'warranty' && (
-                    <p className="text-sm text-orange-600 dark:text-orange-400 font-medium">
-                      ⚠️ Garantía: Factura en $0 - Solo descuenta inventario
-                    </p>
-                  )}
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-2">
                     {/* Subtotal */}
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal:</span>
-                      <span className={`font-semibold ${paymentMethod === 'warranty' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
-                        {paymentMethod === 'warranty' ? '$0' : `$${subtotal.toLocaleString()}`}
+                      <span className="font-semibold text-gray-900 dark:text-white">
+                        ${subtotal.toLocaleString()}
                       </span>
                     </div>
 
@@ -1043,10 +1037,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                         <div className="flex items-center space-x-2">
                           <input
                             type="number"
-                            value={paymentMethod === 'warranty' ? 0 : (totalDiscount || '')}
+                            value={totalDiscount || ''}
                             onChange={(e) => setTotalDiscount(Number(e.target.value) || 0)}
-                            disabled={paymentMethod === 'warranty'}
-                            className={`w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600 ${paymentMethod === 'warranty' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
                             min="0"
                             step={totalDiscountType === 'percentage' ? '0.1' : '1'}
                             placeholder="0"
@@ -1054,8 +1047,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                           <select
                             value={totalDiscountType}
                             onChange={(e) => setTotalDiscountType(e.target.value as 'percentage' | 'amount')}
-                            disabled={paymentMethod === 'warranty'}
-                            className={`px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600 ${paymentMethod === 'warranty' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
                           >
                             <option value="percentage" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">%</option>
                             <option value="amount" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">$</option>
@@ -1085,17 +1077,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                         <div className="flex items-center space-x-2">
                           <input
                             type="checkbox"
-                            checked={paymentMethod === 'warranty' ? false : includeTax}
+                            checked={includeTax}
                             onChange={(e) => setIncludeTax(e.target.checked)}
-                            disabled={paymentMethod === 'warranty'}
-                            className={`h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600 ${paymentMethod === 'warranty' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
                           />
-                          <span className={`text-sm text-gray-700 dark:text-gray-300 ${paymentMethod === 'warranty' ? 'opacity-50' : ''}`}>
-                            {paymentMethod === 'warranty' ? 'No aplica en garantías' : 'Incluir IVA'}
+                          <span className="text-sm text-gray-700 dark:text-gray-300">
+                            Incluir IVA
                           </span>
                         </div>
                       </div>
-                      {includeTax && paymentMethod !== 'warranty' && (
+                      {includeTax && (
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-400">IVA calculado:</span>
                           <span className="font-medium text-gray-900 dark:text-white">${tax.toLocaleString()}</span>
@@ -1107,15 +1098,10 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                     <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
                       <div className="flex justify-between text-lg font-semibold">
                         <span className="text-gray-900 dark:text-white">Total:</span>
-                        <span className={`font-bold ${paymentMethod === 'warranty' ? 'text-orange-600 dark:text-orange-400' : 'text-gray-900 dark:text-white'}`}>
-                          {paymentMethod === 'warranty' ? '$0' : `$${total.toLocaleString()}`}
+                        <span className="font-bold text-gray-900 dark:text-white">
+                          ${total.toLocaleString()}
                         </span>
                       </div>
-                      {paymentMethod === 'warranty' && (
-                        <p className="text-xs text-orange-600 dark:text-orange-400 mt-1">
-                          🛡️ Garantía: Solo descuenta inventario, no genera ingresos
-                        </p>
-                      )}
                     </div>
                   </div>
                 </CardContent>
@@ -1136,13 +1122,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
           <Button
             onClick={handleSave}
             disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-            className={`font-medium px-4 py-2 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed ${
-              paymentMethod === 'warranty' 
-                ? 'bg-orange-600 hover:bg-orange-700 text-white' 
-                : 'bg-blue-600 hover:bg-blue-700 text-white'
-            }`}
+            className="font-medium px-4 py-2 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white"
           >
-            {paymentMethod === 'warranty' ? '🛡️ Crear Garantía' : 'Crear Venta'}
+            Crear Venta
           </Button>
         </div>
       </div>

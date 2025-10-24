@@ -164,28 +164,25 @@ export function ClientTable({
             </div>
           ) : (
             <div className="overflow-x-auto">
-              <table className="w-full">
+              <table className="w-full table-fixed">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Cliente
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Cédula/NIT
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Tipo
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Contacto
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Ubicación
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -195,57 +192,64 @@ export function ClientTable({
                     const TypeIcon = getTypeIcon(client.type)
                     return (
                       <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="flex-shrink-0 mr-3">
-                              <div className="w-8 h-8 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                                <TypeIcon className="h-4 w-4 text-gray-600 dark:text-gray-300" />
+                        <td className="px-3 py-3">
+                          <div className="flex items-center min-w-0">
+                            <div className="flex-shrink-0 mr-2">
+                              <div className="w-6 h-6 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
+                                <TypeIcon className="h-3 w-3 text-gray-600 dark:text-gray-300" />
                               </div>
                             </div>
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">{client.name}</div>
+                            <div className="min-w-0 flex-1">
+                              <div 
+                                className="text-sm font-medium text-gray-900 dark:text-white truncate" 
+                                title={client.name}
+                              >
+                                {client.name}
+                              </div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm">
-                            <div 
-                              className="font-mono text-gray-900 dark:text-white whitespace-nowrap overflow-hidden text-ellipsis cursor-help px-2 py-1 rounded" 
-                              title={`Cédula/NIT: ${client.document}`}
-                            >
-                              {client.document}
-                            </div>
+                        <td className="px-3 py-3">
+                          <div 
+                            className="text-sm font-mono text-gray-900 dark:text-white truncate cursor-help" 
+                            title={`Cédula/NIT: ${client.document}`}
+                          >
+                            {client.document}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={getTypeColor(client.type)}>
+                        <td className="px-3 py-3">
+                          <Badge className={`${getTypeColor(client.type)} text-sm px-2 py-1`}>
                             {getTypeLabel(client.type)}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm">
-                            <div className="text-gray-900 dark:text-white">{client.email}</div>
-                            <div className="text-gray-500 dark:text-gray-400">{client.phone}</div>
+                        <td className="px-3 py-3">
+                          <div className="text-sm min-w-0">
+                            <div 
+                              className="text-gray-900 dark:text-white truncate" 
+                              title={client.email || 'Sin email'}
+                            >
+                              {client.email || 'Sin email'}
+                            </div>
+                            <div 
+                              className="text-gray-500 dark:text-gray-400 truncate" 
+                              title={client.phone || 'Sin teléfono'}
+                            >
+                              {client.phone || 'Sin teléfono'}
+                            </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm">
-                            <div className="text-gray-900 dark:text-white">{client.address}</div>
-                            <div className="text-gray-500 dark:text-gray-400">{client.city}, {client.state}</div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <Badge className={getStatusColor(client.status)}>
+                        <td className="px-3 py-3">
+                          <Badge className={`${getStatusColor(client.status)} text-sm px-2 py-1`}>
                             {client.status === 'active' ? 'Activo' : 'Inactivo'}
                           </Badge>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-3 py-3">
+                          <div className="flex items-center gap-2">
                             <Button
                               size="sm"
                               variant="ghost"
                               onClick={() => onEdit(client)}
-                              className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
                               title="Editar cliente"
                             >
                               <Edit className="h-4 w-4" />
@@ -254,7 +258,7 @@ export function ClientTable({
                               size="sm"
                               variant="ghost"
                               onClick={() => onDelete(client)}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
                               title="Eliminar cliente"
                             >
                               <Trash2 className="h-4 w-4" />

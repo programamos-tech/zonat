@@ -306,8 +306,28 @@ export class SalesService {
           console.error('Error creating mixed payments:', paymentsError)
           throw paymentsError
         }
-      } else if (saleData.paymentMethod !== 'credit') {
-        // Crear pago único para métodos no mixtos
+      } else if (saleData.paymentMethod === 'credit') {
+        // Crear crédito para ventas a crédito
+        const { CreditsService } = await import('./credits-service')
+        
+        await CreditsService.createCredit({
+          saleId: sale.id,
+          clientId: saleData.clientId,
+          clientName: saleData.clientName,
+          invoiceNumber: invoiceNumber,
+          totalAmount: saleData.total,
+          paidAmount: 0,
+          pendingAmount: saleData.total,
+          status: 'pending',
+          dueDate: saleData.dueDate || null,
+          lastPaymentAmount: null,
+          lastPaymentDate: null,
+          lastPaymentUser: null,
+          createdBy: currentUserId,
+          createdByName: currentUser?.name || 'Usuario'
+        })
+      } else {
+        // Crear pago único para métodos no mixtos (cash, transfer, etc.)
         const { error: paymentError } = await supabase
           .from('payments')
           .insert({
@@ -328,17 +348,32 @@ export class SalesService {
       }
 
       // Log de actividad
+      const paymentMethodLabel = saleData.paymentMethod === 'credit' ? 'Venta a Crédito' : 
+                                 saleData.paymentMethod === 'cash' ? 'Venta en Efectivo' :
+                                 saleData.paymentMethod === 'transfer' ? 'Venta por Transferencia' :
+                                 saleData.paymentMethod === 'mixed' ? 'Venta Mixta' : 'Venta'
+      
+      // Usar acción diferente para ventas a crédito
+      const logAction = saleData.paymentMethod === 'credit' ? 'credit_sale_create' : 'sale_create'
+      
       await AuthService.logActivity(
         currentUserId,
-        'sale_create',
+        logAction,
         'sales',
         {
-          description: `Nueva venta creada: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`,
+          description: `${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`,
           saleId: sale.id,
           clientName: saleData.clientName,
           total: saleData.total,
           paymentMethod: saleData.paymentMethod,
-          itemsCount: saleData.items?.length || 0
+          itemsCount: saleData.items?.length || 0,
+          items: saleData.items?.map(item => ({
+            productName: item.productName,
+            productReference: item.productReferenceCode,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice
+          })) || []
         }
       )
 
@@ -450,12 +485,16 @@ export class SalesService {
 
       let totalRefund = 0
 
+      console.log('🔄 Iniciando cancelación de venta:', { id, reason, paymentMethod: sale.paymentMethod })
+      
       // Si es una venta a crédito, anular el crédito y sus abonos
       if (sale.paymentMethod === 'credit') {
+        console.log('💳 Es una venta a crédito, cancelando crédito...')
         const { CreditsService } = await import('./credits-service')
         const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
         
         if (credit) {
+          console.log('📋 Crédito encontrado, cancelando...')
           const currentUser = await AuthService.getCurrentUser()
           const cancelResult = await CreditsService.cancelCredit(
             credit.id, 
@@ -464,26 +503,35 @@ export class SalesService {
             currentUser?.name || 'Usuario'
           )
           totalRefund = cancelResult.totalRefund
+          console.log('✅ Crédito cancelado, reembolso:', totalRefund)
+        } else {
+          console.warn('⚠️ No se encontró crédito para la venta')
         }
-      }
-
-      // Devolver productos al stock
-      const stockReturnResults = []
-      for (const item of sale.items) {
-        try {
-          const result = await ProductsService.returnStockFromSale(item.productId, item.quantity)
-          stockReturnResults.push({ productId: item.productId, success: result })
-        } catch (error) {
-          console.error(`Error returning stock for product ${item.productId}:`, error)
-          stockReturnResults.push({ productId: item.productId, success: false, error })
+        // NO devolver stock aquí porque CreditsService.cancelCredit ya lo hace
+      } else {
+        console.log('💰 Es una venta normal, devolviendo stock...')
+        // Solo devolver productos al stock si NO es una venta a crédito
+        const stockReturnResults = []
+        for (const item of sale.items) {
+          try {
+            console.log('📦 Devolviendo stock para producto:', { productId: item.productId, quantity: item.quantity })
+            const result = await ProductsService.returnStockFromSale(item.productId, item.quantity, currentUserId)
+            stockReturnResults.push({ productId: item.productId, success: result })
+            console.log('✅ Stock devuelto:', { productId: item.productId, success: result })
+          } catch (error) {
+            console.error(`❌ Error returning stock for product ${item.productId}:`, error)
+            stockReturnResults.push({ productId: item.productId, success: false, error })
+          }
         }
-      }
-      
-      // Verificar si hubo errores en el retorno de stock
-      const failedReturns = stockReturnResults.filter(r => !r.success)
-      if (failedReturns.length > 0) {
-        console.warn('Some products could not be returned to stock:', failedReturns)
-        // Continuar con la anulación aunque algunos productos no se pudieron devolver
+        
+        // Verificar si hubo errores en el retorno de stock
+        const failedReturns = stockReturnResults.filter(r => !r.success)
+        if (failedReturns.length > 0) {
+          console.warn('⚠️ Algunos productos no pudieron ser devueltos al stock:', failedReturns)
+          // Continuar con la anulación aunque algunos productos no se pudieron devolver
+        } else {
+          console.log('✅ Todos los productos fueron devueltos al stock exitosamente')
+        }
       }
 
       // Anular la venta

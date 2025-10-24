@@ -135,7 +135,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const returnStockFromSale = async (productId: string, quantity: number): Promise<boolean> => {
-    const success = await ProductsService.returnStockFromSale(productId, quantity, currentUser?.id)
+    const success = await ProductsService.returnStockFromSale(productId, quantity)
     if (success) {
       // Actualizar el estado local - necesitamos refrescar para obtener los valores exactos
       await refreshProducts()

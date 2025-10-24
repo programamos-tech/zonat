@@ -187,7 +187,7 @@ export default function SaleDetailModal({
 
     // Validar que el motivo tenga al menos 10 caracteres
     if (cancelReason.trim().length < 10) {
-      setCancelSuccessMessage('El motivo de anulación debe tener al menos 10 caracteres para mayor claridad.')
+      setCancelSuccessMessage('⚠️ El motivo de anulación debe tener al menos 10 caracteres para mayor claridad. Por favor, proporciona una descripción más detallada.')
       return
     }
 
@@ -547,7 +547,8 @@ export default function SaleDetailModal({
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+            disabled={isCancelling}
+            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -555,7 +556,11 @@ export default function SaleDetailModal({
 
         {/* Mensaje de confirmación de anulación */}
         {cancelSuccessMessage && (
-          <div className="mx-6 mb-4 p-4 rounded-lg border-2 border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800">
+          <div className={`mx-6 mb-4 p-4 rounded-lg border-2 ${
+            cancelSuccessMessage.includes('exitosamente') 
+              ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800'
+              : 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800'
+          }`}>
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 {cancelSuccessMessage.includes('exitosamente') ? (
@@ -564,12 +569,16 @@ export default function SaleDetailModal({
                   </div>
                 ) : (
                   <div className="w-6 h-6 rounded-full bg-red-500 flex items-center justify-center">
-                    <span className="text-white text-sm">✕</span>
+                    <span className="text-white text-sm">⚠</span>
                   </div>
                 )}
               </div>
               <div className="ml-3">
-                <div className="text-sm font-medium text-green-800 dark:text-green-200">
+                <div className={`text-sm font-medium ${
+                  cancelSuccessMessage.includes('exitosamente')
+                    ? 'text-green-800 dark:text-green-200'
+                    : 'text-red-800 dark:text-red-200'
+                }`}>
                   {cancelSuccessMessage.split('\n').map((line, index) => (
                     <div key={index} className={index === 0 ? 'font-semibold' : ''}>
                       {line}
@@ -855,7 +864,8 @@ export default function SaleDetailModal({
                     value={cancelReason}
                     onChange={(e) => setCancelReason(e.target.value)}
                     placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600"
+                    disabled={isCancelling}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     rows={4}
                   />
                   <div className="mt-1 text-right">
@@ -868,13 +878,14 @@ export default function SaleDetailModal({
                   <Button
                     onClick={() => setShowCancelForm(false)}
                     variant="outline"
-                    className="border-red-500 text-red-400 hover:bg-red-900/20 hover:border-red-400"
+                    disabled={isCancelling}
+                    className="border-red-500 text-red-400 hover:bg-red-900/20 hover:border-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleCancel}
-                      disabled={!cancelReason.trim() || isCancelling}
+                      disabled={!cancelReason.trim() || cancelReason.trim().length < 10 || isCancelling}
                       className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
                   >
                       <AlertTriangle className="h-4 w-4 mr-2" />
@@ -894,7 +905,8 @@ export default function SaleDetailModal({
             {sale.status !== 'cancelled' && (
               <Button
                 onClick={handleShowCancelForm}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg"
+                disabled={isCancelling}
+                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Anular Factura
@@ -905,7 +917,7 @@ export default function SaleDetailModal({
           <div className="flex space-x-3">
             <Button
               onClick={handlePrint}
-              disabled={isLoadingPrint || !companyConfig || sale.status === 'cancelled'}
+              disabled={isLoadingPrint || !companyConfig || sale.status === 'cancelled' || isCancelling}
               className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600 hover:border-gray-700 font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoadingPrint ? (
@@ -922,7 +934,8 @@ export default function SaleDetailModal({
             </Button>
             <Button
               onClick={onClose}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2"
+              disabled={isCancelling}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cerrar
             </Button>

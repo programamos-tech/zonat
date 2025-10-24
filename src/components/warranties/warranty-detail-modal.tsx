@@ -299,7 +299,7 @@ export function WarrantyDetailModal({
                         <>
                           <Package className="h-12 w-12 text-gray-400 mx-auto mb-2" />
                           <p className="text-sm text-gray-500 dark:text-gray-400">
-                            {warranty.status === 'completed' ? 'Producto entregado' : 'Pendiente de entrega'}
+                            {warranty.productDeliveredId ? 'Producto entregado' : 'Sin producto de reemplazo'}
                           </p>
                         </>
                       )}
