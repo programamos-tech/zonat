@@ -129,7 +129,7 @@ export default function CreditsPage() {
         status: newStatus,
         lastPaymentAmount: paymentAmount,
         lastPaymentDate: paymentData.paymentDate!,
-        lastPaymentUser: paymentData.userName!
+        lastPaymentUser: paymentData.userId!
       })
 
       // Actualizar el estado local
