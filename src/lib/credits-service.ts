@@ -168,7 +168,7 @@ export class CreditsService {
       pending_amount: credit.pendingAmount - paymentData.amount!,
       last_payment_amount: paymentData.amount,
       last_payment_date: paymentData.paymentDate,
-      last_payment_user: paymentData.userName,
+      last_payment_user: paymentData.userId,
       status: (credit.pendingAmount - paymentData.amount! <= 0) ? 'completed' : 'partial'
     }
 
