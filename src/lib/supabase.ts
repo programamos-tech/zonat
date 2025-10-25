@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://xxpmgwnkrcltymnlbwog.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cG1nd25rcmNsdHltbmxid29nIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA4MTE3ODcsImV4cCI6MjA3NjM4Nzc4N30.LqN9gLEluoe2Xs8InT-xTUI2E6iWFbrXUdZxbfsmnu4'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh4cG1nd25rcmNsdHltbmxid29nIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDgxMTc4NywiZXhwIjoyMDc2Mzg3Nzg3fQ.3lqJOOXYSWdATcSTHXo5IjNqXxSqju8xAlTzZHwwJ9o'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bbkihtgpuzyywhmkwtgc.supabase.co'
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJia2lodGdwdXp5eXdobWt3dGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMjgwMzIsImV4cCI6MjA3NjkwNDAzMn0.IkllhPygyMvL1Wha1g803_0iTBzgc2RKLj8KLLGLiNg'
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJia2lodGdwdXp5eXdobWt3dGdjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTMyODAzMiwiZXhwIjoyMDc2OTA0MDMyfQ.IVwGBykWyy2UH724J1TKUnaq47ccIXVUOoPxI2E-ghw'
 
 // Validar que las variables estén definidas
 if (!supabaseUrl || !supabaseAnonKey) {

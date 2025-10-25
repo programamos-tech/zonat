@@ -45,7 +45,7 @@ export default function DashboardPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
   
   // Verificar si el usuario es Super Admin (Diego)
-  const isSuperAdmin = user?.role === 'superadmin'
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
   
   // Para usuarios no-Super Admin, forzar el filtro a 'today' y mostrar dashboard completo
   const effectiveDateFilter = isSuperAdmin ? dateFilter : 'today'

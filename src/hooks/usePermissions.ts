@@ -10,11 +10,14 @@ export function usePermissions() {
     if (!currentUser) return false
     
     // Super admin tiene todos los permisos
-    if (currentUser.role === 'superadmin') return true
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') return true
+    
+    // Verificar que el usuario tenga permisos
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return false
     
     // Buscar el módulo en los permisos del usuario
     const modulePermission = currentUser.permissions.find(p => p.module === module)
-    if (!modulePermission) return false
+    if (!modulePermission || !modulePermission.actions || !Array.isArray(modulePermission.actions)) return false
     
     // Verificar si tiene la acción específica
     return modulePermission.actions.includes(action)
@@ -43,16 +46,32 @@ export function usePermissions() {
   const getAccessibleModules = (): string[] => {
     if (!currentUser) return []
     
+    // Super admin tiene acceso a todos los módulos
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
+      return ['dashboard', 'products', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs']
+    }
+    
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
+    
     return currentUser.permissions
-      .filter(p => p.actions.includes('view'))
+      .filter(p => p.actions && Array.isArray(p.actions) && p.actions.includes('view'))
       .map(p => p.module)
   }
 
   const getModuleActions = (module: string): string[] => {
     if (!currentUser) return []
     
+    // Super admin tiene todas las acciones
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
+      return ['view', 'create', 'edit', 'delete', 'cancel']
+    }
+    
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
+    
     const modulePermission = currentUser.permissions.find(p => p.module === module)
-    return modulePermission ? modulePermission.actions : []
+    return (modulePermission && modulePermission.actions && Array.isArray(modulePermission.actions)) 
+      ? modulePermission.actions 
+      : []
   }
 
   return {
