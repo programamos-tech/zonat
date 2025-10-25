@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/components/theme-provider";
+// ThemeProvider removed
 import { AuthProvider } from "@/contexts/auth-context";
 import { ClientsProvider } from "@/contexts/clients-context";
 import { ProductsProvider } from "@/contexts/products-context";
@@ -43,25 +43,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <ThemeProvider>
-          <AuthProvider>
-            <ClientsProvider>
-              <ProductsProvider>
-                <CategoriesProvider>
-                  <SalesProvider>
-                    <WarrantyProvider>
-                      <GlobalLoading />
-                      <ConditionalLayout>
-                        {children}
-                      </ConditionalLayout>
-                      <Toaster />
-                    </WarrantyProvider>
-                  </SalesProvider>
-                </CategoriesProvider>
-              </ProductsProvider>
-            </ClientsProvider>
-          </AuthProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ClientsProvider>
+            <ProductsProvider>
+              <CategoriesProvider>
+                <SalesProvider>
+                  <WarrantyProvider>
+                    <GlobalLoading />
+                    <ConditionalLayout>
+                      {children}
+                    </ConditionalLayout>
+                    <Toaster />
+                  </WarrantyProvider>
+                </SalesProvider>
+              </CategoriesProvider>
+            </ProductsProvider>
+          </ClientsProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -209,7 +209,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       // El crédito ya fue creado automáticamente por SalesService.createSale()
       // Solo necesitamos notificar que se creó exitosamente
       onCreateCredit({
-        id: 'auto-created',
+        id: newSale.id, // Usar el ID de la venta como ID del crédito
         saleId: newSale.id,
         clientId: selectedClient.id,
         clientName: selectedClient.name,

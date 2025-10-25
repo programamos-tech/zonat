@@ -737,7 +737,7 @@ export default function DashboardPage() {
               <div className="p-2 bg-green-100 rounded-lg">
                 <CreditCard className="h-5 w-5 text-green-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900">Métodos de Pago</h2>
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Métodos de Pago</h2>
             </div>
           </div>
           <div className="p-6">
@@ -782,9 +782,9 @@ export default function DashboardPage() {
                       className="w-3 h-3 rounded-full" 
                       style={{ backgroundColor: item.color }}
                     ></div>
-                    <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
+                    <span className="text-gray-600 dark:text-white">{item.name}</span>
                   </div>
-                  <span className="font-medium text-gray-900">
+                  <span className="font-medium text-gray-900 dark:text-white">
                     {new Intl.NumberFormat('es-CO', { 
                       style: 'currency', 
                       currency: 'COP',

@@ -18,7 +18,7 @@ import {
 } from 'lucide-react'
 import { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
-import { ThemeToggle } from './theme-toggle'
+// ThemeToggle removed
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -124,13 +124,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               )
             })}
             
-            {/* Theme Toggle */}
-            <div className="px-3 py-4 border-t border-gray-200 dark:border-gray-700 mt-4">
-              <div className="text-xs text-gray-500 dark:text-gray-400 mb-3 font-medium uppercase tracking-wide">
-                Modo de Tema
-              </div>
-              <ThemeToggle />
-            </div>
+            {/* Theme Toggle removed */}
           </nav>
 
           {/* User info */}

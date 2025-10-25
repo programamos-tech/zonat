@@ -52,9 +52,23 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.classList.remove('light', 'dark')
     root.classList.add(resolvedTheme)
     
+    // Also set the data-theme attribute for better compatibility
+    root.setAttribute('data-theme', resolvedTheme)
+    
+    // Debug log
+    console.log('🎨 Theme changed:', { theme, resolvedTheme, classes: root.className })
+    
     // Save theme preference
     localStorage.setItem('theme', theme)
   }, [theme, resolvedTheme])
+
+  // Force theme application on mount
+  useEffect(() => {
+    const root = document.documentElement
+    root.classList.remove('light', 'dark')
+    root.classList.add(resolvedTheme)
+    root.setAttribute('data-theme', resolvedTheme)
+  }, [])
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>

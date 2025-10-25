@@ -22,7 +22,7 @@ export class CreditsService {
         created_by: creditData.createdBy,
         created_by_name: creditData.createdByName
       }])
-      .select()
+      .select('*')
       .single()
 
     if (error) throw error
@@ -57,6 +57,23 @@ export class CreditsService {
 
     if (error) throw error
 
+    // Obtener emails de usuarios únicos
+    const userIds = [...new Set(data.map(credit => credit.last_payment_user).filter(Boolean))]
+    const userEmails: { [key: string]: string } = {}
+    
+    if (userIds.length > 0) {
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', userIds)
+      
+      if (!usersError && users) {
+        users.forEach(user => {
+          userEmails[user.id] = user.email
+        })
+      }
+    }
+
     return data.map(credit => ({
       id: credit.id,
       saleId: credit.sale_id,
@@ -70,7 +87,7 @@ export class CreditsService {
       dueDate: credit.due_date,
       lastPaymentAmount: credit.last_payment_amount,
       lastPaymentDate: credit.last_payment_date,
-      lastPaymentUser: credit.last_payment_user,
+      lastPaymentUser: credit.last_payment_user ? (userEmails[credit.last_payment_user] || credit.last_payment_user) : null,
       createdBy: credit.created_by,
       createdByName: credit.created_by_name,
       createdAt: credit.created_at,
@@ -91,6 +108,20 @@ export class CreditsService {
       throw error
     }
 
+    // Obtener email del usuario si existe
+    let userEmail = data.last_payment_user
+    if (data.last_payment_user) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', data.last_payment_user)
+        .single()
+      
+      if (user) {
+        userEmail = user.email
+      }
+    }
+
     return {
       id: data.id,
       saleId: data.sale_id,
@@ -104,7 +135,7 @@ export class CreditsService {
       dueDate: data.due_date,
       lastPaymentAmount: data.last_payment_amount,
       lastPaymentDate: data.last_payment_date,
-      lastPaymentUser: data.last_payment_user,
+      lastPaymentUser: userEmail,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
@@ -125,10 +156,24 @@ export class CreditsService {
       .from('credits')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select('*')
       .single()
 
     if (error) throw error
+
+    // Obtener email del usuario si existe
+    let userEmail = data.last_payment_user
+    if (data.last_payment_user) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', data.last_payment_user)
+        .single()
+      
+      if (user) {
+        userEmail = user.email
+      }
+    }
 
     return {
       id: data.id,
@@ -143,7 +188,7 @@ export class CreditsService {
       dueDate: data.due_date,
       lastPaymentAmount: data.last_payment_amount,
       lastPaymentDate: data.last_payment_date,
-      lastPaymentUser: data.last_payment_user,
+      lastPaymentUser: userEmail,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
