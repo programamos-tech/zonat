@@ -4,8 +4,66 @@ import { v4 as uuidv4 } from 'uuid'
 import { AuthService } from './auth-service'
 
 export class ProductsService {
-  // Obtener todos los productos
-  static async getAllProducts(): Promise<Product[]> {
+  // Obtener todos los productos con paginación
+  static async getAllProducts(page: number = 1, limit: number = 10): Promise<{ products: Product[], total: number, hasMore: boolean }> {
+    try {
+      const from = (page - 1) * limit
+      const to = from + limit - 1
+
+      // Obtener productos paginados
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(from, to)
+
+      if (error) {
+        console.error('Error fetching products:', error)
+        return { products: [], total: 0, hasMore: false }
+      }
+
+      // Obtener el total de productos
+      const { count, error: countError } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+
+      if (countError) {
+        console.error('Error counting products:', countError)
+        return { products: [], total: 0, hasMore: false }
+      }
+
+      const products = data.map((product: any) => ({
+        id: product.id,
+        name: product.name,
+        description: product.description,
+        categoryId: product.category_id,
+        brand: product.brand,
+        reference: product.reference,
+        price: product.price,
+        cost: product.cost,
+        stock: {
+          warehouse: product.stock_warehouse || 0,
+          store: product.stock_store || 0,
+          total: (product.stock_warehouse || 0) + (product.stock_store || 0)
+        },
+        status: product.status,
+        createdAt: product.created_at,
+        updatedAt: product.updated_at
+      }))
+
+      return {
+        products,
+        total: count || 0,
+        hasMore: to < (count || 0) - 1
+      }
+    } catch (error) {
+      console.error('Error in getAllProducts:', error)
+      return { products: [], total: 0, hasMore: false }
+    }
+  }
+
+  // Obtener todos los productos (sin paginación - para compatibilidad)
+  static async getAllProductsLegacy(): Promise<Product[]> {
     try {
       const { data, error } = await supabase
         .from('products')
@@ -16,7 +74,6 @@ export class ProductsService {
         console.error('Error fetching products:', error)
         return []
       }
-
 
       return data.map((product: any) => ({
         id: product.id,
@@ -37,7 +94,7 @@ export class ProductsService {
         updatedAt: product.updated_at
       }))
     } catch (error) {
-      console.error('Error in getAllProducts:', error)
+      console.error('Error in getAllProductsLegacy:', error)
       return []
     }
   }
@@ -252,11 +309,19 @@ export class ProductsService {
   // Buscar productos
   static async searchProducts(query: string): Promise<Product[]> {
     try {
+      const cleanQuery = query.trim()
+      
+      if (!cleanQuery) {
+        return []
+      }
+
+      // Búsqueda optimizada con mejor rendimiento
       const { data, error } = await supabase
         .from('products')
-        .select('*')
-        .or(`name.ilike.%${query}%,reference.ilike.%${query}%,brand.ilike.%${query}%`)
+        .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, created_at')
+        .or(`name.ilike.%${cleanQuery}%,reference.ilike.%${cleanQuery}%,brand.ilike.%${cleanQuery}%`)
         .order('created_at', { ascending: false })
+        .limit(100) // Aumentar límite para mejor cobertura
 
       if (error) {
         console.error('Error searching products:', error)
@@ -279,7 +344,7 @@ export class ProductsService {
         },
         status: product.status,
         createdAt: product.created_at,
-        updatedAt: product.updated_at
+        updatedAt: product.created_at // Usar created_at como fallback
       }))
     } catch (error) {
       console.error('Error in searchProducts:', error)
@@ -573,6 +638,84 @@ export class ProductsService {
       return true
     } catch (error) {
       console.error('Error in updateProductStock:', error)
+      return false
+    }
+  }
+
+  // Importar productos masivamente desde CSV
+  static async importProductsFromCSV(products: any[]): Promise<boolean> {
+    try {
+      const user = await AuthService.getCurrentUser()
+      if (!user) {
+        console.error('Usuario no autenticado')
+        return false
+      }
+
+      // Verificar que no existan referencias duplicadas
+      const references = products.map(p => p.reference)
+      const { data: existingProducts, error: checkError } = await supabase
+        .from('products')
+        .select('reference')
+        .in('reference', references)
+
+      if (checkError) {
+        console.error('Error checking existing products:', checkError)
+        return false
+      }
+
+      const existingReferences = existingProducts?.map(p => p.reference) || []
+      const duplicateReferences = references.filter(ref => existingReferences.includes(ref))
+      
+      if (duplicateReferences.length > 0) {
+        console.error('Referencias duplicadas encontradas:', duplicateReferences)
+        return false
+      }
+
+      // Preparar datos para inserción
+      const productsToInsert = products.map(product => ({
+        id: uuidv4(),
+        name: product.name,
+        reference: product.reference,
+        description: product.name, // Usar el nombre como descripción
+        price: product.price,
+        cost: product.cost,
+        stock_warehouse: product.stock,
+        stock_store: 0, // Todo el stock va a bodega
+        category_id: null, // Sin categoría por defecto
+        brand: product.brand,
+        status: 'active',
+        created_at: new Date().toISOString()
+        // Removido updated_at ya que no existe en la tabla
+      }))
+
+      // Insertar productos en lotes de 100
+      const batchSize = 100
+      for (let i = 0; i < productsToInsert.length; i += batchSize) {
+        const batch = productsToInsert.slice(i, i + batchSize)
+        
+        const { error: insertError } = await supabase
+          .from('products')
+          .insert(batch)
+
+        if (insertError) {
+          console.error('Error inserting products batch:', insertError)
+          return false
+        }
+      }
+
+      // Registrar actividad
+      await AuthService.logActivity(
+        'products_import',
+        `Importación masiva de ${products.length} productos desde CSV`,
+        {
+          imported_count: products.length,
+          references: references.slice(0, 10) // Solo las primeras 10 referencias
+        }
+      )
+
+      return true
+    } catch (error) {
+      console.error('Error in importProductsFromCSV:', error)
       return false
     }
   }

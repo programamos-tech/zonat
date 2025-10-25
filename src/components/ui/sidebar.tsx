@@ -99,6 +99,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             <Logo size="lg" />
           </div>
 
+
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
@@ -126,6 +127,49 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             
             {/* Theme Toggle removed */}
           </nav>
+
+              {/* Programamos.st Footer */}
+              <div className="px-4 py-3 border-b" style={{ backgroundColor: '#f8f9fa', borderColor: '#e9ecef' }}>
+                <div 
+                  onClick={() => {
+                    const message = encodeURIComponent("Hola! Tengo un error o necesito soporte técnico en el sistema Zonat. ¿Podrías ayudarme?");
+                    const phoneNumber = "3002061711";
+                    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+                    window.open(whatsappUrl, '_blank');
+                  }}
+                  className="flex items-center gap-3 cursor-pointer rounded-lg p-3 transition-all duration-200"
+                  style={{ 
+                    backgroundColor: 'transparent',
+                    ':hover': { backgroundColor: '#e9ecef' }
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
+                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+                >
+                  <div className="flex-shrink-0">
+                    <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: '#230f49' }}>
+                      <img
+                        src="/logo_programamos.st.png"
+                        alt="Programamos.st"
+                        width={40}
+                        height={40}
+                        className="rounded"
+                        style={{ filter: 'brightness(0) invert(1)' }}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-xs font-medium leading-none" style={{ color: '#6c757d' }}>
+                      ¿Tienes un error?
+                    </span>
+                    <span className="text-sm font-bold leading-none" style={{ color: '#230f49' }}>
+                      Da click aquí
+                    </span>
+                    <span className="text-xs font-light leading-none mt-1" style={{ color: '#6c757d' }}>
+                      programamos.st
+                    </span>
+                  </div>
+                </div>
+              </div>
 
           {/* User info */}
           <div className="p-4 bg-gray-50 dark:bg-gray-700">

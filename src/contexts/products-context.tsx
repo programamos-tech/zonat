@@ -8,15 +8,22 @@ import { useAuth } from './auth-context'
 interface ProductsContextType {
   products: Product[]
   loading: boolean
+  currentPage: number
+  totalProducts: number
+  hasMore: boolean
+  isSearching: boolean
   createProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>
   updateProduct: (id: string, updates: Partial<Product>) => Promise<boolean>
   deleteProduct: (id: string) => Promise<boolean>
   searchProducts: (searchTerm: string) => Promise<Product[]>
+  clearSearch: () => Promise<void>
   refreshProducts: () => Promise<void>
+  goToPage: (page: number) => Promise<void>
   transferStock: (productId: string, from: 'warehouse' | 'store', to: 'warehouse' | 'store', quantity: number) => Promise<boolean>
   adjustStock: (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => Promise<boolean>
   deductStockForSale: (productId: string, quantity: number) => Promise<boolean>
   returnStockFromSale: (productId: string, quantity: number) => Promise<boolean>
+  importProductsFromCSV: (products: any[]) => Promise<boolean>
 }
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined)
@@ -24,23 +31,31 @@ const ProductsContext = createContext<ProductsContextType | undefined>(undefined
 export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalProducts, setTotalProducts] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const { user: currentUser } = useAuth()
 
-  const refreshProducts = useCallback(async () => {
+  const refreshProducts = async () => {
     setLoading(true)
     try {
-      const fetchedProducts = await ProductsService.getAllProducts()
-      setProducts(fetchedProducts)
+      const result = await ProductsService.getAllProducts(1, 10)
+      setProducts(result.products)
+      setCurrentPage(1)
+      setTotalProducts(result.total)
+      setHasMore(result.hasMore)
+      setIsSearching(false)
     } catch (error) {
       console.error('Error loading products:', error)
     } finally {
       setLoading(false)
     }
-  }, [])
+  }
 
   useEffect(() => {
     refreshProducts()
-  }, [refreshProducts])
+  }, []) // Empty dependency array to run only once on mount
 
   const createProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     const newProduct = await ProductsService.createProduct(productData, currentUser?.id)
@@ -72,11 +87,58 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const searchProducts = async (searchTerm: string): Promise<Product[]> => {
+    if (!searchTerm.trim()) {
+      await clearSearch()
+      return []
+    }
+    
     setLoading(true)
-    const results = await ProductsService.searchProducts(searchTerm)
-    setProducts(results)
-    setLoading(false)
-    return results
+    setIsSearching(true)
+    
+    try {
+      const results = await ProductsService.searchProducts(searchTerm)
+      setProducts(results)
+      setCurrentPage(1) // Resetear a página 1 en búsquedas
+      setLoading(false)
+      return results
+    } catch (error) {
+      console.error('Search error:', error)
+      setLoading(false)
+      return []
+    }
+  }
+
+  const clearSearch = async (): Promise<void> => {
+    setIsSearching(false)
+    try {
+      setLoading(true)
+      const result = await ProductsService.getAllProducts(1, 10)
+      setProducts(result.products)
+      setCurrentPage(1)
+      setTotalProducts(result.total)
+      setHasMore(result.hasMore)
+    } catch (error) {
+      console.error('Error loading products:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const goToPage = async (page: number) => {
+    if (page >= 1 && page <= Math.ceil(totalProducts / 10) && !loading) {
+      try {
+        setLoading(true)
+        const result = await ProductsService.getAllProducts(page, 10)
+        setProducts(result.products)
+        setCurrentPage(page)
+        setTotalProducts(result.total)
+        setHasMore(result.hasMore)
+      } catch (error) {
+        console.error('Error loading products:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
   }
 
   const transferStock = async (productId: string, from: 'warehouse' | 'store', to: 'warehouse' | 'store', quantity: number): Promise<boolean> => {
@@ -143,20 +205,37 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     return success
   }
 
+  const importProductsFromCSV = async (products: any[]): Promise<boolean> => {
+    const success = await ProductsService.importProductsFromCSV(products)
+    if (success) {
+      await refreshProducts()
+    }
+    return success
+  }
+
+  const contextValue = {
+    products, 
+    loading, 
+    currentPage: currentPage || 1,
+    totalProducts,
+    hasMore,
+    isSearching,
+    createProduct, 
+    updateProduct, 
+    deleteProduct, 
+    searchProducts, 
+    clearSearch,
+    refreshProducts,
+    goToPage,
+    transferStock,
+    adjustStock,
+    deductStockForSale,
+    returnStockFromSale,
+    importProductsFromCSV
+  }
+
   return (
-    <ProductsContext.Provider value={{ 
-      products, 
-      loading, 
-      createProduct, 
-      updateProduct, 
-      deleteProduct, 
-      searchProducts, 
-      refreshProducts,
-      transferStock,
-      adjustStock,
-      deductStockForSale,
-      returnStockFromSale
-    }}>
+    <ProductsContext.Provider value={contextValue}>
       {children}
     </ProductsContext.Provider>
   )

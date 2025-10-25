@@ -2,25 +2,15 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import { CreditCard, DollarSign, Calendar, User, Receipt } from 'lucide-react'
+import { 
+  X, 
+  DollarSign, 
+  CreditCard, 
+  Receipt, 
+  User,
+  Calendar
+} from 'lucide-react'
 import { Credit, PaymentRecord } from '@/types'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -150,13 +140,6 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
     resetForm()
   }
 
-  const handleAmountChange = (value: string) => {
-    setFormData(prev => ({ ...prev, amount: value }))
-    if (errors.amount) {
-      setErrors(prev => ({ ...prev, amount: '' }))
-    }
-  }
-
   const handlePaymentMethodChange = (value: 'cash' | 'transfer' | 'mixed') => {
     setFormData(prev => ({ 
       ...prev, 
@@ -167,163 +150,207 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
     setErrors({})
   }
 
-  if (!credit) return null
+  if (!isOpen || !credit) return null
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="bg-pink-50 dark:bg-pink-900/20 p-6 -m-6 mb-6">
-          <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-            <DollarSign className="h-6 w-6 mr-2 text-pink-600" />
-            Agregar Abono
-          </DialogTitle>
-          <DialogDescription className="text-gray-600 dark:text-gray-300 mt-2">
-            Registra un nuevo abono para el crédito seleccionado.
-          </DialogDescription>
-        </DialogHeader>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información del Crédito */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-            <CardHeader className="flex items-center space-x-3 pb-3">
-              <Receipt className="h-5 w-5 text-pink-600" />
-              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-                Información del Crédito
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Cliente:</span>
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {credit.clientName}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Factura:</span>
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {credit.invoiceNumber}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Total:</span>
-                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                    ${credit.totalAmount.toLocaleString('es-CO')}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-sm text-gray-600 dark:text-gray-300">Saldo Pendiente:</span>
-                  <div className="text-sm font-semibold text-red-600 dark:text-red-400">
-                    ${credit.pendingAmount.toLocaleString('es-CO')}
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Detalles del Abono */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-            <CardHeader className="flex items-center space-x-3 pb-3">
-              <CreditCard className="h-5 w-5 text-pink-600" />
-              <CardTitle className="text-lg font-semibold text-gray-900 dark:text-white">
-                Detalles del Abono
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Monto del Abono *</Label>
-                <Input
-                  id="amount"
-                  type="text"
-                  value={formData.amount}
-                  onChange={(e) => handleNumberChange('amount', e.target.value)}
-                  placeholder="0"
-                  className={errors.amount ? 'border-red-500' : ''}
-                />
-                {errors.amount && (
-                  <p className="text-sm text-red-500">{errors.amount}</p>
-                )}
-                <p className="text-xs text-gray-500">
-                  Máximo: ${credit.pendingAmount.toLocaleString('es-CO')}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="paymentMethod">Método de Pago *</Label>
-                <Select value={formData.paymentMethod} onValueChange={handlePaymentMethodChange}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="cash">Efectivo</SelectItem>
-                    <SelectItem value="transfer">Transferencia</SelectItem>
-                    <SelectItem value="mixed">Mixto (Efectivo + Transferencia)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {formData.paymentMethod === 'mixed' && (
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="cashAmount">Monto en Efectivo *</Label>
-                    <Input
-                      id="cashAmount"
-                      type="text"
-                      value={formData.cashAmount}
-                      onChange={(e) => handleNumberChange('cashAmount', e.target.value)}
-                      placeholder="0"
-                      className={errors.cashAmount ? 'border-red-500' : ''}
-                    />
-                    {errors.cashAmount && (
-                      <p className="text-sm text-red-500">{errors.cashAmount}</p>
-                    )}
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="transferAmount">Monto por Transferencia *</Label>
-                    <Input
-                      id="transferAmount"
-                      type="text"
-                      value={formData.transferAmount}
-                      onChange={(e) => handleNumberChange('transferAmount', e.target.value)}
-                      placeholder="0"
-                      className={errors.transferAmount ? 'border-red-500' : ''}
-                    />
-                    {errors.transferAmount && (
-                      <p className="text-sm text-red-500">{errors.transferAmount}</p>
-                    )}
-                  </div>
-                  {errors.mixed && (
-                    <p className="text-sm text-red-500 col-span-2">{errors.mixed}</p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label htmlFor="description">Observaciones (Opcional)</Label>
-                <Textarea
-                  id="description"
-                  value={formData.description}
-                  onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                  placeholder="Agregar observaciones sobre el abono..."
-                  rows={3}
-                />
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="flex justify-end space-x-3 pt-4">
-            <Button type="button" variant="outline" onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button 
-              type="submit" 
-              className="bg-pink-600 hover:bg-pink-700 text-white"
-            >
-              Registrar Abono
-            </Button>
+    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+        {/* Header */}
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20">
+          <div className="flex items-center gap-3">
+            <DollarSign className="h-8 w-8 text-pink-600" />
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                Agregar Abono
+              </h2>
+              <p className="text-gray-600 dark:text-gray-300">
+                Registra un nuevo abono para el crédito seleccionado.
+              </p>
+            </div>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+          <Button
+            onClick={handleClose}
+            variant="ghost"
+            size="sm"
+            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto p-6">
+          <div className="space-y-6">
+            {/* Información del Crédito */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <Receipt className="h-5 w-5 text-pink-600" />
+                  Información del Crédito
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Cliente:
+                    </label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {credit.clientName}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Factura:
+                    </label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {credit.invoiceNumber}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Total:
+                    </label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      ${credit.totalAmount.toLocaleString('es-CO')}
+                    </p>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Saldo Pendiente:
+                    </label>
+                    <p className="text-lg font-semibold text-red-600">
+                      ${credit.pendingAmount.toLocaleString('es-CO')}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Detalles del Abono */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-pink-600" />
+                  Detalles del Abono
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Monto del Abono *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.amount}
+                    onChange={(e) => handleNumberChange('amount', e.target.value)}
+                    placeholder="0"
+                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                      errors.amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    }`}
+                  />
+                  {errors.amount && (
+                    <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
+                  )}
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    Máximo: ${credit.pendingAmount.toLocaleString('es-CO')}
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Método de Pago *
+                  </label>
+                  <select
+                    value={formData.paymentMethod}
+                    onChange={(e) => handlePaymentMethodChange(e.target.value as 'cash' | 'transfer' | 'mixed')}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="cash">Efectivo</option>
+                    <option value="transfer">Transferencia</option>
+                    <option value="mixed">Mixto (Efectivo + Transferencia)</option>
+                  </select>
+                </div>
+
+                {formData.paymentMethod === 'mixed' && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Monto en Efectivo *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.cashAmount}
+                        onChange={(e) => handleNumberChange('cashAmount', e.target.value)}
+                        placeholder="0"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                          errors.cashAmount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}
+                      />
+                      {errors.cashAmount && (
+                        <p className="text-sm text-red-500 mt-1">{errors.cashAmount}</p>
+                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Monto por Transferencia *
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.transferAmount}
+                        onChange={(e) => handleNumberChange('transferAmount', e.target.value)}
+                        placeholder="0"
+                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
+                          errors.transferAmount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        }`}
+                      />
+                      {errors.transferAmount && (
+                        <p className="text-sm text-red-500 mt-1">{errors.transferAmount}</p>
+                      )}
+                    </div>
+                    {errors.mixed && (
+                      <p className="text-sm text-red-500 col-span-2">{errors.mixed}</p>
+                    )}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Observaciones (Opcional)
+                  </label>
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                    placeholder="Agregar observaciones sobre el abono..."
+                    rows={3}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+          <Button
+            onClick={handleClose}
+            variant="outline"
+            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+          >
+            Cancelar
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            className="bg-pink-600 hover:bg-pink-700 text-white"
+          >
+            Registrar Abono
+          </Button>
+        </div>
+      </div>
+    </div>
   )
 }

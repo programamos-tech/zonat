@@ -6,6 +6,7 @@ import { ProductModal } from '@/components/products/product-modal'
 import { CategoryModal } from '@/components/categories/category-modal'
 import { StockTransferModal } from '@/components/products/stock-transfer-modal'
 import { StockAdjustmentModal } from '@/components/products/stock-adjustment-modal'
+import { CSVImportModal } from '@/components/products/csv-import-modal'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useProducts } from '@/contexts/products-context'
 import { useCategories } from '@/contexts/categories-context'
@@ -13,7 +14,7 @@ import { Product, Category, StockTransfer } from '@/types'
 import { toast } from 'sonner'
 
 export default function ProductsPage() {
-  const { products, loading, createProduct, updateProduct, deleteProduct, transferStock, adjustStock } = useProducts()
+  const { products, loading, currentPage, totalProducts, hasMore, isSearching, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, importProductsFromCSV, goToPage, searchProducts } = useProducts()
   const { categories, createCategory, toggleCategoryStatus, deleteCategory } = useCategories()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -25,6 +26,7 @@ export default function ProductsPage() {
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null)
+  const [isCSVImportModalOpen, setIsCSVImportModalOpen] = useState(false)
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product)
@@ -131,6 +133,14 @@ export default function ProductsPage() {
     setIsModalOpen(true)
   }
 
+  const handleCSVImport = () => {
+    setIsCSVImportModalOpen(true)
+  }
+
+  const handleImportProducts = async (products: any[]) => {
+    return await importProductsFromCSV(products)
+  }
+
   const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
     if (selectedProduct) {
       // Edit existing product
@@ -165,15 +175,23 @@ export default function ProductsPage() {
   return (
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <ProductTable
-                products={products}
-                categories={categories}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onCreate={handleCreate}
-                onManageCategories={handleManageCategories}
-                onStockAdjustment={handleStockAdjustment}
-                onStockTransfer={handleStockTransfer}
-              />
+        products={products}
+        categories={categories}
+        loading={loading}
+        currentPage={currentPage}
+        totalProducts={totalProducts}
+        hasMore={hasMore}
+        isSearching={isSearching}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onCreate={handleCreate}
+        onManageCategories={handleManageCategories}
+        onStockAdjustment={handleStockAdjustment}
+        onStockTransfer={handleStockTransfer}
+        onCSVImport={handleCSVImport}
+        onPageChange={goToPage}
+        onSearch={searchProducts}
+      />
 
       <ProductModal
         isOpen={isModalOpen}
@@ -230,6 +248,12 @@ export default function ProductsPage() {
                 confirmText="Eliminar"
                 cancelText="Cancelar"
                 type="danger"
+              />
+
+              <CSVImportModal
+                isOpen={isCSVImportModalOpen}
+                onClose={() => setIsCSVImportModalOpen(false)}
+                onImport={handleImportProducts}
               />
             </div>
           )

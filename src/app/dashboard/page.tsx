@@ -15,7 +15,8 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Activity,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -55,51 +56,89 @@ export default function DashboardPage() {
   const [allClients, setAllClients] = useState<any[]>([])
   const [allProducts, setAllProducts] = useState<any[]>([])
   const [allPaymentRecords, setAllPaymentRecords] = useState<any[]>([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+
+  // Función para cargar datos del dashboard
+  const loadDashboardData = async (showLoading = false) => {
+    try {
+      if (showLoading) {
+        setIsRefreshing(true)
+      }
+      console.log('🔄 Actualizando datos del dashboard...')
+      const { SalesService } = await import('@/lib/sales-service')
+      const { WarrantyService } = await import('@/lib/warranty-service')
+      const { CreditsService } = await import('@/lib/credits-service')
+      const { ClientsService } = await import('@/lib/clients-service')
+      const { ProductsService } = await import('@/lib/products-service')
+      
+      // Cargar ventas completas (todas las páginas)
+      let salesData: Sale[] = []
+      let page = 1
+      let hasMore = true
+      while (hasMore) {
+        const result = await SalesService.getAllSales(page, 50)
+        salesData = [...salesData, ...result.sales]
+        hasMore = result.hasMore
+        page++
+      }
+      
+      // Cargar otros datos
+      const [warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.all([
+        WarrantyService.getAllWarranties(),
+        CreditsService.getAllCredits(),
+        ClientsService.getAllClients(),
+        ProductsService.getAllProductsLegacy(), // Usar el método legacy que devuelve array
+        CreditsService.getAllPaymentRecords()
+      ])
+      
+      setAllSales(salesData)
+      setAllWarranties(warrantiesResult.warranties || [])
+      setAllCredits(creditsResult || [])
+      setAllClients(clientsResult.clients || [])
+      setAllProducts(productsResult || [])
+      setAllPaymentRecords(paymentRecordsResult || [])
+      setLastUpdated(new Date())
+      
+      console.log('✅ Dashboard actualizado correctamente')
+    } catch (error) {
+      console.error('❌ Error cargando datos del dashboard:', error)
+      setAllSales(sales)
+    } finally {
+      if (showLoading) {
+        setIsRefreshing(false)
+      }
+    }
+  }
 
   // Cargar todos los datos para el dashboard
   useEffect(() => {
-    const loadDashboardData = async () => {
-      try {
-        const { SalesService } = await import('@/lib/sales-service')
-        const { WarrantyService } = await import('@/lib/warranty-service')
-        const { CreditsService } = await import('@/lib/credits-service')
-        const { ClientsService } = await import('@/lib/clients-service')
-        const { ProductsService } = await import('@/lib/products-service')
-        
-        // Cargar ventas completas (todas las páginas)
-        let salesData: Sale[] = []
-        let page = 1
-        let hasMore = true
-        while (hasMore) {
-          const result = await SalesService.getAllSales(page, 50)
-          salesData = [...salesData, ...result.sales]
-          hasMore = result.hasMore
-          page++
-        }
-        
-        // Cargar otros datos
-        const [warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.all([
-          WarrantyService.getAllWarranties(),
-          CreditsService.getAllCredits(),
-          ClientsService.getAllClients(),
-          ProductsService.getAllProducts(),
-          CreditsService.getAllPaymentRecords()
-        ])
-        
-        setAllSales(salesData)
-        setAllWarranties(warrantiesResult.warranties || [])
-        setAllCredits(creditsResult || [])
-        setAllClients(clientsResult.clients || [])
-        setAllProducts(productsResult || [])
-        setAllPaymentRecords(paymentRecordsResult || [])
-      } catch (error) {
-        console.error('Error cargando datos del dashboard:', error)
-        setAllSales(sales)
-      }
-    }
-    
     loadDashboardData()
   }, [sales]) // Re-ejecutar cuando sales del contexto cambie
+
+  // Actualización automática cuando el usuario regresa a la página
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log('👁️ Usuario regresó a la página, actualizando dashboard...')
+        loadDashboardData(true) // Mostrar loading
+      }
+    }
+
+    const handleFocus = () => {
+      console.log('🎯 Ventana enfocada, actualizando dashboard...')
+      loadDashboardData(true) // Mostrar loading
+    }
+
+    // Escuchar cambios de visibilidad de la página
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    window.addEventListener('focus', handleFocus)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+      window.removeEventListener('focus', handleFocus)
+    }
+  }, [])
   
   // Log cuando sales del contexto cambie
   useEffect(() => {
@@ -455,7 +494,14 @@ export default function DashboardPage() {
             </div>
             <p className="text-gray-600 dark:text-gray-400 dark:text-gray-400 text-sm">
               Resumen ejecutivo y métricas de rendimiento
-          </p>
+            </p>
+            
+            {/* Indicador de última actualización */}
+            {lastUpdated && (
+              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Última actualización: {lastUpdated.toLocaleTimeString()}
+              </div>
+            )}
         </div>
           
           {/* Filtros con estilo de dropdown */}
@@ -487,6 +533,16 @@ export default function DashboardPage() {
                 </span>
               </div>
             )}
+            
+            {/* Botón de actualización */}
+            <button
+              onClick={() => loadDashboardData(true)}
+              disabled={isRefreshing}
+              className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg transition-colors"
+            >
+              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+              {isRefreshing ? 'Actualizando...' : 'Actualizar'}
+            </button>
           </div>
         </div>
       </div>

@@ -3,7 +3,6 @@
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/ui/sidebar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
-import { Footer } from '@/components/ui/footer'
 import { useState, useEffect } from 'react'
 
 interface ConditionalLayoutProps {
@@ -31,7 +30,6 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
             {children}
           </div>
         </main>
-        <Footer />
       </div>
     </ProtectedRoute>
   )

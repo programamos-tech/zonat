@@ -31,6 +31,8 @@ interface LogsTableProps {
   actionFilter?: string
   onActionFilterChange?: (action: string) => void
   onRefresh?: () => void
+  loadingMore?: boolean
+  hasMore?: boolean
 }
 
 export function LogsTable({ 
@@ -42,7 +44,9 @@ export function LogsTable({
   onModuleFilterChange,
   actionFilter = 'all',
   onActionFilterChange,
-  onRefresh
+  onRefresh,
+  loadingMore = false,
+  hasMore = true
 }: LogsTableProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
   const [localFilterType, setLocalFilterType] = useState(moduleFilter)
