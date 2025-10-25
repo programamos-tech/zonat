@@ -266,7 +266,7 @@ export class CreditsService {
       status: newStatus,
       lastPaymentAmount: paymentData.amount,
       lastPaymentDate: paymentData.paymentDate,
-      lastPaymentUser: paymentData.userName
+      lastPaymentUser: paymentData.userId
     })
 
     // Actualizar el estado de la venta si el crédito se completó
