@@ -1,36 +1,124 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Zonat - Sistema de Gestión de Ventas
 
-## Getting Started
+Sistema completo de gestión de ventas, inventario y créditos desarrollado con Next.js y Supabase.
 
-First, run the development server:
+## 🚀 Características
 
+- **Dashboard** con métricas en tiempo real
+- **Gestión de Ventas** (efectivo, transferencia, crédito)
+- **Control de Inventario** (stock local y bodega)
+- **Sistema de Créditos** con seguimiento de pagos
+- **Gestión de Clientes** y categorías
+- **Sistema de Garantías**
+- **Registro de Actividades** completo
+- **Control de Usuarios** con roles y permisos
+
+## 🛠️ Tecnologías
+
+- **Frontend**: Next.js 15, React, TypeScript
+- **Backend**: Supabase (PostgreSQL)
+- **Styling**: Tailwind CSS
+- **Autenticación**: Supabase Auth
+- **Deployment**: Vercel
+
+## 📋 Requisitos
+
+- Node.js 18+
+- npm o yarn
+- Cuenta de Supabase
+
+## 🚀 Instalación
+
+1. Clonar el repositorio
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/programamos-tech/zonat.git
+cd zonat
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Instalar dependencias
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Configurar variables de entorno
+```bash
+cp .env.example .env.local
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Ejecutar en desarrollo
+```bash
+npm run dev
+```
 
-## Learn More
+## 📁 Estructura del Proyecto
 
-To learn more about Next.js, take a look at the following resources:
+```
+src/
+├── app/                 # Páginas de Next.js
+├── components/          # Componentes React
+├── lib/                 # Servicios y utilidades
+├── hooks/               # Custom hooks
+└── types/               # Definiciones TypeScript
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+database/
+└── migrations/          # Scripts de migración de BD
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 🔧 Scripts Disponibles
 
-## Deploy on Vercel
+- `npm run dev` - Servidor de desarrollo
+- `npm run build` - Build de producción
+- `npm run start` - Servidor de producción
+- `npm run lint` - Linter
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## 👥 Roles de Usuario
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- **Super Admin**: Acceso completo al sistema
+- **Administrador**: Gestión completa excepto usuarios
+- **Vendedor**: Ventas y clientes
+- **Inventario**: Gestión de productos y stock
+
+## 📊 Dashboard
+
+El dashboard muestra métricas clave:
+- Total de ingresos (efectivo + transferencia)
+- Dinero pendiente (créditos)
+- Productos en stock
+- Facturas anuladas
+- Distribución de métodos de pago
+
+## 🔐 Seguridad
+
+- Autenticación con Supabase
+- Row Level Security (RLS) en base de datos
+- Validación de permisos por rol
+- Logs de todas las actividades
+
+## 📱 Responsive
+
+Diseño completamente responsive para:
+- Desktop
+- Tablet
+- Mobile
+
+## 🚀 Deployment
+
+El proyecto está configurado para deployment automático en Vercel desde la rama `main`.
+
+## 📝 Notas
+
+- Los scripts de migración están en `database/migrations/`
+- No ejecutar scripts de migración en producción sin revisión
+- Siempre hacer backup antes de cambios en BD
+
+## 🤝 Contribución
+
+1. Fork el proyecto
+2. Crear rama feature (`git checkout -b feature/nueva-funcionalidad`)
+3. Commit cambios (`git commit -m 'Agregar nueva funcionalidad'`)
+4. Push a la rama (`git push origin feature/nueva-funcionalidad`)
+5. Abrir Pull Request
+
+## 📄 Licencia
+
+Este proyecto es privado y pertenece a Programamos Tech.
