@@ -16,8 +16,8 @@ import {
   XCircle,
   Pause,
   Tag,
-  Upload,
-  X
+  X,
+  RefreshCw
 } from 'lucide-react'
 import { Product, Category } from '@/types'
 import {
@@ -41,7 +41,7 @@ interface ProductTableProps {
   onManageCategories: () => void
   onStockAdjustment?: (product: Product) => void
   onStockTransfer?: (product: Product) => void
-  onCSVImport?: () => void
+  onRefresh?: () => void
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Product[]>
 }
@@ -60,7 +60,7 @@ export function ProductTable({
   onManageCategories,
   onStockAdjustment,
   onStockTransfer,
-  onCSVImport,
+  onRefresh,
   onPageChange,
   onSearch
 }: ProductTableProps) {
@@ -247,19 +247,22 @@ export function ProductTable({
                   Nuevo Producto
                 </Button>
                 <Button 
-                  onClick={onCSVImport}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <Upload className="h-4 w-4 mr-2" />
-                  Importar
-                </Button>
-                <Button 
                   onClick={onManageCategories} 
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
                   <Tag className="h-4 w-4 mr-2" />
                   Categorías
                 </Button>
+                {onRefresh && (
+                  <Button 
+                    onClick={onRefresh}
+                    disabled={loading}
+                    className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white"
+                  >
+                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                    Actualizar
+                  </Button>
+                )}
               </div>
             </div>
           </CardHeader>

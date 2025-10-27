@@ -6,7 +6,6 @@ import { ProductModal } from '@/components/products/product-modal'
 import { CategoryModal } from '@/components/categories/category-modal'
 import { StockTransferModal } from '@/components/products/stock-transfer-modal'
 import { StockAdjustmentModal } from '@/components/products/stock-adjustment-modal'
-import { CSVImportModal } from '@/components/products/csv-import-modal'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useProducts } from '@/contexts/products-context'
 import { useCategories } from '@/contexts/categories-context'
@@ -14,7 +13,7 @@ import { Product, Category, StockTransfer } from '@/types'
 import { toast } from 'sonner'
 
 export default function ProductsPage() {
-  const { products, loading, currentPage, totalProducts, hasMore, isSearching, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, importProductsFromCSV, goToPage, searchProducts } = useProducts()
+  const { products, loading, currentPage, totalProducts, hasMore, isSearching, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, refreshProducts, goToPage, searchProducts } = useProducts()
   const { categories, createCategory, toggleCategoryStatus, deleteCategory } = useCategories()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -26,7 +25,6 @@ export default function ProductsPage() {
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null)
-  const [isCSVImportModalOpen, setIsCSVImportModalOpen] = useState(false)
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product)
@@ -133,13 +131,11 @@ export default function ProductsPage() {
     setIsModalOpen(true)
   }
 
-  const handleCSVImport = () => {
-    setIsCSVImportModalOpen(true)
+  const handleRefresh = async () => {
+    await refreshProducts()
+    toast.success('Productos actualizados')
   }
 
-  const handleImportProducts = async (products: any[]) => {
-    return await importProductsFromCSV(products)
-  }
 
   const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
     if (selectedProduct) {
@@ -188,7 +184,7 @@ export default function ProductsPage() {
         onManageCategories={handleManageCategories}
         onStockAdjustment={handleStockAdjustment}
         onStockTransfer={handleStockTransfer}
-        onCSVImport={handleCSVImport}
+        onRefresh={handleRefresh}
         onPageChange={goToPage}
         onSearch={searchProducts}
       />
@@ -250,11 +246,6 @@ export default function ProductsPage() {
                 type="danger"
               />
 
-              <CSVImportModal
-                isOpen={isCSVImportModalOpen}
-                onClose={() => setIsCSVImportModalOpen(false)}
-                onImport={handleImportProducts}
-              />
             </div>
           )
         }
