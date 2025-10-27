@@ -15,7 +15,8 @@ import {
   CheckCircle,
   AlertCircle,
   XCircle,
-  Plus
+  Plus,
+  Check
 } from 'lucide-react'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
@@ -24,25 +25,56 @@ interface CreditDetailModalProps {
   isOpen: boolean
   onClose: () => void
   credit: Credit | null
+  clientCredits?: Credit[]
   onAddPayment: (credit: Credit) => void
+  onViewSale?: (invoiceNumber: string) => void
 }
 
-export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: CreditDetailModalProps) {
+export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [], onAddPayment, onViewSale }: CreditDetailModalProps) {
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [selectedCreditId, setSelectedCreditId] = useState<string>('')
+  
+  console.log('CreditDetailModal renderizado con:', {
+    isOpen,
+    creditId: credit?.id,
+    clientCreditsCount: clientCredits.length,
+    selectedCreditId,
+    hasOnAddPayment: !!onAddPayment
+  })
+  
+  // Obtener el crédito actualmente seleccionado
+  const currentCredit = clientCredits.find(c => c.id === selectedCreditId) || credit
+  
+  console.log('Current credit:', currentCredit?.id, currentCredit?.invoiceNumber)
 
   useEffect(() => {
     if (isOpen && credit) {
-      loadPaymentHistory()
+      // Inicializar el crédito seleccionado
+      console.log('Modal abierto con crédito:', credit.id, credit.invoiceNumber)
+      setSelectedCreditId(credit.id)
     }
   }, [isOpen, credit])
+  
+  // Log cuando cambia currentCredit
+  useEffect(() => {
+    if (currentCredit) {
+      console.log('Current credit actualizado:', currentCredit.id, currentCredit.invoiceNumber)
+    }
+  }, [currentCredit])
+  
+  useEffect(() => {
+    if (isOpen && currentCredit) {
+      loadPaymentHistory()
+    }
+  }, [currentCredit])
 
   const loadPaymentHistory = async () => {
-    if (!credit) return
+    if (!currentCredit) return
     
     setIsLoading(true)
     try {
-      const history = await CreditsService.getPaymentHistory(credit.id)
+      const history = await CreditsService.getPaymentHistory(currentCredit.id)
       setPaymentHistory(history)
     } catch (error) {
       console.error('Error loading payment history:', error)
@@ -122,7 +154,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                 Detalles del Crédito
               </h2>
               <p className="text-gray-600 dark:text-gray-300">
-                #{credit.id.slice(-6)}
+                {currentCredit?.invoiceNumber}
               </p>
             </div>
           </div>
@@ -138,7 +170,90 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="space-y-6">
+            {clientCredits.length > 1 && (
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <User className="h-5 w-5 text-pink-600" />
+                    Todos los Créditos de {credit.clientName}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3 max-h-64 overflow-y-auto">
+                    {clientCredits.map((c) => {
+                      const isSelected = selectedCreditId === c.id
+                      // Determinar el color base según el estado
+      let baseBgColor = ''
+      let baseBorderColor = ''
+      
+      if (c.status === 'completed') {
+        baseBgColor = 'bg-green-50 dark:bg-green-900/20'
+        baseBorderColor = 'border-green-200 dark:border-green-800'
+      } else if (c.status === 'partial') {
+        baseBgColor = 'bg-yellow-50 dark:bg-yellow-900/20'
+        baseBorderColor = 'border-yellow-200 dark:border-yellow-800'
+      } else if (c.status === 'pending') {
+        baseBgColor = 'bg-blue-50 dark:bg-blue-900/20'
+        baseBorderColor = 'border-blue-200 dark:border-blue-800'
+      } else {
+        baseBgColor = 'bg-gray-50 dark:bg-gray-700'
+        baseBorderColor = 'border-gray-200 dark:border-gray-600'
+      }
+      
+      // Si está seleccionado, usar rosa
+      const bgColor = isSelected ? 'bg-pink-100 dark:bg-pink-900/30' : baseBgColor
+      const borderColor = isSelected ? 'border-pink-400 dark:border-pink-600 border-2' : baseBorderColor
+      
+                      return (
+                        <div 
+                          key={c.id} 
+                          onClick={() => setSelectedCreditId(c.id)}
+                          className={`border rounded-lg p-3 cursor-pointer transition-all relative ${
+                            isSelected
+                              ? 'bg-pink-100 dark:bg-pink-900/30 border-pink-400 dark:border-pink-600 border-2 shadow-md'
+                              : `${baseBgColor} ${baseBorderColor} hover:border-gray-300`
+                          }`}
+                        >
+                          {isSelected && (
+                            <div className="absolute top-2 right-2 bg-pink-600 text-white rounded-full p-1">
+                              <Check className="h-4 w-4" />
+                            </div>
+                          )}
+                          <div className="flex items-center justify-between mb-2">
+                            <div>
+                              <div className="font-semibold text-gray-900 dark:text-white">
+                                Factura: {c.invoiceNumber}
+                              </div>
+                              <Badge className={`${getStatusColor(c.status)} flex items-center gap-1 w-fit mt-1`}>
+                                {getStatusIcon(c.status)}
+                                {c.status === 'completed' ? 'Completado' :
+                                 c.status === 'partial' ? 'Parcial' :
+                                 c.status === 'pending' ? 'Pendiente' :
+                                 c.status === 'overdue' ? 'Vencido' :
+                                 c.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
+                              </Badge>
+                            </div>
+                            <div className="text-right">
+                              <div className="text-sm text-gray-600 dark:text-gray-400">
+                                Total: ${c.totalAmount.toLocaleString('es-CO')}
+                              </div>
+                              <div className={`text-sm font-semibold ${
+                                c.pendingAmount === 0 ? 'text-green-600' : 'text-red-600'
+                              }`}>
+                                Pendiente: ${c.pendingAmount.toLocaleString('es-CO')}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Información del Crédito */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
@@ -154,7 +269,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                       Factura:
                     </label>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {credit.invoiceNumber}
+                      {currentCredit?.invoiceNumber}
                     </p>
                   </div>
                   
@@ -163,7 +278,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                       Cliente:
                     </label>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {credit.clientName}
+                      {currentCredit?.clientName}
                     </p>
                   </div>
                   
@@ -172,7 +287,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                       $ Monto Total:
                     </label>
                     <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      ${credit.totalAmount.toLocaleString('es-CO')}
+                      ${currentCredit?.totalAmount?.toLocaleString('es-CO')}
                     </p>
                   </div>
                   
@@ -180,13 +295,13 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Estado:
                     </label>
-                    <Badge className={`${getStatusColor(credit.status)} flex items-center gap-1 w-fit`}>
-                      {getStatusIcon(credit.status)}
-                      {credit.status === 'completed' ? 'Completado' :
-                       credit.status === 'partial' ? 'Parcial' :
-                       credit.status === 'pending' ? 'Pendiente' :
-                       credit.status === 'overdue' ? 'Vencido' :
-                       credit.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
+                    <Badge className={`${getStatusColor(currentCredit?.status || 'pending')} flex items-center gap-1 w-fit`}>
+                      {getStatusIcon(currentCredit?.status || 'pending')}
+                      {currentCredit?.status === 'completed' ? 'Completado' :
+                       currentCredit?.status === 'partial' ? 'Parcial' :
+                       currentCredit?.status === 'pending' ? 'Pendiente' :
+                       currentCredit?.status === 'overdue' ? 'Vencido' :
+                       currentCredit?.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
                     </Badge>
                   </div>
                   
@@ -195,7 +310,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                       $ Pagado:
                     </label>
                     <p className="text-lg font-semibold text-green-600">
-                      ${credit.paidAmount.toLocaleString('es-CO')}
+                      ${currentCredit?.paidAmount?.toLocaleString('es-CO')}
                     </p>
                   </div>
                   
@@ -203,29 +318,31 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       $ Pendiente:
                     </label>
-                    <p className="text-lg font-semibold text-red-600">
-                      ${credit.pendingAmount.toLocaleString('es-CO')}
+                    <p className={`text-lg font-semibold ${
+                      currentCredit?.pendingAmount === 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      ${currentCredit?.pendingAmount?.toLocaleString('es-CO')}
                     </p>
                   </div>
                   
-                  {credit.dueDate && (
+                  {currentCredit?.dueDate && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Fecha de Vencimiento:
                       </label>
                       <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {new Date(credit.dueDate).toLocaleDateString('es-CO')}
+                        {new Date(currentCredit.dueDate).toLocaleDateString('es-CO')}
                       </p>
                     </div>
                   )}
                   
-                  {credit.createdByName && (
+                  {currentCredit?.createdByName && (
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                         Registrado por:
                       </label>
                       <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {credit.createdByName}
+                        {currentCredit.createdByName}
                       </p>
                     </div>
                   )}
@@ -242,17 +359,26 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                     Historial de Abonos
                   </CardTitle>
                   <Button 
-                    onClick={() => onAddPayment(credit)}
-                    disabled={credit?.status === 'cancelled'}
+                    onClick={() => {
+                      console.log('Botón Nuevo Abono clickeado')
+                      console.log('Current credit:', currentCredit)
+                      if (currentCredit) {
+                        console.log('Llamando onAddPayment con:', currentCredit.id, currentCredit.invoiceNumber)
+                        onAddPayment(currentCredit)
+                      } else {
+                        console.error('No hay crédito seleccionado')
+                      }
+                    }}
+                    disabled={!currentCredit || currentCredit?.status === 'cancelled'}
                     size="sm"
                     className={`${
-                      credit?.status === 'cancelled' 
+                      !currentCredit || currentCredit?.status === 'cancelled' 
                         ? 'bg-gray-400 hover:bg-gray-400 text-gray-200 cursor-not-allowed' 
                         : 'bg-pink-600 hover:bg-pink-700 text-white'
                     }`}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {credit?.status === 'cancelled' ? 'Crédito Anulado' : 'Nuevo Abono'}
+                    {!currentCredit || currentCredit?.status === 'cancelled' ? 'Crédito Anulado' : 'Nuevo Abono'}
                   </Button>
                 </div>
               </CardHeader>
@@ -266,8 +392,15 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                     <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                     <p className="text-gray-500 dark:text-gray-400 mb-4">No hay abonos registrados</p>
                     <Button 
-                      onClick={() => onAddPayment(credit)}
-                      className="bg-pink-600 hover:bg-pink-700 text-white"
+                      onClick={() => {
+                        if (currentCredit) {
+                          onAddPayment(currentCredit)
+                        } else {
+                          console.error('No hay crédito seleccionado')
+                        }
+                      }}
+                      disabled={!currentCredit}
+                      className="bg-pink-600 hover:bg-pink-700 text-white disabled:bg-gray-400 disabled:hover:bg-gray-400"
                     >
                       <Plus className="h-4 w-4 mr-2" />
                       Registrar Primer Abono
@@ -277,14 +410,14 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {paymentHistory.map((payment) => (
                       <div key={payment.id} className={`border rounded-lg p-3 ${
-                        credit?.status === 'cancelled' 
+                        currentCredit?.status === 'cancelled' 
                           ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
                           : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
                       }`}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <span className={`font-semibold ${
-                              credit?.status === 'cancelled' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
+                              currentCredit?.status === 'cancelled' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
                             }`}>
                               ${payment.amount.toLocaleString('es-CO')}
                             </span>
@@ -293,7 +426,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                               {payment.paymentMethod === 'cash' ? 'Efectivo' :
                                payment.paymentMethod === 'transfer' ? 'Transferencia' : payment.paymentMethod}
                             </Badge>
-                            {credit?.status === 'cancelled' && (
+                            {currentCredit?.status === 'cancelled' && (
                               <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 flex items-center gap-1">
                                 <XCircle className="h-3 w-3" />
                                 Anulado
@@ -321,6 +454,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, onAddPayment }: Cre
                 )}
               </CardContent>
             </Card>
+          </div>
           </div>
         </div>
 

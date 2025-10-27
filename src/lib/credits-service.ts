@@ -141,6 +141,54 @@ export class CreditsService {
     }
   }
 
+  // Obtener todos los créditos de un cliente
+  static async getCreditsByClientId(clientId: string): Promise<Credit[]> {
+    const { data, error } = await supabase
+      .from('credits')
+      .select('*')
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+
+    // Obtener emails de usuarios únicos
+    const userIds = [...new Set(data.map(credit => credit.last_payment_user).filter(Boolean))]
+    const userEmails: { [key: string]: string } = {}
+    
+    if (userIds.length > 0) {
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, email')
+        .in('id', userIds)
+      
+      if (!usersError && users) {
+        users.forEach(user => {
+          userEmails[user.id] = user.email
+        })
+      }
+    }
+
+    return data.map(credit => ({
+      id: credit.id,
+      saleId: credit.sale_id,
+      clientId: credit.client_id,
+      clientName: credit.client_name,
+      invoiceNumber: credit.invoice_number,
+      totalAmount: credit.total_amount,
+      paidAmount: credit.paid_amount,
+      pendingAmount: credit.pending_amount,
+      status: credit.status,
+      dueDate: credit.due_date,
+      lastPaymentAmount: credit.last_payment_amount,
+      lastPaymentDate: credit.last_payment_date,
+      lastPaymentUser: credit.last_payment_user ? (userEmails[credit.last_payment_user] || credit.last_payment_user) : null,
+      createdBy: credit.created_by,
+      createdByName: credit.created_by_name,
+      createdAt: credit.created_at,
+      updatedAt: credit.updated_at
+    }))
+  }
+
   // Actualizar crédito
   static async updateCredit(id: string, updates: Partial<Credit>): Promise<Credit> {
     const updateData: any = {}

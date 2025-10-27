@@ -143,3 +143,4 @@
 2. Implementar webhooks si es necesario
 3. Mejorar documentación
 4. Optimizar consultas
+

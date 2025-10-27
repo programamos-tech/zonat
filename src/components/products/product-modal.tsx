@@ -35,6 +35,28 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
   const [errors, setErrors] = useState<Record<string, string>>({})
 
+  // Actualizar formData cuando cambie el producto
+  useEffect(() => {
+    if (product) {
+      setFormData({
+        name: product.name || '',
+        reference: product.reference || '',
+        description: product.description || '',
+        price: product.price || 0,
+        cost: product.cost || 0,
+        stock: {
+          warehouse: product.stock?.warehouse || 0,
+          store: product.stock?.store || 0,
+          total: product.stock?.total || 0
+        },
+        categoryId: product.categoryId || '',
+        brand: product.brand || '',
+        status: product.status || 'active',
+        initialLocation: 'warehouse' as 'warehouse' | 'store'
+      })
+    }
+  }, [product])
+
   // Función para formatear números con separadores de miles
   const formatNumber = (value: number | string): string => {
     const numValue = typeof value === 'string' ? parseFloat(value) : value
@@ -100,9 +122,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     if (!formData.reference.trim()) {
       newErrors.reference = 'La referencia es requerida'
     }
-    if (!formData.description.trim()) {
-      newErrors.description = 'La descripción es requerida'
-    }
+    // Campo descripción ahora es opcional
     if (formData.price <= 0) {
       newErrors.price = 'El precio debe ser mayor a 0'
     }
@@ -115,12 +135,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     if (formData.stock.store < 0) {
       newErrors.stockStore = 'El stock de local no puede ser negativo'
     }
-    if (!formData.categoryId) {
-      newErrors.categoryId = 'La categoría es requerida'
-    }
-    if (!formData.brand.trim()) {
-      newErrors.brand = 'La marca es requerida'
-    }
+    // Campo categoría ahora es opcional
+    // Campo marca ahora es opcional
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -295,7 +311,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Descripción *
+                    Descripción
                   </label>
                   <textarea
                     value={formData.description}
@@ -303,7 +319,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 resize-none ${
                       errors.description ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
                     }`}
-                    placeholder="Descripción detallada del producto"
+                    placeholder="Descripción detallada del producto (opcional)"
                     rows={3}
                   />
                   {errors.description && (
@@ -314,7 +330,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Marca *
+                      Marca
                     </label>
                     <input
                       type="text"
@@ -323,7 +339,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
                         errors.brand ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
                       }`}
-                      placeholder="Marca del producto"
+                      placeholder="Marca del producto (opcional)"
                     />
                     {errors.brand && (
                       <p className="mt-1 text-sm text-red-400 ">{errors.brand}</p>
@@ -332,7 +348,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Categoría *
+                      Categoría
                     </label>
                     <select
                       value={formData.categoryId}
@@ -341,7 +357,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         errors.categoryId ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
                       }`}
                     >
-                      <option value="">Seleccionar categoría</option>
+                      <option value="">Seleccionar categoría (opcional)</option>
                       {categories.map(category => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -430,9 +446,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   Control de Stock
                 </CardTitle>
                 {product && (
-            <p className="text-sm text-gray-400 mt-2">
-              ℹ️ El stock se muestra solo como información. Para modificar el inventario, usa las opciones de &quot;Ajustar Stock&quot; o &quot;Transferir Stock&quot; desde la tabla de productos.
-            </p>
+                  <div className="flex items-start gap-3 mt-2">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                      <BarChart3 className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
+                      El stock se muestra solo como información. Para modificar el inventario, usa las opciones de "Ajustar Stock" o "Transferir Stock" desde la tabla de productos.
+                    </p>
+                  </div>
                 )}
               </CardHeader>
               <CardContent className="space-y-6">
@@ -448,8 +469,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         onClick={() => handleInputChange('initialLocation', 'warehouse')}
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                           formData.initialLocation === 'warehouse'
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                            : 'border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white'
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <Package className="h-4 w-4" />
@@ -460,8 +481,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         onClick={() => handleInputChange('initialLocation', 'store')}
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                           formData.initialLocation === 'store'
-                            ? 'border-emerald-500 bg-emerald-50 text-emerald-800'
-                            : 'border-gray-600 hover:border-gray-500 text-gray-300 hover:text-white'
+                            ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300'
+                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <Store className="h-4 w-4" />
@@ -578,8 +599,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       onClick={() => handleInputChange('status', status)}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                         formData.status === status
-                          ? 'border-emerald-500 bg-emerald-50  text-emerald-800 '
-                          : 'border-gray-600  hover:border-gray-400 dark:hover:border-gray-500 text-gray-300 hover:text-white'
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300'
+                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       <span className="text-sm font-medium">{getStatusLabel(status)}</span>

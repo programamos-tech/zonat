@@ -143,9 +143,9 @@ export class ProductsService {
       const insertData = {
         id: uuidv4(),
         name: productData.name,
-        description: productData.description,
-        category_id: productData.categoryId,
-        brand: productData.brand,
+        description: productData.description || null, // Convertir string vacío a null
+        category_id: productData.categoryId || null, // Convertir string vacío a null
+        brand: productData.brand || null, // Convertir string vacío a null
         reference: productData.reference,
         price: productData.price,
         cost: productData.cost,
@@ -215,9 +215,9 @@ export class ProductsService {
       const updateData: any = {}
       
       if (updates.name) updateData.name = updates.name
-      if (updates.description) updateData.description = updates.description
-      if (updates.categoryId) updateData.category_id = updates.categoryId
-      if (updates.brand) updateData.brand = updates.brand
+      if (updates.description !== undefined) updateData.description = updates.description || null // Manejar string vacío
+      if (updates.categoryId !== undefined) updateData.category_id = updates.categoryId || null // Manejar string vacío
+      if (updates.brand !== undefined) updateData.brand = updates.brand || null // Manejar string vacío
       if (updates.reference) updateData.reference = updates.reference
       if (updates.price !== undefined) updateData.price = updates.price
       if (updates.cost !== undefined) updateData.cost = updates.cost

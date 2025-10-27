@@ -5,6 +5,9 @@ export class AuthService {
   // Login de usuario
   static async login(email: string, password: string): Promise<User | null> {
     try {
+      console.log('🔐 Iniciando proceso de login para:', email)
+      
+      console.log('📡 Consultando usuario en base de datos...')
       const { data: user, error } = await supabase
         .from('users')
         .select('*')
@@ -12,18 +15,24 @@ export class AuthService {
         .eq('is_active', true)
         .single()
 
+      console.log('📡 Respuesta de consulta usuario:', { user: user ? 'encontrado' : 'no encontrado', error })
+
       if (error || !user) {
+        console.log('❌ Usuario no encontrado o error:', error)
         return null
       }
 
+      console.log('🔑 Verificando contraseña...')
       // En un entorno real, aquí verificarías el hash de la contraseña
       // Por ahora, comparamos directamente (solo para desarrollo)
       if (user.password !== password) {
+        console.log('❌ Contraseña incorrecta')
         return null
       }
 
+      console.log('✅ Credenciales válidas, actualizando último login...')
       // Actualizar último login
-      await supabase
+      const { error: updateError } = await supabase
         .from('users')
         .update({ 
           last_login: new Date().toISOString(),
@@ -31,12 +40,25 @@ export class AuthService {
         })
         .eq('id', user.id)
 
-      // Registrar log de login
-      await this.logActivity(user.id, 'login', 'auth', {
-        email: user.email,
-        timestamp: new Date().toISOString()
-      })
+      if (updateError) {
+        console.log('⚠️ Error actualizando último login:', updateError)
+      } else {
+        console.log('✅ Último login actualizado')
+      }
 
+      console.log('📝 Registrando log de actividad...')
+      // Registrar log de login (no bloquear si falla)
+      try {
+        await this.logActivity(user.id, 'login', 'auth', {
+          email: user.email,
+          timestamp: new Date().toISOString()
+        })
+        console.log('✅ Log de actividad registrado')
+      } catch (logError) {
+        console.log('⚠️ Error registrando log (no crítico):', logError)
+      }
+
+      console.log('✅ Login completado exitosamente')
       return {
         id: user.id,
         name: user.name,
@@ -49,7 +71,7 @@ export class AuthService {
         updatedAt: user.updated_at
       }
     } catch (error) {
-      console.error('Error en login:', error)
+      console.error('❌ Error en login:', error)
       return null
     }
   }

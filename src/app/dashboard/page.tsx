@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { DatePicker } from '@/components/ui/date-picker'
 import { 
   DollarSign, 
   TrendingUp,
@@ -38,12 +39,14 @@ import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
 import { Sale } from '@/types'
 
-type DateFilter = 'today' | 'week' | 'month' | 'quarter' | 'year' | 'all'
+type DateFilter = 'today' | 'specific' | 'all'
 
 export default function DashboardPage() {
   const { sales } = useSales()
   const { user } = useAuth()
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
+  const [specificDate, setSpecificDate] = useState<Date | null>(null)
+  const [isFiltering, setIsFiltering] = useState(false)
   
   // Verificar si el usuario es Super Admin (Diego)
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
@@ -59,6 +62,16 @@ export default function DashboardPage() {
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
 
+  // Función helper para agregar timeout a las promesas
+  const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> => {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error(`Timeout después de ${timeoutMs}ms`)), timeoutMs)
+      )
+    ])
+  }
+
   // Función para cargar datos del dashboard
   const loadDashboardData = async (showLoading = false) => {
     try {
@@ -66,45 +79,66 @@ export default function DashboardPage() {
         setIsRefreshing(true)
       }
       console.log('🔄 Actualizando datos del dashboard...')
+      
+      // Importar servicios
       const { SalesService } = await import('@/lib/sales-service')
       const { WarrantyService } = await import('@/lib/warranty-service')
       const { CreditsService } = await import('@/lib/credits-service')
       const { ClientsService } = await import('@/lib/clients-service')
       const { ProductsService } = await import('@/lib/products-service')
       
-      // Cargar ventas completas (todas las páginas)
-      let salesData: Sale[] = []
-      let page = 1
-      let hasMore = true
-      while (hasMore) {
-        const result = await SalesService.getAllSales(page, 50)
-        salesData = [...salesData, ...result.sales]
-        hasMore = result.hasMore
-        page++
-      }
+      console.log('📊 Cargando datos en paralelo con timeout de 15 segundos...')
       
-      // Cargar otros datos
-      const [warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.all([
-        WarrantyService.getAllWarranties(),
-        CreditsService.getAllCredits(),
-        ClientsService.getAllClients(),
-        ProductsService.getAllProductsLegacy(), // Usar el método legacy que devuelve array
-        CreditsService.getAllPaymentRecords()
+      // Cargar datos en paralelo con timeout para evitar cuelgues
+      const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
+        withTimeout(SalesService.getAllSales(1, 100), 15000), // Solo primera página con límite de 100
+        withTimeout(WarrantyService.getAllWarranties(), 15000),
+        withTimeout(CreditsService.getAllCredits(), 15000),
+        withTimeout(ClientsService.getAllClients(), 15000),
+        withTimeout(ProductsService.getAllProductsLegacy(), 15000),
+        withTimeout(CreditsService.getAllPaymentRecords(), 15000)
       ])
       
-      setAllSales(salesData)
-      setAllWarranties(warrantiesResult.warranties || [])
-      setAllCredits(creditsResult || [])
-      setAllClients(clientsResult.clients || [])
-      setAllProducts(productsResult || [])
-      setAllPaymentRecords(paymentRecordsResult || [])
+      // Procesar resultados, usando datos por defecto si fallan
+      const sales = salesResult.status === 'fulfilled' ? salesResult.value.sales : []
+      const warranties = warrantiesResult.status === 'fulfilled' ? (warrantiesResult.value.warranties || []) : []
+      const credits = creditsResult.status === 'fulfilled' ? (creditsResult.value || []) : []
+      const clients = clientsResult.status === 'fulfilled' ? (clientsResult.value.clients || []) : []
+      const products = productsResult.status === 'fulfilled' ? (productsResult.value || []) : []
+      const payments = paymentRecordsResult.status === 'fulfilled' ? (paymentRecordsResult.value || []) : []
+      
+      console.log('📊 Datos cargados:', {
+        sales: sales.length,
+        warranties: warranties.length,
+        credits: credits.length,
+        clients: clients.length,
+        products: products.length,
+        payments: payments.length
+      })
+      
+      // Log de errores si los hay
+      const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult]
+        .filter(result => result.status === 'rejected')
+        .map(result => (result as PromiseRejectedResult).reason)
+      
+      if (errors.length > 0) {
+        console.warn('⚠️ Algunos servicios fallaron:', errors)
+      }
+      
+      setAllSales(sales)
+      setAllWarranties(warranties)
+      setAllCredits(credits)
+      setAllClients(clients)
+      setAllProducts(products)
+      setAllPaymentRecords(payments)
       setLastUpdated(new Date())
       
       console.log('✅ Dashboard actualizado correctamente')
     } catch (error) {
       console.error('❌ Error cargando datos del dashboard:', error)
-      setAllSales(sales)
+      // No cambiar los datos en caso de error, mantener los existentes
     } finally {
+      // Siempre desactivar el indicador de carga
       if (showLoading) {
         setIsRefreshing(false)
       }
@@ -158,23 +192,12 @@ export default function DashboardPage() {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
         break
-      case 'week':
-        startDate = new Date(now)
-        startDate.setDate(now.getDate() - now.getDay())
-        startDate.setHours(0, 0, 0, 0)
-        break
-      case 'month':
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0)
-        endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999)
-        break
-      case 'quarter':
-        const quarterStartMonth = Math.floor(now.getMonth() / 3) * 3
-        startDate = new Date(now.getFullYear(), quarterStartMonth, 1, 0, 0, 0, 0)
-        endDate = new Date(now.getFullYear(), quarterStartMonth + 3, 0, 23, 59, 59, 999)
-        break
-      case 'year':
-        startDate = new Date(now.getFullYear(), 0, 1, 0, 0, 0, 0)
-        endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999)
+      case 'specific':
+        if (!specificDate) {
+          return { startDate: null, endDate: null }
+        }
+        startDate = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate(), 0, 0, 0, 0)
+        endDate = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate(), 23, 59, 59, 999)
         break
       default:
         return { startDate: null, endDate: null }
@@ -382,37 +405,38 @@ export default function DashboardPage() {
     const generateAllDays = () => {
       const days = []
       const today = new Date()
-      const startDate = new Date(today)
       
-      // Ajustar la fecha de inicio según el filtro
-      switch (dateFilter) {
-        case 'today':
-          startDate.setDate(today.getDate())
-          break
-        case 'week':
-          startDate.setDate(today.getDate() - 6)
-          break
-        case 'month':
-          startDate.setDate(today.getDate() - 29)
-          break
-        case 'quarter':
-          startDate.setDate(today.getDate() - 89)
-          break
-        case 'year':
-          startDate.setDate(today.getDate() - 364)
-          break
-        default:
-          startDate.setDate(today.getDate() - 6) // Por defecto, última semana
-      }
-      
-      for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-        const dateStr = d.toLocaleDateString('es-CO', { 
+      if (effectiveDateFilter === 'specific' && specificDate) {
+        // Para fecha específica, mostrar solo ese día
+        const dateStr = specificDate.toLocaleDateString('es-CO', { 
           weekday: 'short',
           day: '2-digit', 
           month: '2-digit' 
         })
         days.push(dateStr)
+      } else if (effectiveDateFilter === 'today') {
+        // Para hoy, mostrar solo el día actual
+        const dateStr = today.toLocaleDateString('es-CO', { 
+          weekday: 'short',
+          day: '2-digit', 
+          month: '2-digit' 
+        })
+        days.push(dateStr)
+      } else {
+        // Para "Todo el Tiempo", mostrar los últimos 30 días
+        const startDate = new Date(today)
+        startDate.setDate(today.getDate() - 29)
+        
+        for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
+          const dateStr = d.toLocaleDateString('es-CO', { 
+            weekday: 'short',
+            day: '2-digit', 
+            month: '2-digit' 
+          })
+          days.push(dateStr)
+        }
       }
+      
       return days
     }
 
@@ -470,13 +494,44 @@ export default function DashboardPage() {
   const getDateFilterLabel = (filter: DateFilter) => {
     const labels: { [key: string]: string } = {
       today: 'Hoy',
-      week: 'Esta Semana',
-      month: 'Este Mes',
-      quarter: 'Últimos 3 Meses',
-      year: 'Este Año',
-      all: 'Todo el Tiempo'
+      all: 'Todo el Tiempo',
+      specific: specificDate ? specificDate.toLocaleDateString('es-CO') : 'Fecha Específica'
     }
     return labels[filter] || filter
+  }
+
+  // Función para manejar cambio de filtro con indicador de carga
+  const handleFilterChange = async (newFilter: DateFilter) => {
+    if (newFilter === 'specific' && !specificDate) {
+      setDateFilter(newFilter)
+      return
+    }
+    
+    if (newFilter === 'specific' && specificDate) {
+      setIsFiltering(true)
+      setDateFilter(newFilter)
+      // Simular un pequeño delay para mostrar el indicador
+      setTimeout(() => {
+        setIsFiltering(false)
+      }, 1000) // Aumentado a 1 segundo para mejor feedback
+    } else {
+      setDateFilter(newFilter)
+      setSpecificDate(null)
+      setIsFiltering(false) // Asegurar que se desactive
+    }
+  }
+
+  // Función para manejar selección de fecha específica
+  const handleDateSelect = (date: Date | null) => {
+    setSpecificDate(date)
+    if (date) {
+      setIsFiltering(true)
+      setDateFilter('specific')
+      // Simular carga de datos
+      setTimeout(() => {
+        setIsFiltering(false)
+      }, 1000)
+    }
   }
 
 
@@ -504,26 +559,59 @@ export default function DashboardPage() {
             )}
         </div>
           
-          {/* Filtros con estilo de dropdown */}
+          {/* Filtros simplificados */}
           <div className="flex items-center gap-3">
             {isSuperAdmin ? (
-              <div className="relative">
-                <select
-                  value={dateFilter}
-                  onChange={(e) => setDateFilter(e.target.value as DateFilter)}
-                  className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                >
-                {(['today', 'week', 'month', 'quarter', 'year', 'all'] as DateFilter[]).map((filter) => (
-                    <option key={filter} value={filter}>
-                    {getDateFilterLabel(filter)}
-                    </option>
-                  ))}
-                </select>
-                <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                  </svg>
+              <div className="flex items-center gap-3">
+                {/* Selector de período simplificado */}
+                <div className="relative">
+                  <select
+                    value={dateFilter}
+                    onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
+                    className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  >
+                    {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
+                      <option key={filter} value={filter}>
+                        {getDateFilterLabel(filter)}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
                 </div>
+
+                {/* Calendario para fecha específica */}
+                {dateFilter === 'specific' && (
+                  <DatePicker
+                    selectedDate={specificDate}
+                    onDateSelect={handleDateSelect}
+                    placeholder="Seleccionar fecha específica"
+                    className="w-48"
+                  />
+                )}
+
+                {/* Indicador de carga para filtro específico */}
+                {isFiltering && (
+                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                    <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+                      Cargando datos del día...
+                    </span>
+                  </div>
+                )}
+
+                {/* Botón para volver a "Todo el Tiempo" */}
+                {dateFilter !== 'all' && (
+                  <button
+                    onClick={() => handleFilterChange('all')}
+                    className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                  >
+                    Todo el Tiempo
+                  </button>
+                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">

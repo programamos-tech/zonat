@@ -77,10 +77,9 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
       newErrors.newQuantity = 'La cantidad no puede ser negativa'
     }
     
-    if (!formData.reason.trim()) {
-      newErrors.reason = 'La razón del ajuste es obligatoria'
-    } else if (formData.reason.trim().length < 10) {
-      newErrors.reason = 'La razón debe tener al menos 10 caracteres para mayor claridad'
+    // Campo razón ahora es opcional - solo validar longitud si se proporciona
+    if (formData.reason.trim() && formData.reason.trim().length < 10) {
+      newErrors.reason = 'Si proporcionas una razón, debe tener al menos 10 caracteres'
     }
 
     if (Object.keys(newErrors).length > 0) {
@@ -256,7 +255,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                 {/* Reason */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Razón del Ajuste *
+                    Razón del Ajuste
                   </label>
                   <textarea
                     value={formData.reason}
@@ -264,15 +263,15 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                     className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
                       errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
-                    placeholder="Ej: Inventario físico, producto dañado, corrección de error..."
+                    placeholder="Ej: Inventario físico, producto dañado, corrección de error... (opcional)"
                     rows={3}
                   />
                   <div className="mt-1 flex justify-between items-center">
                     {errors.reason && (
                       <p className="text-sm text-red-500">{errors.reason}</p>
                     )}
-                    <span className={`text-xs ml-auto ${formData.reason.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
-                      {formData.reason.length}/10 caracteres mínimo
+                    <span className={`text-xs ml-auto ${formData.reason.length > 0 && formData.reason.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                      {formData.reason.length > 0 ? `${formData.reason.length}/10 caracteres mínimo` : 'Campo opcional'}
                     </span>
                   </div>
                 </div>

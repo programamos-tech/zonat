@@ -17,6 +17,7 @@ export default function CreditsPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [isCreditDetailModalOpen, setIsCreditDetailModalOpen] = useState(false)
   const [selectedCredit, setSelectedCredit] = useState<Credit | null>(null)
+  const [clientCredits, setClientCredits] = useState<Credit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [initialSearch, setInitialSearch] = useState('')
 
@@ -54,7 +55,54 @@ export default function CreditsPage() {
     try {
       setIsLoading(true)
       const creditsData = await CreditsService.getAllCredits()
-      setCredits(creditsData)
+      
+      // Agrupar créditos por cliente
+      const groupedCredits = creditsData.reduce((acc, credit) => {
+        const key = credit.clientId
+        if (!acc[key]) {
+          acc[key] = {
+            clientId: credit.clientId,
+            clientName: credit.clientName,
+            credits: [],
+            totalAmount: 0,
+            paidAmount: 0,
+            pendingAmount: 0,
+            status: 'pending' as 'pending' | 'partial' | 'completed'
+          }
+        }
+        acc[key].credits.push(credit)
+        acc[key].totalAmount += credit.totalAmount
+        acc[key].paidAmount += credit.paidAmount
+        acc[key].pendingAmount += credit.pendingAmount
+        
+        // Determinar el estado general del cliente
+        if (acc[key].pendingAmount === 0) {
+          acc[key].status = 'completed'
+        } else if (acc[key].paidAmount > 0) {
+          acc[key].status = 'partial'
+        }
+        
+        return acc
+      }, {} as Record<string, any>)
+      
+      // Convertir a array
+      const consolidated = Object.values(groupedCredits).map(group => ({
+        ...group,
+        // Usar el primer crédito como referencia principal
+        id: group.credits[0].id,
+        invoiceNumber: `${group.credits.length} factura${group.credits.length > 1 ? 's' : ''}`,
+        dueDate: group.credits.sort((a: any, b: any) => 
+          new Date(b.dueDate || '').getTime() - new Date(a.dueDate || '').getTime()
+        )[0]?.dueDate,
+        lastPaymentDate: group.credits.sort((a: any, b: any) => 
+          new Date(b.lastPaymentDate || '').getTime() - new Date(a.lastPaymentDate || '').getTime()
+        )[0]?.lastPaymentDate,
+        lastPaymentAmount: group.credits[0].lastPaymentAmount,
+        lastPaymentUser: group.credits[0].lastPaymentUser,
+        createdAt: group.credits[0].createdAt
+      }))
+      
+      setCredits(consolidated as Credit[])
     } catch (error) {
       console.error('Error loading credits:', error)
       // Si es un error de tabla no encontrada, mostrar mensaje más útil
@@ -69,13 +117,28 @@ export default function CreditsPage() {
     }
   }
 
-  const handleView = (credit: Credit) => {
-    setSelectedCredit(credit)
-    setIsCreditDetailModalOpen(true)
+  const handleView = async (credit: Credit) => {
+    // Cargar todos los créditos del cliente
+    try {
+      const allCredits = await CreditsService.getCreditsByClientId(credit.clientId)
+      setClientCredits(allCredits)
+      
+      // Si tiene múltiples créditos, usar el primero como seleccionado
+      // Esto se manejará en el modal para permitir seleccionar entre ellos
+      setSelectedCredit(credit)
+      setIsCreditDetailModalOpen(true)
+    } catch (error) {
+      console.error('Error loading client credits:', error)
+      setClientCredits([])
+      setSelectedCredit(credit)
+      setIsCreditDetailModalOpen(true)
+    }
   }
 
   const handlePayment = (credit: Credit) => {
+    console.log('handlePayment llamado con:', credit.id, credit.invoiceNumber)
     setSelectedCredit(credit)
+    // NO cerrar el modal de detalles, solo abrir el de pago
     setIsPaymentModalOpen(true)
   }
 
@@ -137,8 +200,13 @@ export default function CreditsPage() {
         credit.id === selectedCredit.id ? updatedCredit : credit
       ))
 
+      // Recargar los créditos del cliente para actualizar el modal de detalles
+      const allCredits = await CreditsService.getCreditsByClientId(selectedCredit.clientId)
+      setClientCredits(allCredits)
+
       setIsPaymentModalOpen(false)
-      setSelectedCredit(null)
+      // NO resetear selectedCredit para mantener el modal de detalles abierto
+      // setSelectedCredit(null)
     } catch (error) {
       console.error('Error adding payment:', error)
       console.error('Error details:', {
@@ -181,15 +249,21 @@ export default function CreditsPage() {
 
       <PaymentModal
         isOpen={isPaymentModalOpen}
-        onClose={() => setIsPaymentModalOpen(false)}
+        onClose={() => {
+          setIsPaymentModalOpen(false)
+        }}
         onAddPayment={handleAddPayment}
         credit={selectedCredit}
       />
 
       <CreditDetailModal
         isOpen={isCreditDetailModalOpen}
-        onClose={() => setIsCreditDetailModalOpen(false)}
+        onClose={() => {
+          setIsCreditDetailModalOpen(false)
+          setClientCredits([])
+        }}
         credit={selectedCredit}
+        clientCredits={clientCredits}
         onAddPayment={handlePayment}
         onViewSale={handleViewSale}
       />

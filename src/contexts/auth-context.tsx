@@ -44,25 +44,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
+    console.log('🚀 AuthContext: Iniciando login...')
     setIsLoading(true)
     
     try {
+      console.log('📞 AuthContext: Llamando a AuthService.login...')
       const userData = await AuthService.login(email, password)
       
+      console.log('📞 AuthContext: Respuesta de AuthService:', userData ? 'usuario obtenido' : 'null')
+      
       if (userData) {
+        console.log('✅ AuthContext: Usuario válido, configurando estado...')
         setUser(userData)
         if (typeof window !== 'undefined') {
           localStorage.setItem('zonat_user', JSON.stringify(userData))
           document.cookie = `zonat_user=${JSON.stringify(userData)}; path=/; max-age=86400`
+          console.log('💾 AuthContext: Usuario guardado en localStorage y cookie')
         }
         setIsLoading(false)
+        console.log('✅ AuthContext: Login exitoso')
         return true
       }
       
+      console.log('❌ AuthContext: Usuario inválido')
       setIsLoading(false)
       return false
     } catch (error) {
-      console.error('Error en login:', error)
+      console.error('❌ AuthContext: Error en login:', error)
       setIsLoading(false)
       return false
     }
