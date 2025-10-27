@@ -18,6 +18,7 @@
 | ¿Alguna consulta depende de columnas que ya cambiaron de nombre o tipo? | ❌ | **FALTA**: Revisar todas las consultas por columnas obsoletas |
 | ¿Están definidas las policies (RLS) para las tablas que se usan desde el frontend? | ❌ | **FALTA**: No se encontraron políticas RLS definidas |
 | ¿Se está manejando correctamente el auth.session al realizar queries? | ❌ | **FALTA**: No se usa `auth.session` en las consultas |
+
 | ¿Las funciones (rpc o sql functions) que se llaman desde el código realmente existen en Supabase? | ❌ | **FALTA**: Se usan `rpc('create_users_table')` pero no se verifica su existencia |
 | ¿El código maneja errores de Supabase en cada operación crítica? | ⚠️ | **PARCIAL**: Algunos servicios manejan errores, otros no |
 

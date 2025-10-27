@@ -89,9 +89,10 @@ export default function DashboardPage() {
       
       console.log('📊 Cargando datos en paralelo con timeout de 15 segundos...')
       
-      // Cargar datos en paralelo con timeout para evitar cuelgues
+      // Cargar TODOS los datos para poder filtrar por cualquier fecha
+      // Usar un número muy grande para obtener todos los registros
       const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
-        withTimeout(SalesService.getAllSales(1, 100), 15000), // Solo primera página con límite de 100
+        withTimeout(SalesService.getAllSales(1, 10000), 20000), // Aumentado para obtener más datos
         withTimeout(WarrantyService.getAllWarranties(), 15000),
         withTimeout(CreditsService.getAllCredits(), 15000),
         withTimeout(ClientsService.getAllClients(), 15000),
@@ -219,6 +220,16 @@ export default function DashboardPage() {
 
     const { startDate, endDate } = getDateRange(effectiveDateFilter)
     if (!startDate || !endDate) {
+      // Si es 'specific' pero no hay fecha seleccionada, devolver datos vacíos
+      if (effectiveDateFilter === 'specific') {
+        return {
+          sales: [],
+          warranties: [],
+          credits: [],
+          paymentRecords: []
+        }
+      }
+      // Para otros casos, devolver todos los datos
       return {
         sales: allSales,
         warranties: allWarranties,
@@ -510,14 +521,18 @@ export default function DashboardPage() {
     if (newFilter === 'specific' && specificDate) {
       setIsFiltering(true)
       setDateFilter(newFilter)
-      // Simular un pequeño delay para mostrar el indicador
-      setTimeout(() => {
+      // Recargar datos para la fecha específica
+      loadDashboardData().then(() => {
         setIsFiltering(false)
-      }, 1000) // Aumentado a 1 segundo para mejor feedback
+      })
     } else {
       setDateFilter(newFilter)
       setSpecificDate(null)
       setIsFiltering(false) // Asegurar que se desactive
+      // Si cambias a 'today' o 'all', también actualizar para asegurar datos frescos
+      if (newFilter !== 'specific') {
+        loadDashboardData()
+      }
     }
   }
 
@@ -527,10 +542,10 @@ export default function DashboardPage() {
     if (date) {
       setIsFiltering(true)
       setDateFilter('specific')
-      // Simular carga de datos
-      setTimeout(() => {
+      // Recargar datos del dashboard para la fecha específica
+      loadDashboardData().then(() => {
         setIsFiltering(false)
-      }, 1000)
+      })
     }
   }
 
@@ -602,16 +617,6 @@ export default function DashboardPage() {
                     </span>
                   </div>
                 )}
-
-                {/* Botón para volver a "Todo el Tiempo" */}
-                {dateFilter !== 'all' && (
-                  <button
-                    onClick={() => handleFilterChange('all')}
-                    className="px-3 py-2 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    Todo el Tiempo
-                  </button>
-                )}
               </div>
             ) : (
               <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
@@ -621,16 +626,6 @@ export default function DashboardPage() {
                 </span>
               </div>
             )}
-            
-            {/* Botón de actualización */}
-            <button
-              onClick={() => loadDashboardData(true)}
-              disabled={isRefreshing}
-              className="flex items-center gap-2 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white rounded-lg transition-colors"
-            >
-              <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-              {isRefreshing ? 'Actualizando...' : 'Actualizar'}
-            </button>
           </div>
         </div>
       </div>
