@@ -185,7 +185,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-5 w-5 text-pink-600" />
+                  <Receipt className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                   Información del Crédito
                 </CardTitle>
               </CardHeader>

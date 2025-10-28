@@ -355,9 +355,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-visible flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
           <div className="flex items-center gap-3">
-            <CreditCard className="h-8 w-8 text-pink-600" />
+            <CreditCard className="h-8 w-8 text-gray-600 dark:text-gray-400" />
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Crear Venta a Crédito

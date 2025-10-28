@@ -175,7 +175,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-5 w-5 text-pink-600" />
+                    <User className="h-5 w-5 text-gray-600 dark:text-gray-400" />
                     Todos los Créditos de {credit.clientName}
                   </CardTitle>
                 </CardHeader>
@@ -183,40 +183,19 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {clientCredits.map((c) => {
                       const isSelected = selectedCreditId === c.id
-                      // Determinar el color base según el estado
-      let baseBgColor = ''
-      let baseBorderColor = ''
-      
-      if (c.status === 'completed') {
-        baseBgColor = 'bg-green-50 dark:bg-green-900/20'
-        baseBorderColor = 'border-green-200 dark:border-green-800'
-      } else if (c.status === 'partial') {
-        baseBgColor = 'bg-yellow-50 dark:bg-yellow-900/20'
-        baseBorderColor = 'border-yellow-200 dark:border-yellow-800'
-      } else if (c.status === 'pending') {
-        baseBgColor = 'bg-blue-50 dark:bg-blue-900/20'
-        baseBorderColor = 'border-blue-200 dark:border-blue-800'
-      } else {
-        baseBgColor = 'bg-gray-50 dark:bg-gray-700'
-        baseBorderColor = 'border-gray-200 dark:border-gray-600'
-      }
-      
-      // Si está seleccionado, usar rosa
-      const bgColor = isSelected ? 'bg-pink-100 dark:bg-pink-900/30' : baseBgColor
-      const borderColor = isSelected ? 'border-pink-400 dark:border-pink-600 border-2' : baseBorderColor
+                      // Usar colores neutros y uniformes
+      const bgColor = isSelected 
+        ? 'bg-gray-100 dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500' 
+        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600'
       
                       return (
                         <div 
                           key={c.id} 
                           onClick={() => setSelectedCreditId(c.id)}
-                          className={`border rounded-lg p-3 cursor-pointer transition-all relative ${
-                            isSelected
-                              ? 'bg-pink-100 dark:bg-pink-900/30 border-pink-400 dark:border-pink-600 border-2 shadow-md'
-                              : `${baseBgColor} ${baseBorderColor} hover:border-gray-300`
-                          }`}
+                          className={`border rounded-lg p-3 cursor-pointer transition-all relative hover:shadow-md ${bgColor}`}
                         >
                           {isSelected && (
-                            <div className="absolute top-2 right-2 bg-pink-600 text-white rounded-full p-1">
+                            <div className="absolute top-2 right-2 bg-gray-600 dark:bg-gray-500 text-white rounded-full p-1">
                               <Check className="h-4 w-4" />
                             </div>
                           )}
