@@ -291,30 +291,19 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         discount: 0,
         status: 'completed',
         paymentMethod: 'credit',
-        notes: formData.notes
+        notes: formData.notes,
+        dueDate: formData.dueDate
       }
       
+      // Crear la venta (el SalesService automáticamente creará el crédito cuando paymentMethod es 'credit')
       const newSale = await SalesService.createSale(saleData, user?.id || '')
       
-      // Crear el crédito
-      const creditData = {
-        saleId: newSale.id,
-        clientId: formData.clientId,
-        clientName: client.name,
-        invoiceNumber: newSale.invoiceNumber,
-        totalAmount: calculateTotal(),
-        paidAmount: 0,
-        pendingAmount: calculateTotal(),
-        status: 'pending',
-        dueDate: formData.dueDate,
-        lastPaymentAmount: null,
-        lastPaymentDate: null,
-        lastPaymentUser: null,
-        createdBy: user?.id || '',
-        createdByName: user?.name || 'Usuario'
-      }
+      // Obtener el crédito creado automáticamente por el SalesService
+      const newCredit = await CreditsService.getCreditByInvoiceNumber(newSale.invoiceNumber)
       
-      const newCredit = await CreditsService.createCredit(creditData)
+      if (!newCredit) {
+        throw new Error('No se pudo encontrar el crédito creado')
+      }
       
       // TODO: Implementar logActivity en CreditsService
       // await CreditsService.logActivity({
