@@ -315,18 +315,22 @@ export class ProductsService {
         return []
       }
 
-      // Búsqueda optimizada con mejor rendimiento
+      console.log('🔍 Searching products for:', cleanQuery)
+
+      // Búsqueda simplificada sin timeout - buscar en referencia y nombre
       const { data, error } = await supabase
         .from('products')
         .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, created_at')
-        .or(`name.ilike.%${cleanQuery}%,reference.ilike.%${cleanQuery}%,brand.ilike.%${cleanQuery}%`)
+        .or(`reference.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
         .order('created_at', { ascending: false })
-        .limit(100) // Aumentar límite para mejor cobertura
+        .limit(100)
 
       if (error) {
         console.error('Error searching products:', error)
         return []
       }
+
+      console.log('✅ Found products:', data.length)
 
       return data.map((product: any) => ({
         id: product.id,
@@ -347,7 +351,7 @@ export class ProductsService {
         updatedAt: product.created_at // Usar created_at como fallback
       }))
     } catch (error) {
-      console.error('Error in searchProducts:', error)
+      console.error('❌ Error in searchProducts:', error)
       return []
     }
   }

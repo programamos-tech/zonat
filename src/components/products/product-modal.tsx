@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { X, Package, Tag, DollarSign, BarChart3, AlertTriangle, Store } from 'lucide-react'
 import { Product, Category } from '@/types'
+import { useProducts } from '@/contexts/products-context'
 
 interface ProductModalProps {
   isOpen: boolean
@@ -16,6 +17,7 @@ interface ProductModalProps {
 }
 
 export function ProductModal({ isOpen, onClose, onSave, product, categories }: ProductModalProps) {
+  const { products } = useProducts()
   const [formData, setFormData] = useState({
     name: product?.name || '',
     reference: product?.reference || '',
@@ -121,6 +123,16 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     }
     if (!formData.reference.trim()) {
       newErrors.reference = 'La referencia es requerida'
+    } else {
+      // Verificar si la referencia ya existe en otro producto
+      const referenceExists = products.some(p => 
+        p.reference.toLowerCase() === formData.reference.toLowerCase() && 
+        (!product || p.id !== product.id)
+      )
+      
+      if (referenceExists) {
+        newErrors.reference = 'Esta referencia ya existe en otro producto'
+      }
     }
     // Campo descripción ahora es opcional
     if (formData.price <= 0) {

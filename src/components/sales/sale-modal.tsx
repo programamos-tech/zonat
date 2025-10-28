@@ -34,7 +34,7 @@ interface SaleModalProps {
 
 export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
-  const { products, refreshProducts } = useProducts()
+  const { products, refreshProducts, searchProducts } = useProducts()
   
   // Debug: Log products when modal opens
   useEffect(() => {
@@ -102,20 +102,64 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     )
   }, [clients, clientSearch])
 
-  const filteredProducts = useMemo(() => {
-    console.log('filteredProducts - products:', products.length, 'search:', debouncedProductSearch)
+  const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
+  const [isSearchingProducts, setIsSearchingProducts] = useState(false)
+
+  // Buscar productos cuando el usuario escriba
+  useEffect(() => {
+    let cancelled = false
     
+    const performSearch = async () => {
+      if (debouncedProductSearch.trim().length >= 2) {
+        setIsSearchingProducts(true)
+        try {
+          const results = await searchProducts(debouncedProductSearch)
+          if (!cancelled) {
+            setSearchedProducts(results)
+          }
+        } catch (error) {
+          console.error('Error searching products:', error)
+          if (!cancelled) {
+            setSearchedProducts([])
+          }
+        } finally {
+          if (!cancelled) {
+            setIsSearchingProducts(false)
+          }
+        }
+      } else {
+        setSearchedProducts([])
+        setIsSearchingProducts(false)
+      }
+    }
+
+    performSearch()
+    
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedProductSearch])
+
+  const filteredProducts = useMemo(() => {
     // Si no hay búsqueda, mostrar solo los primeros 5 productos como sugerencias
     if (!debouncedProductSearch.trim()) {
       const activeProducts = products.filter(product => product && product.status === 'active')
-      const suggestions = activeProducts.slice(0, 5)
-      console.log('filteredProducts - suggestions:', suggestions.length)
-      return suggestions
+      return activeProducts.slice(0, 5)
     }
     
-    // Buscar en nombre, marca y referencia
+    // Si estamos buscando y aún no hay resultados, mostrar vacío
+    if (debouncedProductSearch.trim().length >= 2 && isSearchingProducts) {
+      return []
+    }
+    
+    // Si hay búsqueda y tenemos resultados buscados, usar esos productos
+    if (debouncedProductSearch.trim().length >= 2 && searchedProducts.length > 0) {
+      return searchedProducts
+    }
+    
+    // Si hay búsqueda pero no hay resultados buscados y no estamos buscando, usar productos locales
     const searchTerm = debouncedProductSearch.toLowerCase().trim()
-    return products.filter(product => {
+    const matchingProducts = products.filter(product => {
       if (!product || product.status !== 'active') return false
       
       const name = (product.name || '').toLowerCase()
@@ -126,7 +170,34 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
              brand.includes(searchTerm) || 
              reference.includes(searchTerm)
     })
-  }, [products, debouncedProductSearch])
+    
+    // Priorizar resultados: primero por referencia exacta, luego por referencia que empieza con, luego nombre que empieza con, luego el resto
+    return matchingProducts.sort((a, b) => {
+      const searchTermLower = searchTerm.toLowerCase()
+      const aRef = (a.reference || '').toLowerCase()
+      const bRef = (b.reference || '').toLowerCase()
+      const aName = (a.name || '').toLowerCase()
+      const bName = (b.name || '').toLowerCase()
+      
+      // Referencia exacta primero
+      if (aRef === searchTermLower && bRef !== searchTermLower) return -1
+      if (aRef !== searchTermLower && bRef === searchTermLower) return 1
+      
+      // Referencia que empieza con el término
+      if (aRef.startsWith(searchTermLower) && !bRef.startsWith(searchTermLower)) return -1
+      if (!aRef.startsWith(searchTermLower) && bRef.startsWith(searchTermLower)) return 1
+      
+      // Nombre que empieza con el término
+      if (aName.startsWith(searchTermLower) && !bName.startsWith(searchTermLower)) return -1
+      if (!aName.startsWith(searchTermLower) && bName.startsWith(searchTermLower)) return 1
+      
+      // Ordenar por referencia que contiene el término
+      if (aRef.includes(searchTermLower) && !bRef.includes(searchTermLower)) return -1
+      if (!aRef.includes(searchTermLower) && bRef.includes(searchTermLower)) return 1
+      
+      return 0
+    })
+  }, [products, debouncedProductSearch, searchedProducts, isSearchingProducts])
 
   // Debug: Log filtered products
   useEffect(() => {
@@ -341,6 +412,26 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     }
     setShowProductDropdown(false)
     setProductSearch('')
+  }
+
+  const handleUpdatePrice = (itemId: string, newPrice: number) => {
+    if (newPrice < 0) return
+
+    setSelectedProducts(prev =>
+      prev.map(item => {
+        if (item.id === itemId) {
+          const updatedItem = { ...item, unitPrice: newPrice }
+          // Recalcular total con descuento
+          const baseTotal = updatedItem.quantity * newPrice
+          const discountAmount = updatedItem.discountType === 'percentage' 
+            ? (baseTotal * (updatedItem.discount || 0)) / 100 
+            : (updatedItem.discount || 0)
+          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          return updatedItem
+        }
+        return item
+      })
+    )
   }
 
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
@@ -699,7 +790,14 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             ✕ Cerrar
                           </button>
                         </div>
-                        {filteredProducts.length === 0 ? (
+                        {isSearchingProducts ? (
+                          <div className="px-4 py-6 text-center">
+                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600 mx-auto mb-2"></div>
+                            <div className="text-gray-500 dark:text-gray-400 text-sm">
+                              Buscando productos...
+                            </div>
+                          </div>
+                        ) : filteredProducts.length === 0 ? (
                           <div className="px-4 py-6 text-center">
                             <Package className="h-8 w-8 text-gray-500 mx-auto mb-2" />
                             <div className="text-gray-500 dark:text-gray-400 text-sm">
@@ -788,9 +886,23 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             <div className="flex items-start justify-between mb-2">
                               <div className="flex-1">
                                 <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
-                                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300">
-                                  <span>Precio: <span className="font-medium text-gray-900 dark:text-white">${item.unitPrice.toLocaleString()}</span></span>
+                                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-2">
+                                  <span>Precio base: <span className="font-medium text-gray-500 dark:text-gray-400">${products.find(p => p.id === item.productId)?.price.toLocaleString() || 0}</span></span>
                                   <span>Stock: <span className="font-medium">{getAvailableStock(item.productId)} unidades</span></span>
+                                </div>
+                                <div className="flex items-center space-x-2 mt-2">
+                                  <label className="text-xs font-medium text-gray-400 dark:text-gray-500">
+                                    Precio de venta:
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={item.unitPrice || ''}
+                                    onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
+                                    className="w-32 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
+                                    min="0"
+                                    step="100"
+                                    placeholder="0"
+                                  />
                                 </div>
                               </div>
                               <div className="text-right">

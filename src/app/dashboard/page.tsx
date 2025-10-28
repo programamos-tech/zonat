@@ -378,6 +378,24 @@ export default function DashboardPage() {
     // Clientes únicos que han comprado en el período seleccionado
     const uniqueClients = new Set(sales.map(sale => sale.clientId)).size
 
+    // Calcular ganancia bruta (ventas - costo de productos vendidos)
+    const grossProfit = sales.reduce((totalProfit, sale) => {
+      if (!sale.items) return totalProfit
+      
+      const saleProfit = sale.items.reduce((itemProfit, item) => {
+        // Buscar el producto para obtener su costo
+        const product = allProducts.find(p => p.id === item.productId)
+        const cost = product?.cost || 0
+        const salePrice = item.unitPrice
+        const quantity = item.quantity
+        const itemGrossProfit = (salePrice - cost) * quantity
+        
+        return itemProfit + itemGrossProfit
+      }, 0)
+      
+      return totalProfit + saleProfit
+    }, 0)
+
     // Facturas anuladas en el período seleccionado
     const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
 
@@ -491,6 +509,7 @@ export default function DashboardPage() {
       totalDebt,
       pendingCreditsCount: pendingCredits.length,
       uniqueClients,
+      grossProfit,
       cancelledSales,
       lowStockProducts,
       totalProducts: totalStockUnits,
@@ -732,19 +751,23 @@ export default function DashboardPage() {
           </p>
         </div>
 
-        {/* Clientes Únicos */}
+        {/* Ganancia Bruta */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-              <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Clientes que Compraron</span>
+            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
                     </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {metrics.uniqueClients}
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
+            }).format(metrics.grossProfit)}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
-            en el período seleccionado
+            Beneficio por ventas realizadas
                       </p>
                     </div>
 

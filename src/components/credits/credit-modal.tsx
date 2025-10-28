@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { SuccessAlert } from '@/components/ui/success-alert'
+import { DatePicker } from '@/components/ui/date-picker'
 import { 
   X, 
   CreditCard, 
@@ -30,7 +32,7 @@ interface CreditModalProps {
 
 export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProps) {
   const { clients, getAllClients } = useClients()
-  const { products, refreshProducts } = useProducts()
+  const { products, searchProducts } = useProducts()
   const { user } = useAuth()
   
   const [formData, setFormData] = useState({
@@ -42,15 +44,19 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
   const [productSearch, setProductSearch] = useState('')
+  const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
+  const [isSearchingProducts, setIsSearchingProducts] = useState(false)
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [showSuccessAlert, setShowSuccessAlert] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
       getAllClients()
-      refreshProducts()
     }
-  }, [isOpen, getAllClients, refreshProducts])
+  }, [isOpen, getAllClients])
 
   useEffect(() => {
     if (formData.clientId) {
@@ -59,16 +65,99 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     }
   }, [formData.clientId, clients])
 
-  const filteredProducts = products.filter(product =>
-    product.name.toLowerCase().includes(productSearch.toLowerCase()) ||
-    product.referenceCode?.toLowerCase().includes(productSearch.toLowerCase())
-  )
+  // Sincronizar selectedDate con formData.dueDate
+  useEffect(() => {
+    if (selectedDate) {
+      const year = selectedDate.getFullYear()
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0')
+      const day = String(selectedDate.getDate()).padStart(2, '0')
+      setFormData(prev => ({ ...prev, dueDate: `${year}-${month}-${day}` }))
+    }
+  }, [selectedDate])
+
+  // Debounce para la búsqueda de productos
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedProductSearch(productSearch)
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [productSearch])
+
+  // Buscar productos cuando el usuario escriba
+  useEffect(() => {
+    let cancelled = false
+    
+    const performSearch = async () => {
+      if (debouncedProductSearch.trim().length >= 2) {
+        setIsSearchingProducts(true)
+        try {
+          const results = await searchProducts(debouncedProductSearch)
+          if (!cancelled) {
+            setSearchedProducts(results)
+          }
+        } catch (error) {
+          console.error('Error searching products:', error)
+          if (!cancelled) {
+            setSearchedProducts([])
+            setIsSearchingProducts(false)
+          }
+        } finally {
+          if (!cancelled) {
+            setIsSearchingProducts(false)
+          }
+        }
+      } else {
+        setSearchedProducts([])
+        setIsSearchingProducts(false)
+      }
+    }
+
+    performSearch()
+    
+    return () => {
+      cancelled = true
+    }
+  }, [debouncedProductSearch])
+
+  // Filtrar productos - usar productos buscados o locales
+  const filteredProducts = debouncedProductSearch.trim().length >= 2 && searchedProducts.length > 0
+    ? searchedProducts
+    : debouncedProductSearch.trim().length >= 2 && searchedProducts.length === 0 && !isSearchingProducts
+    ? []
+    : products.filter(product => {
+        if (!product || product.status !== 'active') return false
+        const searchTerm = debouncedProductSearch.toLowerCase().trim()
+        const name = (product.name || '').toLowerCase()
+        const reference = (product.reference || '').toLowerCase()
+        return name.includes(searchTerm) || reference.includes(searchTerm)
+      }).sort((a, b) => {
+        const searchTermLower = debouncedProductSearch.toLowerCase()
+        const aRef = (a.reference || '').toLowerCase()
+        const bRef = (b.reference || '').toLowerCase()
+        const aName = (a.name || '').toLowerCase()
+        const bName = (b.name || '').toLowerCase()
+        
+        // Referencia exacta primero
+        if (aRef === searchTermLower && bRef !== searchTermLower) return -1
+        if (aRef !== searchTermLower && bRef === searchTermLower) return 1
+        
+        // Referencia que empieza con el término
+        if (aRef.startsWith(searchTermLower) && !bRef.startsWith(searchTermLower)) return -1
+        if (!aRef.startsWith(searchTermLower) && bRef.startsWith(searchTermLower)) return 1
+        
+        // Nombre que empieza con el término
+        if (aName.startsWith(searchTermLower) && !bName.startsWith(searchTermLower)) return -1
+        if (!aName.startsWith(searchTermLower) && bName.startsWith(searchTermLower)) return 1
+        
+        return 0
+      })
 
   const addProduct = (product: Product) => {
     const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
     
+    // No agregar productos sin stock
     if (totalStock <= 0) {
-      alert(`❌ El producto "${product.name}" no tiene stock disponible.\nStock actual: ${totalStock}`)
+      alert(`❌ No puedes agregar "${product.name}" porque no tiene stock disponible.\nStock: ${totalStock}`)
       return
     }
     
@@ -77,13 +166,13 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     if (existingItem) {
       const newQuantity = existingItem.quantity + 1
       if (newQuantity > totalStock) {
-        alert(`❌ No hay suficiente stock para "${product.name}".\nStock disponible: ${totalStock}`)
+        alert(`❌ No puedes agregar más de "${product.name}".\nStock disponible: ${totalStock}`)
         return
       }
       setSelectedProducts(prev => 
         prev.map(item => 
           item.productId === product.id 
-            ? { ...item, quantity: newQuantity }
+            ? { ...item, quantity: newQuantity, totalPrice: (item.unitPrice || 0) * newQuantity }
             : item
         )
       )
@@ -91,10 +180,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       setSelectedProducts(prev => [...prev, {
         productId: product.id,
         productName: product.name,
-        productReference: product.referenceCode || '',
+        productReference: product.reference || '',
         quantity: 1,
-        unitPrice: product.sellingPrice || 0,
-        totalPrice: product.sellingPrice || 0
+        unitPrice: product.price || 0,
+        totalPrice: product.price || 0
       }])
     }
     
@@ -127,10 +216,23 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           ? { 
               ...item, 
               quantity: newQuantity,
-              totalPrice: item.unitPrice * newQuantity
+              totalPrice: (item.unitPrice || 0) * newQuantity
             }
           : item
       )
+    )
+  }
+
+  const updatePrice = (productId: string, newPrice: number) => {
+    if (newPrice < 0) return
+
+    setSelectedProducts(prev =>
+      prev.map(item => {
+        if (item.productId === productId) {
+          return { ...item, unitPrice: newPrice, totalPrice: newPrice * (item.quantity || 0) }
+        }
+        return item
+      })
     )
   }
 
@@ -159,39 +261,74 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     setLoading(true)
     
     try {
+      // Obtener información del cliente
+      const client = clients.find(c => c.id === formData.clientId)
+      if (!client) {
+        alert('❌ Cliente no encontrado')
+        return
+      }
+      
+      // Preparar los items para la venta
+      const saleItems = selectedProducts.map(item => ({
+        productId: item.productId,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        total: item.totalPrice,
+        discount: 0,
+        discountType: 'amount',
+        tax: 0
+      }))
+      
       // Crear la venta
       const saleData = {
         clientId: formData.clientId,
-        items: selectedProducts,
+        clientName: client.name,
+        items: saleItems,
         total: calculateTotal(),
+        subtotal: calculateTotal(),
+        tax: 0,
+        discount: 0,
+        status: 'completed',
         paymentMethod: 'credit',
         notes: formData.notes
       }
       
-      const newSale = await SalesService.createSale(saleData)
+      const newSale = await SalesService.createSale(saleData, user?.id || '')
       
       // Crear el crédito
       const creditData = {
         saleId: newSale.id,
         clientId: formData.clientId,
-        amount: calculateTotal(),
-        dueDate: formData.dueDate,
+        clientName: client.name,
+        invoiceNumber: newSale.invoiceNumber,
+        totalAmount: calculateTotal(),
+        paidAmount: 0,
+        pendingAmount: calculateTotal(),
         status: 'pending',
-        notes: formData.notes
+        dueDate: formData.dueDate,
+        lastPaymentAmount: null,
+        lastPaymentDate: null,
+        lastPaymentUser: null,
+        createdBy: user?.id || '',
+        createdByName: user?.name || 'Usuario'
       }
       
       const newCredit = await CreditsService.createCredit(creditData)
       
-      // Registrar actividad
-      await CreditsService.logActivity({
-        creditId: newCredit.id,
-        action: 'credit_created',
-        details: `Crédito creado por ${user?.email} - Monto: $${calculateTotal().toLocaleString()}`,
-        userId: user?.id || ''
-      })
+      // TODO: Implementar logActivity en CreditsService
+      // await CreditsService.logActivity({
+      //   creditId: newCredit.id,
+      //   action: 'credit_created',
+      //   details: `Crédito creado por ${user?.email} - Monto: $${calculateTotal().toLocaleString()}`,
+      //   userId: user?.id || ''
+      // })
       
       onCreateCredit(newCredit)
       handleClose()
+      
+      // Mostrar alerta de éxito
+      setShowSuccessAlert(true)
       
     } catch (error) {
       console.error('Error creating credit:', error)
@@ -211,6 +348,11 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     setSelectedProducts([])
     setProductSearch('')
     setShowProductDropdown(false)
+    setSelectedDate(null)
+  }
+
+  const handleCloseSuccessAlert = () => {
+    setShowSuccessAlert(false)
   }
 
   const handleClose = () => {
@@ -222,7 +364,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
   return (
     <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-visible flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20">
           <div className="flex items-center gap-3">
@@ -247,7 +389,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto overflow-x-visible p-6 min-h-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Cliente */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -315,73 +457,149 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       }}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
-                  </div>
-                  
-                  {showProductDropdown && productSearch && (
-                    <div className="absolute z-10 w-full mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto">
-                      {filteredProducts.slice(0, 10).map((product) => (
+                    
+                    {showProductDropdown && productSearch && (
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
+                      {isSearchingProducts ? (
+                        <div className="p-4 text-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-600 mx-auto mb-2"></div>
+                          <div className="text-sm text-gray-500">Buscando productos...</div>
+                        </div>
+                      ) : filteredProducts.length === 0 ? (
+                        <div className="p-4 text-center text-gray-500 text-sm">
+                          No se encontraron productos
+                        </div>
+                      ) : (
+                        filteredProducts
+                          .filter(product => {
+                            const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+                            return totalStock > 0
+                          })
+                          .slice(0, 10)
+                          .map((product) => {
+                          const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+                          
+                          return (
                         <div
                           key={product.id}
                           onClick={() => addProduct(product)}
-                          className="p-3 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer border-b border-gray-200 dark:border-gray-600 last:border-b-0"
+                          className="p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer bg-white dark:bg-gray-700"
                         >
                           <div className="font-medium text-gray-900 dark:text-white">
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-gray-300">
-                            Ref: {product.referenceCode || 'N/A'} | 
+                            Ref: {product.reference || 'N/A'} | 
                             Stock: {(product.stock?.warehouse || 0) + (product.stock?.store || 0)} | 
-                            Precio: ${(product.sellingPrice || 0).toLocaleString()}
+                            Precio: ${(product.price || 0).toLocaleString('es-CO')}
                           </div>
                         </div>
-                      ))}
+                      )})
+                      )}
                     </div>
-                  )}
+                    )}
+                  </div>
                 </div>
                 
                 {selectedProducts.length > 0 && (
                   <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {selectedProducts.map((item) => (
-                      <div key={item.productId} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="flex-1">
-                          <div className="font-medium text-gray-900 dark:text-white">
-                            {item.productName}
-                          </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-300">
-                            Ref: {item.productReference} | ${item.unitPrice.toLocaleString()}
+                    {selectedProducts.map((item) => {
+                      const product = products.find(p => p.id === item.productId)
+                      const warehouseStock = product?.stock?.warehouse || 0
+                      const localStock = product?.stock?.store || 0
+                      const reference = product?.reference || 'N/A'
+                      const basePrice = product?.price || 0
+                      
+                      return (
+                      <div key={item.productId} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-900 dark:text-white">
+                              {item.productName}
+                            </div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              Ref: {reference} | Bodega: {warehouseStock} | Local: {localStock}
+                            </div>
                           </div>
                         </div>
+                        
+                        {/* Controles de precio y cantidad */}
                         <div className="flex items-center gap-2">
-                          <Button
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Minus className="h-4 w-4" />
-                          </Button>
-                          <span className="w-8 text-center text-sm font-medium">
-                            {item.quantity}
-                          </span>
-                          <Button
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0"
-                          >
-                            <Plus className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            onClick={() => removeProduct(item.productId)}
-                            size="sm"
-                            variant="outline"
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-700"
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                          <div className="flex-1">
+                            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
+                              Precio de venta
+                            </label>
+                            <input
+                              type="text"
+                              value={item.unitPrice ? item.unitPrice.toLocaleString('es-CO') : ''}
+                              onChange={(e) => {
+                                const cleanValue = e.target.value.replace(/\./g, '')
+                                const numericValue = parseFloat(cleanValue) || 0
+                                updatePrice(item.productId, numericValue)
+                              }}
+                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                              placeholder="0"
+                            />
+                            {basePrice > 0 && (
+                              <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
+                                Base: ${basePrice.toLocaleString('es-CO')}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
+                              Cantidad
+                            </label>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                              >
+                                <Minus className="h-3 w-3" />
+                              </Button>
+                              <input
+                                type="number"
+                                value={item.quantity}
+                                onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 0)}
+                                className="w-12 h-7 text-center text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                                min="1"
+                              />
+                              <Button
+                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                                size="sm"
+                                variant="outline"
+                                className="h-7 w-7 p-0"
+                              >
+                                <Plus className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+                          
+                          <div className="flex-shrink-0 mt-6">
+                            <Button
+                              onClick={() => removeProduct(item.productId)}
+                              size="sm"
+                              variant="outline"
+                              className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                            >
+                              <X className="h-3 w-3" />
+                            </Button>
+                          </div>
                         </div>
+                        
+                        {/* Total del producto */}
+                        {item.totalPrice > 0 && (
+                          <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-600">
+                            <span className="text-xs text-gray-600 dark:text-gray-400">Total:</span>
+                            <span className="font-semibold text-pink-600">${item.totalPrice.toLocaleString('es-CO')}</span>
+                          </div>
+                        )}
                       </div>
-                    ))}
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -400,11 +618,11 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Fecha de Vencimiento *
                   </label>
-                  <input
-                    type="date"
-                    value={formData.dueDate}
-                    onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  <DatePicker
+                    selectedDate={selectedDate}
+                    onDateSelect={setSelectedDate}
+                    placeholder="Seleccionar fecha de vencimiento"
+                    className="w-full"
                   />
                 </div>
                 <div>
@@ -444,11 +662,11 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                             {item.productName}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-gray-300">
-                            {item.quantity} x ${item.unitPrice.toLocaleString()}
+                            {item.quantity} x ${item.unitPrice.toLocaleString('es-CO')}
                           </div>
                         </div>
                         <div className="font-medium text-gray-900 dark:text-white">
-                          ${item.totalPrice.toLocaleString()}
+                          ${item.totalPrice.toLocaleString('es-CO')}
                         </div>
                       </div>
                     ))}
@@ -458,7 +676,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                           Total:
                         </span>
                         <span className="text-lg font-bold text-pink-600">
-                          ${calculateTotal().toLocaleString()}
+                          ${calculateTotal().toLocaleString('es-CO')}
                         </span>
                       </div>
                     </div>
@@ -497,6 +715,14 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           </Button>
         </div>
       </div>
+      
+      {/* Alerta de éxito */}
+      <SuccessAlert
+        isOpen={showSuccessAlert}
+        onClose={handleCloseSuccessAlert}
+        title="¡Crédito creado exitosamente!"
+        message="La venta a crédito ha sido registrada correctamente. El cliente puede ver el detalle en su historial de créditos."
+      />
     </div>
   )
 }

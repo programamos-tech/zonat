@@ -13,6 +13,7 @@ interface DatePickerProps {
 export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccionar fecha", className = "" }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [showAbove, setShowAbove] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Cerrar dropdown al hacer click fuera
@@ -80,6 +81,19 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
     setIsOpen(false)
   }
 
+  const handleOpenCalendar = () => {
+    if (dropdownRef.current) {
+      const rect = dropdownRef.current.getBoundingClientRect()
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - rect.bottom
+      const spaceAbove = rect.top
+      
+      // Siempre mostrar hacia arriba si está en la mitad inferior de la pantalla
+      setShowAbove(rect.top > viewportHeight / 2)
+    }
+    setIsOpen(!isOpen)
+  }
+
   const isToday = (date: Date) => {
     const today = new Date()
     return date.toDateString() === today.toDateString()
@@ -108,7 +122,10 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
   return (
     <div className={`relative ${className}`} ref={dropdownRef}>
       {/* Input trigger */}
-      <div className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500">
+      <div 
+        onClick={handleOpenCalendar}
+        className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 cursor-pointer"
+      >
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-gray-400" />
           <span className={selectedDate ? 'text-gray-900 dark:text-white' : 'text-gray-500'}>
@@ -128,7 +145,10 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
             </button>
           )}
           <button
-            onClick={() => setIsOpen(!isOpen)}
+            onClick={(e) => {
+              e.stopPropagation()
+              handleOpenCalendar()
+            }}
             className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
           >
             <ChevronRight className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
@@ -138,7 +158,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
 
       {/* Calendar dropdown */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-50 p-4 min-w-[280px]">
+        <div className={`absolute ${showAbove ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[100] p-4 min-w-[280px] max-w-[280px]`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
@@ -170,7 +190,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
           </div>
 
           {/* Calendar days */}
-          <div className="grid grid-cols-7 gap-1">
+          <div className="grid grid-cols-7 gap-1 max-w-full">
             {generateDays().map((dayData, index) => {
               const { day, isCurrentMonth, date } = dayData
               const isCurrentDay = isToday(date)
