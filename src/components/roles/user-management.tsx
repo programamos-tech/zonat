@@ -28,6 +28,7 @@ const moduleOptions = [
   { value: 'clients', label: 'Clientes' },
   { value: 'sales', label: 'Ventas' },
   { value: 'payments', label: 'Abonos' },
+  { value: 'warranties', label: 'Garantías' },
   { value: 'roles', label: 'Roles' },
   { value: 'logs', label: 'Logs' }
 ]
@@ -49,32 +50,25 @@ const rolePermissions = {
   ],
   'admin': [
     { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view'] },
-    { module: 'clients', actions: ['view'] },
-    { module: 'sales', actions: ['view'] },
-    { module: 'payments', actions: ['view'] },
-    { module: 'logs', actions: ['view'] }
-  ],
-  'vendedor': [
-    { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view'] },
-    { module: 'clients', actions: ['view'] },
     { module: 'sales', actions: ['view'] },
     { module: 'payments', actions: ['view'] }
   ],
+  'vendedor': [
+    { module: 'sales', actions: ['view'] },
+    { module: 'payments', actions: ['view'] },
+    { module: 'warranties', actions: ['view'] }
+  ],
   'inventario': [
-    { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view'] },
-    { module: 'logs', actions: ['view'] }
+    { module: 'products', actions: ['view'] }
   ]
 }
 
 // Descripciones de cada rol
 const roleDescriptions = {
   'superadmin': 'Acceso completo a todos los módulos del sistema (Diego)',
-  'admin': 'Gestión completa de productos, clientes, ventas y abonos',
-  'vendedor': 'Puede ver y gestionar ventas, clientes y abonos',
-  'inventario': 'Gestiona productos y revisa logs del sistema'
+  'admin': 'Acceso al dashboard, ventas y créditos',
+  'vendedor': 'Acceso a ventas, créditos y garantías',
+  'inventario': 'Acceso únicamente a productos'
 }
 
 export function UserManagement() {
@@ -324,136 +318,186 @@ export function UserManagement() {
             </div>
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Nuevo Usuario
                 </Button>
               </DialogTrigger>
-              <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
-                <DialogHeader className="bg-indigo-50 dark:bg-indigo-900/20 p-6 -m-6 mb-6">
-                  <DialogTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
-                    <UserCheck className="h-6 w-6 mr-2 text-indigo-600" />
+              <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+                <DialogHeader className="bg-emerald-50 dark:bg-emerald-900/20 p-6 -m-6 mb-6 border-b border-emerald-200 dark:border-emerald-800">
+                  <DialogTitle className="text-2xl font-bold text-emerald-800 dark:text-emerald-200 flex items-center">
+                    <UserCheck className="h-6 w-6 mr-2 text-emerald-600" />
                     Crear Nuevo Usuario
                   </DialogTitle>
-                  <DialogDescription className="text-gray-600 dark:text-gray-300 mt-2">
+                  <DialogDescription className="text-emerald-700 dark:text-emerald-300 mt-2">
                     Completa la información del nuevo usuario y asigna los permisos correspondientes.
                   </DialogDescription>
                 </DialogHeader>
                 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Columna Izquierda - Información del Usuario */}
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Nombre Completo</Label>
-                        <Input
-                          id="name"
-                          value={formData.name}
-                          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          placeholder="Ej: Juan Pérez"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={formData.email}
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          placeholder="juan@zonat.com"
-                        />
-                      </div>
-                    </div>
-          
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="password">Contraseña</Label>
-                        <Input
-                          id="password"
-                          type="password"
-                          value={formData.password}
-                          onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                          placeholder="Mínimo 6 caracteres"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="role">Rol</Label>
-                        <Select value={formData.role} onValueChange={applyRolePermissions}>
-                          <SelectTrigger>
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {roleOptions.map(role => (
-                              <SelectItem key={role.value} value={role.value}>
-                                {role.label}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
+                <div className="flex-1 overflow-y-auto p-6">
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Columna Izquierda - Información del Usuario */}
+                    <div className="space-y-6">
+                      {/* Información Básica */}
+                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                            <UserCheck className="h-5 w-5 mr-2 text-emerald-400" />
+                            Información Básica
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Nombre Completo *
+                              </label>
+                              <input
+                                type="text"
+                                value={formData.name}
+                                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                placeholder="Ej: Juan Pérez"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Email *
+                              </label>
+                              <input
+                                type="email"
+                                value={formData.email}
+                                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                placeholder="juan@zonat.com"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Contraseña *
+                              </label>
+                              <input
+                                type="password"
+                                value={formData.password}
+                                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                placeholder="Mínimo 6 caracteres"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                Rol *
+                              </label>
+                              <Select value={formData.role} onValueChange={applyRolePermissions}>
+                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {roleOptions.map(role => (
+                                    <SelectItem key={role.value} value={role.value}>
+                                      {role.label}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                    <div className="p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
-                      <p className="text-sm text-gray-600 dark:text-gray-400">
-                        <span className="font-semibold text-indigo-700 dark:text-indigo-300">
-                          {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
-                        </span>
-                      </p>
-                    </div>
+                      {/* Descripción del Rol */}
+                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                            <Shield className="h-5 w-5 mr-2 text-emerald-400" />
+                            Descripción del Rol
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                            <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                              <span className="font-semibold">
+                                {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
+                              </span>
+                            </p>
+                          </div>
+                        </CardContent>
+                      </Card>
 
-                    <div className="flex items-center space-x-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
-                      <Switch
-                        id="isActive"
-                        checked={formData.isActive}
-                        onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                        className="data-[state=checked]:bg-indigo-600"
-                      />
-                      <Label htmlFor="isActive" className="text-base font-medium text-indigo-700 dark:text-indigo-300">Usuario Activo</Label>
-                    </div>
-                  </div>
-
-                  {/* Columna Derecha - Permisos */}
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <Label className="text-lg font-bold text-gray-900 dark:text-white flex items-center">
-                        <UserCheck className="h-5 w-5 mr-2 text-indigo-600" />
-                        Permisos del Sistema
-                      </Label>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-indigo-100 dark:bg-indigo-900/30 px-3 py-1 rounded-lg border border-indigo-200 dark:border-indigo-800">
-                        Rol: <span className="font-semibold text-indigo-600 dark:text-indigo-400">
-                          {roleOptions.find(r => r.value === formData.role)?.label}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="space-y-3">
-                      {moduleOptions.map(module => (
-                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                          <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
-                            <input
-                              type="checkbox"
-                              checked={hasPermission(module.value, 'view')}
-                              onChange={() => togglePermission(module.value, 'view')}
-                              className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                      {/* Estado del Usuario */}
+                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                            <User className="h-5 w-5 mr-2 text-emerald-400" />
+                            Estado del Usuario
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex items-center space-x-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                            <Switch
+                              id="isActive"
+                              checked={formData.isActive}
+                              onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
+                              className="data-[state=checked]:bg-emerald-600"
                             />
-                            <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
-                          </label>
-                        </div>
-                      ))}
+                            <Label htmlFor="isActive" className="text-base font-medium text-emerald-700 dark:text-emerald-300">
+                              Usuario Activo
+                            </Label>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+
+                    {/* Columna Derecha - Permisos */}
+                    <div className="space-y-6">
+                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                        <CardHeader>
+                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                            <Shield className="h-5 w-5 mr-2 text-emerald-400" />
+                            Permisos del Sistema
+                          </CardTitle>
+                          <div className="text-sm text-gray-600 dark:text-gray-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 mt-2">
+                            Rol: <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                              {roleOptions.find(r => r.value === formData.role)?.label}
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          {moduleOptions.map(module => (
+                            <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
+                              <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                                <input
+                                  type="checkbox"
+                                  checked={hasPermission(module.value, 'view')}
+                                  onChange={() => togglePermission(module.value, 'view')}
+                                  className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                                />
+                                <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
+                              </label>
+                            </div>
+                          ))}
+                        </CardContent>
+                      </Card>
                     </div>
                   </div>
                 </div>
 
-                <div className="flex justify-end space-x-3 pt-4">
+                {/* Footer */}
+                <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                   <Button 
                     variant="outline" 
                     onClick={() => setIsCreateModalOpen(false)}
+                    className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
                   >
                     Cancelar
                   </Button>
                   <Button 
                     onClick={handleCreateUser}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
                   >
+                    <UserCheck className="h-4 w-4 mr-2" />
                     Crear Usuario
                   </Button>
                 </div>
@@ -529,7 +573,7 @@ export function UserManagement() {
               </p>
               <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
+                  <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
                     <Plus className="h-4 w-4 mr-2" />
                     Nuevo Usuario
                   </Button>

@@ -2,6 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { 
   DollarSign, 
@@ -37,6 +38,7 @@ import {
 } from 'recharts'
 import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
+import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Sale } from '@/types'
 
 type DateFilter = 'today' | 'specific' | 'all'
@@ -144,6 +146,12 @@ export default function DashboardPage() {
         setIsRefreshing(false)
       }
     }
+  }
+
+  // Función para actualización manual del dashboard
+  const handleRefresh = () => {
+    console.log('🔄 Actualización manual del dashboard solicitada')
+    loadDashboardData(true) // Mostrar loading
   }
 
   // Cargar todos los datos para el dashboard
@@ -364,15 +372,20 @@ export default function DashboardPage() {
     const completedWarranties = warranties.filter(w => w.status === 'completed').length
     const pendingWarranties = warranties.filter(w => w.status === 'pending').length
 
-    // Créditos pendientes y parciales (dinero afuera) - solo del período seleccionado
-    const pendingCredits = credits.filter(c => c.status === 'pending' || c.status === 'partial')
+    // Créditos pendientes y parciales (dinero afuera) - TODOS los créditos, no filtrados por fecha
+    // Excluir créditos cancelados (que tienen totalAmount y pendingAmount en 0)
+    const pendingCredits = allCredits.filter(c => 
+      (c.status === 'pending' || c.status === 'partial') && 
+      !(c.totalAmount === 0 && c.pendingAmount === 0)
+    )
     const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
     
     console.log('Credits calculation:', {
-      allCreditsCount: credits.length,
+      allCreditsCount: allCredits.length,
+      filteredCreditsCount: credits.length,
       pendingCreditsCount: pendingCredits.length,
       totalDebt,
-      credits: credits.map(c => ({ id: c.id, status: c.status, pendingAmount: c.pendingAmount, totalAmount: c.totalAmount }))
+      note: 'totalDebt usa TODOS los créditos activos (excluye cancelados con montos en 0)'
     })
 
     // Clientes únicos que han comprado en el período seleccionado
@@ -396,6 +409,26 @@ export default function DashboardPage() {
       return totalProfit + saleProfit
     }, 0)
 
+    // Calcular las ventas más rentables para mostrar en la lista
+    const topProfitableSales = sales.map(sale => {
+      if (!sale.items) return { ...sale, profit: 0 }
+      
+      const saleProfit = sale.items.reduce((itemProfit, item) => {
+        const product = allProducts.find(p => p.id === item.productId)
+        const cost = product?.cost || 0
+        const salePrice = item.unitPrice
+        const quantity = item.quantity
+        const itemGrossProfit = (salePrice - cost) * quantity
+        
+        return itemProfit + itemGrossProfit
+      }, 0)
+      
+      return { ...sale, profit: saleProfit }
+    })
+    .filter(sale => sale.profit > 0) // Solo ventas con ganancia positiva
+    .sort((a, b) => b.profit - a.profit) // Ordenar por ganancia descendente
+    .slice(0, 5) // Tomar las 5 más rentables
+
     // Facturas anuladas en el período seleccionado
     const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
 
@@ -413,6 +446,24 @@ export default function DashboardPage() {
       return (localStock + warehouseStock) <= 5 && (localStock + warehouseStock) > 0;
     }).length
 
+    // Calcular inversión total en stock (precio de compra * stock actual)
+    const totalStockInvestment = allProducts.reduce((sum, product) => {
+      const localStock = product.stock?.store || 0;
+      const warehouseStock = product.stock?.warehouse || 0;
+      const totalStock = localStock + warehouseStock;
+      const costPrice = product.cost || 0; // Precio de compra/costo
+      return sum + (costPrice * totalStock);
+    }, 0)
+
+    // Calcular valor estimado de ventas (precio de venta * stock actual)
+    const estimatedSalesValue = allProducts.reduce((sum, product) => {
+      const localStock = product.stock?.store || 0;
+      const warehouseStock = product.stock?.warehouse || 0;
+      const totalStock = localStock + warehouseStock;
+      const sellingPrice = product.price || 0; // Precio de venta
+      return sum + (sellingPrice * totalStock);
+    }, 0)
+
     // Datos para gráficos - Mejorado para mostrar todos los días del período
 
     const salesByDay = sales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
@@ -424,11 +475,42 @@ export default function DashboardPage() {
       if (!acc[date]) {
         acc[date] = { amount: 0, count: 0 }
       }
-      acc[date].amount += sale.total
-      acc[date].count += 1
+      
+      // Solo contar ingresos reales (efectivo + transferencia), no créditos
+      if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+        acc[date].amount += sale.total
+        acc[date].count += 1
+      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+        // Para pagos mixtos, solo contar la parte en efectivo/transferencia
+        const realPaymentAmount = sale.payments.reduce((sum, payment) => {
+          if (payment.paymentType === 'cash' || payment.paymentType === 'transfer') {
+            return sum + (payment.amount || 0)
+          }
+          return sum
+        }, 0)
+        if (realPaymentAmount > 0) {
+          acc[date].amount += realPaymentAmount
+          acc[date].count += 1
+        }
+      }
+      // No contar ventas a crédito (paymentMethod === 'credit') en el gráfico
+      
       return acc
     }, {})
 
+    // Agregar abonos de créditos al gráfico (dinero real ingresado)
+    validPaymentRecords.forEach(payment => {
+      const date = new Date(payment.paymentDate).toLocaleDateString('es-CO', { 
+        weekday: 'short',
+        day: '2-digit', 
+        month: '2-digit' 
+      })
+      if (!salesByDay[date]) {
+        salesByDay[date] = { amount: 0, count: 0 }
+      }
+      salesByDay[date].amount += payment.amount
+      // No incrementar count para abonos, solo para ventas nuevas
+    })
 
     // Generar todos los días del período seleccionado
     const generateAllDays = () => {
@@ -510,9 +592,12 @@ export default function DashboardPage() {
       pendingCreditsCount: pendingCredits.length,
       uniqueClients,
       grossProfit,
+      topProfitableSales,
       cancelledSales,
       lowStockProducts,
       totalProducts: totalStockUnits,
+      totalStockInvestment,
+      estimatedSalesValue,
       totalClients: allClients.length,
       salesChartData,
       paymentMethodData,
@@ -570,7 +655,8 @@ export default function DashboardPage() {
 
 
   return (
-    <div className="p-6 bg-white dark:bg-gray-900 min-h-screen">
+    <RoleProtectedRoute module="dashboard" requiredAction="view">
+      <div className="p-6 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header con estilo de las otras páginas */}
       <div className="mb-8">
         <div className="flex items-center justify-between">
@@ -617,6 +703,17 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
+                {/* Botón de actualizar */}
+                <Button 
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  variant="outline"
+                  className="text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Actualizar
+                </Button>
+
                 {/* Calendario para fecha específica */}
                 {dateFilter === 'specific' && (
                   <DatePicker
@@ -653,12 +750,19 @@ export default function DashboardPage() {
       {/* Métricas principales con estilo de cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Total Ingresos */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
               <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {effectiveDateFilter === 'today' ? 'Hoy' : 
+                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                 'Todos los Períodos'}
+              </p>
+            </div>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {new Intl.NumberFormat('es-CO', { 
@@ -673,12 +777,19 @@ export default function DashboardPage() {
               </div>
 
         {/* Efectivo */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {effectiveDateFilter === 'today' ? 'Hoy' : 
+                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                 'Todos los Períodos'}
+              </p>
+            </div>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {new Intl.NumberFormat('es-CO', { 
@@ -693,12 +804,19 @@ export default function DashboardPage() {
               </div>
 
         {/* Transferencia */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {effectiveDateFilter === 'today' ? 'Hoy' : 
+                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                 'Todos los Períodos'}
+              </p>
+            </div>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {new Intl.NumberFormat('es-CO', { 
@@ -713,12 +831,15 @@ export default function DashboardPage() {
               </div>
 
         {/* Dinero Afuera */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
               <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Total</p>
+            </div>
           </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {new Intl.NumberFormat('es-CO', { 
@@ -736,7 +857,7 @@ export default function DashboardPage() {
       {/* Segunda fila de métricas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {/* Garantías Completadas */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -752,12 +873,19 @@ export default function DashboardPage() {
         </div>
 
         {/* Ganancia Bruta */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {effectiveDateFilter === 'today' ? 'Hoy' : 
+                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                 'Todos los Períodos'}
+              </p>
+            </div>
                     </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {new Intl.NumberFormat('es-CO', { 
@@ -766,29 +894,74 @@ export default function DashboardPage() {
               minimumFractionDigits: 0 
             }).format(metrics.grossProfit)}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
             Beneficio por ventas realizadas
-                      </p>
+          </p>
+          
+          {/* Lista de ventas más rentables */}
+          {metrics.topProfitableSales.length > 0 && (
+            <div className="space-y-1">
+              {metrics.topProfitableSales.map((sale, index) => {
+                const saleTime = new Date(sale.createdAt).toLocaleTimeString('es-CO', { 
+                  hour: '2-digit', 
+                  minute: '2-digit' 
+                })
+                const clientName = sale.clientName || 'Cliente'
+                
+                return (
+                  <div key={sale.id} className="flex justify-between items-center text-sm">
+                    <span className="text-gray-600 dark:text-gray-400">
+                      • {clientName} ({saleTime})
+                    </span>
+                    <span className="text-green-600 dark:text-green-400 font-medium">
+                      +${sale.profit.toLocaleString('es-CO')}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          )}
                     </div>
 
         {/* Productos en Stock */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
               <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
-                  </div>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Stock Total</p>
+            </div>
+          </div>
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {metrics.totalProducts}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
             {metrics.lowStockProducts} con stock bajo
           </p>
-                </div>
+          <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-2">
+            <div>
+              <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                ${metrics.totalStockInvestment.toLocaleString('es-CO')}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Inversión Total en Stock
+              </p>
+            </div>
+            <div>
+              <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                ${metrics.estimatedSalesValue.toLocaleString('es-CO')}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">
+                Valor Estimado de Ventas
+              </p>
+            </div>
+          </div>
+        </div>
                 
         {/* Facturas Anuladas */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
               <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -808,14 +981,21 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Gráfico de ventas por día */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-blue-600" />
+          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Ventas por Día</h2>
+              <div className="text-right">
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ventas por Día</span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {effectiveDateFilter === 'today' ? 'Hoy' : 
+                   effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                   'Todos los Períodos'}
+                </p>
+              </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 mt-1">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
               {metrics.salesChartData.length > 0 
                 ? `${metrics.salesChartData.length} días con ventas en el período seleccionado`
                 : 'No hay ventas en el período seleccionado'
@@ -1012,5 +1192,6 @@ export default function DashboardPage() {
         </div>
       </div>
     </div>
+    </RoleProtectedRoute>
   )
 }

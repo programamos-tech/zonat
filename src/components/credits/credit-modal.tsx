@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { SuccessAlert } from '@/components/ui/success-alert'
 import { DatePicker } from '@/components/ui/date-picker'
 import { 
   X, 
@@ -15,7 +14,9 @@ import {
   Plus, 
   Minus,
   Search,
-  ShoppingCart
+  ShoppingCart,
+  ChevronDown,
+  AlertTriangle
 } from 'lucide-react'
 import { Credit, Client, SaleItem, Product } from '@/types'
 import { useProducts } from '@/contexts/products-context'
@@ -47,10 +48,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [stockAlert, setStockAlert] = useState<{show: boolean, message: string, productId?: string}>({show: false, message: ''})
   const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
-  const [showSuccessAlert, setShowSuccessAlert] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -157,7 +158,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     
     // No agregar productos sin stock
     if (totalStock <= 0) {
-      alert(`❌ No puedes agregar "${product.name}" porque no tiene stock disponible.\nStock: ${totalStock}`)
+      showStockAlert(`No puedes agregar "${product.name}" porque no tiene stock disponible. Stock: ${totalStock}`, product.id)
       return
     }
     
@@ -166,7 +167,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     if (existingItem) {
       const newQuantity = existingItem.quantity + 1
       if (newQuantity > totalStock) {
-        alert(`❌ No puedes agregar más de "${product.name}".\nStock disponible: ${totalStock}`)
+        showStockAlert(`No puedes agregar más de "${product.name}". Stock disponible: ${totalStock}`, product.id)
         return
       }
       setSelectedProducts(prev => 
@@ -205,7 +206,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     if (product) {
       const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
       if (newQuantity > totalStock) {
-        alert(`❌ No hay suficiente stock para "${product.name}".\nStock disponible: ${totalStock}`)
+        showStockAlert(`No hay suficiente stock para "${product.name}". Stock disponible: ${totalStock}`, productId)
         return
       }
     }
@@ -316,9 +317,6 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       onCreateCredit(newCredit)
       handleClose()
       
-      // Mostrar alerta de éxito
-      setShowSuccessAlert(true)
-      
     } catch (error) {
       console.error('Error creating credit:', error)
       alert('❌ Error al crear el crédito. Por favor intenta de nuevo.')
@@ -338,10 +336,15 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     setProductSearch('')
     setShowProductDropdown(false)
     setSelectedDate(null)
+    setStockAlert({show: false, message: ''})
   }
 
-  const handleCloseSuccessAlert = () => {
-    setShowSuccessAlert(false)
+  const showStockAlert = (message: string, productId?: string) => {
+    setStockAlert({show: true, message, productId})
+    // Auto-hide after 4 seconds
+    setTimeout(() => {
+      setStockAlert({show: false, message: ''})
+    }, 4000)
   }
 
   const handleClose = () => {
@@ -355,9 +358,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-visible flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-800 dark:to-gray-700">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-white dark:from-pink-900/20 dark:to-gray-800">
           <div className="flex items-center gap-3">
-            <CreditCard className="h-8 w-8 text-gray-600 dark:text-gray-400" />
+            <CreditCard className="h-8 w-8 text-pink-600" />
             <div>
               <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 Crear Venta a Crédito
@@ -378,7 +381,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto overflow-x-visible p-6 min-h-0">
+        <div className="flex-1 overflow-y-auto p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Cliente */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -460,21 +463,22 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         </div>
                       ) : (
                         filteredProducts
-                          .filter(product => {
-                            const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
-                            return totalStock > 0
-                          })
                           .slice(0, 10)
                           .map((product) => {
                           const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+                          const hasStock = totalStock > 0
                           
                           return (
                         <div
                           key={product.id}
-                          onClick={() => addProduct(product)}
-                          className="p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 hover:bg-gray-50 dark:hover:bg-gray-600 cursor-pointer bg-white dark:bg-gray-700"
+                          onClick={() => hasStock ? addProduct(product) : null}
+                          className={`p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 cursor-pointer ${
+                            hasStock 
+                              ? 'hover:bg-gray-50 dark:hover:bg-gray-600 bg-white dark:bg-gray-700' 
+                              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                          }`}
                         >
-                          <div className="font-medium text-gray-900 dark:text-white">
+                          <div className={`font-medium ${hasStock ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'}`}>
                             {product.name}
                           </div>
                           <div className="text-sm text-gray-600 dark:text-gray-300">
@@ -482,6 +486,11 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                             Stock: {(product.stock?.warehouse || 0) + (product.stock?.store || 0)} | 
                             Precio: ${(product.price || 0).toLocaleString('es-CO')}
                           </div>
+                          {!hasStock && (
+                            <div className="mt-2 px-2 py-1 bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 text-xs font-medium rounded">
+                              Sin Stock
+                            </div>
+                          )}
                         </div>
                       )})
                       )}
@@ -591,6 +600,18 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                     })}
                   </div>
                 )}
+
+                {/* Alerta sutil de stock */}
+                {stockAlert.show && (
+                  <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-600 rounded-lg shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                      <div className="text-sm font-medium text-red-800 dark:text-red-200">
+                        {stockAlert.message}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -612,6 +633,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                     onDateSelect={setSelectedDate}
                     placeholder="Seleccionar fecha de vencimiento"
                     className="w-full"
+                    minDate={new Date()}
                   />
                 </div>
                 <div>
@@ -704,14 +726,6 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           </Button>
         </div>
       </div>
-      
-      {/* Alerta de éxito */}
-      <SuccessAlert
-        isOpen={showSuccessAlert}
-        onClose={handleCloseSuccessAlert}
-        title="¡Crédito creado exitosamente!"
-        message="La venta a crédito ha sido registrada correctamente. El cliente puede ver el detalle en su historial de créditos."
-      />
     </div>
   )
 }

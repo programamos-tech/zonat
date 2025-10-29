@@ -10,7 +10,7 @@ import { toast } from 'sonner'
 import { Users } from 'lucide-react'
 
 export default function ClientsPage() {
-  const { clients, loading, createClient, updateClient, deleteClient } = useClients()
+  const { clients, loading, createClient, updateClient, deleteClient, getAllClients } = useClients()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
@@ -39,6 +39,11 @@ export default function ClientsPage() {
     }
   }
 
+
+  const handleRefresh = async () => {
+    await getAllClients()
+    toast.success('Lista de clientes actualizada')
+  }
 
   const handleCreate = () => {
     setSelectedClient(null)
@@ -83,6 +88,7 @@ export default function ClientsPage() {
         onEdit={handleEdit}
         onDelete={handleDelete}
         onCreate={handleCreate}
+        onRefresh={handleRefresh}
       />
 
       <ClientModal

@@ -863,9 +863,12 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
                   {/* Alerta general de stock */}
                   {stockAlert.show && !stockAlert.productId && (
-                    <div className="mt-2 p-2 bg-red-900/20 border border-red-500/30 rounded-md">
-                      <div className="text-xs text-red-400 text-center">
-                        {stockAlert.message}
+                    <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-600 rounded-lg shadow-sm">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                        <div className="text-sm font-medium text-red-800 dark:text-red-200">
+                          {stockAlert.message}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -982,9 +985,12 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             
                             {/* Stock Alert */}
                             {stockAlert.show && stockAlert.productId === item.productId && (
-                              <div className="mt-3 p-2 bg-red-900/20 border border-red-500/30 rounded-md">
-                                <div className="text-xs text-red-400 text-center">
-                                  {stockAlert.message}
+                              <div className="mt-3 p-3 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-600 rounded-lg shadow-sm">
+                                <div className="flex items-center gap-2">
+                                  <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
+                                  <div className="text-sm font-medium text-red-800 dark:text-red-200">
+                                    {stockAlert.message}
+                                  </div>
                                 </div>
                               </div>
                             )}

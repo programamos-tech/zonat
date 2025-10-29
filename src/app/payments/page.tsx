@@ -6,6 +6,7 @@ import { CreditTable } from '@/components/payments/payment-table'
 import { CreditModal } from '@/components/credits/credit-modal'
 import { PaymentModal } from '@/components/credits/payment-modal'
 import { CreditDetailModal } from '@/components/credits/credit-detail-modal'
+import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
 
@@ -51,10 +52,37 @@ export default function CreditsPage() {
     }
   }, [])
 
+  // Escuchar eventos de crédito cancelado para refrescar la vista
+  useEffect(() => {
+    console.log('🎧 Configurando listener para eventos creditCancelled')
+    
+    const handleCreditCancelled = (event: CustomEvent) => {
+      console.log('🔄 Crédito cancelado detectado, refrescando vista:', event.detail)
+      console.log('🔄 Ejecutando loadCredits()...')
+      loadCredits()
+    }
+
+    window.addEventListener('creditCancelled', handleCreditCancelled as EventListener)
+    console.log('✅ Listener configurado exitosamente')
+    
+    return () => {
+      console.log('🧹 Limpiando listener de eventos creditCancelled')
+      window.removeEventListener('creditCancelled', handleCreditCancelled as EventListener)
+    }
+  }, [])
+
   const loadCredits = async () => {
     try {
+      console.log('🔄 Iniciando loadCredits()...')
       setIsLoading(true)
       const creditsData = await CreditsService.getAllCredits()
+      console.log('📊 Créditos obtenidos de la DB:', creditsData.length)
+      console.log('📊 Primeros créditos:', creditsData.slice(0, 3).map(c => ({ 
+        id: c.id, 
+        invoiceNumber: c.invoiceNumber, 
+        status: c.status,
+        totalAmount: c.totalAmount 
+      })))
       
       // Agrupar créditos por cliente
       const groupedCredits = creditsData.reduce((acc, credit) => {
@@ -80,6 +108,8 @@ export default function CreditsPage() {
           acc[key].status = 'completed'
         } else if (acc[key].paidAmount > 0) {
           acc[key].status = 'partial'
+        } else {
+          acc[key].status = 'pending'
         }
         
         return acc
@@ -137,9 +167,11 @@ export default function CreditsPage() {
 
   const handlePayment = (credit: Credit) => {
     console.log('handlePayment llamado con:', credit.id, credit.invoiceNumber)
+    console.log('Abriendo modal de pagos...')
     setSelectedCredit(credit)
     // NO cerrar el modal de detalles, solo abrir el de pago
     setIsPaymentModalOpen(true)
+    console.log('isPaymentModalOpen debería ser true ahora')
   }
 
   const handleViewSale = (invoiceNumber: string) => {
@@ -154,12 +186,17 @@ export default function CreditsPage() {
     sessionStorage.setItem('selectedInvoice', invoiceNumber)
   }
 
+  const handleRefresh = async () => {
+    await loadCredits()
+  }
+
   const handleCreate = () => {
     setIsCreditModalOpen(true)
   }
 
   const handleCreateCredit = async (credit: Credit) => {
-    setCredits(prev => [credit, ...prev])
+    // Recargar créditos para agrupar automáticamente
+    await loadCredits()
     setIsCreditModalOpen(false)
   }
 
@@ -232,13 +269,15 @@ export default function CreditsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <RoleProtectedRoute module="payments" requiredAction="view">
+      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <CreditTable
         credits={credits}
         onView={handleView}
         onPayment={handlePayment}
         onCreate={handleCreate}
         isLoading={isLoading}
+        onRefresh={handleRefresh}
       />
 
       <CreditModal
@@ -268,5 +307,6 @@ export default function CreditsPage() {
         onViewSale={handleViewSale}
       />
     </div>
+    </RoleProtectedRoute>
   )
 }

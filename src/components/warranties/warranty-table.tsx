@@ -13,7 +13,8 @@ import {
   Trash2,
   Clock,
   AlertTriangle,
-  Shield
+  Shield,
+  RefreshCcw
 } from 'lucide-react'
 import { Warranty } from '@/types'
 
@@ -25,6 +26,7 @@ interface WarrantyTableProps {
   onEdit: (warranty: Warranty) => void
   onStatusChange: (warrantyId: string, newStatus: string, notes?: string) => void
   onSearch: (searchTerm: string) => void
+  onRefresh?: () => void
 }
 
 export function WarrantyTable({ 
@@ -34,7 +36,8 @@ export function WarrantyTable({
   onView, 
   onEdit, 
   onStatusChange,
-  onSearch 
+  onSearch,
+  onRefresh
 }: WarrantyTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -123,13 +126,25 @@ export function WarrantyTable({
                 Administra las garantías y productos devueltos
               </p>
             </div>
-            <Button 
-              onClick={onCreate}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Garantía
-            </Button>
+            <div className="flex items-center gap-3">
+              {onRefresh && (
+                <Button 
+                  onClick={onRefresh} 
+                  variant="outline"
+                  className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20"
+                >
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Actualizar
+                </Button>
+              )}
+              <Button 
+                onClick={onCreate}
+                className="bg-orange-600 hover:bg-orange-700 text-white"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Garantía
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>

@@ -16,19 +16,25 @@ import {
   CheckCircle,
   Clock,
   AlertCircle,
-  XCircle
+  XCircle,
+  RefreshCcw
 } from 'lucide-react'
 import { Credit } from '@/types'
 
 // Funciones para manejar estados
-const getStatusColor = (status: string) => {
+const getStatusColor = (status: string, credit?: any) => {
+  // Si el crédito está cancelado (montos en 0), usar color rojo
+  if (isCreditCancelled(credit)) {
+    return 'bg-red-100 text-red-800 border-red-200'
+  }
+  
   switch (status) {
     case 'completed':
       return 'bg-green-100 text-green-800 border-green-200'
     case 'partial':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
+      return 'bg-orange-100 text-orange-800 border-orange-200'
     case 'pending':
-      return 'bg-blue-100 text-blue-800 border-blue-200'
+      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
     case 'overdue':
       return 'bg-red-100 text-red-800 border-red-200'
     case 'cancelled':
@@ -38,7 +44,12 @@ const getStatusColor = (status: string) => {
   }
 }
 
-const getStatusIcon = (status: string) => {
+const getStatusIcon = (status: string, credit?: any) => {
+  // Si el crédito está cancelado (montos en 0), usar ícono X
+  if (isCreditCancelled(credit)) {
+    return <XCircle className="h-4 w-4" />
+  }
+  
   switch (status) {
     case 'completed':
       return <CheckCircle className="h-4 w-4" />
@@ -55,7 +66,21 @@ const getStatusIcon = (status: string) => {
   }
 }
 
-const getStatusText = (status: string) => {
+// Función para verificar si un crédito está cancelado
+const isCreditCancelled = (credit: any) => {
+  // Si totalAmount y pendingAmount son 0, el crédito está cancelado
+  return credit?.totalAmount === 0 && credit?.pendingAmount === 0
+}
+
+const getStatusText = (status: string, credit?: any) => {
+  // Si el crédito está cancelado (montos en 0), mostrar "Anulado"
+  if (isCreditCancelled(credit)) {
+    console.log('🔍 Detectado crédito cancelado:', { status, totalAmount: credit?.totalAmount, pendingAmount: credit?.pendingAmount })
+    return 'Anulado'
+  }
+  
+  console.log('🔍 Status normal:', { status, totalAmount: credit?.totalAmount, pendingAmount: credit?.pendingAmount })
+  
   switch (status) {
     case 'completed':
       return 'Completado'
@@ -78,9 +103,10 @@ interface CreditTableProps {
   onPayment: (credit: Credit) => void
   onCreate: () => void
   isLoading?: boolean
+  onRefresh?: () => void
 }
 
-export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = false }: CreditTableProps) {
+export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = false, onRefresh }: CreditTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -125,12 +151,25 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
     }
   }
 
-  const getStatusColor = (status: string) => {
+  const getInvoiceCount = (invoiceNumber: string) => {
+    // Extraer el número de facturas del string como "10 facturas" o "7 facturas"
+    const match = invoiceNumber.match(/(\d+)\s+factura/)
+    const count = match ? parseInt(match[1]) : 1
+    console.log('Invoice number:', invoiceNumber, 'Extracted count:', count)
+    return count
+  }
+
+  const getStatusColor = (status: string, credit?: any) => {
+    // Si el crédito está cancelado (montos en 0), usar color rojo
+    if (isCreditCancelled(credit)) {
+      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+    }
+    
     switch (status) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
       case 'partial':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       case 'completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       case 'overdue':
@@ -142,7 +181,12 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
     }
   }
 
-  const getStatusLabel = (status: string) => {
+  const getStatusLabel = (status: string, credit?: any) => {
+    // Si el crédito está cancelado (montos en 0), mostrar "Anulado"
+    if (isCreditCancelled(credit)) {
+      return 'Anulado'
+    }
+    
     switch (status) {
       case 'pending':
         return 'Pendiente'
@@ -192,10 +236,22 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                   {formatCurrency(totalDebt)}
                 </div>
               </div>
-              <Button onClick={onCreate} className="bg-pink-600 hover:bg-pink-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Crédito
-              </Button>
+              <div className="flex items-center gap-3">
+                {onRefresh && (
+                  <Button 
+                    onClick={onRefresh} 
+                    variant="outline"
+                    className="text-pink-600 border-pink-600 hover:bg-pink-50 dark:text-pink-400 dark:border-pink-400 dark:hover:bg-pink-900/20"
+                  >
+                    <RefreshCcw className="h-4 w-4 mr-2" />
+                    Actualizar
+                  </Button>
+                )}
+                <Button onClick={onCreate} className="bg-pink-600 hover:bg-pink-700 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nuevo Crédito
+                </Button>
+              </div>
             </div>
           </div>
         </CardHeader>
@@ -309,9 +365,9 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge className={`${getStatusColor(credit.status)} flex items-center gap-1 w-fit`}>
-                          {getStatusIcon(credit.status)}
-                          {getStatusText(credit.status)}
+                        <Badge className={`${getStatusColor(credit.status, credit)} flex items-center gap-1 w-fit`}>
+                          {getStatusIcon(credit.status, credit)}
+                          {getStatusText(credit.status, credit)}
                         </Badge>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -354,13 +410,19 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             size="sm"
                             variant="ghost"
                             onClick={() => onPayment(credit)}
-                            disabled={credit.status === 'cancelled'}
+                            disabled={credit.status === 'cancelled' || getInvoiceCount(credit.invoiceNumber) > 1}
                             className={`${
-                              credit.status === 'cancelled' 
+                              credit.status === 'cancelled' || getInvoiceCount(credit.invoiceNumber) > 1
                                 ? 'text-gray-400 cursor-not-allowed opacity-50' 
                                 : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
                             }`}
-                            title={credit.status === 'cancelled' ? 'Crédito anulado' : 'Registrar abono'}
+                            title={
+                              credit.status === 'cancelled' 
+                                ? 'Crédito anulado' 
+                                : getInvoiceCount(credit.invoiceNumber) > 1 
+                                  ? 'Más de 1 factura - Use el detalle para registrar abonos'
+                                  : 'Registrar abono'
+                            }
                           >
                             <DollarSign className="h-4 w-4" />
                           </Button>

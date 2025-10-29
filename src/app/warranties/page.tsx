@@ -24,6 +24,10 @@ export default function WarrantiesPage() {
   const [searchResults, setSearchResults] = useState<Warranty[]>([])
   const [isSearching, setIsSearching] = useState(false)
 
+  const handleRefresh = async () => {
+    await refreshWarranties()
+  }
+
   const handleCreateWarranty = () => {
     setSelectedWarranty(null)
     setShowCreateModal(true)
@@ -91,6 +95,7 @@ export default function WarrantiesPage() {
           onEdit={handleEditWarranty}
           onStatusChange={handleStatusChange}
           onSearch={handleSearch}
+          onRefresh={handleRefresh}
         />
 
         {/* Modales */}

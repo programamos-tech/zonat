@@ -11,7 +11,8 @@ import {
   Trash2, 
   Users,
   Building2,
-  User
+  User,
+  RefreshCcw
 } from 'lucide-react'
 import { Client } from '@/types'
 
@@ -20,13 +21,15 @@ interface ClientTableProps {
   onEdit: (client: Client) => void
   onDelete: (client: Client) => void
   onCreate: () => void
+  onRefresh?: () => void
 }
 
 export function ClientTable({ 
   clients, 
   onEdit, 
   onDelete, 
-  onCreate 
+  onCreate,
+  onRefresh
 }: ClientTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
@@ -105,10 +108,22 @@ export function ClientTable({
                 Administra tus clientes minoristas, mayoristas y consumidores finales
               </p>
             </div>
-            <Button onClick={onCreate} className="bg-purple-600 hover:bg-purple-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Cliente
-            </Button>
+            <div className="flex items-center gap-3">
+              {onRefresh && (
+                <Button 
+                  onClick={onRefresh} 
+                  variant="outline"
+                  className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20"
+                >
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Actualizar
+                </Button>
+              )}
+              <Button onClick={onCreate} className="bg-purple-600 hover:bg-purple-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Cliente
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>

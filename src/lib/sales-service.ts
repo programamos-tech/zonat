@@ -486,51 +486,77 @@ export class SalesService {
       let totalRefund = 0
 
       console.log('🔄 Iniciando cancelación de venta:', { id, reason, paymentMethod: sale.paymentMethod })
+      console.log('🔍 Verificando si es venta a crédito...', { isCredit: sale.paymentMethod === 'credit' })
       
-      // Si es una venta a crédito, anular el crédito y sus abonos
+      // 🚀 OPTIMIZACIÓN: Obtener crédito una sola vez al inicio si es necesario
+      let credit = null
       if (sale.paymentMethod === 'credit') {
-        console.log('💳 Es una venta a crédito, cancelando crédito...')
+        console.log('📋 Obteniendo información del crédito...')
         const { CreditsService } = await import('./credits-service')
-        const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+        credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
         
+        if (!credit) {
+          console.warn('⚠️ No se encontró crédito para la venta')
+        } else {
+          console.log('✅ Crédito encontrado:', { creditId: credit.id, invoiceNumber: credit.invoiceNumber })
+        }
+      }
+      
+      // Si es una venta a crédito, manejar cancelación parcial
+      if (sale.paymentMethod === 'credit') {
+        console.log('💳 Es una venta a crédito, manejando cancelación parcial...')
+        
+        // Devolver stock al local (siempre hacer esto para ventas a crédito canceladas)
+        console.log('📦 Devolviendo stock al local para venta a crédito cancelada...')
+        console.log('🔍 Venta items:', sale.items.map(item => ({ productId: item.productId, productName: item.productName, quantity: item.quantity })))
+        
+        // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote en lugar de loop secuencial
+        const stockReturnItems = sale.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          productName: item.productName
+        }))
+        
+        console.log('🚀 Iniciando procesamiento en lote para', stockReturnItems.length, 'productos')
+        const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
+        
+        if (stockReturnResult.success) {
+          console.log('✅ Todos los productos fueron devueltos al stock exitosamente')
+        } else {
+          const failedReturns = stockReturnResult.results.filter(r => !r.success)
+          console.warn('⚠️ Algunos productos no pudieron ser devueltos al stock:', failedReturns)
+          // Continuar con la anulación aunque algunos productos no se pudieron devolver
+        }
+
+        // Actualizar el crédito para reflejar la cancelación parcial
         if (credit) {
-          console.log('📋 Crédito encontrado, cancelando...')
-          const currentUser = await AuthService.getCurrentUser()
-          const cancelResult = await CreditsService.cancelCredit(
-            credit.id, 
-            reason, 
-            currentUserId, 
-            currentUser?.name || 'Usuario'
-          )
-          totalRefund = cancelResult.totalRefund
-          console.log('✅ Crédito cancelado, reembolso:', totalRefund)
+          console.log('📋 Actualizando crédito para reflejar cancelación parcial...')
+          
+          // Recalcular el estado del crédito basado en las ventas activas
+          // Esto se moverá después de actualizar la venta
         } else {
           console.warn('⚠️ No se encontró crédito para la venta')
         }
-        // NO devolver stock aquí porque CreditsService.cancelCredit ya lo hace
       } else {
         console.log('💰 Es una venta normal, devolviendo stock...')
-        // Solo devolver productos al stock si NO es una venta a crédito
-        const stockReturnResults = []
-        for (const item of sale.items) {
-          try {
-            console.log('📦 Devolviendo stock para producto:', { productId: item.productId, quantity: item.quantity })
-            const result = await ProductsService.returnStockFromSale(item.productId, item.quantity, currentUserId)
-            stockReturnResults.push({ productId: item.productId, success: result })
-            console.log('✅ Stock devuelto:', { productId: item.productId, success: result })
-          } catch (error) {
-            console.error(`❌ Error returning stock for product ${item.productId}:`, error)
-            stockReturnResults.push({ productId: item.productId, success: false, error })
-          }
-        }
+        console.log('🔍 Payment method:', sale.paymentMethod)
         
-        // Verificar si hubo errores en el retorno de stock
-        const failedReturns = stockReturnResults.filter(r => !r.success)
-        if (failedReturns.length > 0) {
+        // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote para ventas normales también
+        const stockReturnItems = sale.items.map(item => ({
+          productId: item.productId,
+          quantity: item.quantity,
+          productName: item.productName
+        }))
+        
+        console.log('🚀 Iniciando procesamiento en lote para venta normal:', stockReturnItems.length, 'productos')
+        const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
+        
+        if (stockReturnResult.success) {
+          console.log('✅ Todos los productos fueron devueltos al stock exitosamente')
+        } else {
+          const failedReturns = stockReturnResult.results.filter(r => !r.success)
           console.warn('⚠️ Algunos productos no pudieron ser devueltos al stock:', failedReturns)
           // Continuar con la anulación aunque algunos productos no se pudieron devolver
-        } else {
-          console.log('✅ Todos los productos fueron devueltos al stock exitosamente')
         }
       }
 
@@ -546,6 +572,32 @@ export class SalesService {
       if (error) {
         console.error('Error cancelling sale:', error)
         throw error
+      }
+
+      console.log('✅ Venta marcada como cancelled en la DB')
+
+      // Verificar que la venta se actualizó correctamente
+      const { data: updatedSale, error: verifyError } = await supabase
+        .from('sales')
+        .select('id, status, invoice_number')
+        .eq('id', id)
+        .single()
+
+      if (verifyError) {
+        console.error('Error verificando venta actualizada:', verifyError)
+      } else {
+        console.log('🔍 Estado de la venta después de cancelar:', updatedSale)
+        
+        // 🚀 OPTIMIZACIÓN: Solo actualizar crédito si es necesario (evitar query redundante)
+        if (sale.paymentMethod === 'credit') {
+          console.log('📋 Actualizando crédito después de confirmar cancelación de venta...')
+          // Usar el crédito que ya obtuvimos anteriormente en lugar de hacer otra query
+          if (credit) {
+            await this.updateCreditStatusAfterSaleCancellation(credit.id, sale.id)
+          } else {
+            console.warn('⚠️ No se encontró crédito para la venta')
+          }
+        }
       }
 
       // Log de actividad
@@ -564,6 +616,125 @@ export class SalesService {
       return { success: true, totalRefund }
     } catch (error) {
       console.error('Error in cancelSale:', error)
+      throw error
+    }
+  }
+
+  // Actualizar el estado del crédito después de cancelar una venta
+  static async updateCreditStatusAfterSaleCancellation(creditId: string, cancelledSaleId: string): Promise<void> {
+    try {
+      console.log('🔄 Recalculando estado del crédito después de cancelación...')
+      
+      // Obtener la venta cancelada para obtener el cliente
+      const cancelledSale = await this.getSaleById(cancelledSaleId)
+      if (!cancelledSale) {
+        console.error('No se pudo obtener la venta cancelada')
+        return
+      }
+
+      // Obtener todas las ventas con el mismo número de factura (crédito específico)
+      const { data: allSales, error: salesError } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('invoice_number', cancelledSale.invoiceNumber)
+        .order('created_at', { ascending: true })
+
+      console.log('🔍 Todas las ventas del crédito:', allSales?.map(s => ({ 
+        id: s.id, 
+        invoiceNumber: s.invoice_number, 
+        status: s.status, 
+        total: s.total 
+      })))
+
+      if (salesError) {
+        console.error('Error obteniendo ventas del crédito:', salesError)
+        return
+      }
+
+      if (!allSales || allSales.length === 0) {
+        console.warn('No se encontraron ventas para el crédito')
+        return
+      }
+
+      // Calcular totales solo de ventas activas (no canceladas)
+      const activeSales = allSales.filter(sale => sale.status !== 'cancelled')
+      const totalAmount = activeSales.reduce((sum, sale) => sum + sale.total, 0)
+      
+      console.log('📊 Ventas activas:', activeSales.length, 'de', allSales.length, 'total')
+      console.log('💰 Monto total activo:', totalAmount)
+
+      // Si no hay ventas activas, solo actualizar los montos a 0 (mantener status original)
+      if (activeSales.length === 0) {
+        console.log('🚫 Todas las ventas están canceladas, actualizando montos a 0')
+        console.log('🔍 Credit ID:', creditId)
+        
+        const { error: updateError } = await supabase
+          .from('credits')
+          .update({
+            total_amount: 0,
+            pending_amount: 0,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', creditId)
+
+        if (updateError) {
+          console.error('Error actualizando montos del crédito:', updateError)
+          throw updateError
+        }
+
+        console.log('✅ Montos del crédito actualizados a 0')
+        return
+      }
+
+      // Obtener el monto pagado actual del crédito
+      const { data: creditData, error: creditError } = await supabase
+        .from('credits')
+        .select('paid_amount')
+        .eq('id', creditId)
+        .single()
+
+      if (creditError) {
+        console.error('Error obteniendo datos del crédito:', creditError)
+        return
+      }
+
+      const paidAmount = creditData.paid_amount || 0
+      const pendingAmount = totalAmount - paidAmount
+
+      // Determinar el nuevo estado del crédito
+      let newStatus = 'pending'
+      if (pendingAmount <= 0) {
+        newStatus = 'completed'
+      } else if (paidAmount > 0) {
+        newStatus = 'partial'
+      }
+
+      console.log('📈 Nuevo estado calculado:', {
+        totalAmount,
+        paidAmount,
+        pendingAmount,
+        newStatus
+      })
+
+      // Actualizar el crédito
+      const { error: updateError } = await supabase
+        .from('credits')
+        .update({
+          total_amount: totalAmount,
+          pending_amount: pendingAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', creditId)
+
+      if (updateError) {
+        console.error('Error actualizando crédito:', updateError)
+        throw updateError
+      }
+
+      console.log('✅ Crédito actualizado exitosamente')
+    } catch (error) {
+      console.error('Error en updateCreditStatusAfterSaleCancellation:', error)
       throw error
     }
   }

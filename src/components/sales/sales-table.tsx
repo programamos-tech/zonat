@@ -12,7 +12,8 @@ import {
   Eye,
   Receipt,
   Download,
-  Printer
+  Printer,
+  RefreshCcw
 } from 'lucide-react'
 import { Sale } from '@/types'
 
@@ -29,6 +30,7 @@ interface SalesTableProps {
   onPrint: (sale: Sale) => void
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Sale[]>
+  onRefresh?: () => void
 }
 
 export function SalesTable({ 
@@ -43,7 +45,8 @@ export function SalesTable({
   onCreate, 
   onPrint,
   onPageChange,
-  onSearch
+  onSearch,
+  onRefresh
 }: SalesTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -199,10 +202,22 @@ export function SalesTable({
                 Administra tus ventas y genera facturas
               </p>
             </div>
-            <Button onClick={onCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
-              <Plus className="h-4 w-4 mr-2" />
-              Nueva Venta
-            </Button>
+            <div className="flex items-center gap-3">
+              {onRefresh && (
+                <Button 
+                  onClick={onRefresh} 
+                  variant="outline"
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                >
+                  <RefreshCcw className="h-4 w-4 mr-2" />
+                  Actualizar
+                </Button>
+              )}
+              <Button onClick={onCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Plus className="h-4 w-4 mr-2" />
+                Nueva Venta
+              </Button>
+            </div>
           </div>
         </CardHeader>
       </Card>

@@ -7,6 +7,7 @@ import { CategoryModal } from '@/components/categories/category-modal'
 import { StockTransferModal } from '@/components/products/stock-transfer-modal'
 import { StockAdjustmentModal } from '@/components/products/stock-adjustment-modal'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { useProducts } from '@/contexts/products-context'
 import { useCategories } from '@/contexts/categories-context'
 import { Product, Category, StockTransfer } from '@/types'
@@ -169,7 +170,8 @@ export default function ProductsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <RoleProtectedRoute module="products" requiredAction="view">
+      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <ProductTable
         products={products}
         categories={categories}
@@ -246,6 +248,7 @@ export default function ProductsPage() {
                 type="danger"
               />
 
-            </div>
-          )
-        }
+      </div>
+    </RoleProtectedRoute>
+  )
+}

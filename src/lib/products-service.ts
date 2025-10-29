@@ -510,20 +510,27 @@ export class ProductsService {
         return false
       }
       
-      console.log('📦 Producto encontrado:', product.name)
+      console.log('📦 Producto encontrado:', { name: product.name, currentStock: product.stock })
+      console.log('📦 Stock actual en local:', product.stock.store)
+      console.log('📦 Cantidad a devolver:', quantity)
 
       // Devolver el stock al local (store) por defecto
+      const newStockStore = (product.stock.store || 0) + quantity
+      console.log('📦 Nuevo stock en local será:', newStockStore)
+      
       const { error } = await supabase
         .from('products')
         .update({
-          stock_store: (product.stock.store || 0) + quantity
+          stock_store: newStockStore
         })
         .eq('id', productId)
 
       if (error) {
-        console.error('Error returning stock:', error)
+        console.error('❌ Error returning stock:', error)
         return false
       }
+
+      console.log('✅ Stock actualizado exitosamente en la base de datos')
 
       // Registrar la actividad
       if (currentUserId) {
@@ -566,6 +573,155 @@ export class ProductsService {
     } catch (error) {
       console.error('Error in returnStockFromSale:', error)
       return false
+    }
+  }
+
+  // 🚀 NUEVA FUNCIÓN: Devolver stock de múltiples productos en lote (OPTIMIZADA)
+  static async returnStockFromSaleBatch(items: Array<{productId: string, quantity: number, productName?: string}>, currentUserId?: string): Promise<{success: boolean, results: Array<{productId: string, success: boolean, error?: any}>}> {
+    try {
+      console.log('🚀 returnStockFromSaleBatch llamado:', { itemsCount: items.length, currentUserId })
+      
+      if (!items || items.length === 0) {
+        console.log('⚠️ No hay items para procesar')
+        return { success: true, results: [] }
+      }
+
+      // 1. Obtener todos los productos de una vez
+      const productIds = items.map(item => item.productId)
+      console.log('📦 Obteniendo productos:', productIds)
+      
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('id, name, reference, stock_store')
+        .in('id', productIds)
+
+      if (productsError) {
+        console.error('❌ Error obteniendo productos:', productsError)
+        throw productsError
+      }
+
+      console.log('📦 Productos obtenidos:', products?.length || 0)
+
+      // 2. Preparar actualizaciones masivas
+      const updates = items.map(item => {
+        const product = products?.find(p => p.id === item.productId)
+        if (!product) {
+          console.error('❌ Producto no encontrado:', item.productId)
+          return null
+        }
+
+        const currentStock = product.stock_store || 0
+        const newStock = currentStock + item.quantity
+        
+        console.log('📦 Preparando actualización:', {
+          productId: item.productId,
+          productName: product.name,
+          currentStock,
+          quantity: item.quantity,
+          newStock
+        })
+
+        return {
+          id: item.productId,
+          stock_store: newStock,
+          productName: product.name,
+          productReference: product.reference,
+          quantity: item.quantity,
+          previousStock: currentStock
+        }
+      }).filter(Boolean)
+
+      if (updates.length === 0) {
+        console.error('❌ No se encontraron productos válidos para actualizar')
+        return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error: 'Producto no encontrado' })) }
+      }
+
+      // 3. Actualización masiva usando Promise.all
+      console.log('🚀 Ejecutando actualizaciones masivas...')
+      const updatePromises = updates.map(async (update) => {
+        try {
+          const { error } = await supabase
+            .from('products')
+            .update({ stock_store: update.stock_store })
+            .eq('id', update.id)
+
+          if (error) {
+            console.error(`❌ Error actualizando producto ${update.id}:`, error)
+            return { productId: update.id, success: false, error }
+          }
+
+          console.log(`✅ Producto ${update.id} actualizado exitosamente`)
+          return { 
+            productId: update.id, 
+            success: true, 
+            productName: update.productName, 
+            productReference: update.productReference,
+            quantity: update.quantity,
+            previousStock: update.previousStock,
+            newStock: update.stock_store
+          }
+        } catch (error) {
+          console.error(`❌ Error en actualización de producto ${update.id}:`, error)
+          return { productId: update.id, success: false, error }
+        }
+      })
+
+      const results = await Promise.all(updatePromises)
+      console.log('🚀 Todas las actualizaciones completadas:', results)
+
+      // 4. Log consolidado (una sola vez)
+      if (currentUserId) {
+        const successfulUpdates = results.filter(r => r.success)
+        const failedUpdates = results.filter(r => !r.success)
+        
+        const description = `Cancelación de venta masiva: Se devolvieron ${successfulUpdates.length} productos al stock${failedUpdates.length > 0 ? ` (${failedUpdates.length} fallaron)` : ''}`
+        
+        console.log('🔄 Registrando log consolidado:', {
+          currentUserId,
+          successfulCount: successfulUpdates.length,
+          failedCount: failedUpdates.length,
+          description
+        })
+        
+        try {
+          await AuthService.logActivity(
+            currentUserId,
+            'sale_cancellation_stock_return_batch',
+            'products',
+            {
+              description,
+              successfulUpdates: successfulUpdates.map(r => ({
+                productId: r.productId,
+                productName: r.productName,
+                productReference: r.productReference,
+                quantityReturned: r.quantity,
+                previousStoreStock: r.previousStock,
+                newStoreStock: r.newStock,
+                location: 'store',
+                reason: 'Venta cancelada'
+              })),
+              failedUpdates: failedUpdates.map(r => ({
+                productId: r.productId,
+                error: r.error
+              })),
+              totalItems: items.length,
+              batchProcessing: true
+            }
+          )
+          console.log('✅ Log consolidado registrado exitosamente')
+        } catch (logError) {
+          console.error('❌ Error registrando log consolidado:', logError)
+          // No fallar la operación principal por un error de log
+        }
+      }
+
+      const allSuccessful = results.every(r => r.success)
+      console.log('🚀 Procesamiento en lote completado:', { allSuccessful, resultsCount: results.length })
+
+      return { success: allSuccessful, results }
+    } catch (error) {
+      console.error('❌ Error in returnStockFromSaleBatch:', error)
+      return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error })) }
     }
   }
 

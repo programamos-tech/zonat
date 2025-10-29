@@ -218,7 +218,7 @@ export interface Credit {
   lastPaymentAmount?: number
   lastPaymentDate?: string
   lastPaymentUser?: string
-  status: 'pending' | 'partial' | 'completed' | 'overdue'
+  status: 'pending' | 'partial' | 'completed' | 'overdue' | 'cancelled'
   dueDate?: string
   createdBy?: string
   createdByName?: string

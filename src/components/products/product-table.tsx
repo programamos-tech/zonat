@@ -257,7 +257,8 @@ export function ProductTable({
                   <Button 
                     onClick={onRefresh}
                     disabled={loading}
-                    className="bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white"
+                    variant="outline"
+                    className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50"
                   >
                     <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
                     Actualizar

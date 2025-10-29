@@ -137,6 +137,21 @@ export function SalesProvider({ children }: { children: ReactNode }) {
         return updated
       })
 
+      // Si es una venta a crédito, notificar para actualizar la vista de créditos
+      const cancelledSale = sales.find(sale => sale.id === id)
+      console.log('🔍 Venta cancelada encontrada:', cancelledSale)
+      console.log('🔍 Payment method:', cancelledSale?.paymentMethod)
+      
+      if (cancelledSale?.paymentMethod === 'credit') {
+        console.log('🚨 Emitiendo evento de crédito cancelado:', cancelledSale.invoiceNumber)
+        window.dispatchEvent(new CustomEvent('creditCancelled', { 
+          detail: { invoiceNumber: cancelledSale.invoiceNumber } 
+        }))
+        console.log('✅ Evento emitido exitosamente')
+      } else {
+        console.log('ℹ️ No es una venta a crédito, no se emite evento')
+      }
+
       return result
     } catch (error) {
       console.error('Error cancelling sale:', error)

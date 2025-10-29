@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { SalesTable } from '@/components/sales/sales-table'
 import { SaleModal } from '@/components/sales/sale-modal'
 import SaleDetailModal from '@/components/sales/sale-detail-modal'
+import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { useSales } from '@/contexts/sales-context'
 import { Sale } from '@/types'
 
@@ -20,7 +21,8 @@ export default function SalesPage() {
     deleteSale, 
     cancelSale, 
     goToPage,
-    searchSales
+    searchSales,
+    refreshSales
   } = useSales()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
@@ -75,6 +77,10 @@ export default function SalesPage() {
     setIsDetailModalOpen(true)
   }
 
+
+  const handleRefresh = async () => {
+    await refreshSales()
+  }
 
   const handleCreate = () => {
     setIsModalOpen(true)
@@ -449,7 +455,8 @@ export default function SalesPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen">
+    <RoleProtectedRoute module="sales" requiredAction="view">
+      <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen">
       <SalesTable
         sales={sales}
         loading={loading}
@@ -463,6 +470,7 @@ export default function SalesPage() {
         onPrint={handlePrint}
         onPageChange={goToPage}
         onSearch={searchSales}
+        onRefresh={handleRefresh}
       />
 
       <SaleModal
@@ -482,5 +490,6 @@ export default function SalesPage() {
         onPrint={handlePrint}
       />
     </div>
+    </RoleProtectedRoute>
   )
 }

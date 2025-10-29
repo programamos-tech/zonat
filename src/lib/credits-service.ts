@@ -50,15 +50,40 @@ export class CreditsService {
 
   // Obtener todos los créditos
   static async getAllCredits(): Promise<Credit[]> {
-    const { data, error } = await supabase
-      .from('credits')
-      .select('*')
-      .order('created_at', { ascending: false })
+    try {
+      console.log('🔄 Cargando créditos...')
+      
+      // Obtener todos los créditos
+      const { data: creditsData, error: creditsError } = await supabase
+        .from('credits')
+        .select('*')
+        .order('created_at', { ascending: false })
 
-    if (error) throw error
+      if (creditsError) {
+        console.error('Error obteniendo créditos:', creditsError)
+        throw creditsError
+      }
 
+      console.log('📊 Créditos encontrados:', creditsData?.length || 0)
+
+      if (!creditsData || creditsData.length === 0) {
+        console.log('ℹ️ No hay créditos en la base de datos')
+        return []
+      }
+
+      // Por ahora, devolver todos los créditos sin filtrado
+      // TODO: Implementar filtrado por ventas activas más adelante
+      return await this.mapCreditsData(creditsData)
+    } catch (error) {
+      console.error('Error en getAllCredits:', error)
+      throw error
+    }
+  }
+
+  // Función auxiliar para mapear datos de créditos
+  private static async mapCreditsData(creditsData: any[]): Promise<Credit[]> {
     // Obtener emails de usuarios únicos
-    const userIds = [...new Set(data.map(credit => credit.last_payment_user).filter(Boolean))]
+    const userIds = [...new Set(creditsData.map(credit => credit.last_payment_user).filter(Boolean))]
     const userEmails: { [key: string]: string } = {}
     
     if (userIds.length > 0) {
@@ -74,7 +99,7 @@ export class CreditsService {
       }
     }
 
-    return data.map(credit => ({
+    return creditsData.map(credit => ({
       id: credit.id,
       saleId: credit.sale_id,
       clientId: credit.client_id,

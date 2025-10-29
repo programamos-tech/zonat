@@ -8,9 +8,10 @@ interface DatePickerProps {
   onDateSelect: (date: Date | null) => void
   placeholder?: string
   className?: string
+  minDate?: Date
 }
 
-export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccionar fecha", className = "" }: DatePickerProps) {
+export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccionar fecha", className = "", minDate }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
   const [showAbove, setShowAbove] = useState(false)
@@ -72,6 +73,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
   }
 
   const handleDateClick = (date: Date) => {
+    if (isDateDisabled(date)) return
     onDateSelect(date)
     setIsOpen(false)
   }
@@ -97,6 +99,11 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
   const isToday = (date: Date) => {
     const today = new Date()
     return date.toDateString() === today.toDateString()
+  }
+
+  const isDateDisabled = (date: Date) => {
+    if (!minDate) return false
+    return date < minDate
   }
 
   const isSelected = (date: Date) => {
@@ -195,22 +202,26 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
               const { day, isCurrentMonth, date } = dayData
               const isCurrentDay = isToday(date)
               const isSelectedDay = isSelected(date)
+              const isDisabled = isDateDisabled(date)
               
               return (
                 <button
                   key={index}
                   onClick={() => handleDateClick(date)}
+                  disabled={isDisabled}
                   className={`
                     w-8 h-8 text-xs rounded transition-colors
-                    ${isCurrentMonth 
-                      ? 'text-gray-900 dark:text-white hover:bg-emerald-100 dark:hover:bg-emerald-900/30' 
-                      : 'text-gray-400 dark:text-gray-600'
+                    ${isDisabled 
+                      ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed bg-gray-100 dark:bg-gray-800' 
+                      : isCurrentMonth 
+                        ? 'text-gray-900 dark:text-white hover:bg-emerald-100 dark:hover:bg-emerald-900/30' 
+                        : 'text-gray-400 dark:text-gray-600'
                     }
-                    ${isCurrentDay 
+                    ${isCurrentDay && !isDisabled
                       ? 'bg-emerald-100 dark:bg-emerald-900/30 font-semibold' 
                       : ''
                     }
-                    ${isSelectedDay 
+                    ${isSelectedDay && !isDisabled
                       ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
                       : ''
                     }
@@ -226,8 +237,18 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
           <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex gap-2">
               <button
-                onClick={() => handleDateClick(new Date())}
-                className="flex-1 px-3 py-1 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded hover:bg-emerald-200 dark:hover:bg-emerald-900/50"
+                onClick={() => {
+                  const today = new Date()
+                  if (!isDateDisabled(today)) {
+                    handleDateClick(today)
+                  }
+                }}
+                disabled={isDateDisabled(new Date())}
+                className={`flex-1 px-3 py-1 text-xs rounded transition-colors ${
+                  isDateDisabled(new Date())
+                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+                }`}
               >
                 Hoy
               </button>

@@ -47,6 +47,9 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   const currentCredit = clientCredits.find(c => c.id === selectedCreditId) || credit
   
   console.log('Current credit:', currentCredit?.id, currentCredit?.invoiceNumber)
+  console.log('Selected credit ID:', selectedCreditId)
+  console.log('Available client credits:', clientCredits.map(c => ({ id: c.id, invoice: c.invoiceNumber })))
+  console.log('Due date:', currentCredit?.dueDate)
 
   useEffect(() => {
     if (isOpen && credit) {
@@ -69,6 +72,15 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
     }
   }, [currentCredit])
 
+  // Forzar re-render cuando cambie la selección
+  useEffect(() => {
+    console.log('Selected credit ID cambió a:', selectedCreditId)
+    if (selectedCreditId && clientCredits.length > 0) {
+      const newCredit = clientCredits.find(c => c.id === selectedCreditId)
+      console.log('Nuevo crédito seleccionado:', newCredit?.invoiceNumber)
+    }
+  }, [selectedCreditId, clientCredits])
+
   const loadPaymentHistory = async () => {
     if (!currentCredit) return
     
@@ -84,14 +96,25 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
     }
   }
 
-  const getStatusColor = (status: string) => {
+  // Función para verificar si un crédito está cancelado
+  const isCreditCancelled = (credit: any) => {
+    // Si totalAmount y pendingAmount son 0, el crédito está cancelado
+    return credit?.totalAmount === 0 && credit?.pendingAmount === 0
+  }
+
+  const getStatusColor = (status: string, credit?: any) => {
+    // Si el crédito está cancelado (montos en 0), usar color rojo
+    if (isCreditCancelled(credit)) {
+      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+    }
+    
     switch (status) {
       case 'completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 hover:text-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400'
       case 'partial':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 hover:bg-yellow-100 hover:text-yellow-800 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400'
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 hover:bg-orange-100 hover:text-orange-800 dark:hover:bg-orange-900/20 dark:hover:text-orange-400'
       case 'pending':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 hover:text-blue-800 dark:hover:bg-blue-900/20 dark:hover:text-blue-400'
+        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 hover:bg-yellow-100 hover:text-yellow-800 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400'
       case 'overdue':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
       case 'cancelled':
@@ -101,7 +124,12 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
     }
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string, credit?: any) => {
+    // Si el crédito está cancelado (montos en 0), usar ícono X
+    if (isCreditCancelled(credit)) {
+      return <XCircle className="h-4 w-4" />
+    }
+    
     switch (status) {
       case 'completed':
         return <CheckCircle className="h-4 w-4" />
@@ -194,19 +222,15 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                           onClick={() => setSelectedCreditId(c.id)}
                           className={`border rounded-lg p-3 cursor-pointer transition-all relative hover:shadow-md ${bgColor}`}
                         >
-                          {isSelected && (
-                            <div className="absolute top-2 right-2 bg-gray-600 dark:bg-gray-500 text-white rounded-full p-1">
-                              <Check className="h-4 w-4" />
-                            </div>
-                          )}
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <div className="font-semibold text-gray-900 dark:text-white">
                                 Factura: {c.invoiceNumber}
                               </div>
-                              <Badge className={`${getStatusColor(c.status)} flex items-center gap-1 w-fit mt-1`}>
-                                {getStatusIcon(c.status)}
-                                {c.status === 'completed' ? 'Completado' :
+                              <Badge className={`${getStatusColor(c.status, c)} flex items-center gap-1 w-fit mt-1`}>
+                                {getStatusIcon(c.status, c)}
+                                {isCreditCancelled(c) ? 'Anulado' :
+                                 c.status === 'completed' ? 'Completado' :
                                  c.status === 'partial' ? 'Parcial' :
                                  c.status === 'pending' ? 'Pendiente' :
                                  c.status === 'overdue' ? 'Vencido' :
@@ -274,9 +298,10 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Estado:
                     </label>
-                    <Badge className={`${getStatusColor(currentCredit?.status || 'pending')} flex items-center gap-1 w-fit`}>
-                      {getStatusIcon(currentCredit?.status || 'pending')}
-                      {currentCredit?.status === 'completed' ? 'Completado' :
+                    <Badge className={`${getStatusColor(currentCredit?.status || 'pending', currentCredit)} flex items-center gap-1 w-fit`}>
+                      {getStatusIcon(currentCredit?.status || 'pending', currentCredit)}
+                      {isCreditCancelled(currentCredit) ? 'Anulado' :
+                       currentCredit?.status === 'completed' ? 'Completado' :
                        currentCredit?.status === 'partial' ? 'Parcial' :
                        currentCredit?.status === 'pending' ? 'Pendiente' :
                        currentCredit?.status === 'overdue' ? 'Vencido' :
@@ -304,16 +329,17 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                     </p>
                   </div>
                   
-                  {currentCredit?.dueDate && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Fecha de Vencimiento:
-                      </label>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {new Date(currentCredit.dueDate).toLocaleDateString('es-CO')}
-                      </p>
-                    </div>
-                  )}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      Fecha de Vencimiento:
+                    </label>
+                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                      {currentCredit?.dueDate 
+                        ? new Date(currentCredit.dueDate).toLocaleDateString('es-CO')
+                        : 'No definida'
+                      }
+                    </p>
+                  </div>
                   
                   {currentCredit?.createdByName && (
                     <div>
@@ -369,21 +395,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                 ) : paymentHistory.length === 0 ? (
                   <div className="text-center py-8">
                     <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                    <p className="text-gray-500 dark:text-gray-400 mb-4">No hay abonos registrados</p>
-                    <Button 
-                      onClick={() => {
-                        if (currentCredit) {
-                          onAddPayment(currentCredit)
-                        } else {
-                          console.error('No hay crédito seleccionado')
-                        }
-                      }}
-                      disabled={!currentCredit}
-                      className="bg-pink-600 hover:bg-pink-700 text-white disabled:bg-gray-400 disabled:hover:bg-gray-400"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Registrar Primer Abono
-                    </Button>
+                    <p className="text-gray-500 dark:text-gray-400">No hay abonos registrados</p>
                   </div>
                 ) : (
                   <div className="space-y-3 max-h-64 overflow-y-auto">
@@ -412,9 +424,6 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                               </Badge>
                             )}
                           </div>
-                          <span className="text-sm text-gray-500 dark:text-gray-400">
-                            {new Date(payment.paymentDate).toLocaleDateString('es-CO')}
-                          </span>
                         </div>
                         
                         {payment.description && (
@@ -425,7 +434,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                         
                         <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
                           <span>Registrado por: {payment.userName}</span>
-                          <span>{new Date(payment.createdAt).toLocaleString('es-CO')}</span>
+                          <span>{new Date(payment.paymentDate).toLocaleString('es-CO')}</span>
                         </div>
                       </div>
                     ))}
