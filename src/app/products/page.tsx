@@ -50,7 +50,6 @@ export default function ProductsPage() {
     }
   }
 
-
   const handleStockAdjustment = (product: Product) => {
     setProductToAdjust(product)
     setIsAdjustmentModalOpen(true)
@@ -107,7 +106,6 @@ export default function ProductsPage() {
     }
   }
 
-
   const handleToggleCategoryStatus = async (categoryId: string, newStatus: 'active' | 'inactive') => {
     const success = await toggleCategoryStatus(categoryId, newStatus)
     if (success) {
@@ -136,7 +134,6 @@ export default function ProductsPage() {
     await refreshProducts()
     toast.success('Productos actualizados')
   }
-
 
   const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
     if (selectedProduct) {

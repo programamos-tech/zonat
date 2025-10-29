@@ -13,11 +13,21 @@ export interface LogEntry {
 }
 
 export class LogsService {
-  // Obtener logs con paginación para scroll infinito
-  static async getLogsPaginated(offset: number = 0, limit: number = 20): Promise<{ logs: LogEntry[], hasMore: boolean }> {
+  // Obtener logs con paginación por páginas (similar a ventas)
+  static async getLogsByPage(page: number = 1, limit: number = 20): Promise<{ logs: LogEntry[], total: number, hasMore: boolean }> {
     try {
-      console.log(`🔄 Obteniendo logs paginados (offset: ${offset}, limit: ${limit})...`)
+      const offset = (page - 1) * limit
       
+      // Obtener total de logs
+      const { count: totalCount, error: countError } = await supabase
+        .from('logs')
+        .select('*', { count: 'exact', head: true })
+
+      if (countError) {
+        return { logs: [], total: 0, hasMore: false }
+      }
+
+      // Obtener logs de la página
       const { data: logs, error } = await supabase
         .from('logs')
         .select(`
@@ -30,11 +40,8 @@ export class LogsService {
         .range(offset, offset + limit - 1)
 
       if (error) {
-        console.error('❌ Error obteniendo logs:', error)
-        return { logs: [], hasMore: false }
+        return { logs: [], total: 0, hasMore: false }
       }
-
-      console.log('✅ Logs obtenidos de Supabase:', logs)
       
       const mappedLogs = logs.map(log => ({
         id: log.id,
@@ -48,23 +55,18 @@ export class LogsService {
         user_name: log.users?.name || 'Usuario Desconocido'
       }))
 
-      console.log('✅ Logs mapeados:', mappedLogs)
-      
-      // Si obtenemos menos logs que el límite, no hay más páginas
-      const hasMore = logs.length === limit
-      
-      return { logs: mappedLogs, hasMore }
+      const total = totalCount || 0
+      const hasMore = offset + limit < total
+
+      return { logs: mappedLogs, total, hasMore }
     } catch (error) {
-      console.error('❌ Error obteniendo logs:', error)
-      return { logs: [], hasMore: false }
+      return { logs: [], total: 0, hasMore: false }
     }
   }
 
   // Obtener todos los logs (método legacy para compatibilidad)
   static async getAllLogs(): Promise<LogEntry[]> {
     try {
-      console.log('🔄 Obteniendo todos los logs de Supabase...')
-      
       const { data: logs, error } = await supabase
         .from('logs')
         .select(`
@@ -76,12 +78,9 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Error obteniendo logs:', error)
         return []
       }
 
-      console.log('✅ Logs obtenidos de Supabase:', logs)
-      
       const mappedLogs = logs.map(log => ({
         id: log.id,
         user_id: log.user_id,
@@ -94,10 +93,8 @@ export class LogsService {
         user_name: log.users?.name || 'Usuario Desconocido'
       }))
 
-      console.log('✅ Logs mapeados:', mappedLogs)
       return mappedLogs
     } catch (error) {
-      console.error('❌ Error obteniendo logs:', error)
       return []
     }
   }
@@ -117,7 +114,6 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Error obteniendo logs por módulo:', error)
         return []
       }
 
@@ -133,7 +129,6 @@ export class LogsService {
         user_name: log.users?.name || 'Usuario Desconocido'
       }))
     } catch (error) {
-      console.error('❌ Error obteniendo logs por módulo:', error)
       return []
     }
   }
@@ -153,7 +148,6 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Error obteniendo logs por usuario:', error)
         return []
       }
 
@@ -169,7 +163,6 @@ export class LogsService {
         user_name: log.users?.name || 'Usuario Desconocido'
       }))
     } catch (error) {
-      console.error('❌ Error obteniendo logs por usuario:', error)
       return []
     }
   }
@@ -189,7 +182,6 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Error buscando logs:', error)
         return []
       }
 
@@ -205,7 +197,6 @@ export class LogsService {
         user_name: log.users?.name || 'Usuario Desconocido'
       }))
     } catch (error) {
-      console.error('❌ Error buscando logs:', error)
       return []
     }
   }

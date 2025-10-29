@@ -207,7 +207,6 @@ export function ProductTable({
     }).format(amount)
   }
 
-
   const categoryOptions = ['all', ...categories.map(c => c.id)]
   const statuses = [
     { value: 'all', label: 'Todos los estados' },

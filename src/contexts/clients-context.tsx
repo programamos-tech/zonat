@@ -29,7 +29,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
       const clientsData = await ClientsService.getAllClients()
       setClients(clientsData)
     } catch (error) {
-      console.error('Error loading clients:', error)
+      // Error silencioso en producción
       setClients([])
     } finally {
       setLoading(false)
@@ -40,7 +40,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     try {
       return await ClientsService.getClientById(id)
     } catch (error) {
-      console.error('Error getting client:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -53,7 +53,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
       }
       return result
     } catch (error) {
-      console.error('Error creating client:', error)
+      // Error silencioso en producción
       return { client: null, error: 'Error inesperado al crear el cliente.' }
     }
   }
@@ -71,7 +71,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
       }
       return false
     } catch (error) {
-      console.error('Error updating client:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -85,7 +85,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
       }
       return false
     } catch (error) {
-      console.error('Error deleting client:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -94,7 +94,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     try {
       return await ClientsService.searchClients(query)
     } catch (error) {
-      console.error('Error searching clients:', error)
+      // Error silencioso en producción
       return []
     }
   }

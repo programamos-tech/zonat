@@ -31,8 +31,11 @@ interface LogsTableProps {
   actionFilter?: string
   onActionFilterChange?: (action: string) => void
   onRefresh?: () => void
-  loadingMore?: boolean
+  loading?: boolean
+  currentPage?: number
+  totalLogs?: number
   hasMore?: boolean
+  onPageChange?: (page: number) => void
 }
 
 export function LogsTable({ 
@@ -45,8 +48,11 @@ export function LogsTable({
   actionFilter = 'all',
   onActionFilterChange,
   onRefresh,
-  loadingMore = false,
-  hasMore = true
+  loading = false,
+  currentPage = 1,
+  totalLogs = 0,
+  hasMore = true,
+  onPageChange
 }: LogsTableProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
   const [localFilterType, setLocalFilterType] = useState(moduleFilter)
@@ -181,6 +187,8 @@ export function LogsTable({
         return 'Descuento de Stock'
       case 'sale_cancellation_stock_return':
         return 'Devolución de Stock'
+      case 'sale_cancellation_stock_return_batch':
+        return 'Devolución de Stock Masiva'
       case 'product_create':
         return 'Producto Creado'
       case 'product_update':
@@ -396,6 +404,10 @@ export function LogsTable({
                   {filteredLogs.map((log, index) => {
                     // Mapear el tipo basado en el módulo y acción
                     const getLogType = (log: any) => {
+                      // Manejar casos específicos independientemente del módulo
+                      if (log.action === 'sale_cancellation_stock_return') return 'sale_cancellation_stock_return'
+                      if (log.action === 'sale_cancellation_stock_return_batch') return 'sale_cancellation_stock_return'
+                      
                       if (log.module === 'sales') {
                         if (log.action === 'sale_create') return 'sale'
                         if (log.action === 'credit_sale_create') return 'credit_sale_create'
@@ -462,7 +474,7 @@ export function LogsTable({
                       <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                         <td className="px-4 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900 dark:text-white">
-                            {filteredLogs.length - index}
+                            {totalLogs - ((currentPage - 1) * 20) - index}
                           </div>
                         </td>
                         <td className="px-4 py-4">
@@ -497,6 +509,7 @@ export function LogsTable({
                                 log.action === 'sale_cancel' ? 'Cancelar Venta' :
                                 log.action === 'sale_stock_deduction' ? 'Descontar Stock' :
                                 log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
+                                log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
                                 log.action) :
                              log.module === 'products' ? 
                                (log.action === 'product_create' ? 'Crear' :
@@ -505,6 +518,7 @@ export function LogsTable({
                                 log.action === 'stock_transfer' ? 'Transferir' :
                                 log.action === 'stock_adjustment' ? 'Ajustar' :
                                 log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
+                                log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
                                 log.action) :
                              log.module === 'categories' ?
                                (log.action === 'category_create' ? 'Crear' :
@@ -600,6 +614,71 @@ export function LogsTable({
           )}
         </CardContent>
       </Card>
+
+      {/* Paginación */}
+      {totalLogs > 20 && (
+        <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+          {/* Información de página */}
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Mostrando {((currentPage - 1) * 20) + 1} - {Math.min(currentPage * 20, totalLogs)} de {totalLogs} registros
+          </div>
+          
+          {/* Controles de paginación */}
+          <div className="flex items-center space-x-2">
+            {/* Botón Anterior */}
+            <button
+              onClick={() => onPageChange && onPageChange(currentPage - 1)}
+              disabled={currentPage === 1 || loading}
+              className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              Anterior
+            </button>
+            
+            {/* Números de página */}
+            <div className="flex items-center space-x-1">
+              {Array.from({ length: Math.ceil(totalLogs / 20) }, (_, i) => i + 1)
+                .filter(page => {
+                  // Mostrar solo páginas cercanas a la actual
+                  return page === 1 || 
+                         page === Math.ceil(totalLogs / 20) || 
+                         Math.abs(page - currentPage) <= 2
+                })
+                .map((page, index, array) => {
+                  // Agregar "..." si hay gap
+                  const showEllipsis = index > 0 && page - array[index - 1] > 1
+                  
+                  return (
+                    <div key={page} className="flex items-center">
+                      {showEllipsis && (
+                        <span className="px-2 text-gray-400 text-sm">...</span>
+                      )}
+                      <button
+                        onClick={() => onPageChange && onPageChange(page)}
+                        disabled={loading}
+                        className={`px-3 py-1.5 text-sm rounded-md transition-colors min-w-[32px] ${
+                          page === currentPage 
+                            ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium" 
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </div>
+                  )
+                })}
+            </div>
+            
+            {/* Botón Siguiente */}
+            <button
+              onClick={() => onPageChange && onPageChange(currentPage + 1)}
+              disabled={currentPage >= Math.ceil(totalLogs / 20) || loading}
+              className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

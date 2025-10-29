@@ -51,8 +51,7 @@ export class CreditsService {
   // Obtener todos los créditos
   static async getAllCredits(): Promise<Credit[]> {
     try {
-      console.log('🔄 Cargando créditos...')
-      
+
       // Obtener todos los créditos
       const { data: creditsData, error: creditsError } = await supabase
         .from('credits')
@@ -60,14 +59,12 @@ export class CreditsService {
         .order('created_at', { ascending: false })
 
       if (creditsError) {
-        console.error('Error obteniendo créditos:', creditsError)
+      // Error silencioso en producción
         throw creditsError
       }
 
-      console.log('📊 Créditos encontrados:', creditsData?.length || 0)
-
       if (!creditsData || creditsData.length === 0) {
-        console.log('ℹ️ No hay créditos en la base de datos')
+
         return []
       }
 
@@ -75,7 +72,7 @@ export class CreditsService {
       // TODO: Implementar filtrado por ventas activas más adelante
       return await this.mapCreditsData(creditsData)
     } catch (error) {
-      console.error('Error en getAllCredits:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -396,7 +393,7 @@ export class CreditsService {
         .eq('id', credit.saleId)
 
       if (saleUpdateError) {
-        console.error('Error updating sale status:', saleUpdateError)
+      // Error silencioso en producción
         // No lanzamos error aquí para no interrumpir el flujo del pago
       }
     }
@@ -496,7 +493,7 @@ export class CreditsService {
           .eq('id', payment.id)
 
         if (cancelError) {
-          console.error('Error detallado cancelando abono:', cancelError)
+      // Error silencioso en producción
           throw new Error(`Error al anular los abonos: ${cancelError.message}`)
         }
       }
@@ -514,7 +511,7 @@ export class CreditsService {
         .eq('id', creditId)
 
       if (creditError) {
-        console.error('Error detallado al anular crédito:', creditError)
+      // Error silencioso en producción
         throw new Error(`Error al anular el crédito: ${creditError.message}`)
       }
 
@@ -532,7 +529,7 @@ export class CreditsService {
         .eq('client_id', credit.clientId)
 
       if (paymentError) {
-        console.error('Error cancelando payment:', paymentError)
+      // Error silencioso en producción
         // No lanzamos error aquí para no interrumpir el flujo
       }
 
@@ -544,18 +541,12 @@ export class CreditsService {
         // Obtener la venta por sale_id
         const sale = await SalesService.getSaleById(credit.saleId)
         if (sale && sale.items && sale.items.length > 0) {
-          console.log('🔄 Restaurando stock para venta cancelada:', sale.invoiceNumber)
-          console.log('📦 Productos a restaurar:', sale.items.length)
-          
+
           // Restaurar stock de todos los productos de la venta
           const stockReturnResults = []
           for (const item of sale.items) {
             try {
-              console.log('🔄 Llamando returnStockFromSale desde credits-service:', { 
-                productId: item.productId, 
-                quantity: item.quantity, 
-                userId 
-              })
+
               const result = await ProductsService.returnStockFromSale(item.productId, item.quantity, userId)
               stockReturnResults.push({ 
                 productId: item.productId, 
@@ -564,13 +555,11 @@ export class CreditsService {
                 success: result 
               })
               
-              if (result) {
-                console.log(`✅ Stock restaurado: ${item.productName} (+${item.quantity} unidades)`)
-              } else {
-                console.error(`❌ Error restaurando stock: ${item.productName}`)
+              if (!result) {
+      // Error silencioso en producción
               }
             } catch (error) {
-              console.error(`❌ Error returning stock for product ${item.productId}:`, error)
+      // Error silencioso en producción
               stockReturnResults.push({ 
                 productId: item.productId, 
                 productName: item.productName,
@@ -584,13 +573,13 @@ export class CreditsService {
           // Verificar si hubo errores en el retorno de stock
           const failedReturns = stockReturnResults.filter(r => !r.success)
           if (failedReturns.length > 0) {
-            console.warn('⚠️ Algunos productos no pudieron ser restaurados al stock:', failedReturns)
+
             // Continuar con la anulación aunque algunos productos no se pudieron devolver
           } else {
-            console.log('✅ Stock restaurado exitosamente para todos los productos')
+
           }
         } else {
-          console.warn('⚠️ No se encontró la venta asociada al crédito o no tiene items')
+
         }
         
         // ACTUALIZAR STATUS DE LA VENTA: Marcar la venta como cancelada
@@ -605,22 +594,22 @@ export class CreditsService {
               .eq('id', credit.saleId)
 
             if (saleUpdateError) {
-              console.error('❌ Error actualizando status de la venta:', saleUpdateError)
+      // Error silencioso en producción
             } else {
-              console.log('✅ Status de la venta actualizado a "cancelled"')
+
             }
           } catch (saleError) {
-            console.error('❌ Error actualizando venta:', saleError)
+      // Error silencioso en producción
           }
         }
       } catch (stockError) {
-        console.error('❌ Error restaurando stock al cancelar crédito:', stockError)
+      // Error silencioso en producción
         // No lanzamos error aquí para no interrumpir la cancelación del crédito
       }
 
       return { success: true, totalRefund }
     } catch (error) {
-      console.error('Error cancelando crédito:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -654,7 +643,7 @@ export class CreditsService {
         createdAt: payment.created_at
       }))
     } catch (error) {
-      console.error('Error fetching payment records:', error)
+      // Error silencioso en producción
       return []
     }
   }
@@ -695,7 +684,7 @@ export class CreditsService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error fetching credit by invoice number:', error)
+      // Error silencioso en producción
       return null
     }
   }

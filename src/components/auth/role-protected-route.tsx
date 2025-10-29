@@ -24,7 +24,7 @@ export function RoleProtectedRoute({
     if (!isLoading && user) {
       // Verificar si el usuario tiene permisos para este módulo
       if (!hasPermission(module, requiredAction)) {
-        console.log(`❌ Usuario ${user.email} no tiene permisos para ${module}:${requiredAction}`)
+
         // Redirigir al dashboard si no tiene permisos
         router.push('/dashboard')
       }

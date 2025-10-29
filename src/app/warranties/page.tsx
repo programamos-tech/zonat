@@ -40,7 +40,7 @@ export default function WarrantiesPage() {
 
   const handleEditWarranty = (warranty: Warranty) => {
     // Modal de edición eliminado - las garantías se completan automáticamente
-    console.log('Edición de garantía deshabilitada:', warranty.id)
+
   }
 
   const handleSaveWarranty = async (warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'>) => {
@@ -50,17 +50,16 @@ export default function WarrantiesPage() {
       setShowEditModal(false)
       await refreshWarranties()
     } catch (error) {
-      console.error('Error saving warranty:', error)
+      // Error silencioso en producción
     }
   }
-
 
   const handleStatusChange = async (warrantyId: string, newStatus: string, notes?: string) => {
     try {
       await updateWarrantyStatus(warrantyId, newStatus, notes)
       await refreshWarranties()
     } catch (error) {
-      console.error('Error updating warranty status:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -76,7 +75,7 @@ export default function WarrantiesPage() {
       const results = await searchWarranties(searchTerm)
       setSearchResults(results)
     } catch (error) {
-      console.error('Error searching warranties:', error)
+      // Error silencioso en producción
       setSearchResults([])
     } finally {
       setIsSearching(false)

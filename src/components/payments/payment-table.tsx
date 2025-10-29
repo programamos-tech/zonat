@@ -75,12 +75,10 @@ const isCreditCancelled = (credit: any) => {
 const getStatusText = (status: string, credit?: any) => {
   // Si el crédito está cancelado (montos en 0), mostrar "Anulado"
   if (isCreditCancelled(credit)) {
-    console.log('🔍 Detectado crédito cancelado:', { status, totalAmount: credit?.totalAmount, pendingAmount: credit?.pendingAmount })
+
     return 'Anulado'
   }
-  
-  console.log('🔍 Status normal:', { status, totalAmount: credit?.totalAmount, pendingAmount: credit?.pendingAmount })
-  
+
   switch (status) {
     case 'completed':
       return 'Completado'
@@ -155,7 +153,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
     // Extraer el número de facturas del string como "10 facturas" o "7 facturas"
     const match = invoiceNumber.match(/(\d+)\s+factura/)
     const count = match ? parseInt(match[1]) : 1
-    console.log('Invoice number:', invoiceNumber, 'Extracted count:', count)
+
     return count
   }
 
@@ -410,14 +408,14 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             size="sm"
                             variant="ghost"
                             onClick={() => onPayment(credit)}
-                            disabled={credit.status === 'cancelled' || getInvoiceCount(credit.invoiceNumber) > 1}
+                            disabled={credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1}
                             className={`${
-                              credit.status === 'cancelled' || getInvoiceCount(credit.invoiceNumber) > 1
+                              credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1
                                 ? 'text-gray-400 cursor-not-allowed opacity-50' 
                                 : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
                             }`}
                             title={
-                              credit.status === 'cancelled' 
+                              credit.status === 'cancelled' || isCreditCancelled(credit)
                                 ? 'Crédito anulado' 
                                 : getInvoiceCount(credit.invoiceNumber) > 1 
                                   ? 'Más de 1 factura - Use el detalle para registrar abonos'

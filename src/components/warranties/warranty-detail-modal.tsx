@@ -101,7 +101,6 @@ export function WarrantyDetailModal({
     }
   }
 
-
   return (
     <>
       {/* Modal Principal */}
@@ -245,8 +244,8 @@ export function WarrantyDetailModal({
                   )}
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Motivo de la Garantía:</span>
-                    <p className="text-sm text-gray-900 dark:text-white bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
-                      {warranty.reason}
+                    <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                      {warranty.reason || '-'}
                     </p>
                   </div>
                 </CardContent>
@@ -309,83 +308,6 @@ export function WarrantyDetailModal({
               </Card>
             </div>
 
-            {/* Notas Adicionales */}
-            {warranty.notes && (
-              <Card className="mt-6 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-orange-600" />
-                    Notas Adicionales
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-4 rounded-lg">
-                    {warranty.notes}
-                  </p>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Historial de Estados */}
-            {warranty.statusHistory && warranty.statusHistory.length > 0 && (
-              <Card className="mt-6 bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <History className="h-5 w-5 text-orange-600" />
-                    Historial de Estados
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {warranty.statusHistory
-                      .sort((a, b) => new Date(b.changedAt).getTime() - new Date(a.changedAt).getTime())
-                      .map((history, index) => (
-                        <div key={history.id} className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                          <div className="flex-shrink-0">
-                            {getStatusIcon(history.newStatus)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Badge className={getStatusColor(history.newStatus)}>
-                                  {getStatusLabel(history.newStatus)}
-                                </Badge>
-                                {history.previousStatus && (
-                                  <>
-                                    <span className="text-gray-400">←</span>
-                                    <Badge variant="outline" className="text-gray-600 dark:text-gray-400">
-                                      {getStatusLabel(history.previousStatus)}
-                                    </Badge>
-                                  </>
-                                )}
-                              </div>
-                              <span className="text-xs text-gray-500 dark:text-gray-400">
-                                {new Date(history.changedAt).toLocaleDateString('es-CO', {
-                                  year: 'numeric',
-                                  month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
-                                })}
-                              </span>
-                            </div>
-                            {history.notes && (
-                              <p className="text-sm text-gray-700 dark:text-gray-300 mt-2">
-                                {history.notes}
-                              </p>
-                            )}
-                            {history.changedByUser && (
-                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                Cambiado por: {history.changedByUser.name}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
           </div>
 
           {/* Footer */}

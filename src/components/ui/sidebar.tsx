@@ -16,7 +16,7 @@ import {
   LogOut,
   ShieldCheck
 } from 'lucide-react'
-import { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
 // ThemeToggle removed
 import { usePermissions } from '@/hooks/usePermissions'
@@ -99,7 +99,6 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             <Logo size="lg" />
           </div>
 
-
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
@@ -129,42 +128,55 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           </nav>
 
               {/* Programamos.st Footer */}
-              <div className="px-4 py-3 border-b" style={{ backgroundColor: '#f8f9fa', borderColor: '#e9ecef' }}>
-                <div 
-                  onClick={() => {
-                    const message = encodeURIComponent("Hola! Tengo un error o necesito soporte técnico en el sistema Zonat. ¿Podrías ayudarme?");
-                    const phoneNumber = "3002061711";
-                    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-                    window.open(whatsappUrl, '_blank');
-                  }}
-                  className="flex items-center gap-3 cursor-pointer rounded-lg p-3 transition-all duration-200"
-                  style={{ 
-                    backgroundColor: 'transparent',
-                    ':hover': { backgroundColor: '#e9ecef' }
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e9ecef'}
-                  onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-                >
-                  <div className="flex-shrink-0">
-                    <div className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm" style={{ backgroundColor: '#230f49' }}>
-                      <img
-                        src="/logo_programamos.st.png"
-                        alt="Programamos.st"
-                        width={40}
-                        height={40}
-                        className="rounded"
-                        style={{ filter: 'brightness(0) invert(1)' }}
-                      />
-                    </div>
+              <div 
+                onClick={() => {
+                  const message = encodeURIComponent("Hola! Tengo un error o necesito soporte técnico en el sistema Zonat. ¿Podrías ayudarme?");
+                  const phoneNumber = "3002061711";
+                  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
+                  window.open(whatsappUrl, '_blank');
+                }}
+                className="group flex items-center gap-4 rounded-xl py-3 px-4 shadow-lg border transition-all duration-300 cursor-pointer backdrop-blur-sm mx-4 mb-4"
+                style={{
+                  background: 'linear-gradient(135deg, #230f49 0%, #1a0a3a 100%)',
+                  borderColor: 'rgba(35, 15, 73, 0.3)',
+                  boxShadow: '0 10px 25px rgba(35, 15, 73, 0.2)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #2d1a5a 0%, #230f49 100%)'
+                  e.currentTarget.style.transform = 'scale(1.03)'
+                  e.currentTarget.style.boxShadow = '0 15px 35px rgba(35, 15, 73, 0.3)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'linear-gradient(135deg, #230f49 0%, #1a0a3a 100%)'
+                  e.currentTarget.style.transform = 'scale(1)'
+                  e.currentTarget.style.boxShadow = '0 10px 25px rgba(35, 15, 73, 0.2)'
+                }}
+              >
+                <div className="flex items-center gap-4">
+                  <div 
+                    className="w-10 h-10 rounded-full flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300"
+                    style={{
+                      background: 'linear-gradient(135deg, #230f49 0%, #1a0a3a 100%)',
+                      boxShadow: '0 4px 15px rgba(35, 15, 73, 0.4)'
+                    }}
+                  >
+                    <img
+                      src="/logo_programamos.st.png"
+                      alt="Programamos.st"
+                      width={28}
+                      height={28}
+                      className="rounded opacity-90 group-hover:opacity-100 transition-opacity duration-300"
+                      style={{ filter: 'brightness(0) invert(1)' }}
+                    />
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-xs font-medium leading-none" style={{ color: '#6c757d' }}>
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-xs font-medium text-white/80 leading-none">
                       ¿Tienes un error?
                     </span>
-                    <span className="text-sm font-bold leading-none" style={{ color: '#230f49' }}>
+                    <span className="text-sm font-bold text-white leading-none group-hover:text-purple-200 transition-colors duration-300">
                       Da click aquí
                     </span>
-                    <span className="text-xs font-light leading-none mt-1" style={{ color: '#6c757d' }}>
+                    <span className="text-xs font-light text-white/60 leading-none">
                       programamos.st
                     </span>
                   </div>

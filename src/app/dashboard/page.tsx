@@ -40,6 +40,7 @@ import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Sale } from '@/types'
+import { CancelledInvoicesModal } from '@/components/dashboard/cancelled-invoices-modal'
 
 type DateFilter = 'today' | 'specific' | 'all'
 
@@ -53,6 +54,9 @@ export default function DashboardPage() {
   // Verificar si el usuario es Super Admin (Diego)
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
   
+  // Verificar si el usuario puede ver información de créditos (superadmin, admin, vendedor)
+  const canViewCredits = user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'vendedor'
+  
   // Para usuarios no-Super Admin, forzar el filtro a 'today' y mostrar dashboard completo
   const effectiveDateFilter = isSuperAdmin ? dateFilter : 'today'
   const [allSales, setAllSales] = useState<Sale[]>([])
@@ -63,9 +67,10 @@ export default function DashboardPage() {
   const [allPaymentRecords, setAllPaymentRecords] = useState<any[]>([])
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [showCancelledModal, setShowCancelledModal] = useState(false)
 
   // Función helper para agregar timeout a las promesas
-  const withTimeout = <T>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> => {
+  const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> => {
     return Promise.race([
       promise,
       new Promise<T>((_, reject) => 
@@ -80,7 +85,6 @@ export default function DashboardPage() {
       if (showLoading) {
         setIsRefreshing(true)
       }
-      console.log('🔄 Actualizando datos del dashboard...')
       
       // Importar servicios
       const { SalesService } = await import('@/lib/sales-service')
@@ -88,8 +92,6 @@ export default function DashboardPage() {
       const { CreditsService } = await import('@/lib/credits-service')
       const { ClientsService } = await import('@/lib/clients-service')
       const { ProductsService } = await import('@/lib/products-service')
-      
-      console.log('📊 Cargando datos en paralelo con timeout de 15 segundos...')
       
       // Cargar TODOS los datos para poder filtrar por cualquier fecha
       // Usar un número muy grande para obtener todos los registros
@@ -110,23 +112,10 @@ export default function DashboardPage() {
       const products = productsResult.status === 'fulfilled' ? (productsResult.value || []) : []
       const payments = paymentRecordsResult.status === 'fulfilled' ? (paymentRecordsResult.value || []) : []
       
-      console.log('📊 Datos cargados:', {
-        sales: sales.length,
-        warranties: warranties.length,
-        credits: credits.length,
-        clients: clients.length,
-        products: products.length,
-        payments: payments.length
-      })
-      
       // Log de errores si los hay
       const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult]
         .filter(result => result.status === 'rejected')
         .map(result => (result as PromiseRejectedResult).reason)
-      
-      if (errors.length > 0) {
-        console.warn('⚠️ Algunos servicios fallaron:', errors)
-      }
       
       setAllSales(sales)
       setAllWarranties(warranties)
@@ -135,10 +124,8 @@ export default function DashboardPage() {
       setAllProducts(products)
       setAllPaymentRecords(payments)
       setLastUpdated(new Date())
-      
-      console.log('✅ Dashboard actualizado correctamente')
     } catch (error) {
-      console.error('❌ Error cargando datos del dashboard:', error)
+      // Error silencioso para no exponer detalles en producción
       // No cambiar los datos en caso de error, mantener los existentes
     } finally {
       // Siempre desactivar el indicador de carga
@@ -150,7 +137,6 @@ export default function DashboardPage() {
 
   // Función para actualización manual del dashboard
   const handleRefresh = () => {
-    console.log('🔄 Actualización manual del dashboard solicitada')
     loadDashboardData(true) // Mostrar loading
   }
 
@@ -163,13 +149,11 @@ export default function DashboardPage() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden) {
-        console.log('👁️ Usuario regresó a la página, actualizando dashboard...')
         loadDashboardData(true) // Mostrar loading
       }
     }
 
     const handleFocus = () => {
-      console.log('🎯 Ventana enfocada, actualizando dashboard...')
       loadDashboardData(true) // Mostrar loading
     }
 
@@ -182,14 +166,6 @@ export default function DashboardPage() {
       window.removeEventListener('focus', handleFocus)
     }
   }, [])
-  
-  // Log cuando sales del contexto cambie
-  useEffect(() => {
-    console.log('Dashboard: sales del contexto cambiaron:', {
-      salesCount: sales.length,
-      sales: sales.map(s => ({ id: s.id, total: s.total, paymentMethod: s.paymentMethod }))
-    })
-  }, [sales])
 
   // Función para obtener fechas de filtro
   const getDateRange = (filter: DateFilter) => {
@@ -268,16 +244,6 @@ export default function DashboardPage() {
   const metrics = useMemo(() => {
     const { sales, warranties, credits, paymentRecords } = filteredData
     
-    console.log('Dashboard metrics calculation:', {
-      salesCount: sales.length,
-      sales: sales.map(s => ({ id: s.id, total: s.total, paymentMethod: s.paymentMethod, createdAt: s.createdAt })),
-      paymentRecordsCount: paymentRecords.length,
-      paymentRecords: paymentRecords.map(p => ({ amount: p.amount, paymentMethod: p.paymentMethod, paymentDate: p.paymentDate })),
-      dateFilter: effectiveDateFilter,
-      allSalesCount: allSales.length,
-      allPaymentRecordsCount: allPaymentRecords.length
-    })
-    
     // Ingresos por ventas (nuevas ventas)
     const salesRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
     
@@ -323,20 +289,6 @@ export default function DashboardPage() {
 
     // Ingresos totales (solo efectivo + transferencia - dinero que realmente ha ingresado)
     const totalRevenue = cashRevenue + transferRevenue
-    
-    console.log('Revenue calculations:', {
-      salesRevenue,
-      creditPaymentsRevenue,
-      cashRevenue,
-      transferRevenue,
-      totalRevenue,
-      validPaymentRecordsCount: validPaymentRecords.length,
-      mixedSales: sales.filter(s => s.paymentMethod === 'mixed').map(s => ({
-        id: s.id,
-        total: s.total,
-        payments: s.payments?.map(p => ({ type: p.paymentType, amount: p.amount }))
-      }))
-    })
 
     const creditRevenue = sales
       .filter(s => s.paymentMethod === 'credit')
@@ -371,6 +323,27 @@ export default function DashboardPage() {
     // Garantías
     const completedWarranties = warranties.filter(w => w.status === 'completed').length
     const pendingWarranties = warranties.filter(w => w.status === 'pending').length
+    
+    // Métricas adicionales para garantías
+    const warrantyRate = sales.length > 0 ? ((completedWarranties / sales.length) * 100).toFixed(1) : '0.0'
+    
+    // Calcular valor total de productos reemplazados en garantías
+    const totalWarrantyValue = warranties
+      .filter(w => w.status === 'completed')
+      .reduce((sum, warranty) => {
+        // Buscar el producto de reemplazo para obtener su precio
+        const replacementProduct = allProducts.find(p => p.id === warranty.productDeliveredId)
+        return sum + (replacementProduct?.price || 0)
+      }, 0)
+    
+    // Calcular días desde la última garantía
+    const lastWarranty = warranties
+      .filter(w => w.status === 'completed')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+    
+    const daysSinceLastWarranty = lastWarranty 
+      ? Math.floor((new Date().getTime() - new Date(lastWarranty.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+      : null
 
     // Créditos pendientes y parciales (dinero afuera) - TODOS los créditos, no filtrados por fecha
     // Excluir créditos cancelados (que tienen totalAmount y pendingAmount en 0)
@@ -380,13 +353,28 @@ export default function DashboardPage() {
     )
     const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
     
-    console.log('Credits calculation:', {
-      allCreditsCount: allCredits.length,
-      filteredCreditsCount: credits.length,
-      pendingCreditsCount: pendingCredits.length,
-      totalDebt,
-      note: 'totalDebt usa TODOS los créditos activos (excluye cancelados con montos en 0)'
+    // Créditos del día actual (para usuarios no-superadmin)
+    const dailyCredits = credits.filter(c => 
+      (c.status === 'pending' || c.status === 'partial') && 
+      !(c.totalAmount === 0 && c.pendingAmount === 0)
+    )
+    const dailyCreditsDebt = dailyCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
+    const dailyCreditsCount = dailyCredits.length
+    
+    // Créditos vencidos (para información adicional de vendedores)
+    const overdueCredits = allCredits.filter(c => {
+      if (c.status !== 'pending' && c.status !== 'partial') return false
+      if (c.totalAmount === 0 && c.pendingAmount === 0) return false
+      if (!c.dueDate) return false
+      
+      const dueDate = new Date(c.dueDate)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      
+      return dueDate < today
     })
+    const overdueCreditsCount = overdueCredits.length
+    const overdueCreditsDebt = overdueCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
 
     // Clientes únicos que han comprado en el período seleccionado
     const uniqueClients = new Set(sales.map(sale => sale.clientId)).size
@@ -588,8 +576,15 @@ export default function DashboardPage() {
       topProducts,
       completedWarranties,
       pendingWarranties,
+      warrantyRate,
+      totalWarrantyValue,
+      daysSinceLastWarranty,
       totalDebt,
       pendingCreditsCount: pendingCredits.length,
+      dailyCreditsDebt,
+      dailyCreditsCount,
+      overdueCreditsCount,
+      overdueCreditsDebt,
       uniqueClients,
       grossProfit,
       topProfitableSales,
@@ -652,7 +647,6 @@ export default function DashboardPage() {
       })
     }
   }
-
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
@@ -746,9 +740,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-
       {/* Métricas principales con estilo de cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {/* Total Ingresos */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
@@ -830,32 +823,64 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-        {/* Dinero Afuera */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Total</p>
-            </div>
-          </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.totalDebt)}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
-            {metrics.pendingCreditsCount} créditos pendientes/parciales
-          </p>
-        </div>
       </div>
 
       {/* Segunda fila de métricas */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${canViewCredits ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} ${isSuperAdmin ? 'lg:grid-cols-4' : ''} gap-6 mb-8`}>
+        {/* Dinero Afuera - Para usuarios con permisos de créditos */}
+        {canViewCredits && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {isSuperAdmin ? 'Total' : 'Hoy'}
+                </p>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              {new Intl.NumberFormat('es-CO', { 
+                style: 'currency', 
+                currency: 'COP',
+                minimumFractionDigits: 0 
+              }).format(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              {isSuperAdmin 
+                ? `${metrics.pendingCreditsCount} créditos pendientes/parciales`
+                : `${metrics.dailyCreditsCount || 0} créditos del día`
+              }
+            </p>
+
+            {/* Información adicional para vendedores */}
+            {!isSuperAdmin && (
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Créditos vencidos:</span>
+                  <span className="font-semibold text-red-600 dark:text-red-400">
+                    {metrics.overdueCreditsCount || 0}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Deuda vencida:</span>
+                  <span className="font-semibold text-red-600 dark:text-red-400">
+                    ${(metrics.overdueCreditsDebt || 0).toLocaleString('es-CO')}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">Créditos pendientes:</span>
+                  <span className="font-semibold text-orange-600 dark:text-orange-400">
+                    {metrics.pendingCreditsCount || 0}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {/* Garantías Completadas */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
@@ -867,9 +892,34 @@ export default function DashboardPage() {
           <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {metrics.completedWarranties}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
             {metrics.pendingWarranties} pendientes
           </p>
+
+          {/* Resumen adicional */}
+          <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
+              <span className="font-semibold text-purple-600 dark:text-purple-400">
+                {metrics.warrantyRate}% de ventas
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-400">Valor:</span>
+              <span className="font-semibold text-orange-600 dark:text-orange-400">
+                ${metrics.totalWarrantyValue.toLocaleString('es-CO')}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600 dark:text-gray-400">Última:</span>
+              <span className="font-semibold text-blue-600 dark:text-blue-400">
+                {metrics.daysSinceLastWarranty !== null 
+                  ? `hace ${metrics.daysSinceLastWarranty} días`
+                  : 'N/A'
+                }
+              </span>
+            </div>
+          </div>
         </div>
 
         {/* Ganancia Bruta */}
@@ -923,58 +973,87 @@ export default function DashboardPage() {
           )}
                     </div>
 
-        {/* Productos en Stock */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-              <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+        {/* Productos en Stock - Solo para Super Admin */}
+        {isSuperAdmin && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Stock Total</p>
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Stock Total</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              {metrics.totalProducts}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+              {metrics.lowStockProducts} con stock bajo
+            </p>
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-2">
+              <div>
+                <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                  ${metrics.totalStockInvestment.toLocaleString('es-CO')}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Inversión Total en Stock
+                </p>
+              </div>
+              <div>
+                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                  ${metrics.estimatedSalesValue.toLocaleString('es-CO')}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  Valor Estimado de Ventas
+                </p>
+              </div>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {metrics.totalProducts}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-            {metrics.lowStockProducts} con stock bajo
-          </p>
-          <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-2">
-            <div>
-              <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                ${metrics.totalStockInvestment.toLocaleString('es-CO')}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Inversión Total en Stock
-              </p>
-            </div>
-            <div>
-              <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
-                ${metrics.estimatedSalesValue.toLocaleString('es-CO')}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Valor Estimado de Ventas
-              </p>
-            </div>
-          </div>
-        </div>
+        )}
                 
-        {/* Facturas Anuladas */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-              <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+        {/* Facturas Anuladas - Solo para Super Admin */}
+        {isSuperAdmin && (
+          <div 
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            onClick={() => setShowCancelledModal(true)}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              </div>
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              {metrics.cancelledSales}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              de {metrics.totalSales} ventas totales
+            </p>
+            
+            {/* Resumen adicional */}
+            <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
+                <span className="font-semibold text-red-600 dark:text-red-400">
+                  {metrics.totalSales > 0 ? ((metrics.cancelledSales / metrics.totalSales) * 100).toFixed(1) : 0}%
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Valor perdido:</span>
+                <span className="font-semibold text-orange-600 dark:text-orange-400">
+                  ${sales.filter(sale => sale.status === 'cancelled').reduce((sum, sale) => sum + sale.total, 0).toLocaleString('es-CO')}
+                </span>
+              </div>
+              <div className="text-center pt-2">
+                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1">
+                  <BarChart3 className="h-3 w-3" />
+                  Haz clic para ver análisis detallado
+                </span>
+              </div>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {metrics.cancelledSales}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400">
-            de {metrics.totalSales} ventas totales
-          </p>
-        </div>
+        )}
       </div>
 
       {/* Gráficos y estadísticas */}
@@ -1191,6 +1270,16 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      
+      {/* Modal de Facturas Anuladas - Solo para Super Admin */}
+      {isSuperAdmin && (
+        <CancelledInvoicesModal
+          isOpen={showCancelledModal}
+          onClose={() => setShowCancelledModal(false)}
+          sales={filteredData.sales}
+          allSales={allSales}
+        />
+      )}
     </div>
     </RoleProtectedRoute>
   )

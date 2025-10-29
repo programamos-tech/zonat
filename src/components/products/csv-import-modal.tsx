@@ -155,7 +155,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
         toast.error('Error importando productos')
       }
     } catch (error) {
-      console.error('Error importing products:', error)
+      // Error silencioso en producción
       toast.error('Error importando productos')
     } finally {
       setIsLoading(false)

@@ -12,14 +12,14 @@ export class SalesService {
         .select('*', { count: 'exact', head: true })
 
       if (error) {
-        console.error('Error getting sales count:', error)
+      // Error silencioso en producción
         return '#001' // Fallback
       }
 
       const nextNumber = (count || 0) + 1
       return `#${nextNumber.toString().padStart(3, '0')}`
     } catch (error) {
-      console.error('Error generating invoice number:', error)
+      // Error silencioso en producción
       return '#001' // Fallback
     }
   }
@@ -45,7 +45,7 @@ export class SalesService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching sales:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -88,7 +88,7 @@ export class SalesService {
         }) || [])
       })) || [])
     } catch (error) {
-      console.error('Error in getAllSales:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -115,7 +115,7 @@ export class SalesService {
         .single()
 
       if (error) {
-        console.error('Error fetching sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -162,7 +162,7 @@ export class SalesService {
 
       return result
     } catch (error) {
-      console.error('Error in getSaleById:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -197,7 +197,7 @@ export class SalesService {
         .single()
 
       if (saleError) {
-        console.error('Error creating sale:', saleError)
+      // Error silencioso en producción
         throw saleError
       }
 
@@ -236,7 +236,7 @@ export class SalesService {
           .insert(saleItems)
 
         if (itemsError) {
-          console.error('Error creating sale items:', itemsError)
+      // Error silencioso en producción
           throw itemsError
         }
       }
@@ -257,7 +257,7 @@ export class SalesService {
           })
 
         if (paymentError) {
-          console.error('Error creating payment:', paymentError)
+      // Error silencioso en producción
           throw paymentError
         }
       }
@@ -296,7 +296,7 @@ export class SalesService {
 
       return newSale
     } catch (error) {
-      console.error('Error in createSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -322,7 +322,7 @@ export class SalesService {
         .single()
 
       if (error) {
-        console.error('Error updating sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -352,7 +352,7 @@ export class SalesService {
         items: saleData.items || []
       }
     } catch (error) {
-      console.error('Error in updateSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -365,7 +365,7 @@ export class SalesService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error deleting sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -380,7 +380,7 @@ export class SalesService {
         }
       )
     } catch (error) {
-      console.error('Error in deleteSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -396,7 +396,7 @@ export class SalesService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error cancelling sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -412,7 +412,7 @@ export class SalesService {
         }
       )
     } catch (error) {
-      console.error('Error in cancelSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -439,7 +439,7 @@ export class SalesService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error searching sales:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -482,7 +482,7 @@ export class SalesService {
         }) || [])
       })) || [])
     } catch (error) {
-      console.error('Error in searchSales:', error)
+      // Error silencioso en producción
       throw error
     }
   }

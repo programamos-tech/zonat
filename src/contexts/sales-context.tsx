@@ -47,7 +47,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       setTotalSales(result.total)
       setHasMore(result.hasMore)
     } catch (error) {
-      console.error('Error fetching sales:', error)
+      // Error silencioso en producción
     } finally {
       setLoading(false)
     }
@@ -62,21 +62,8 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       throw new Error('Usuario no autenticado')
     }
 
-    console.log('🔍 DEBUG - Contexto recibiendo:', {
-      discount: saleData.discount,
-      discountType: saleData.discountType
-    })
-
     try {
       const newSale = await SalesService.createSale(saleData, currentUser.id)
-      console.log('🔍 DEBUG - Venta creada en contexto:', {
-        sellerName: newSale.sellerName,
-        sellerEmail: newSale.sellerEmail,
-        itemsWithRef: newSale.items.map(item => ({
-          productName: item.productName,
-          productReferenceCode: item.productReferenceCode
-        }))
-      })
       
       // Añadir la venta completa al estado (ya viene con todos los datos del getSaleById)
       setSales(prev => [newSale, ...prev])
@@ -84,7 +71,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       // Refrescar productos para actualizar el stock
       await refreshProducts()
     } catch (error) {
-      console.error('Error creating sale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -98,7 +85,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       const updatedSale = await SalesService.updateSale(id, saleData, currentUser.id)
       setSales(prev => prev.map(sale => sale.id === id ? updatedSale : sale))
     } catch (error) {
-      console.error('Error updating sale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -112,7 +99,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       await SalesService.deleteSale(id, currentUser.id)
       setSales(prev => prev.filter(sale => sale.id !== id))
     } catch (error) {
-      console.error('Error deleting sale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -133,29 +120,25 @@ export function SalesProvider({ children }: { children: ReactNode }) {
             ? { ...sale, status: 'cancelled' as const }
             : sale
         )
-        console.log('Updated sales state:', updated.find(s => s.id === id))
         return updated
       })
 
       // Si es una venta a crédito, notificar para actualizar la vista de créditos
       const cancelledSale = sales.find(sale => sale.id === id)
-      console.log('🔍 Venta cancelada encontrada:', cancelledSale)
-      console.log('🔍 Payment method:', cancelledSale?.paymentMethod)
-      
+
       if (cancelledSale?.paymentMethod === 'credit') {
-        console.log('🚨 Emitiendo evento de crédito cancelado:', cancelledSale.invoiceNumber)
+
         window.dispatchEvent(new CustomEvent('creditCancelled', { 
           detail: { invoiceNumber: cancelledSale.invoiceNumber } 
         }))
-        console.log('✅ Evento emitido exitosamente')
+
       } else {
-        console.log('ℹ️ No es una venta a crédito, no se emite evento')
+
       }
 
       return result
     } catch (error) {
-      console.error('Error cancelling sale:', error)
-      
+      // Error silencioso en producción
       // Proporcionar un mensaje de error más específico
       if (error instanceof Error) {
         if (error.message.includes('Product not found')) {
@@ -175,7 +158,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
     try {
       return await SalesService.searchSales(searchTerm)
     } catch (error) {
-      console.error('Error searching sales:', error)
+      // Error silencioso en producción
       throw error
     }
   }

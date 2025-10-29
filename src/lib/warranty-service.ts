@@ -139,7 +139,7 @@ export class WarrantyService {
         hasMore: (count || 0) > offset + limit
       }
     } catch (error) {
-      console.error('Error fetching warranties:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -235,7 +235,7 @@ export class WarrantyService {
         statusHistory: data.warranty_status_history
       }
     } catch (error) {
-      console.error('Error fetching warranty:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -319,21 +319,19 @@ export class WarrantyService {
                 local: (product.stock?.local || 0) - localDeduction,
                 warehouse: (product.stock?.warehouse || 0) - warehouseDeduction
               })
-              
-              console.log(`✅ Producto de reemplazo descontado del inventario: ${warrantyData.productDeliveredName} (${quantityToDeduct} unidades)`)
             } else {
-              console.warn(`⚠️ Stock insuficiente para el producto de reemplazo: ${warrantyData.productDeliveredName}`)
+
             }
           }
         } catch (stockError) {
-          console.error('Error al descontar producto del inventario:', stockError)
+      // Error silencioso en producción
           // No lanzar el error para no interrumpir la creación de la garantía
         }
       }
 
       return this.getWarrantyById(data.id) as Promise<Warranty>
     } catch (error) {
-      console.error('Error creating warranty:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -398,7 +396,7 @@ export class WarrantyService {
         )
       }
     } catch (error) {
-      console.error('Error updating warranty status:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -426,7 +424,7 @@ export class WarrantyService {
         throw error
       }
     } catch (error) {
-      console.error('Error adding status history:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -488,7 +486,7 @@ export class WarrantyService {
         productReceived: warranty.product_received
       }))
     } catch (error) {
-      console.error('Error searching warranties:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -522,7 +520,7 @@ export class WarrantyService {
 
       return stats
     } catch (error) {
-      console.error('Error fetching warranty stats:', error)
+      // Error silencioso en producción
       throw error
     }
   }

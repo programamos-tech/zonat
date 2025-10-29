@@ -56,7 +56,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
   const [selectedReplacementProduct, setSelectedReplacementProduct] = useState<Product | null>(null)
   const [defectiveQuantity, setDefectiveQuantity] = useState<number>(1)
-  const [replacementQuantity, setReplacementQuantity] = useState<number>(1)
   
   // Estados del formulario
   const [formData, setFormData] = useState({
@@ -71,7 +70,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       if (warranty) {
         // Modo edición
         setFormData({
-          reason: warranty.reason,
+          reason: warranty.reason || '',
           notes: warranty.notes || '',
           productSerial: warranty.productReceivedSerial || ''
         })
@@ -108,7 +107,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         if (replacementProduct) setSelectedReplacementProduct(replacementProduct)
       }
     } catch (error) {
-      console.error('Error loading existing data:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -122,7 +121,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     setSelectedProduct(null)
     setSelectedReplacementProduct(null)
     setDefectiveQuantity(1)
-    setReplacementQuantity(1)
     setSearchSale('')
     setSearchReplacement('')
     setSaleResults([])
@@ -143,10 +141,10 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     }
 
     try {
-      const results = await SalesService.searchSales(query)
+      const results = await SalesService.searchSalesForWarranty(query)
       setSaleResults(results.slice(0, 10))
     } catch (error) {
-      console.error('Error searching sales:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -168,7 +166,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       const results = await ProductsService.searchProducts(query)
       setReplacementResults(results.slice(0, 10))
     } catch (error) {
-      console.error('Error searching replacement products:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -181,8 +179,29 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       const totalStock = (product.stock?.local || 0) + (product.stock?.warehouse || 0)
       return totalStock >= defectiveQuantity
     } catch (error) {
-      console.error('Error checking product stock:', error)
+      // Error silencioso en producción
       return false
+    }
+  }
+
+  // Función para validar stock del producto de reemplazo
+  const validateReplacementStock = async () => {
+    if (!selectedReplacementProduct) return
+    
+    setStockValidation({ hasStock: false, checking: true, stockCount: 0 })
+    try {
+      const productWithStock = await ProductsService.getProductById(selectedReplacementProduct.id)
+      if (productWithStock) {
+        const totalStock = (productWithStock.stock?.local || 0) + (productWithStock.stock?.warehouse || 0)
+        setStockValidation({ 
+          hasStock: totalStock >= 1, // Siempre validamos para 1 unidad
+          checking: false, 
+          stockCount: totalStock 
+        })
+      }
+    } catch (error) {
+      // Error silencioso en producción
+      setStockValidation({ hasStock: false, checking: false, stockCount: 0 })
     }
   }
 
@@ -207,10 +226,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       // Solo bloquear si ya se alcanzó el límite de garantías para este producto específico
       const hasReachedLimit = existingWarrantiesCount >= quantityPurchased
       setHasExistingWarranty(hasReachedLimit)
-      
-      console.log(`Producto ${productId}: ${existingWarrantiesCount}/${quantityPurchased} garantías utilizadas`)
+
     } catch (error) {
-      console.error('Error checking existing warranty:', error)
+      // Error silencioso en producción
       setHasExistingWarranty(false)
     } finally {
       setCheckingWarranty(false)
@@ -232,24 +250,15 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       newErrors.product = 'Debe seleccionar un producto defectuoso'
     }
 
-    if (defectiveQuantity <= 0) {
-      newErrors.defectiveQuantity = 'La cantidad defectuosa debe ser mayor a 0'
-    }
-
-    if (defectiveQuantity > (selectedProduct?.stock?.local || 0)) {
-      newErrors.defectiveQuantity = 'La cantidad defectuosa no puede ser mayor a la cantidad comprada'
-    }
-
-    if (!formData.reason.trim()) {
-      newErrors.reason = 'El motivo de la garantía es requerido'
-    }
+    // Motivo de la garantía es opcional, no validamos
 
     if (!selectedReplacementProduct) {
       newErrors.replacementProduct = 'Debe seleccionar un producto de reemplazo'
     }
 
-    if (replacementQuantity <= 0) {
-      newErrors.replacementQuantity = 'La cantidad de reemplazo debe ser mayor a 0'
+    // Validar stock del producto de reemplazo
+    if (selectedReplacementProduct && !stockValidation.hasStock) {
+      newErrors.replacementProduct = `Sin stock disponible: solo hay ${stockValidation.stockCount} unidades`
     }
 
     // Validar vigencia de garantía
@@ -276,14 +285,14 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         productDeliveredId: selectedReplacementProduct?.id,
         productDeliveredName: selectedReplacementProduct?.name,
         reason: formData.reason,
-        notes: `${formData.notes || ''}\n\nCantidades:\n- Defectuosos: ${defectiveQuantity}\n- A entregar: ${replacementQuantity}`.trim(),
+        notes: `${formData.notes || ''}\n\nCantidad: ${defectiveQuantity} producto(s) defectuoso(s) → ${defectiveQuantity} producto(s) de reemplazo`.trim(),
         status: 'completed'
       }
 
       await onSave(warrantyData)
       handleClose()
     } catch (error) {
-      console.error('Error saving warranty:', error)
+      // Error silencioso en producción
     } finally {
       setLoading(false)
     }
@@ -350,8 +359,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       <div className="flex items-start space-x-2">
                         <AlertTriangle className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
                         <div className="text-sm text-blue-800 dark:text-blue-300">
-                          <p className="font-medium mb-1">ℹ️ Información importante:</p>
-                          <p>Las facturas canceladas no aparecen en esta búsqueda porque no pueden tener garantías. Solo se muestran facturas activas y válidas.</p>
+                          <p className="font-medium mb-1">Información importante:</p>
+                          <p>Esta búsqueda incluye todas las facturas (activas y canceladas). Las facturas canceladas aparecerán marcadas como "ANULADA" pero no se pueden seleccionar para crear garantías.</p>
                         </div>
                       </div>
                     </div>
@@ -361,7 +370,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         {saleResults.map((sale) => (
                           <div
                             key={sale.id}
-                            onClick={async () => {
+                            onClick={sale.status === 'cancelled' ? undefined : async () => {
                               setSelectedSale(sale)
                               setSearchSale('')
                               setSaleResults([])
@@ -370,10 +379,21 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                               setSelectedReplacementProduct(null)
                               setHasExistingWarranty(false)
                             }}
-                            className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer"
+                            className={`p-3 border rounded-lg ${
+                              sale.status === 'cancelled' 
+                                ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 cursor-not-allowed opacity-75' 
+                                : 'border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer'
+                            }`}
                           >
-                            <div className="font-medium text-gray-900 dark:text-white">
-                              Factura: {sale.invoiceNumber}
+                            <div className="flex items-center justify-between mb-2">
+                              <div className="font-medium text-gray-900 dark:text-white">
+                                Factura: {sale.invoiceNumber}
+                              </div>
+                              {sale.status === 'cancelled' && (
+                                <div className="text-xs bg-red-100 dark:bg-red-800 text-red-800 dark:text-red-200 px-2 py-1 rounded-full font-medium">
+                                  ANULADA
+                                </div>
+                              )}
                             </div>
                             <div className="text-sm text-gray-600 dark:text-gray-300">
                               Cliente: {sale.clientName}
@@ -384,8 +404,14 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             <div className="text-sm text-gray-600 dark:text-gray-300">
                               Total: ${sale.total.toLocaleString()}
                             </div>
-                            {!isWarrantyValid(sale.createdAt) && (
-                              <div className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-1">
+                            {sale.status === 'cancelled' && (
+                              <div className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-1 mt-1">
+                                <Lock className="h-3 w-3" />
+                                No se pueden crear garantías para facturas anuladas
+                              </div>
+                            )}
+                            {sale.status !== 'cancelled' && !isWarrantyValid(sale.createdAt) && (
+                              <div className="text-xs text-red-600 dark:text-red-400 font-medium flex items-center gap-1 mt-1">
                                 <AlertTriangle className="h-3 w-3" />
                                 Garantía vencida
                               </div>
@@ -401,8 +427,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         <div className="flex items-start space-x-2">
                           <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
                           <div className="text-sm text-yellow-800 dark:text-yellow-300">
-                            <p className="font-medium mb-1">🔍 No se encontraron facturas</p>
-                            <p>No hay facturas activas que coincidan con tu búsqueda. Recuerda que las facturas canceladas no pueden tener garantías.</p>
+                            <p className="font-medium mb-1">No se encontraron facturas</p>
+                            <p>No se encontraron facturas que coincidan con tu búsqueda. Intenta con otro número de factura o nombre de cliente.</p>
                           </div>
                         </div>
                       </div>
@@ -654,18 +680,6 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <Package className="h-3 w-3" />
                           Producto defectuoso
                         </div>
-                        {stockValidation.hasStock && (
-                          <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
-                            <CheckCircle className="h-3 w-3" />
-                            Stock disponible: {stockValidation.stockCount} unidades
-                          </div>
-                        )}
-                        {!stockValidation.hasStock && !stockValidation.checking && (
-                          <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 flex items-center gap-1">
-                            <AlertTriangle className="h-3 w-3" />
-                            Sin stock suficiente: {stockValidation.stockCount} disponibles
-                          </div>
-                        )}
                       </div>
                       <Button
                         onClick={hasExistingWarranty ? undefined : () => setSelectedProduct(null)}
@@ -682,46 +696,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Cantidad defectuosa *
+                          Cantidad:
                         </label>
-                        <div className={`flex items-center gap-3 ${hasExistingWarranty ? 'opacity-50 pointer-events-none' : ''}`}>
-                          <Button
-                            onClick={hasExistingWarranty ? undefined : () => setDefectiveQuantity(Math.max(1, defectiveQuantity - 1))}
-                            variant="outline"
-                            size="sm"
-                            disabled={hasExistingWarranty}
-                            className="w-8 h-8 p-0"
-                          >
-                            -
-                          </Button>
-                          <input
-                            type="number"
-                            min="1"
-                            max={selectedProduct.stock?.local || 1}
-                            value={defectiveQuantity}
-                            disabled={hasExistingWarranty}
-                            onChange={hasExistingWarranty ? undefined : (e) => setDefectiveQuantity(Math.max(1, Math.min(selectedProduct.stock?.local || 1, parseInt(e.target.value) || 1)))}
-                            className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                          />
-                          <Button
-                            onClick={hasExistingWarranty ? undefined : () => setDefectiveQuantity(Math.min(selectedProduct.stock?.local || 1, defectiveQuantity + 1))}
-                            variant="outline"
-                            size="sm"
-                            disabled={hasExistingWarranty}
-                            className="w-8 h-8 p-0"
-                          >
-                            +
-                          </Button>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            de {selectedProduct.stock?.local || 0} comprados
-                          </span>
-                        </div>
-                        {errors.defectiveQuantity && (
-                          <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
-                            <AlertTriangle className="h-4 w-4" />
-                            {errors.defectiveQuantity}
-                          </p>
-                        )}
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          1 unidad
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -783,10 +762,28 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             {replacementResults.map((product) => (
                               <div
                                 key={product.id}
-                                onClick={() => {
+                                onClick={async () => {
                                   setSelectedReplacementProduct(product)
                                   setSearchReplacement('')
                                   setReplacementResults([])
+                                  
+                                  // Validar stock del producto de reemplazo
+                                  setStockValidation({ hasStock: false, checking: true, stockCount: 0 })
+                                  try {
+                                    const productWithStock = await ProductsService.getProductById(product.id)
+                                    if (productWithStock) {
+                                      const totalStock = (productWithStock.stock?.local || 0) + (productWithStock.stock?.warehouse || 0)
+                                      setStockValidation({ 
+                                        hasStock: totalStock >= 1, 
+                                        checking: false, 
+                                        stockCount: totalStock 
+                                      })
+                                    }
+                                  } catch (error) {
+      // Error silencioso en producción
+                                    setStockValidation({ hasStock: false, checking: false, stockCount: 0 })
+                                  }
+                                  
                                   // Limpiar error de producto de reemplazo
                                   if (errors.replacementProduct) {
                                     setErrors(prev => {
@@ -840,31 +837,28 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         </div>
                         <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />
-                          Producto de reemplazo (cargado automáticamente)
+                          Producto de reemplazo seleccionado
                         </div>
+                        {stockValidation.hasStock && (
+                          <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                            <CheckCircle className="h-3 w-3" />
+                            Stock disponible: {stockValidation.stockCount} unidades
+                          </div>
+                        )}
+                        {!stockValidation.hasStock && !stockValidation.checking && (
+                          <div className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                            <AlertTriangle className="h-3 w-3" />
+                            Sin stock suficiente: {stockValidation.stockCount} disponibles
+                          </div>
+                        )}
+                        {stockValidation.checking && (
+                          <div className="text-xs text-blue-600 dark:text-blue-400 mt-1 flex items-center gap-1">
+                            <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                            Verificando stock...
+                          </div>
+                        )}
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => {
-                            setShowReplacementSearch(true)
-                            setSearchReplacement('')
-                            setReplacementResults([])
-                            // Limpiar error de producto de reemplazo
-                            if (errors.replacementProduct) {
-                              setErrors(prev => {
-                                const newErrors = { ...prev }
-                                delete newErrors.replacementProduct
-                                return newErrors
-                              })
-                            }
-                          }}
-                          variant="outline"
-                          size="sm"
-                          className="text-blue-600 hover:text-blue-700 border-blue-300 hover:border-blue-400"
-                        >
-                          <Search className="h-4 w-4 mr-1" />
-                          Cambiar
-                        </Button>
                         <Button
                           onClick={() => setSelectedReplacementProduct(null)}
                           variant="ghost"
@@ -876,74 +870,15 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       </div>
                     </div>
                     
-                    {/* Control de cantidad de reemplazo */}
+                    {/* Información de cantidad */}
                     <div className="space-y-3">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                          Cantidad a entregar *
+                          Cantidad:
                         </label>
-                        <div className="flex items-center gap-3">
-                          <Button
-                            onClick={() => {
-                              setReplacementQuantity(Math.max(1, replacementQuantity - 1))
-                              // Limpiar error de cantidad de reemplazo
-                              if (errors.replacementQuantity) {
-                                setErrors(prev => {
-                                  const newErrors = { ...prev }
-                                  delete newErrors.replacementQuantity
-                                  return newErrors
-                                })
-                              }
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="w-8 h-8 p-0"
-                          >
-                            -
-                          </Button>
-                          <input
-                            type="number"
-                            min="1"
-                            max={defectiveQuantity}
-                            value={replacementQuantity}
-                            onChange={(e) => {
-                              setReplacementQuantity(Math.max(1, Math.min(defectiveQuantity, parseInt(e.target.value) || 1)))
-                              // Limpiar error de cantidad de reemplazo
-                              if (errors.replacementQuantity) {
-                                setErrors(prev => {
-                                  const newErrors = { ...prev }
-                                  delete newErrors.replacementQuantity
-                                  return newErrors
-                                })
-                              }
-                            }}
-                            className="w-20 px-2 py-1 text-center border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                          />
-                          <Button
-                            onClick={() => {
-                              setReplacementQuantity(Math.min(defectiveQuantity, replacementQuantity + 1))
-                              // Limpiar error de cantidad de reemplazo
-                              if (errors.replacementQuantity) {
-                                setErrors(prev => {
-                                  const newErrors = { ...prev }
-                                  delete newErrors.replacementQuantity
-                                  return newErrors
-                                })
-                              }
-                            }}
-                            variant="outline"
-                            size="sm"
-                            className="w-8 h-8 p-0"
-                          >
-                            +
-                          </Button>
-                          <span className="text-sm text-gray-600 dark:text-gray-300">
-                            (máximo {defectiveQuantity} defectuosos)
-                          </span>
-                        </div>
-                        {errors.replacementQuantity && (
-                          <p className="text-sm text-red-500">{errors.replacementQuantity}</p>
-                        )}
+                        <p className="text-sm text-gray-600 dark:text-gray-300">
+                          1 unidad
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -976,7 +911,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Motivo de la Garantía *
+                    Motivo de la Garantía (opcional)
                   </label>
                   <textarea
                     value={formData.reason}

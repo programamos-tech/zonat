@@ -6,8 +6,8 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJ
 
 // Validar que las variables estén definidas
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('❌ Error: Variables de entorno de Supabase no encontradas')
-  console.error('Asegúrate de tener un archivo .env.local con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY')
+      // Error silencioso en producción
+      // Error silencioso en producción
 }
 
 // Cliente para operaciones del cliente (anon)

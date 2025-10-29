@@ -12,7 +12,7 @@ export class ClientsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching clients:', error)
+      // Error silencioso en producción
         return []
       }
 
@@ -32,7 +32,7 @@ export class ClientsService {
         createdAt: client.created_at
       }))
     } catch (error) {
-      console.error('Error in getAllClients:', error)
+      // Error silencioso en producción
       return []
     }
   }
@@ -47,7 +47,7 @@ export class ClientsService {
         .single()
 
       if (error) {
-        console.error('Error fetching client:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -67,7 +67,7 @@ export class ClientsService {
         createdAt: data.created_at
       }
     } catch (error) {
-      console.error('Error in getClientById:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -99,8 +99,7 @@ export class ClientsService {
         .single()
 
       if (error) {
-        console.error('Error creating client:', error)
-        
+      // Error silencioso en producción
         // Manejar errores específicos
         if (error.code === '23505') {
           if (error.message.includes('clients_email_key')) {
@@ -149,7 +148,7 @@ export class ClientsService {
 
       return { client: newClient, error: null }
     } catch (error) {
-      console.error('Error in createClient:', error)
+      // Error silencioso en producción
       return { client: null, error: 'Error inesperado al crear el cliente.' }
     }
   }
@@ -183,7 +182,7 @@ export class ClientsService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error updating client:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -205,7 +204,7 @@ export class ClientsService {
 
       return true
     } catch (error) {
-      console.error('Error in updateClient:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -222,7 +221,7 @@ export class ClientsService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error deleting client:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -244,7 +243,7 @@ export class ClientsService {
 
       return true
     } catch (error) {
-      console.error('Error in deleteClient:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -259,7 +258,7 @@ export class ClientsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error searching clients:', error)
+      // Error silencioso en producción
         return []
       }
 
@@ -279,7 +278,7 @@ export class ClientsService {
         createdAt: client.created_at
       }))
     } catch (error) {
-      console.error('Error in searchClients:', error)
+      // Error silencioso en producción
       return []
     }
   }

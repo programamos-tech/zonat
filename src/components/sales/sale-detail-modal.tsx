@@ -63,7 +63,7 @@ export default function SaleDetailModal({
           }
           setCompanyConfig(config)
         } catch (error) {
-          console.error('Error loading company config:', error)
+      // Error silencioso en producción
         }
       }
       
@@ -73,7 +73,7 @@ export default function SaleDetailModal({
 
   // Limpiar mensaje de confirmación cuando la venta se anula
   useEffect(() => {
-    console.log('Sale status changed:', sale?.status)
+
     if (sale?.status === 'cancelled') {
       setShowCancelForm(false)
       setCancelReason('')
@@ -211,7 +211,7 @@ export default function SaleDetailModal({
         // NO cerrar el modal, mantenerlo abierto para ver el resultado
       }, 3000)
     } catch (error) {
-      console.error('Error cancelling sale:', error)
+      // Error silencioso en producción
       setCancelSuccessMessage('Error al anular la venta. Por favor, inténtalo de nuevo.')
     } finally {
       setIsCancelling(false)
@@ -220,7 +220,7 @@ export default function SaleDetailModal({
 
   const handlePrint = async () => {
     if (!sale || !companyConfig) {
-      console.error('No hay datos de venta o configuración de empresa')
+      // Error silencioso en producción
       return
     }
 
@@ -523,7 +523,7 @@ export default function SaleDetailModal({
       }
 
     } catch (error) {
-      console.error('Error generando factura:', error)
+      // Error silencioso en producción
       alert('Error al generar la factura. Intenta nuevamente.')
     } finally {
       setIsLoadingPrint(false)

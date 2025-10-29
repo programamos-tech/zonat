@@ -61,7 +61,7 @@ export const CategoriesProvider = ({ children }: { children: ReactNode }) => {
       
       return false
     } catch (error) {
-      console.error('Error in updateCategory:', error)
+      // Error silencioso en producción
       return false
     }
   }

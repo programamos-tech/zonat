@@ -45,10 +45,47 @@ npm install
 cp .env.example .env.local
 ```
 
-4. Ejecutar en desarrollo
+Editar `.env.local` con tus credenciales de Supabase:
+```env
+NEXT_PUBLIC_SUPABASE_URL=tu-url-de-supabase
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu-anon-key-de-supabase
+SUPABASE_SERVICE_ROLE_KEY=tu-service-role-key-de-supabase
+```
+
+4. Inicializar la base de datos
+```bash
+node database/migrations/init-supabase.js
+```
+
+5. Ejecutar en desarrollo
 ```bash
 npm run dev
 ```
+
+## 🔧 Variables de Entorno
+
+### Variables Requeridas
+
+| Variable | Descripción | Ejemplo |
+|----------|-------------|---------|
+| `NEXT_PUBLIC_SUPABASE_URL` | URL de tu proyecto Supabase | `https://xxx.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave anónima de Supabase | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave de servicio de Supabase | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...` |
+
+### Variables Opcionales
+
+| Variable | Descripción | Valor por Defecto |
+|----------|-------------|-------------------|
+| `NODE_ENV` | Entorno de ejecución | `development` |
+| `NEXT_PUBLIC_APP_NAME` | Nombre de la aplicación | `ZONA T` |
+| `NEXT_PUBLIC_APP_VERSION` | Versión de la aplicación | `1.0.0` |
+
+### 🔐 Seguridad
+
+- **NUNCA** commits las variables de entorno al repositorio
+- Usa `.env.local` para desarrollo local
+- Usa las variables de entorno de tu plataforma de deployment para producción
+- Las claves de Supabase deben mantenerse seguras
 
 ## 📁 Estructura del Proyecto
 

@@ -46,7 +46,7 @@ export default function CreditsPage() {
         // Limpiar el sessionStorage después de usarlo
         sessionStorage.removeItem('selectedCredit')
       } catch (error) {
-        console.error('Error parsing selected credit:', error)
+      // Error silencioso en producción
         sessionStorage.removeItem('selectedCredit')
       }
     }
@@ -54,35 +54,23 @@ export default function CreditsPage() {
 
   // Escuchar eventos de crédito cancelado para refrescar la vista
   useEffect(() => {
-    console.log('🎧 Configurando listener para eventos creditCancelled')
-    
+
     const handleCreditCancelled = (event: CustomEvent) => {
-      console.log('🔄 Crédito cancelado detectado, refrescando vista:', event.detail)
-      console.log('🔄 Ejecutando loadCredits()...')
       loadCredits()
     }
 
     window.addEventListener('creditCancelled', handleCreditCancelled as EventListener)
-    console.log('✅ Listener configurado exitosamente')
-    
+
     return () => {
-      console.log('🧹 Limpiando listener de eventos creditCancelled')
+
       window.removeEventListener('creditCancelled', handleCreditCancelled as EventListener)
     }
   }, [])
 
   const loadCredits = async () => {
     try {
-      console.log('🔄 Iniciando loadCredits()...')
       setIsLoading(true)
       const creditsData = await CreditsService.getAllCredits()
-      console.log('📊 Créditos obtenidos de la DB:', creditsData.length)
-      console.log('📊 Primeros créditos:', creditsData.slice(0, 3).map(c => ({ 
-        id: c.id, 
-        invoiceNumber: c.invoiceNumber, 
-        status: c.status,
-        totalAmount: c.totalAmount 
-      })))
       
       // Agrupar créditos por cliente
       const groupedCredits = creditsData.reduce((acc, credit) => {
@@ -134,10 +122,10 @@ export default function CreditsPage() {
       
       setCredits(consolidated as Credit[])
     } catch (error) {
-      console.error('Error loading credits:', error)
+      // Error silencioso en producción
       // Si es un error de tabla no encontrada, mostrar mensaje más útil
       if (error instanceof Error && error.message.includes('relation "credits" does not exist')) {
-        console.warn('Las tablas de créditos no existen. Ejecuta el script SQL para crearlas.')
+
         setCredits([]) // Mostrar lista vacía en lugar de error
       } else {
         setCredits([]) // En caso de otros errores, mostrar lista vacía
@@ -158,7 +146,7 @@ export default function CreditsPage() {
       setSelectedCredit(credit)
       setIsCreditDetailModalOpen(true)
     } catch (error) {
-      console.error('Error loading client credits:', error)
+      // Error silencioso en producción
       setClientCredits([])
       setSelectedCredit(credit)
       setIsCreditDetailModalOpen(true)
@@ -166,12 +154,11 @@ export default function CreditsPage() {
   }
 
   const handlePayment = (credit: Credit) => {
-    console.log('handlePayment llamado con:', credit.id, credit.invoiceNumber)
-    console.log('Abriendo modal de pagos...')
+
     setSelectedCredit(credit)
     // NO cerrar el modal de detalles, solo abrir el de pago
     setIsPaymentModalOpen(true)
-    console.log('isPaymentModalOpen debería ser true ahora')
+
   }
 
   const handleViewSale = (invoiceNumber: string) => {
@@ -245,13 +232,8 @@ export default function CreditsPage() {
       // NO resetear selectedCredit para mantener el modal de detalles abierto
       // setSelectedCredit(null)
     } catch (error) {
-      console.error('Error adding payment:', error)
-      console.error('Error details:', {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-        error: error
-      })
-      
+      // Error silencioso en producción
+      // Error silencioso en producción
       let errorMessage = 'Error al agregar el pago. Por favor intenta de nuevo.'
       
       if (error instanceof Error) {

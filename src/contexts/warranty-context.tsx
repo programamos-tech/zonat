@@ -51,7 +51,7 @@ export function WarrantyProvider({ children }: { children: ReactNode }) {
       setTotalWarranties(result.total)
       setHasMore(result.hasMore)
     } catch (error) {
-      console.error('Error fetching warranties:', error)
+      // Error silencioso en producción
     } finally {
       setLoading(false)
     }
@@ -68,7 +68,7 @@ export function WarrantyProvider({ children }: { children: ReactNode }) {
       setWarranties(prev => [newWarranty, ...prev])
       setTotalWarranties(prev => prev + 1)
     } catch (error) {
-      console.error('Error creating warranty:', error)
+      // Error silencioso en producción
       throw error
     }
   }, [currentUser])
@@ -89,7 +89,7 @@ export function WarrantyProvider({ children }: { children: ReactNode }) {
           : warranty
       ))
     } catch (error) {
-      console.error('Error updating warranty status:', error)
+      // Error silencioso en producción
       throw error
     }
   }, [currentUser])
@@ -103,7 +103,7 @@ export function WarrantyProvider({ children }: { children: ReactNode }) {
       const results = await WarrantyService.searchWarranties(searchTerm)
       return results
     } catch (error) {
-      console.error('Error searching warranties:', error)
+      // Error silencioso en producción
       return []
     }
   }, [warranties])
@@ -120,7 +120,7 @@ export function WarrantyProvider({ children }: { children: ReactNode }) {
     try {
       return await WarrantyService.getWarrantyStats()
     } catch (error) {
-      console.error('Error fetching warranty stats:', error)
+      // Error silencioso en producción
       return {
         total: 0,
         pending: 0,

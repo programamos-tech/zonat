@@ -39,8 +39,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   // Debug: Log products when modal opens
   useEffect(() => {
     if (isOpen) {
-      console.log('SaleModal opened - products:', products.length)
-      console.log('Products data:', products)
+
     }
   }, [isOpen, products])
   
@@ -118,7 +117,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             setSearchedProducts(results)
           }
         } catch (error) {
-          console.error('Error searching products:', error)
+      // Error silencioso en producción
           if (!cancelled) {
             setSearchedProducts([])
           }
@@ -201,9 +200,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
   // Debug: Log filtered products
   useEffect(() => {
-    console.log('filteredProducts changed:', filteredProducts.length, 'products')
+
     if (filteredProducts.length > 0) {
-      console.log('First product:', filteredProducts[0])
+
     }
   }, [filteredProducts])
 
@@ -249,7 +248,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         return 'Seleccionar método de pago'
     }
   }
-
 
   // Función para obtener el stock disponible de un producto
   const getAvailableStock = (productId: string) => {
@@ -532,7 +530,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     )
   }
 
-
   const handleSave = () => {
     // Validar que hay cliente, productos, método de pago y que todos tengan cantidad > 0
     const validProducts = selectedProducts.filter(item => item.quantity > 0)
@@ -596,7 +593,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       setClientSearch(newClient.name)
       setIsClientModalOpen(false)
     } catch (error) {
-      console.error('Error creating client:', error)
+      // Error silencioso en producción
     }
   }
 

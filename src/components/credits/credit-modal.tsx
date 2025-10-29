@@ -52,6 +52,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
+  const [includeTax, setIncludeTax] = useState(false)
 
   useEffect(() => {
     if (isOpen) {
@@ -97,7 +98,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             setSearchedProducts(results)
           }
         } catch (error) {
-          console.error('Error searching products:', error)
+      // Error silencioso en producción
           if (!cancelled) {
             setSearchedProducts([])
             setIsSearchingProducts(false)
@@ -238,7 +239,17 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   }
 
   const calculateTotal = () => {
+    const subtotal = selectedProducts.reduce((total, item) => total + item.totalPrice, 0)
+    const tax = includeTax ? subtotal * 0.19 : 0
+    return subtotal + tax
+  }
+
+  const calculateSubtotal = () => {
     return selectedProducts.reduce((total, item) => total + item.totalPrice, 0)
+  }
+
+  const calculateTax = () => {
+    return includeTax ? calculateSubtotal() * 0.19 : 0
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -287,8 +298,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         clientName: client.name,
         items: saleItems,
         total: calculateTotal(),
-        subtotal: calculateTotal(),
-        tax: 0,
+        subtotal: calculateSubtotal(),
+        tax: calculateTax(),
         discount: 0,
         status: 'completed',
         paymentMethod: 'credit',
@@ -318,7 +329,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       handleClose()
       
     } catch (error) {
-      console.error('Error creating credit:', error)
+      // Error silencioso en producción
       alert('❌ Error al crear el crédito. Por favor intenta de nuevo.')
     } finally {
       setLoading(false)
@@ -336,6 +347,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     setProductSearch('')
     setShowProductDropdown(false)
     setSelectedDate(null)
+    setIncludeTax(false)
     setStockAlert({show: false, message: ''})
   }
 
@@ -681,6 +693,40 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         </div>
                       </div>
                     ))}
+                    
+                    {/* Subtotal */}
+                    <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-600 dark:text-gray-300">
+                          Subtotal:
+                        </span>
+                        <span className="font-semibold text-gray-900 dark:text-white">
+                          ${calculateSubtotal().toLocaleString('es-CO')}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* IVA Checkbox */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={includeTax}
+                          onChange={(e) => setIncludeTax(e.target.checked)}
+                          className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
+                        />
+                        <span className="text-sm text-gray-700 dark:text-gray-300">
+                          Incluir IVA (19%)
+                        </span>
+                      </div>
+                      {includeTax && (
+                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                          ${calculateTax().toLocaleString('es-CO')}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Total */}
                     <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-bold text-gray-900 dark:text-white">

@@ -47,7 +47,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
       setHasMore(result.hasMore)
       setIsSearching(false)
     } catch (error) {
-      console.error('Error loading products:', error)
+      // Error silencioso en producción
     } finally {
       setLoading(false)
     }
@@ -102,7 +102,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false)
       return results
     } catch (error) {
-      console.error('Search error:', error)
+      // Error silencioso en producción
       setLoading(false)
       return []
     }
@@ -118,7 +118,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
       setTotalProducts(result.total)
       setHasMore(result.hasMore)
     } catch (error) {
-      console.error('Error loading products:', error)
+      // Error silencioso en producción
     } finally {
       setLoading(false)
     }
@@ -134,7 +134,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
         setTotalProducts(result.total)
         setHasMore(result.hasMore)
       } catch (error) {
-        console.error('Error loading products:', error)
+      // Error silencioso en producción
       } finally {
         setLoading(false)
       }

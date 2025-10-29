@@ -62,7 +62,7 @@ export function SalesTable({
           const results = await onSearch(searchTerm)
           setSearchResults(results)
         } catch (error) {
-          console.error('Error en búsqueda:', error)
+      // Error silencioso en producción
           setSearchResults([])
         } finally {
           setIsSearching(false)

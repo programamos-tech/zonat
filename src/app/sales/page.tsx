@@ -50,14 +50,14 @@ export default function SalesPage() {
     if (selectedSale) {
       const updatedSale = sales.find(sale => sale.id === selectedSale.id)
       if (updatedSale && updatedSale.status !== selectedSale.status) {
-        console.log('Updating selectedSale status:', selectedSale.status, '->', updatedSale.status)
+
         setSelectedSale(updatedSale)
       }
     }
   }, [sales, selectedSale])
 
   const handleEdit = (sale: Sale) => {
-    console.log('Edit sale:', sale)
+
     // TODO: Implement edit modal
   }
 
@@ -66,7 +66,7 @@ export default function SalesPage() {
       try {
         await deleteSale(sale.id)
       } catch (error) {
-        console.error('Error deleting sale:', error)
+      // Error silencioso en producción
         alert('Error al eliminar la venta')
       }
     }
@@ -76,7 +76,6 @@ export default function SalesPage() {
     setSelectedSale(sale)
     setIsDetailModalOpen(true)
   }
-
 
   const handleRefresh = async () => {
     await refreshSales()
@@ -91,7 +90,7 @@ export default function SalesPage() {
       await createSale(saleData)
       setIsModalOpen(false)
     } catch (error) {
-      console.error('Error creating sale:', error)
+      // Error silencioso en producción
       alert('Error al crear la venta')
     }
   }
@@ -424,7 +423,7 @@ export default function SalesPage() {
       }
 
     } catch (error) {
-      console.error('Error generando factura:', error)
+      // Error silencioso en producción
       alert('Error al generar la factura. Intenta nuevamente.')
     }
   }
@@ -437,7 +436,7 @@ export default function SalesPage() {
       // setSelectedSale(null)
       return result
     } catch (error) {
-      console.error('Error cancelling sale:', error)
+      // Error silencioso en producción
       alert('Error al cancelar la venta')
       throw error
     }

@@ -18,7 +18,7 @@ export class ProductsService {
         .range(from, to)
 
       if (error) {
-        console.error('Error fetching products:', error)
+      // Error silencioso en producción
         return { products: [], total: 0, hasMore: false }
       }
 
@@ -28,7 +28,7 @@ export class ProductsService {
         .select('*', { count: 'exact', head: true })
 
       if (countError) {
-        console.error('Error counting products:', countError)
+      // Error silencioso en producción
         return { products: [], total: 0, hasMore: false }
       }
 
@@ -57,7 +57,7 @@ export class ProductsService {
         hasMore: to < (count || 0) - 1
       }
     } catch (error) {
-      console.error('Error in getAllProducts:', error)
+      // Error silencioso en producción
       return { products: [], total: 0, hasMore: false }
     }
   }
@@ -71,7 +71,7 @@ export class ProductsService {
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error fetching products:', error)
+      // Error silencioso en producción
         return []
       }
 
@@ -94,7 +94,7 @@ export class ProductsService {
         updatedAt: product.updated_at
       }))
     } catch (error) {
-      console.error('Error in getAllProductsLegacy:', error)
+      // Error silencioso en producción
       return []
     }
   }
@@ -109,7 +109,7 @@ export class ProductsService {
         .single()
 
       if (error) {
-        console.error('Error fetching product:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -132,7 +132,7 @@ export class ProductsService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error in getProductById:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -161,7 +161,7 @@ export class ProductsService {
         .single()
 
       if (error) {
-        console.error('Error creating product:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -204,7 +204,7 @@ export class ProductsService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error in createProduct:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -233,7 +233,7 @@ export class ProductsService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error updating product:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -268,7 +268,7 @@ export class ProductsService {
 
       return true
     } catch (error) {
-      console.error('Error in updateProduct:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -282,7 +282,7 @@ export class ProductsService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error deleting product:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -301,7 +301,7 @@ export class ProductsService {
 
       return true
     } catch (error) {
-      console.error('Error in deleteProduct:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -315,8 +315,6 @@ export class ProductsService {
         return []
       }
 
-      console.log('🔍 Searching products for:', cleanQuery)
-
       // Búsqueda simplificada sin timeout - buscar en referencia y nombre
       const { data, error } = await supabase
         .from('products')
@@ -326,11 +324,9 @@ export class ProductsService {
         .limit(100)
 
       if (error) {
-        console.error('Error searching products:', error)
+      // Error silencioso en producción
         return []
       }
-
-      console.log('✅ Found products:', data.length)
 
       return data.map((product: any) => ({
         id: product.id,
@@ -351,7 +347,7 @@ export class ProductsService {
         updatedAt: product.created_at // Usar created_at como fallback
       }))
     } catch (error) {
-      console.error('❌ Error in searchProducts:', error)
+      // Error silencioso en producción
       return []
     }
   }
@@ -369,7 +365,7 @@ export class ProductsService {
       const currentToStock = to === 'warehouse' ? product.stock.warehouse : product.stock.store
 
       if (currentFromStock < quantity) {
-        console.error('Insufficient stock for transfer')
+      // Error silencioso en producción
         return false
       }
 
@@ -382,7 +378,7 @@ export class ProductsService {
         .eq('id', productId)
 
       if (error) {
-        console.error('Error transferring stock:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -419,7 +415,7 @@ export class ProductsService {
 
       return true
     } catch (error) {
-      console.error('Error in transferStock:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -434,7 +430,7 @@ export class ProductsService {
       const totalAvailable = warehouse + store
 
       if (totalAvailable < quantity) {
-        console.error(`Insufficient stock for product ${productId}. Available: ${totalAvailable}, Required: ${quantity}`)
+      // Error silencioso en producción
         return false
       }
 
@@ -464,7 +460,7 @@ export class ProductsService {
         .eq('id', productId)
 
       if (error) {
-        console.error('Error deducting stock:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -494,7 +490,7 @@ export class ProductsService {
 
       return true
     } catch (error) {
-      console.error('Error in deductStockForSale:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -502,22 +498,16 @@ export class ProductsService {
   // Devolver stock de una venta cancelada
   static async returnStockFromSale(productId: string, quantity: number, currentUserId?: string): Promise<boolean> {
     try {
-      console.log('🔄 returnStockFromSale llamado:', { productId, quantity, currentUserId })
-      
+
       const product = await this.getProductById(productId)
       if (!product) {
-        console.error('❌ Producto no encontrado:', productId)
+      // Error silencioso en producción
         return false
       }
-      
-      console.log('📦 Producto encontrado:', { name: product.name, currentStock: product.stock })
-      console.log('📦 Stock actual en local:', product.stock.store)
-      console.log('📦 Cantidad a devolver:', quantity)
 
       // Devolver el stock al local (store) por defecto
       const newStockStore = (product.stock.store || 0) + quantity
-      console.log('📦 Nuevo stock en local será:', newStockStore)
-      
+
       const { error } = await supabase
         .from('products')
         .update({
@@ -526,24 +516,14 @@ export class ProductsService {
         .eq('id', productId)
 
       if (error) {
-        console.error('❌ Error returning stock:', error)
+      // Error silencioso en producción
         return false
       }
-
-      console.log('✅ Stock actualizado exitosamente en la base de datos')
 
       // Registrar la actividad
       if (currentUserId) {
         const description = `Cancelación de venta: Se devolvieron ${quantity} unidades del producto "${product.name}" al local`
-        
-        console.log('🔄 Registrando log de retorno de stock:', {
-          currentUserId,
-          productId,
-          productName: product.name,
-          quantity,
-          description
-        })
-        
+
         try {
           await AuthService.logActivity(
             currentUserId,
@@ -561,17 +541,17 @@ export class ProductsService {
               reason: 'Venta cancelada'
             }
           )
-          console.log('✅ Log de retorno de stock registrado exitosamente')
+
         } catch (logError) {
-          console.error('❌ Error registrando log de retorno de stock:', logError)
+      // Error silencioso en producción
         }
       } else {
-        console.warn('⚠️ No se pudo registrar log de retorno de stock: currentUserId no disponible')
+
       }
 
       return true
     } catch (error) {
-      console.error('Error in returnStockFromSale:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -579,47 +559,35 @@ export class ProductsService {
   // 🚀 NUEVA FUNCIÓN: Devolver stock de múltiples productos en lote (OPTIMIZADA)
   static async returnStockFromSaleBatch(items: Array<{productId: string, quantity: number, productName?: string}>, currentUserId?: string): Promise<{success: boolean, results: Array<{productId: string, success: boolean, error?: any}>}> {
     try {
-      console.log('🚀 returnStockFromSaleBatch llamado:', { itemsCount: items.length, currentUserId })
-      
+
       if (!items || items.length === 0) {
-        console.log('⚠️ No hay items para procesar')
+
         return { success: true, results: [] }
       }
 
       // 1. Obtener todos los productos de una vez
       const productIds = items.map(item => item.productId)
-      console.log('📦 Obteniendo productos:', productIds)
-      
+
       const { data: products, error: productsError } = await supabase
         .from('products')
         .select('id, name, reference, stock_store')
         .in('id', productIds)
 
       if (productsError) {
-        console.error('❌ Error obteniendo productos:', productsError)
+      // Error silencioso en producción
         throw productsError
       }
-
-      console.log('📦 Productos obtenidos:', products?.length || 0)
 
       // 2. Preparar actualizaciones masivas
       const updates = items.map(item => {
         const product = products?.find(p => p.id === item.productId)
         if (!product) {
-          console.error('❌ Producto no encontrado:', item.productId)
+      // Error silencioso en producción
           return null
         }
 
         const currentStock = product.stock_store || 0
         const newStock = currentStock + item.quantity
-        
-        console.log('📦 Preparando actualización:', {
-          productId: item.productId,
-          productName: product.name,
-          currentStock,
-          quantity: item.quantity,
-          newStock
-        })
 
         return {
           id: item.productId,
@@ -632,12 +600,12 @@ export class ProductsService {
       }).filter(Boolean)
 
       if (updates.length === 0) {
-        console.error('❌ No se encontraron productos válidos para actualizar')
+      // Error silencioso en producción
         return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error: 'Producto no encontrado' })) }
       }
 
       // 3. Actualización masiva usando Promise.all
-      console.log('🚀 Ejecutando actualizaciones masivas...')
+
       const updatePromises = updates.map(async (update) => {
         try {
           const { error } = await supabase
@@ -646,11 +614,10 @@ export class ProductsService {
             .eq('id', update.id)
 
           if (error) {
-            console.error(`❌ Error actualizando producto ${update.id}:`, error)
+      // Error silencioso en producción
             return { productId: update.id, success: false, error }
           }
 
-          console.log(`✅ Producto ${update.id} actualizado exitosamente`)
           return { 
             productId: update.id, 
             success: true, 
@@ -661,13 +628,12 @@ export class ProductsService {
             newStock: update.stock_store
           }
         } catch (error) {
-          console.error(`❌ Error en actualización de producto ${update.id}:`, error)
+      // Error silencioso en producción
           return { productId: update.id, success: false, error }
         }
       })
 
       const results = await Promise.all(updatePromises)
-      console.log('🚀 Todas las actualizaciones completadas:', results)
 
       // 4. Log consolidado (una sola vez)
       if (currentUserId) {
@@ -675,14 +641,7 @@ export class ProductsService {
         const failedUpdates = results.filter(r => !r.success)
         
         const description = `Cancelación de venta masiva: Se devolvieron ${successfulUpdates.length} productos al stock${failedUpdates.length > 0 ? ` (${failedUpdates.length} fallaron)` : ''}`
-        
-        console.log('🔄 Registrando log consolidado:', {
-          currentUserId,
-          successfulCount: successfulUpdates.length,
-          failedCount: failedUpdates.length,
-          description
-        })
-        
+
         try {
           await AuthService.logActivity(
             currentUserId,
@@ -708,19 +667,18 @@ export class ProductsService {
               batchProcessing: true
             }
           )
-          console.log('✅ Log consolidado registrado exitosamente')
+
         } catch (logError) {
-          console.error('❌ Error registrando log consolidado:', logError)
+      // Error silencioso en producción
           // No fallar la operación principal por un error de log
         }
       }
 
       const allSuccessful = results.every(r => r.success)
-      console.log('🚀 Procesamiento en lote completado:', { allSuccessful, resultsCount: results.length })
 
       return { success: allSuccessful, results }
     } catch (error) {
-      console.error('❌ Error in returnStockFromSaleBatch:', error)
+      // Error silencioso en producción
       return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error })) }
     }
   }
@@ -743,7 +701,7 @@ export class ProductsService {
         .eq('id', productId)
 
       if (error) {
-        console.error('Error adjusting stock:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -774,7 +732,7 @@ export class ProductsService {
 
       return true
     } catch (error) {
-      console.error('Error in adjustStock:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -791,13 +749,13 @@ export class ProductsService {
         .eq('id', productId)
 
       if (error) {
-        console.error('Error updating product stock:', error)
+      // Error silencioso en producción
         return false
       }
 
       return true
     } catch (error) {
-      console.error('Error in updateProductStock:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -807,7 +765,7 @@ export class ProductsService {
     try {
       const user = await AuthService.getCurrentUser()
       if (!user) {
-        console.error('Usuario no autenticado')
+      // Error silencioso en producción
         return false
       }
 
@@ -819,7 +777,7 @@ export class ProductsService {
         .in('reference', references)
 
       if (checkError) {
-        console.error('Error checking existing products:', checkError)
+      // Error silencioso en producción
         return false
       }
 
@@ -827,7 +785,7 @@ export class ProductsService {
       const duplicateReferences = references.filter(ref => existingReferences.includes(ref))
       
       if (duplicateReferences.length > 0) {
-        console.error('Referencias duplicadas encontradas:', duplicateReferences)
+      // Error silencioso en producción
         return false
       }
 
@@ -858,7 +816,7 @@ export class ProductsService {
           .insert(batch)
 
         if (insertError) {
-          console.error('Error inserting products batch:', insertError)
+      // Error silencioso en producción
           return false
         }
       }
@@ -875,7 +833,7 @@ export class ProductsService {
 
       return true
     } catch (error) {
-      console.error('Error in importProductsFromCSV:', error)
+      // Error silencioso en producción
       return false
     }
   }

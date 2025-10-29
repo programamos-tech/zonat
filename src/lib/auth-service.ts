@@ -5,9 +5,7 @@ export class AuthService {
   // Login de usuario
   static async login(email: string, password: string): Promise<User | null> {
     try {
-      console.log('🔐 Iniciando proceso de login para:', email)
-      
-      console.log('📡 Consultando usuario en base de datos...')
+
       const { data: user, error } = await supabase
         .from('users')
         .select('*')
@@ -15,22 +13,18 @@ export class AuthService {
         .eq('is_active', true)
         .single()
 
-      console.log('📡 Respuesta de consulta usuario:', { user: user ? 'encontrado' : 'no encontrado', error })
-
       if (error || !user) {
-        console.log('❌ Usuario no encontrado o error:', error)
+
         return null
       }
 
-      console.log('🔑 Verificando contraseña...')
       // En un entorno real, aquí verificarías el hash de la contraseña
       // Por ahora, comparamos directamente (solo para desarrollo)
       if (user.password !== password) {
-        console.log('❌ Contraseña incorrecta')
+
         return null
       }
 
-      console.log('✅ Credenciales válidas, actualizando último login...')
       // Actualizar último login
       const { error: updateError } = await supabase
         .from('users')
@@ -41,24 +35,22 @@ export class AuthService {
         .eq('id', user.id)
 
       if (updateError) {
-        console.log('⚠️ Error actualizando último login:', updateError)
+
       } else {
-        console.log('✅ Último login actualizado')
+
       }
 
-      console.log('📝 Registrando log de actividad...')
       // Registrar log de login (no bloquear si falla)
       try {
         await this.logActivity(user.id, 'login', 'auth', {
           email: user.email,
           timestamp: new Date().toISOString()
         })
-        console.log('✅ Log de actividad registrado')
+
       } catch (logError) {
-        console.log('⚠️ Error registrando log (no crítico):', logError)
+        // Error registrando log (no crítico)
       }
 
-      console.log('✅ Login completado exitosamente')
       return {
         id: user.id,
         name: user.name,
@@ -71,7 +63,7 @@ export class AuthService {
         updatedAt: user.updated_at
       }
     } catch (error) {
-      console.error('❌ Error en login:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -85,7 +77,7 @@ export class AuthService {
     permissions: any[]
   }, currentUserId?: string): Promise<User | null> {
     try {
-      console.log('🔄 Creando usuario en Supabase:', userData)
+
       const { data: user, error } = await supabaseAdmin
         .from('users')
         .insert({
@@ -102,12 +94,10 @@ export class AuthService {
         .single()
 
       if (error) {
-        console.error('❌ Error creando usuario:', error)
+      // Error silencioso en producción
         return null
       }
 
-      console.log('✅ Usuario creado exitosamente:', user)
-      
       // Registrar actividad
       await this.logActivity(
         currentUserId || '00000000-0000-0000-0000-000000000001', // Usuario actual o Diego Admin
@@ -137,7 +127,7 @@ export class AuthService {
         updatedAt: user.updated_at
       }
     } catch (error) {
-      console.error('❌ Error creando usuario:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -167,7 +157,7 @@ export class AuthService {
         updatedAt: user.updated_at
       }
     } catch (error) {
-      console.error('Error obteniendo usuario:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -175,18 +165,17 @@ export class AuthService {
   // Obtener todos los usuarios
   static async getAllUsers(): Promise<User[]> {
     try {
-      console.log('🔄 Obteniendo usuarios de Supabase...')
+
       const { data: users, error } = await supabase
         .from('users')
         .select('*')
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('❌ Error obteniendo usuarios:', error)
+      // Error silencioso en producción
         return []
       }
 
-      console.log('✅ Usuarios obtenidos de Supabase:', users)
       const mappedUsers = users.map(user => ({
         id: user.id,
         name: user.name,
@@ -198,11 +187,10 @@ export class AuthService {
         createdAt: user.created_at,
         updatedAt: user.updated_at
       }))
-      
-      console.log('✅ Usuarios mapeados:', mappedUsers)
+
       return mappedUsers
     } catch (error) {
-      console.error('❌ Error obteniendo usuarios:', error)
+      // Error silencioso en producción
       return []
     }
   }
@@ -226,27 +214,13 @@ export class AuthService {
       if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive
       if (updates.lastLogin) dbUpdates.last_login = updates.lastLogin
 
-      console.log('🔄 Actualizando usuario en Supabase:', {
-        userId: id,
-        updates: updates,
-        dbUpdates: dbUpdates
-      })
-
       const { error } = await supabaseAdmin
         .from('users')
         .update(dbUpdates)
         .eq('id', id)
 
       if (error) {
-        console.error('❌ Error actualizando usuario en Supabase:', {
-          error,
-          errorCode: error.code,
-          errorMessage: error.message,
-          errorDetails: error.details,
-          errorHint: error.hint,
-          dbUpdates,
-          userId: id
-        })
+      // Error silencioso en producción
         return false
       }
 
@@ -349,7 +323,7 @@ export class AuthService {
 
       return true
     } catch (error) {
-      console.error('Error actualizando usuario:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -366,7 +340,7 @@ export class AuthService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error eliminando usuario:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -388,7 +362,7 @@ export class AuthService {
 
       return true
     } catch (error) {
-      console.error('Error eliminando usuario:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -415,10 +389,10 @@ export class AuthService {
         .select()
         
       if (error) {
-        console.error('Error insertando log en Supabase:', error)
+      // Error silencioso en producción
       }
     } catch (error) {
-      console.error('Error registrando actividad:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -453,7 +427,7 @@ export class AuthService {
         }
       )
     } catch (error) {
-      console.error('Error registrando cambio de permisos:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -468,7 +442,7 @@ export class AuthService {
         .single()
 
       if (existingUser) {
-        console.log('Diego ya existe en la base de datos')
+
         return
       }
 
@@ -489,9 +463,8 @@ export class AuthService {
         ]
       })
 
-      console.log('Datos iniciales creados exitosamente')
     } catch (error) {
-      console.error('Error inicializando datos:', error)
+      // Error silencioso en producción
     }
   }
 
@@ -499,7 +472,7 @@ export class AuthService {
   static async getCurrentUser(): Promise<User | null> {
     try {
       if (typeof window === 'undefined') {
-        console.log('🔍 DEBUG getCurrentUser: window is undefined')
+
         return null
       }
 
@@ -537,7 +510,7 @@ export class AuthService {
         updatedAt: dbUser.updated_at
       }
     } catch (error) {
-      console.error('Error getting current user:', error)
+      // Error silencioso en producción
       return null
     }
   }

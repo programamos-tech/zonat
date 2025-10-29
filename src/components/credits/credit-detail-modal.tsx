@@ -34,27 +34,14 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCreditId, setSelectedCreditId] = useState<string>('')
-  
-  console.log('CreditDetailModal renderizado con:', {
-    isOpen,
-    creditId: credit?.id,
-    clientCreditsCount: clientCredits.length,
-    selectedCreditId,
-    hasOnAddPayment: !!onAddPayment
-  })
-  
+
   // Obtener el crédito actualmente seleccionado
   const currentCredit = clientCredits.find(c => c.id === selectedCreditId) || credit
-  
-  console.log('Current credit:', currentCredit?.id, currentCredit?.invoiceNumber)
-  console.log('Selected credit ID:', selectedCreditId)
-  console.log('Available client credits:', clientCredits.map(c => ({ id: c.id, invoice: c.invoiceNumber })))
-  console.log('Due date:', currentCredit?.dueDate)
 
   useEffect(() => {
     if (isOpen && credit) {
       // Inicializar el crédito seleccionado
-      console.log('Modal abierto con crédito:', credit.id, credit.invoiceNumber)
+
       setSelectedCreditId(credit.id)
     }
   }, [isOpen, credit])
@@ -62,7 +49,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   // Log cuando cambia currentCredit
   useEffect(() => {
     if (currentCredit) {
-      console.log('Current credit actualizado:', currentCredit.id, currentCredit.invoiceNumber)
+
     }
   }, [currentCredit])
   
@@ -74,10 +61,10 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
 
   // Forzar re-render cuando cambie la selección
   useEffect(() => {
-    console.log('Selected credit ID cambió a:', selectedCreditId)
+
     if (selectedCreditId && clientCredits.length > 0) {
       const newCredit = clientCredits.find(c => c.id === selectedCreditId)
-      console.log('Nuevo crédito seleccionado:', newCredit?.invoiceNumber)
+
     }
   }, [selectedCreditId, clientCredits])
 
@@ -89,7 +76,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
       const history = await CreditsService.getPaymentHistory(currentCredit.id)
       setPaymentHistory(history)
     } catch (error) {
-      console.error('Error loading payment history:', error)
+      // Error silencioso en producción
       setPaymentHistory([])
     } finally {
       setIsLoading(false)
@@ -365,25 +352,24 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                   </CardTitle>
                   <Button 
                     onClick={() => {
-                      console.log('Botón Nuevo Abono clickeado')
-                      console.log('Current credit:', currentCredit)
+
                       if (currentCredit) {
-                        console.log('Llamando onAddPayment con:', currentCredit.id, currentCredit.invoiceNumber)
+
                         onAddPayment(currentCredit)
                       } else {
-                        console.error('No hay crédito seleccionado')
+      // Error silencioso en producción
                       }
                     }}
-                    disabled={!currentCredit || currentCredit?.status === 'cancelled'}
+                    disabled={!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)}
                     size="sm"
                     className={`${
-                      !currentCredit || currentCredit?.status === 'cancelled' 
+                      !currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)
                         ? 'bg-gray-400 hover:bg-gray-400 text-gray-200 cursor-not-allowed' 
                         : 'bg-pink-600 hover:bg-pink-700 text-white'
                     }`}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {!currentCredit || currentCredit?.status === 'cancelled' ? 'Crédito Anulado' : 'Nuevo Abono'}
+                    {!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit) ? 'Crédito Anulado' : 'Nuevo Abono'}
                   </Button>
                 </div>
               </CardHeader>

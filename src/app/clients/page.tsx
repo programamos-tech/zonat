@@ -39,7 +39,6 @@ export default function ClientsPage() {
     }
   }
 
-
   const handleRefresh = async () => {
     await getAllClients()
     toast.success('Lista de clientes actualizada')

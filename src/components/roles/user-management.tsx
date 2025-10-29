@@ -97,15 +97,15 @@ export function UserManagement() {
 
   // Debug: Log formData changes
   useEffect(() => {
-    console.log('🔄 formData actualizado:', formData)
+
   }, [formData])
 
   // Aplicar permisos cuando se cambia el rol
   useEffect(() => {
     if (formData.role) {
-      console.log('🔄 Aplicando permisos automáticamente para rol:', formData.role)
+
       const permissions = rolePermissions[formData.role as keyof typeof rolePermissions] || []
-      console.log('📋 Permisos para', formData.role, ':', permissions)
+
       setFormData(prev => ({ ...prev, permissions }))
     }
   }, [formData.role])
@@ -118,12 +118,12 @@ export function UserManagement() {
   const loadUsers = async () => {
     setLoading(true)
     try {
-      console.log('🔄 Cargando usuarios...')
+
       const usersData = await getAllUsers()
-      console.log('✅ Usuarios cargados:', usersData)
+
       setUsers(usersData)
     } catch (error) {
-      console.error('❌ Error cargando usuarios:', error)
+      // Error silencioso en producción
       toast.error('Error cargando usuarios')
     } finally {
       setLoading(false)
@@ -145,9 +145,9 @@ export function UserManagement() {
   // Crear usuario
   const handleCreateUser = async () => {
     try {
-      console.log('🔄 Creando usuario:', formData)
+
       const success = await createUser(formData)
-      console.log('✅ Resultado creación:', success)
+
       if (success) {
         toast.success('Usuario creado exitosamente')
         setIsCreateModalOpen(false)
@@ -158,7 +158,7 @@ export function UserManagement() {
         toast.error('Error creando usuario')
       }
     } catch (error) {
-      console.error('❌ Error creando usuario:', error)
+      // Error silencioso en producción
       toast.error('Error creando usuario')
     }
   }
@@ -168,8 +168,7 @@ export function UserManagement() {
     if (!selectedUser) return
 
     try {
-      console.log('🔄 Actualizando usuario:', selectedUser.id, formData)
-      
+
       const success = await updateUser(selectedUser.id, formData)
       if (success) {
         toast.success('Usuario actualizado exitosamente')
@@ -180,7 +179,7 @@ export function UserManagement() {
         toast.error('Error actualizando usuario')
       }
     } catch (error) {
-      console.error('Error actualizando usuario:', error)
+      // Error silencioso en producción
       toast.error('Error actualizando usuario')
     }
   }
@@ -272,23 +271,21 @@ export function UserManagement() {
 
   // Verificar si tiene permiso
   const hasPermission = (module: string, action: string) => {
-    console.log('🔍 Verificando permiso:', { module, action, permissions: formData.permissions })
+
     const permission = formData.permissions.find(p => p.module === module)
     const hasAccess = permission?.actions.includes(action) || false
-    console.log('✅ Resultado:', hasAccess)
+
     return hasAccess
   }
 
   // Aplicar permisos predefinidos del rol
   const applyRolePermissions = (role: string) => {
-    console.log('🔄 Aplicando permisos para rol:', role)
-    console.log('📋 rolePermissions disponibles:', rolePermissions)
+
     const permissions = rolePermissions[role as keyof typeof rolePermissions] || []
-    console.log('📋 Permisos obtenidos para', role, ':', permissions)
-    
+
     setFormData(prev => {
       const newData = { ...prev, role, permissions }
-      console.log('✅ Nuevos datos del formulario:', newData)
+
       return newData
     })
   }

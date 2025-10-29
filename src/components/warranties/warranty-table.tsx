@@ -97,8 +97,6 @@ export function WarrantyTable({
     onSearch(value)
   }
 
-
-
   const getStatusOptions = (currentStatus: string) => {
     const allStatuses = [
       { value: 'pending', label: 'Pendiente', icon: <Clock className="h-4 w-4" /> },

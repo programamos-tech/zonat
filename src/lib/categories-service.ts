@@ -13,7 +13,7 @@ export class CategoriesService {
         .order('name', { ascending: true })
 
       if (error) {
-        console.error('Error fetching categories:', error)
+      // Error silencioso en producción
         return []
       }
 
@@ -26,7 +26,7 @@ export class CategoriesService {
         updatedAt: category.updated_at
       }))
     } catch (error) {
-      console.error('Error in getAllCategories:', error)
+      // Error silencioso en producción
       return []
     }
   }
@@ -41,7 +41,7 @@ export class CategoriesService {
         .single()
 
       if (error) {
-        console.error('Error fetching category:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -53,7 +53,7 @@ export class CategoriesService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error in getCategoryById:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -74,19 +74,12 @@ export class CategoriesService {
         .select()
 
       if (error) {
-        console.error('❌ Error creating category:', {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-          fullError: error,
-          errorString: JSON.stringify(error)
-        })
+        // Error silencioso en producción
         return null
       }
 
       if (!data || data.length === 0) {
-        console.error('No data returned from insert')
+      // Error silencioso en producción
         return null
       }
 
@@ -116,7 +109,7 @@ export class CategoriesService {
 
       return newCategory
     } catch (error) {
-      console.error('Error in createCategory:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -133,7 +126,7 @@ export class CategoriesService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error updating category:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -158,7 +151,7 @@ export class CategoriesService {
 
       return true
     } catch (error) {
-      console.error('Error in updateCategory:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -176,7 +169,7 @@ export class CategoriesService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error deleting category:', error)
+      // Error silencioso en producción
         return false
       }
 
@@ -196,7 +189,7 @@ export class CategoriesService {
 
       return true
     } catch (error) {
-      console.error('Error in deleteCategory:', error)
+      // Error silencioso en producción
       return false
     }
   }
@@ -211,7 +204,7 @@ export class CategoriesService {
         .order('name', { ascending: true })
 
       if (error) {
-        console.error('Error searching categories:', error)
+      // Error silencioso en producción
         return []
       }
 
@@ -224,7 +217,7 @@ export class CategoriesService {
         updatedAt: category.updated_at
       }))
     } catch (error) {
-      console.error('Error in searchCategories:', error)
+      // Error silencioso en producción
       return []
     }
   }

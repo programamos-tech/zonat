@@ -12,14 +12,14 @@ export class SalesService {
         .select('*', { count: 'exact', head: true })
 
       if (error) {
-        console.error('Error getting sales count:', error)
+      // Error silencioso en producción
         return '#001' // Fallback
       }
 
       const nextNumber = (count || 0) + 1
       return `#${nextNumber.toString().padStart(3, '0')}`
     } catch (error) {
-      console.error('Error generating invoice number:', error)
+      // Error silencioso en producción
       return '#001' // Fallback
     }
   }
@@ -34,7 +34,7 @@ export class SalesService {
         .select('*', { count: 'exact', head: true })
       
       if (countError) {
-        console.error('Error getting sales count:', countError)
+      // Error silencioso en producción
         throw countError
       }
       
@@ -71,7 +71,7 @@ export class SalesService {
         .range(offset, offset + limit - 1)
 
       if (error) {
-        console.error('Error fetching sales:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -121,7 +121,7 @@ export class SalesService {
         hasMore: (offset + limit) < (count || 0)
       }
     } catch (error) {
-      console.error('Error in getAllSales:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -160,7 +160,7 @@ export class SalesService {
         .single()
 
       if (error) {
-        console.error('Error fetching sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -208,7 +208,7 @@ export class SalesService {
 
       return result
     } catch (error) {
-      console.error('Error in getSaleById:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -243,7 +243,7 @@ export class SalesService {
         .single()
 
       if (saleError) {
-        console.error('Error creating sale:', saleError)
+      // Error silencioso en producción
         throw saleError
       }
 
@@ -282,7 +282,7 @@ export class SalesService {
           .insert(saleItems)
 
         if (itemsError) {
-          console.error('Error creating sale items:', itemsError)
+      // Error silencioso en producción
           throw itemsError
         }
       }
@@ -303,7 +303,7 @@ export class SalesService {
           .insert(paymentRecords)
 
         if (paymentsError) {
-          console.error('Error creating mixed payments:', paymentsError)
+      // Error silencioso en producción
           throw paymentsError
         }
       } else if (saleData.paymentMethod === 'credit') {
@@ -342,7 +342,7 @@ export class SalesService {
           })
 
         if (paymentError) {
-          console.error('Error creating payment:', paymentError)
+      // Error silencioso en producción
           throw paymentError
         }
       }
@@ -386,7 +386,7 @@ export class SalesService {
 
       return completeSale
     } catch (error) {
-      console.error('Error in createSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -412,7 +412,7 @@ export class SalesService {
         .single()
 
       if (error) {
-        console.error('Error updating sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -442,7 +442,7 @@ export class SalesService {
         items: saleData.items || []
       }
     } catch (error) {
-      console.error('Error in updateSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -455,7 +455,7 @@ export class SalesService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error deleting sale:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -470,7 +470,7 @@ export class SalesService {
         }
       )
     } catch (error) {
-      console.error('Error in deleteSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -485,77 +485,66 @@ export class SalesService {
 
       let totalRefund = 0
 
-      console.log('🔄 Iniciando cancelación de venta:', { id, reason, paymentMethod: sale.paymentMethod })
-      console.log('🔍 Verificando si es venta a crédito...', { isCredit: sale.paymentMethod === 'credit' })
-      
       // 🚀 OPTIMIZACIÓN: Obtener crédito una sola vez al inicio si es necesario
       let credit = null
       if (sale.paymentMethod === 'credit') {
-        console.log('📋 Obteniendo información del crédito...')
+
         const { CreditsService } = await import('./credits-service')
         credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
         
         if (!credit) {
-          console.warn('⚠️ No se encontró crédito para la venta')
+
         } else {
-          console.log('✅ Crédito encontrado:', { creditId: credit.id, invoiceNumber: credit.invoiceNumber })
+
         }
       }
       
       // Si es una venta a crédito, manejar cancelación parcial
       if (sale.paymentMethod === 'credit') {
-        console.log('💳 Es una venta a crédito, manejando cancelación parcial...')
-        
+
         // Devolver stock al local (siempre hacer esto para ventas a crédito canceladas)
-        console.log('📦 Devolviendo stock al local para venta a crédito cancelada...')
-        console.log('🔍 Venta items:', sale.items.map(item => ({ productId: item.productId, productName: item.productName, quantity: item.quantity })))
-        
+
         // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote en lugar de loop secuencial
         const stockReturnItems = sale.items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
           productName: item.productName
         }))
-        
-        console.log('🚀 Iniciando procesamiento en lote para', stockReturnItems.length, 'productos')
+
         const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
         
         if (stockReturnResult.success) {
-          console.log('✅ Todos los productos fueron devueltos al stock exitosamente')
+
         } else {
           const failedReturns = stockReturnResult.results.filter(r => !r.success)
-          console.warn('⚠️ Algunos productos no pudieron ser devueltos al stock:', failedReturns)
+
           // Continuar con la anulación aunque algunos productos no se pudieron devolver
         }
 
         // Actualizar el crédito para reflejar la cancelación parcial
         if (credit) {
-          console.log('📋 Actualizando crédito para reflejar cancelación parcial...')
-          
+
           // Recalcular el estado del crédito basado en las ventas activas
           // Esto se moverá después de actualizar la venta
         } else {
-          console.warn('⚠️ No se encontró crédito para la venta')
+
         }
       } else {
-        console.log('💰 Es una venta normal, devolviendo stock...')
-        console.log('🔍 Payment method:', sale.paymentMethod)
-        
+
         // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote para ventas normales también
         const stockReturnItems = sale.items.map(item => ({
           productId: item.productId,
           quantity: item.quantity,
           productName: item.productName
         }))
-        
-        console.log('🚀 Iniciando procesamiento en lote para venta normal:', stockReturnItems.length, 'productos')
+
         const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
         
         if (stockReturnResult.success) {
-          console.log('✅ Todos los productos fueron devueltos al stock exitosamente')
+
         } else {
           const failedReturns = stockReturnResult.results.filter(r => !r.success)
-          console.warn('⚠️ Algunos productos no pudieron ser devueltos al stock:', failedReturns)
+
           // Continuar con la anulación aunque algunos productos no se pudieron devolver
         }
       }
@@ -570,11 +559,9 @@ export class SalesService {
         .eq('id', id)
 
       if (error) {
-        console.error('Error cancelling sale:', error)
+      // Error silencioso en producción
         throw error
       }
-
-      console.log('✅ Venta marcada como cancelled en la DB')
 
       // Verificar que la venta se actualizó correctamente
       const { data: updatedSale, error: verifyError } = await supabase
@@ -584,18 +571,17 @@ export class SalesService {
         .single()
 
       if (verifyError) {
-        console.error('Error verificando venta actualizada:', verifyError)
+      // Error silencioso en producción
       } else {
-        console.log('🔍 Estado de la venta después de cancelar:', updatedSale)
-        
+
         // 🚀 OPTIMIZACIÓN: Solo actualizar crédito si es necesario (evitar query redundante)
         if (sale.paymentMethod === 'credit') {
-          console.log('📋 Actualizando crédito después de confirmar cancelación de venta...')
+
           // Usar el crédito que ya obtuvimos anteriormente en lugar de hacer otra query
           if (credit) {
             await this.updateCreditStatusAfterSaleCancellation(credit.id, sale.id)
           } else {
-            console.warn('⚠️ No se encontró crédito para la venta')
+
           }
         }
       }
@@ -615,7 +601,7 @@ export class SalesService {
 
       return { success: true, totalRefund }
     } catch (error) {
-      console.error('Error in cancelSale:', error)
+      // Error silencioso en producción
       throw error
     }
   }
@@ -623,12 +609,11 @@ export class SalesService {
   // Actualizar el estado del crédito después de cancelar una venta
   static async updateCreditStatusAfterSaleCancellation(creditId: string, cancelledSaleId: string): Promise<void> {
     try {
-      console.log('🔄 Recalculando estado del crédito después de cancelación...')
-      
+
       // Obtener la venta cancelada para obtener el cliente
       const cancelledSale = await this.getSaleById(cancelledSaleId)
       if (!cancelledSale) {
-        console.error('No se pudo obtener la venta cancelada')
+      // Error silencioso en producción
         return
       }
 
@@ -639,35 +624,23 @@ export class SalesService {
         .eq('invoice_number', cancelledSale.invoiceNumber)
         .order('created_at', { ascending: true })
 
-      console.log('🔍 Todas las ventas del crédito:', allSales?.map(s => ({ 
-        id: s.id, 
-        invoiceNumber: s.invoice_number, 
-        status: s.status, 
-        total: s.total 
-      })))
-
       if (salesError) {
-        console.error('Error obteniendo ventas del crédito:', salesError)
+      // Error silencioso en producción
         return
       }
 
       if (!allSales || allSales.length === 0) {
-        console.warn('No se encontraron ventas para el crédito')
+
         return
       }
 
       // Calcular totales solo de ventas activas (no canceladas)
       const activeSales = allSales.filter(sale => sale.status !== 'cancelled')
       const totalAmount = activeSales.reduce((sum, sale) => sum + sale.total, 0)
-      
-      console.log('📊 Ventas activas:', activeSales.length, 'de', allSales.length, 'total')
-      console.log('💰 Monto total activo:', totalAmount)
 
       // Si no hay ventas activas, solo actualizar los montos a 0 (mantener status original)
       if (activeSales.length === 0) {
-        console.log('🚫 Todas las ventas están canceladas, actualizando montos a 0')
-        console.log('🔍 Credit ID:', creditId)
-        
+
         const { error: updateError } = await supabase
           .from('credits')
           .update({
@@ -678,11 +651,10 @@ export class SalesService {
           .eq('id', creditId)
 
         if (updateError) {
-          console.error('Error actualizando montos del crédito:', updateError)
+      // Error silencioso en producción
           throw updateError
         }
 
-        console.log('✅ Montos del crédito actualizados a 0')
         return
       }
 
@@ -694,7 +666,7 @@ export class SalesService {
         .single()
 
       if (creditError) {
-        console.error('Error obteniendo datos del crédito:', creditError)
+      // Error silencioso en producción
         return
       }
 
@@ -709,13 +681,6 @@ export class SalesService {
         newStatus = 'partial'
       }
 
-      console.log('📈 Nuevo estado calculado:', {
-        totalAmount,
-        paidAmount,
-        pendingAmount,
-        newStatus
-      })
-
       // Actualizar el crédito
       const { error: updateError } = await supabase
         .from('credits')
@@ -728,24 +693,23 @@ export class SalesService {
         .eq('id', creditId)
 
       if (updateError) {
-        console.error('Error actualizando crédito:', updateError)
+      // Error silencioso en producción
         throw updateError
       }
 
-      console.log('✅ Crédito actualizado exitosamente')
     } catch (error) {
-      console.error('Error en updateCreditStatusAfterSaleCancellation:', error)
+      // Error silencioso en producción
       throw error
     }
   }
 
-  static async searchSales(searchTerm: string): Promise<Sale[]> {
+  static async searchSalesForWarranty(searchTerm: string): Promise<Sale[]> {
     try {
       // Limpiar el término de búsqueda
       const cleanTerm = searchTerm.trim()
       if (!cleanTerm) return []
 
-      // Construir la consulta de búsqueda
+      // Construir la consulta de búsqueda (SIN excluir ventas canceladas para garantías)
       let searchQuery = supabase
         .from('sales')
         .select(`
@@ -818,11 +782,11 @@ export class SalesService {
 
       const { data, error } = await searchQuery
         .or(searchConditions.join(','))
-        .neq('status', 'cancelled') // Excluir ventas canceladas
+        // NO excluir ventas canceladas para garantías
         .order('created_at', { ascending: false })
 
       if (error) {
-        console.error('Error searching sales:', error)
+      // Error silencioso en producción
         throw error
       }
 
@@ -881,7 +845,7 @@ export class SalesService {
 
       return results
     } catch (error) {
-      console.error('Error in searchSales:', error)
+      // Error silencioso en producción
       throw error
     }
   }

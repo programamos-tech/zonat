@@ -102,8 +102,6 @@ export function CategoryModal({
     onClose()
   }
 
-
-
   if (!isOpen) return null
 
   return (

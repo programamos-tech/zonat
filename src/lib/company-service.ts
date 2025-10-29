@@ -12,7 +12,7 @@ export class CompanyService {
         .single()
 
       if (error) {
-        console.error('Error fetching company config:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -30,7 +30,7 @@ export class CompanyService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error in getCompanyConfig:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -57,7 +57,7 @@ export class CompanyService {
         .single()
 
       if (error) {
-        console.error('Error upserting company config:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -75,7 +75,7 @@ export class CompanyService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error in upsertCompanyConfig:', error)
+      // Error silencioso en producción
       return null
     }
   }
@@ -111,7 +111,7 @@ export class CompanyService {
         .single()
 
       if (error) {
-        console.error('Error creating default config:', error)
+      // Error silencioso en producción
         return null
       }
 
@@ -129,7 +129,7 @@ export class CompanyService {
         updatedAt: data.updated_at
       }
     } catch (error) {
-      console.error('Error in initializeDefaultConfig:', error)
+      // Error silencioso en producción
       return null
     }
   }

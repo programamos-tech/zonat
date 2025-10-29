@@ -56,8 +56,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     root.setAttribute('data-theme', resolvedTheme)
     
     // Debug log
-    console.log('🎨 Theme changed:', { theme, resolvedTheme, classes: root.className })
-    
+
     // Save theme preference
     localStorage.setItem('theme', theme)
   }, [theme, resolvedTheme])

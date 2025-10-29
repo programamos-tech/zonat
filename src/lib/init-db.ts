@@ -2,30 +2,29 @@ import { supabaseAdmin } from './supabase'
 
 export async function initializeDatabase() {
   try {
-    console.log('🚀 Inicializando base de datos de ZONA T...')
 
     // 1. Crear tabla de usuarios
     const { error: usersError } = await supabaseAdmin.rpc('create_users_table')
     if (usersError) {
-      console.log('Tabla de usuarios ya existe o error:', usersError.message)
+
     } else {
-      console.log('✅ Tabla de usuarios creada')
+
     }
 
     // 2. Crear tabla de roles
     const { error: rolesError } = await supabaseAdmin.rpc('create_roles_table')
     if (rolesError) {
-      console.log('Tabla de roles ya existe o error:', rolesError.message)
+
     } else {
-      console.log('✅ Tabla de roles creada')
+
     }
 
     // 3. Crear tabla de logs
     const { error: logsError } = await supabaseAdmin.rpc('create_logs_table')
     if (logsError) {
-      console.log('Tabla de logs ya existe o error:', logsError.message)
+
     } else {
-      console.log('✅ Tabla de logs creada')
+
     }
 
     // 4. Insertar roles por defecto
@@ -97,9 +96,9 @@ export async function initializeDatabase() {
       ], { onConflict: 'id' })
 
     if (rolesInsertError) {
-      console.log('Error insertando roles:', rolesInsertError.message)
+
     } else {
-      console.log('✅ Roles por defecto insertados')
+
     }
 
     // 5. Insertar usuario Diego
@@ -127,16 +126,15 @@ export async function initializeDatabase() {
       }, { onConflict: 'id' })
 
     if (diegoError) {
-      console.log('Error insertando Diego:', diegoError.message)
+
     } else {
-      console.log('✅ Usuario Diego creado')
+
     }
 
-    console.log('🎉 Base de datos inicializada exitosamente!')
     return true
 
   } catch (error) {
-    console.error('❌ Error inicializando base de datos:', error)
+      // Error silencioso en producción
     return false
   }
 }
@@ -193,11 +191,10 @@ export async function createTables() {
       `
     })
 
-    console.log('✅ Tablas creadas exitosamente')
     return true
 
   } catch (error) {
-    console.error('❌ Error creando tablas:', error)
+      // Error silencioso en producción
     return false
   }
 }
