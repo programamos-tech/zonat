@@ -12,6 +12,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { GlobalLoading } from "@/components/ui/global-loading";
 import { Toaster } from "sonner";
+import { BottomNav } from "@/components/ui/bottom-nav";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased pb-16 md:pb-0`}
       >
         <AuthProvider>
           <ClientsProvider>
@@ -53,6 +54,7 @@ export default function RootLayout({
                     <ConditionalLayout>
                       {children}
                     </ConditionalLayout>
+                    <BottomNav />
                     <Toaster />
                   </WarrantyProvider>
                 </SalesProvider>
