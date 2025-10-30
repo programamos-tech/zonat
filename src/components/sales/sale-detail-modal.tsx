@@ -11,7 +11,6 @@ import {
   Calendar, 
   CreditCard, 
   AlertTriangle,
-  Printer,
   Download,
   DollarSign,
   Package,
@@ -915,23 +914,6 @@ export default function SaleDetailModal({
           </div>
           
           <div className="flex space-x-3">
-            <Button
-              onClick={handlePrint}
-              disabled={isLoadingPrint || !companyConfig || sale.status === 'cancelled' || isCancelling}
-              className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600 hover:border-gray-700 font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoadingPrint ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Generando...
-                </>
-              ) : (
-                <>
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimir
-                </>
-              )}
-            </Button>
             <Button
               onClick={onClose}
               disabled={isCancelling}

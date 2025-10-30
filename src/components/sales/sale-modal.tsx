@@ -658,17 +658,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                       </div>
                     </div>
                     
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-gray-600 dark:text-gray-500">¿No encuentras el cliente?</span>
-                      <button
-                        onClick={() => setIsClientModalOpen(true)}
-                        className="flex items-center space-x-1 px-2 py-1 text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700/20 rounded-md transition-colors duration-200"
-                        title="Crear nuevo cliente"
-                      >
-                        <User className="h-3 w-3" />
-                        <span>Crear</span>
-                      </button>
-                    </div>
+                    {/* Opción de crear cliente eliminada en el modal de ventas */}
                     
                     {showClientDropdown && (
                       <div className="mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-20">

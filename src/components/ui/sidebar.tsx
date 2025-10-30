@@ -114,7 +114,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                   className={cn(
                     "flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200",
                     isActive
-                      ? "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 shadow-sm"
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 shadow-sm"
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white hover:shadow-sm"
                   )}
                 >

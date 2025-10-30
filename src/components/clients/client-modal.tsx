@@ -109,9 +109,14 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    // Solo el nombre es obligatorio
+    // Nombre obligatorio
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es requerido'
+    }
+
+    // Cédula/NIT obligatorio
+    if (!formData.document.trim()) {
+      newErrors.document = 'La cédula/NIT es obligatoria'
     }
 
     // Validar email solo si se proporciona y no es 'N/A'
@@ -277,7 +282,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
               <CardContent className="space-y-3">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Cédula/NIT
+                    Cédula/NIT *
                   </label>
                   <input
                     type="text"

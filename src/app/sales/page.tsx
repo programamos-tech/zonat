@@ -146,13 +146,13 @@ export default function SalesPage() {
         }).format(amount)
       }
 
-      // Generar HTML del ticket tipo colombiano
+      // Generar HTML del ticket (incluye logo y datos fijos de Zona T)
       const invoiceHTML = `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
-          <title>Zona T - Ticket</title>
+          <title>ZONA T - Factura</title>
           <style>
             body { 
               font-family: 'Courier New', monospace; 
@@ -172,6 +172,13 @@ export default function SalesPage() {
               text-align: center; 
               padding: 10px 5px; 
               border-bottom: 1px dashed #000;
+            }
+            .logo {
+              width: 64px;
+              height: 64px;
+              object-fit: contain;
+              margin: 0 auto 6px auto;
+              display: block;
             }
             .company-name { 
               font-size: 16px; 
@@ -298,11 +305,12 @@ export default function SalesPage() {
           <div class="ticket">
             <!-- Header -->
             <div class="header">
-              <div class="company-name">${companyConfig.name}</div>
+              <img src="/zonat-logo.png" class="logo" alt="ZONA T" />
+              <div class="company-name">ZONA T</div>
               <div class="company-info">
-                NIT: ${companyConfig.nit}<br>
-                ${companyConfig.address}<br>
-                Tel: ${companyConfig.phone}
+                NIT 1035770226 - 9<br>
+                Carrera 20#22-02, Sincelejo, Colombia.<br>
+                3135206736
               </div>
             </div>
 
@@ -402,7 +410,7 @@ export default function SalesPage() {
             <div class="footer">
               <div class="separator">═══════════════════════════════</div>
               <div>¡Gracias por su compra!</div>
-              <div>${companyConfig.name}</div>
+              <div>ZONA T</div>
               <div class="separator">═══════════════════════════════</div>
             </div>
           </div>
