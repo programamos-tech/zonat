@@ -650,16 +650,16 @@ export default function DashboardPage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-6 bg-white dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
       {/* Header con estilo de las otras páginas */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between">
+      <div className="mb-4 md:mb-8">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
                 <BarChart3 className="h-5 w-5 text-white" />
               </div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
+              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
             </div>
             <p className="text-gray-600 dark:text-gray-400 dark:text-gray-400 text-sm">
               Resumen ejecutivo y métricas de rendimiento
@@ -674,15 +674,15 @@ export default function DashboardPage() {
         </div>
           
           {/* Filtros simplificados */}
-          <div className="flex items-center gap-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
             {isSuperAdmin ? (
               <div className="flex items-center gap-3">
                 {/* Selector de período simplificado */}
-                <div className="relative">
+                <div className="relative w-full sm:w-auto">
                   <select
                     value={dateFilter}
                     onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
-                    className="appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-4 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                   >
                     {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
                       <option key={filter} value={filter}>
@@ -702,7 +702,7 @@ export default function DashboardPage() {
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   variant="outline"
-                  className="text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
+                  className="w-full sm:w-auto text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
                 >
                   <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                   Actualizar
@@ -714,7 +714,7 @@ export default function DashboardPage() {
                     selectedDate={specificDate}
                     onDateSelect={handleDateSelect}
                     placeholder="Seleccionar fecha específica"
-                    className="w-48"
+                    className="w-full sm:w-48"
                   />
                 )}
 
@@ -741,9 +741,9 @@ export default function DashboardPage() {
       </div>
 
       {/* Métricas principales con estilo de cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Total Ingresos */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
               <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -757,7 +757,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
@@ -770,7 +770,7 @@ export default function DashboardPage() {
               </div>
 
         {/* Efectivo */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -784,7 +784,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
@@ -797,7 +797,7 @@ export default function DashboardPage() {
               </div>
 
         {/* Transferencia */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -811,7 +811,7 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
@@ -826,10 +826,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Segunda fila de métricas */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${canViewCredits ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} ${isSuperAdmin ? 'lg:grid-cols-4' : ''} gap-6 mb-8`}>
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${canViewCredits ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} ${isSuperAdmin ? 'lg:grid-cols-4' : ''} gap-4 md:gap-6 mb-6 md:mb-8`}>
         {/* Dinero Afuera - Para usuarios con permisos de créditos */}
         {canViewCredits && (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
                 <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
@@ -841,7 +841,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               {new Intl.NumberFormat('es-CO', { 
                 style: 'currency', 
                 currency: 'COP',
@@ -882,14 +882,14 @@ export default function DashboardPage() {
         )}
 
         {/* Garantías Completadas */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             </div>
             <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
           </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {metrics.completedWarranties}
           </p>
           <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -923,7 +923,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Ganancia Bruta */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
                 <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -937,7 +937,7 @@ export default function DashboardPage() {
               </p>
             </div>
                     </div>
-          <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
@@ -975,7 +975,7 @@ export default function DashboardPage() {
 
         {/* Productos en Stock - Solo para Super Admin */}
         {isSuperAdmin && (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
                 <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
@@ -985,7 +985,7 @@ export default function DashboardPage() {
                 <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Stock Total</p>
               </div>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               {metrics.totalProducts}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
@@ -1015,7 +1015,7 @@ export default function DashboardPage() {
         {/* Facturas Anuladas - Solo para Super Admin */}
         {isSuperAdmin && (
           <div 
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
             onClick={() => setShowCancelledModal(true)}
           >
             <div className="flex items-center justify-between mb-4">
@@ -1024,7 +1024,7 @@ export default function DashboardPage() {
               </div>
               <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               {metrics.cancelledSales}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
@@ -1057,10 +1057,10 @@ export default function DashboardPage() {
       </div>
 
       {/* Gráficos y estadísticas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Gráfico de ventas por día */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="p-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
                 <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -1081,9 +1081,9 @@ export default function DashboardPage() {
               }
             </p>
           </div>
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             {metrics.salesChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={300}>
+              <ResponsiveContainer width="100%" height={220} className="md:!h-[300px]">
                 <BarChart data={metrics.salesChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
@@ -1153,7 +1153,7 @@ export default function DashboardPage() {
 
         {/* Gráfico de métodos de pago */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-100 rounded-lg">
                 <CreditCard className="h-5 w-5 text-green-600" />
@@ -1161,7 +1161,7 @@ export default function DashboardPage() {
               <h2 className="text-lg font-bold text-gray-900 dark:text-white">Métodos de Pago</h2>
             </div>
           </div>
-          <div className="p-6">
+          <div className="p-4 md:p-6">
             <ResponsiveContainer width="100%" height={300}>
               <PieChart>
                 <Pie
@@ -1221,7 +1221,7 @@ export default function DashboardPage() {
 
       {/* Productos más vendidos con gráfico de barras */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
           <div className="flex items-center gap-3">
             <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
               <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -1229,9 +1229,9 @@ export default function DashboardPage() {
             <h2 className="text-lg font-bold text-gray-900 dark:text-white">Productos Más Vendidos</h2>
           </div>
         </div>
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {metrics.topProductsChart.length > 0 ? (
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={220} className="md:!h-[300px]">
               <BarChart data={metrics.topProductsChart} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 

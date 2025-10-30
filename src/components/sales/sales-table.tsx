@@ -285,7 +285,49 @@ export function SalesTable({
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
+              {/* Mobile list */}
+              <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-800">
+                {filteredSales.map((sale) => {
+                  const { date, time } = formatDateTime(sale.createdAt)
+                  return (
+                    <div key={sale.id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-blue-600 dark:text-blue-400 font-semibold">
+                            {generateInvoiceNumber(sale)}
+                          </div>
+                          <div className="text-sm text-gray-900 dark:text-white font-medium truncate max-w-[220px]">
+                            {sale.clientName}
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(sale.status)}>{getStatusLabel(sale.status)}</Badge>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <Badge className={getPaymentMethodColor(sale.paymentMethod)}>
+                          {getPaymentMethodLabel(sale.paymentMethod)}
+                        </Badge>
+                        <div className="text-right">
+                          <div className="text-gray-900 dark:text-white font-semibold">
+                            {formatCurrency(sale.total)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{date} • {time}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => onView(sale)} className="h-8 px-2">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => onPrint(sale)} className="h-8 px-2">
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <div className="overflow-x-auto hidden md:block">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>

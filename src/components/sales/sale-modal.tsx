@@ -605,8 +605,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-        <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-7xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed top-0 right-0 bottom-0 left-0 md:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center md:pl-6 md:pr-4">
+        <div className="bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:w-auto md:max-w-7xl max-h-[92vh] md:max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20">
           <div className="flex items-center space-x-3">
@@ -626,8 +626,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800 pb-24 md:pb-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column - Client and Products */}
             <div className="space-y-6">
               {/* Client Selection */}
@@ -1226,7 +1226,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 shadow-lg">
+        <div className="sticky bottom-0 left-0 right-0 z-[60] flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 backdrop-blur shadow-lg" style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
           <Button
             onClick={handleClose}
             variant="outline"
