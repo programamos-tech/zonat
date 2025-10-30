@@ -220,26 +220,9 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     onClose()
   }
 
-  useEffect(() => {
-    if (product) {
-      setFormData({
-        name: product.name,
-        reference: product.reference,
-        description: product.description,
-        price: product.price,
-        cost: product.cost,
-        stock: {
-          warehouse: product.stock.warehouse,
-          store: product.stock.store,
-          total: product.stock.total
-        },
-        categoryId: product.categoryId,
-        brand: product.brand,
-        status: product.status,
-        initialLocation: 'warehouse'
-      })
-    }
-  }, [product])
+  // Nota: ya hay un efecto arriba que sincroniza `product` con `formData`
+  // con valores por defecto seguros ('' o 0). Evitamos duplicar y
+  // sobreescribir con posibles null/undefined eliminando este segundo efecto.
 
   if (!isOpen) return null
 
