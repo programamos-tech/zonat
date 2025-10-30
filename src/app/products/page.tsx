@@ -158,13 +158,7 @@ export default function ProductsPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
-      </div>
-    )
-  }
+  // Siempre renderizamos la página para no perder el estado del buscador
 
   return (
     <RoleProtectedRoute module="products" requiredAction="view">

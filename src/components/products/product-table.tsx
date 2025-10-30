@@ -341,7 +341,13 @@ export function ProductTable({
         </Card>
 
         {/* Table */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 relative">
+          {/* Overlay de carga para búsquedas/refresh sin perder el contenido */}
+          {loading && (
+            <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+            </div>
+          )}
           <CardContent className="p-0">
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
