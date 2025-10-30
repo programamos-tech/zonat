@@ -12,7 +12,7 @@ import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { GlobalLoading } from "@/components/ui/global-loading";
 import { Toaster } from "sonner";
-import { BottomNav } from "@/components/ui/bottom-nav";
+import { MobileNavWrapper } from "@/components/ui/mobile-nav-wrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -54,7 +54,7 @@ export default function RootLayout({
                     <ConditionalLayout>
                       {children}
                     </ConditionalLayout>
-                    <BottomNav />
+                    <MobileNavWrapper />
                     <Toaster />
                   </WarrantyProvider>
                 </SalesProvider>
