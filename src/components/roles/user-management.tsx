@@ -319,47 +319,50 @@ export function UserManagement() {
               <Plus className="h-4 w-4 mr-2" />
               Nuevo Usuario
             </Button>
+          </div>
+        </CardHeader>
+      </Card>
 
-          {/* Modal de creación */}
-          {isCreateModalOpen && (
-            <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
-              <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
-                {/* Header */}
-                <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 flex-shrink-0">
-                  <div className="flex items-center gap-3">
-                    <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-emerald-600" />
-                    <div>
-                      <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                        Crear Nuevo Usuario
-                      </h2>
-                      <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                        Completa la información del nuevo usuario y asigna los permisos correspondientes.
-                      </p>
-                    </div>
-                  </div>
-                  <Button
-                    onClick={() => setIsCreateModalOpen(false)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <X className="h-5 w-5" />
-                  </Button>
+      {/* Modal de creación */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
+          <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+            {/* Header */}
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 flex-shrink-0">
+              <div className="flex items-center gap-3">
+                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-emerald-600" />
+                <div>
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                    Crear Nuevo Usuario
+                  </h2>
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
+                    Completa la información del nuevo usuario y asigna los permisos correspondientes.
+                  </p>
                 </div>
+              </div>
+              <Button
+                onClick={() => setIsCreateModalOpen(false)}
+                variant="ghost"
+                size="sm"
+                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+            </div>
 
-                <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Columna Izquierda - Información del Usuario */}
-                    <div className="space-y-6">
-                      {/* Información Básica */}
-                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                        <CardHeader>
-                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                            <UserCheck className="h-5 w-5 mr-2 text-emerald-400" />
-                            Información Básica
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Columna Izquierda - Información del Usuario */}
+                <div className="space-y-6">
+                  {/* Información Básica */}
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                        <UserCheck className="h-5 w-5 mr-2 text-emerald-400" />
+                        Información Básica
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
                               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -418,17 +421,17 @@ export function UserManagement() {
                             </div>
                           </div>
                         </CardContent>
-                      </Card>
+                  </Card>
 
-                      {/* Descripción del Rol */}
-                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                        <CardHeader>
-                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                            <Shield className="h-5 w-5 mr-2 text-emerald-400" />
-                            Descripción del Rol
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                  {/* Descripción del Rol */}
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                        <Shield className="h-5 w-5 mr-2 text-emerald-400" />
+                        Descripción del Rol
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                           <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
                             <p className="text-sm text-emerald-700 dark:text-emerald-300">
                               <span className="font-semibold">
@@ -437,17 +440,17 @@ export function UserManagement() {
                             </p>
                           </div>
                         </CardContent>
-                      </Card>
+                  </Card>
 
-                      {/* Estado del Usuario */}
-                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                        <CardHeader>
-                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                            <User className="h-5 w-5 mr-2 text-emerald-400" />
-                            Estado del Usuario
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
+                  {/* Estado del Usuario */}
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                        <User className="h-5 w-5 mr-2 text-emerald-400" />
+                        Estado del Usuario
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
                           <div className="flex items-center space-x-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
                             <Switch
                               id="isActive"
@@ -460,24 +463,24 @@ export function UserManagement() {
                             </Label>
                           </div>
                         </CardContent>
-                      </Card>
-                    </div>
+                  </Card>
+                </div>
 
-                    {/* Columna Derecha - Permisos */}
-                    <div className="space-y-6">
-                      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                        <CardHeader>
-                          <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                            <Shield className="h-5 w-5 mr-2 text-emerald-400" />
-                            Permisos del Sistema
-                          </CardTitle>
-                          <div className="text-sm text-gray-600 dark:text-gray-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 mt-2">
-                            Rol: <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                              {roleOptions.find(r => r.value === formData.role)?.label}
-                            </span>
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
+                {/* Columna Derecha - Permisos */}
+                <div className="space-y-6">
+                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                    <CardHeader>
+                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                        <Shield className="h-5 w-5 mr-2 text-emerald-400" />
+                        Permisos del Sistema
+                      </CardTitle>
+                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 mt-2">
+                        Rol: <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                          {roleOptions.find(r => r.value === formData.role)?.label}
+                        </span>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
                           {moduleOptions.map(module => (
                             <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
                               <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
@@ -492,38 +495,36 @@ export function UserManagement() {
                             </div>
                           ))}
                         </CardContent>
-                      </Card>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer */}
-                <div 
-                  className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0"
-                  style={{
-                    paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)`
-                  }}
-                >
-                  <Button 
-                    variant="outline" 
-                    onClick={() => setIsCreateModalOpen(false)}
-                    className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-                  >
-                    Cancelar
-                  </Button>
-                  <Button 
-                    onClick={handleCreateUser}
-                    className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  >
-                    <UserCheck className="h-4 w-4 mr-2" />
-                    Crear Usuario
-                  </Button>
+                  </Card>
                 </div>
               </div>
-            )}
+            </div>
+
+            {/* Footer */}
+            <div 
+              className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0"
+              style={{
+                paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)`
+              }}
+            >
+              <Button 
+                variant="outline" 
+                onClick={() => setIsCreateModalOpen(false)}
+                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleCreateUser}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Crear Usuario
+              </Button>
+            </div>
           </div>
-        </CardHeader>
-      </Card>
+        </div>
+      )}
 
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
