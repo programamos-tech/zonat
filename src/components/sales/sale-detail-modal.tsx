@@ -26,6 +26,7 @@ interface SaleDetailModalProps {
   sale: Sale | null
   onCancel?: (saleId: string, reason: string) => Promise<{ success: boolean, totalRefund?: number }>
   onPrint?: (sale: Sale) => void
+  onFinalizeDraft?: (saleId: string) => Promise<void>
 }
 
 export default function SaleDetailModal({ 
@@ -33,7 +34,8 @@ export default function SaleDetailModal({
   onClose, 
   sale, 
   onCancel,
-  onPrint
+  onPrint,
+  onFinalizeDraft
 }: SaleDetailModalProps) {
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
@@ -42,6 +44,7 @@ export default function SaleDetailModal({
   const [clientData, setClientData] = useState<Client | null>(null)
   const [isLoadingPrint, setIsLoadingPrint] = useState(false)
   const [cancelSuccessMessage, setCancelSuccessMessage] = useState<string | null>(null)
+  const [isFinalizing, setIsFinalizing] = useState(false)
   const cancelFormRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -214,6 +217,22 @@ export default function SaleDetailModal({
       setCancelSuccessMessage('Error al anular la venta. Por favor, inténtalo de nuevo.')
     } finally {
       setIsCancelling(false)
+    }
+  }
+
+  const handleFinalizeDraft = async () => {
+    if (!sale || !onFinalizeDraft) return
+    
+    setIsFinalizing(true)
+    try {
+      await onFinalizeDraft(sale.id)
+      // Cerrar el modal después de facturar
+      onClose()
+    } catch (error) {
+      // Error silencioso en producción
+      alert('Error al facturar el borrador')
+    } finally {
+      setIsFinalizing(false)
     }
   }
 
@@ -901,7 +920,17 @@ export default function SaleDetailModal({
         {/* Footer */}
         <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <div className="flex space-x-3">
-            {sale.status !== 'cancelled' && (
+            {sale.status === 'draft' && onFinalizeDraft && (
+              <Button
+                onClick={handleFinalizeDraft}
+                disabled={isFinalizing}
+                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                {isFinalizing ? 'Facturando...' : 'Facturar'}
+              </Button>
+            )}
+            {sale.status !== 'cancelled' && sale.status !== 'draft' && (
               <Button
                 onClick={handleShowCancelForm}
                 disabled={isCancelling}
@@ -916,7 +945,7 @@ export default function SaleDetailModal({
           <div className="flex space-x-3">
             <Button
               onClick={onClose}
-              disabled={isCancelling}
+              disabled={isCancelling || isFinalizing}
               className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cerrar

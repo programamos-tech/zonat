@@ -33,11 +33,11 @@ export function ConfirmModal({
     switch (type) {
       case 'danger':
         return {
-          iconColor: 'text-purple-400',
-          iconBg: 'bg-purple-900/20',
-          confirmButton: 'bg-purple-600 hover:bg-purple-700 text-white',
-          borderColor: 'border-purple-700',
-          headerBg: 'bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20'
+          iconColor: 'text-green-400',
+          iconBg: 'bg-green-900/20',
+          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
+          borderColor: 'border-green-700',
+          headerBg: 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
         }
       case 'warning':
         return {
@@ -57,11 +57,11 @@ export function ConfirmModal({
         }
       default:
         return {
-          iconColor: 'text-purple-400',
-          iconBg: 'bg-purple-900/20',
-          confirmButton: 'bg-purple-600 hover:bg-purple-700 text-white',
-          borderColor: 'border-purple-700',
-          headerBg: 'bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20'
+          iconColor: 'text-green-400',
+          iconBg: 'bg-green-900/20',
+          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
+          borderColor: 'border-green-700',
+          headerBg: 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
         }
     }
   }
@@ -69,7 +69,7 @@ export function ConfirmModal({
   const styles = getTypeStyles()
 
   return (
-    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:pl-6 lg:pr-4">
+    <div className="fixed inset-0 xl:left-64 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
         {/* Header */}
         <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 ${styles.headerBg} flex-shrink-0`}>

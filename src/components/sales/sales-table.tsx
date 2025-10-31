@@ -128,6 +128,8 @@ export function SalesTable({
         return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300'
       case 'cancelled':
         return 'bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300'
+      case 'draft':
+        return 'bg-purple-100 text-purple-800 hover:bg-purple-200 hover:text-purple-900 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30 dark:hover:text-purple-300'
       default:
         return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-200'
     }
@@ -141,6 +143,8 @@ export function SalesTable({
         return 'Pendiente'
       case 'cancelled':
         return 'Cancelada'
+      case 'draft':
+        return 'Borrador'
       default:
         return status
     }
@@ -199,10 +203,10 @@ export function SalesTable({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader>
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-visible">
+        <CardHeader className="overflow-visible">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
+            <div className="flex-shrink-0">
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <Receipt className="h-6 w-6 text-blue-600" />
               Gestión de Ventas
@@ -211,19 +215,22 @@ export function SalesTable({
                 Administra tus ventas y genera facturas
               </p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-shrink-0 flex-wrap">
               {onRefresh && (
                 <Button 
                   onClick={onRefresh} 
                   variant="outline"
-                  className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20"
+                  className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20 whitespace-nowrap"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
                   Actualizar
                 </Button>
               )}
               {canCreateSales && (
-                <Button onClick={onCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+                <Button 
+                  onClick={onCreate} 
+                  className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap flex-shrink-0"
+                >
                   <Plus className="h-4 w-4 mr-2" />
                   Nueva Venta
                 </Button>

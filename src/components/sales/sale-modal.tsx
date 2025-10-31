@@ -329,15 +329,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     return mixedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
   }
 
-  const getRemainingAmount = () => {
-    // Si no hay productos seleccionados, no hay pago que completar
-    if (validProducts.length === 0) {
-      return Math.round(total) // Devolver el total redondeado (que será 0) para que no muestre "Pago completo"
-    }
-    // Redondear el faltante a números enteros (sin centavos)
-    return Math.round(total - getTotalMixedPayments())
-  }
-
   // Solo considerar productos con cantidad > 0 para cálculos
   const validProducts = selectedProducts.filter(item => item.quantity > 0)
   
@@ -360,6 +351,15 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   // IVA automático sobre el total (19% en Colombia)
   const tax = includeTax ? subtotalAfterTotalDiscount * 0.19 : 0
   const total = subtotalAfterTotalDiscount + tax
+
+  const getRemainingAmount = () => {
+    // Si no hay productos seleccionados, no hay pago que completar
+    if (validProducts.length === 0) {
+      return Math.round(total) // Devolver el total redondeado (que será 0) para que no muestre "Pago completo"
+    }
+    // Redondear el faltante a números enteros (sin centavos)
+    return Math.round(total - getTotalMixedPayments())
+  }
 
   const handleAddProduct = (product: Product) => {
     const availableStock = getAvailableStock(product.id)
@@ -531,14 +531,12 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     )
   }
 
-  const handleSave = () => {
+  const handleSave = (isDraft: boolean = false) => {
     // Validar que hay cliente, productos, método de pago y que todos tengan cantidad > 0
-    const validProducts = selectedProducts.filter(item => item.quantity > 0)
-    
     if (!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod) return
 
-    // Validar pagos mixtos si es necesario
-    if (paymentMethod === 'mixed') {
+    // Si NO es borrador, validar pagos mixtos si es necesario
+    if (!isDraft && paymentMethod === 'mixed') {
       const totalMixedPayments = getTotalMixedPayments()
       const roundedTotal = Math.round(total)
       const roundedPayments = Math.round(totalMixedPayments)
@@ -558,7 +556,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       tax: tax,
       discount: totalDiscount,
       discountType: totalDiscountType,
-      status: 'completed',
+      status: isDraft ? 'draft' : 'completed',
       paymentMethod,
       payments: paymentMethod === 'mixed' ? mixedPayments : undefined,
       items: validProducts // Solo incluir productos con cantidad > 0
@@ -569,6 +567,12 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     
     onSave(newSale)
     handleClose()
+  }
+
+  const handleSaveAsDraft = () => {
+    // Solo permitir borrador si es crédito
+    if (paymentMethod !== 'credit') return
+    handleSave(true)
   }
 
   const handleClose = () => {
@@ -610,8 +614,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col pt-10 xl:pt-0">
-        <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-7xl xl:max-h-[95vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
+        <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20 flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -740,9 +744,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                       <Package className="h-5 w-5 mr-2 text-blue-600" />
                       Agregar Productos
                     </div>
-                    <Badge variant="outline" className="text-xs text-gray-500 dark:text-gray-400 border-gray-300 dark:border-gray-500">
-                      {products.filter(p => p.status === 'active').length} disponibles
-                    </Badge>
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -763,11 +764,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                         onClick={() => setShowProductDropdown(true)}
                         className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
                       />
-                    </div>
-                    
-                    {/* Debug: Mostrar siempre el estado */}
-                    <div className="text-xs text-gray-500 mt-1">
-                      Debug: {filteredProducts.length} productos disponibles
                     </div>
                     
                     {/* Product Dropdown */}
@@ -1224,8 +1220,17 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             >
               Cancelar
             </Button>
+            {paymentMethod === 'credit' && (
+              <Button
+                onClick={handleSaveAsDraft}
+                disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
+                className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-gray-600 hover:bg-gray-700 text-white"
+              >
+                Guardar como Borrador
+              </Button>
+            )}
             <Button
-              onClick={handleSave}
+              onClick={() => handleSave(false)}
               disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
               className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white"
             >

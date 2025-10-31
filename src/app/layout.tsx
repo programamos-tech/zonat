@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Fira_Code } from "next/font/google";
 import "./globals.css";
 // ThemeProvider removed
 import { AuthProvider } from "@/contexts/auth-context";
@@ -24,6 +24,11 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+const firaCode = Fira_Code({
+  variable: "--font-fira-code",
+  subsets: ["latin"],
+});
+
 export const metadata: Metadata = {
   title: "ZONA T - Panel de Control",
   description: "Sistema de gestión de inventario y ventas para ZONA T",
@@ -37,7 +42,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased pb-16 lg:pb-0`}
+        className={`${geistSans.variable} ${geistMono.variable} ${firaCode.variable} antialiased pb-16 lg:pb-0`}
       >
         <AuthProvider>
           <ClientsProvider>

@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { Button } from '@/components/ui/button'
 
 export function EnvironmentBanner() {
   const [isDevelopment, setIsDevelopment] = useState(false)
@@ -31,6 +32,13 @@ export function EnvironmentBanner() {
     setIsDevelopment(shouldShow)
   }, [])
 
+  const handleReportError = () => {
+    const message = encodeURIComponent("Hola! Tengo un error o necesito soporte técnico en el sistema Zonat. ¿Podrías ayudarme?")
+    const phoneNumber = "3002061711"
+    const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`
+    window.open(whatsappUrl, '_blank')
+  }
+
   if (!isDevelopment) return null
 
   return (
@@ -38,17 +46,30 @@ export function EnvironmentBanner() {
       className="fixed top-0 left-0 right-0 xl:left-64 z-[100] border-b-2 shadow-lg"
       style={{ 
         backgroundColor: '#230f49',
-        borderColor: '#3d1f6b'
+        borderColor: '#3d1f6b',
+        fontFamily: 'var(--font-fira-code), "Courier New", monospace'
       }}
     >
-      <div className="flex items-center justify-center gap-2 px-4 py-2 text-xs md:text-sm font-semibold text-white">
-        <img 
-          src="/logo_programamos.st.png" 
-          alt="Programamos.st" 
-          className="h-4 w-4 md:h-5 md:w-5 flex-shrink-0 object-contain"
-        />
-        <span className="uppercase tracking-wide">Ambiente de Pruebas - DEVELOP</span>
-        <span className="hidden md:inline">| programamos.st</span>
+      <div className="flex items-center justify-center gap-3 px-4 py-2">
+        <div className="flex items-center gap-2 text-xs md:text-sm font-semibold text-white">
+          <img 
+            src="/logo_programamos.st.png" 
+            alt="Programamos.st" 
+            className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 object-contain"
+          />
+          <span className="whitespace-nowrap">programamos.st</span>
+          <span className="mx-1">-</span>
+          <span className="whitespace-nowrap">Ambiente de Pruebas</span>
+          <span className="mx-1">-</span>
+          <span className="whitespace-nowrap">Versión 1</span>
+        </div>
+        <Button
+          onClick={handleReportError}
+          className="bg-transparent hover:bg-white/10 border border-white/30 text-white text-xs px-3 py-1 h-auto font-semibold"
+          style={{ fontFamily: 'var(--font-fira-code), "Courier New", monospace' }}
+        >
+          Reportar Error
+        </Button>
       </div>
     </div>
   )

@@ -16,6 +16,7 @@ interface SalesContextType {
   updateSale: (id: string, saleData: Partial<Sale>) => Promise<void>
   deleteSale: (id: string) => Promise<void>
   cancelSale: (id: string, reason: string) => Promise<{ success: boolean, totalRefund?: number }>
+  finalizeDraftSale: (id: string) => Promise<void>
   searchSales: (searchTerm: string) => Promise<Sale[]>
   refreshSales: () => Promise<void>
   goToPage: (page: number) => Promise<void>
@@ -154,6 +155,23 @@ export function SalesProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const finalizeDraftSale = async (id: string) => {
+    if (!currentUser?.id) {
+      throw new Error('Usuario no autenticado')
+    }
+
+    try {
+      await SalesService.finalizeDraftSale(id, currentUser.id)
+      // Refrescar productos para actualizar el stock
+      await refreshProducts()
+      // Refrescar ventas
+      await fetchSales(currentPage, false)
+    } catch (error) {
+      // Error silencioso en producción
+      throw error
+    }
+  }
+
   const searchSales = async (searchTerm: string): Promise<Sale[]> => {
     try {
       return await SalesService.searchSales(searchTerm)
@@ -184,6 +202,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       updateSale,
       deleteSale,
       cancelSale,
+      finalizeDraftSale,
       searchSales,
       refreshSales,
       goToPage

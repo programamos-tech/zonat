@@ -119,27 +119,6 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             {/* Theme Toggle removed */}
           </nav>
 
-          {/* Programamos.st Support Bar */}
-          <div
-            onClick={() => {
-                  const message = encodeURIComponent("Hola! Tengo un error o necesito soporte técnico en el sistema Zonat. ¿Podrías ayudarme?");
-                  const phoneNumber = "3002061711";
-                  const whatsappUrl = `https://wa.me/${phoneNumber}?text=${message}`;
-                  window.open(whatsappUrl, '_blank');
-            }}
-            className="mx-4 mb-4 rounded-md border border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur px-3 py-2 shadow-sm hover:shadow transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex items-center justify-between gap-2">
-              <div className="flex items-center gap-2 min-w-0 overflow-hidden">
-                <div className="w-7 h-7 rounded-full flex items-center justify-center bg-gray-200 dark:bg-gray-700 flex-shrink-0">
-                  <img src="/logo_programamos.st.png" alt="Programamos.st" width={18} height={18} className="opacity-80 dark:opacity-70" style={{ filter: 'brightness(0)' }} />
-                </div>
-                <span className="text-xs text-gray-700 dark:text-gray-300 truncate">ZONA T v{process.env.NEXT_PUBLIC_APP_VERSION || '1.0.0'}</span>
-              </div>
-              <span className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 shrink-0">Reportar</span>
-            </div>
-          </div>
-
           {/* User info */}
           <div className="p-4 bg-gray-50 dark:bg-gray-700">
             <div className="flex items-center justify-between">

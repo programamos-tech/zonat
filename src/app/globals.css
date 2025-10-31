@@ -517,13 +517,6 @@ body {
     max-width: 7rem;
   }
   
-  .logs-table-tablet th:nth-child(7),
-  .logs-table-tablet td:nth-child(7) {
-    width: 4rem !important; /* Acciones */
-    min-width: 4rem;
-    max-width: 4rem;
-  }
-  
   /* Asegurar que la tabla no se desborde */
   .logs-table-tablet-container {
     overflow-x: auto !important;

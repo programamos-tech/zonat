@@ -247,20 +247,23 @@ export class SalesService {
         throw saleError
       }
 
-      // Crear los items de la venta y descontar stock
+      // Crear los items de la venta y descontar stock (solo si no es borrador)
       if (saleData.items && saleData.items.length > 0) {
-        // Primero descontar stock de todos los productos
-        for (const item of saleData.items) {
-          const stockDeducted = await ProductsService.deductStockForSale(
-            item.productId, 
-            item.quantity, 
-            currentUserId
-          )
-          
-          if (!stockDeducted) {
-            // Si no se pudo descontar stock, revertir la venta
-            await supabase.from('sales').delete().eq('id', sale.id)
-            throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
+        // Si NO es borrador, descontar stock de todos los productos
+        if (saleData.status !== 'draft') {
+          // Primero descontar stock de todos los productos
+          for (const item of saleData.items) {
+            const stockDeducted = await ProductsService.deductStockForSale(
+              item.productId, 
+              item.quantity, 
+              currentUserId
+            )
+            
+            if (!stockDeducted) {
+              // Si no se pudo descontar stock, revertir la venta
+              await supabase.from('sales').delete().eq('id', sale.id)
+              throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
+            }
           }
         }
 
@@ -287,63 +290,65 @@ export class SalesService {
         }
       }
 
-      // Crear registros de pago según el método
-      if (saleData.paymentMethod === 'mixed' && saleData.payments && saleData.payments.length > 0) {
-        // Crear pagos mixtos
-        const paymentRecords = saleData.payments.map(payment => ({
-          sale_id: sale.id,
-          payment_type: payment.paymentType,
-          amount: payment.amount,
-          reference: payment.reference || null,
-          notes: payment.notes || null
-        }))
-
-        const { error: paymentsError } = await supabase
-          .from('sale_payments')
-          .insert(paymentRecords)
-
-        if (paymentsError) {
-      // Error silencioso en producción
-          throw paymentsError
-        }
-      } else if (saleData.paymentMethod === 'credit') {
-        // Crear crédito para ventas a crédito
-        const { CreditsService } = await import('./credits-service')
-        
-        await CreditsService.createCredit({
-          saleId: sale.id,
-          clientId: saleData.clientId,
-          clientName: saleData.clientName,
-          invoiceNumber: invoiceNumber,
-          totalAmount: saleData.total,
-          paidAmount: 0,
-          pendingAmount: saleData.total,
-          status: 'pending',
-          dueDate: saleData.dueDate || null,
-          lastPaymentAmount: null,
-          lastPaymentDate: null,
-          lastPaymentUser: null,
-          createdBy: currentUserId,
-          createdByName: currentUser?.name || 'Usuario'
-        })
-      } else {
-        // Crear pago único para métodos no mixtos (cash, transfer, etc.)
-        const { error: paymentError } = await supabase
-          .from('payments')
-          .insert({
+      // Crear registros de pago según el método (solo si NO es borrador)
+      if (saleData.status !== 'draft') {
+        if (saleData.paymentMethod === 'mixed' && saleData.payments && saleData.payments.length > 0) {
+          // Crear pagos mixtos
+          const paymentRecords = saleData.payments.map(payment => ({
             sale_id: sale.id,
-            client_id: saleData.clientId,
-            client_name: saleData.clientName,
-            invoice_number: invoiceNumber,
-            total_amount: saleData.total,
-            paid_amount: saleData.paymentMethod === 'cash' ? saleData.total : 0,
-            pending_amount: saleData.paymentMethod === 'cash' ? 0 : saleData.total,
-            status: saleData.paymentMethod === 'cash' ? 'completed' : 'pending'
-          })
+            payment_type: payment.paymentType,
+            amount: payment.amount,
+            reference: payment.reference || null,
+            notes: payment.notes || null
+          }))
 
-        if (paymentError) {
-      // Error silencioso en producción
-          throw paymentError
+          const { error: paymentsError } = await supabase
+            .from('sale_payments')
+            .insert(paymentRecords)
+
+          if (paymentsError) {
+        // Error silencioso en producción
+            throw paymentsError
+          }
+        } else if (saleData.paymentMethod === 'credit') {
+          // Crear crédito para ventas a crédito
+          const { CreditsService } = await import('./credits-service')
+          
+          await CreditsService.createCredit({
+            saleId: sale.id,
+            clientId: saleData.clientId,
+            clientName: saleData.clientName,
+            invoiceNumber: invoiceNumber,
+            totalAmount: saleData.total,
+            paidAmount: 0,
+            pendingAmount: saleData.total,
+            status: 'pending',
+            dueDate: saleData.dueDate || null,
+            lastPaymentAmount: null,
+            lastPaymentDate: null,
+            lastPaymentUser: null,
+            createdBy: currentUserId,
+            createdByName: currentUser?.name || 'Usuario'
+          })
+        } else {
+          // Crear pago único para métodos no mixtos (cash, transfer, etc.)
+          const { error: paymentError } = await supabase
+            .from('payments')
+            .insert({
+              sale_id: sale.id,
+              client_id: saleData.clientId,
+              client_name: saleData.clientName,
+              invoice_number: invoiceNumber,
+              total_amount: saleData.total,
+              paid_amount: saleData.paymentMethod === 'cash' ? saleData.total : 0,
+              pending_amount: saleData.paymentMethod === 'cash' ? 0 : saleData.total,
+              status: saleData.paymentMethod === 'cash' ? 'completed' : 'pending'
+            })
+
+          if (paymentError) {
+        // Error silencioso en producción
+            throw paymentError
+          }
         }
       }
 
@@ -353,19 +358,28 @@ export class SalesService {
                                  saleData.paymentMethod === 'transfer' ? 'Venta por Transferencia' :
                                  saleData.paymentMethod === 'mixed' ? 'Venta Mixta' : 'Venta'
       
-      // Usar acción diferente para ventas a crédito
-      const logAction = saleData.paymentMethod === 'credit' ? 'credit_sale_create' : 'sale_create'
+      // Usar acción diferente según el tipo de venta
+      const logAction = saleData.status === 'draft' 
+        ? 'sale_draft_create' 
+        : saleData.paymentMethod === 'credit' 
+          ? 'credit_sale_create' 
+          : 'sale_create'
+      
+      const logDescription = saleData.status === 'draft'
+        ? `Borrador de ${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`
+        : `${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`
       
       await AuthService.logActivity(
         currentUserId,
         logAction,
         'sales',
         {
-          description: `${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`,
+          description: logDescription,
           saleId: sale.id,
           clientName: saleData.clientName,
           total: saleData.total,
           paymentMethod: saleData.paymentMethod,
+          status: saleData.status,
           itemsCount: saleData.items?.length || 0,
           items: saleData.items?.map(item => ({
             productName: item.productName,
@@ -441,6 +455,83 @@ export class SalesService {
         createdAt: data.created_at,
         items: saleData.items || []
       }
+    } catch (error) {
+      // Error silencioso en producción
+      throw error
+    }
+  }
+
+  // Finalizar un borrador: descuenta stock y crea crédito si corresponde
+  static async finalizeDraftSale(id: string, currentUserId: string): Promise<Sale> {
+    try {
+      // Obtener la venta borrador
+      const draftSale = await this.getSaleById(id)
+      if (!draftSale) {
+        throw new Error('Venta no encontrada')
+      }
+
+      if (draftSale.status !== 'draft') {
+        throw new Error('Esta venta no es un borrador')
+      }
+
+      // Obtener información del usuario actual
+      const currentUser = await AuthService.getCurrentUser()
+
+      // Descontar stock de todos los productos
+      if (draftSale.items && draftSale.items.length > 0) {
+        for (const item of draftSale.items) {
+          const stockDeducted = await ProductsService.deductStockForSale(
+            item.productId, 
+            item.quantity, 
+            currentUserId
+          )
+          
+          if (!stockDeducted) {
+            throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
+          }
+        }
+      }
+
+      // Crear crédito si el método de pago es crédito
+      if (draftSale.paymentMethod === 'credit') {
+        const { CreditsService } = await import('./credits-service')
+        
+        await CreditsService.createCredit({
+          saleId: draftSale.id,
+          clientId: draftSale.clientId,
+          clientName: draftSale.clientName,
+          invoiceNumber: draftSale.invoiceNumber || '',
+          totalAmount: draftSale.total,
+          paidAmount: 0,
+          pendingAmount: draftSale.total,
+          status: 'pending',
+          dueDate: null,
+          lastPaymentAmount: null,
+          lastPaymentDate: null,
+          lastPaymentUser: null,
+          createdBy: currentUserId,
+          createdByName: currentUser?.name || 'Usuario'
+        })
+      }
+
+      // Actualizar el status a 'completed'
+      const updatedSale = await this.updateSale(id, { status: 'completed' }, currentUserId)
+
+      // Log de actividad
+      await AuthService.logActivity(
+        currentUserId,
+        'sale_draft_finalize',
+        'sales',
+        {
+          description: `Borrador facturado: ${draftSale.clientName} - Total: $${draftSale.total.toLocaleString()}`,
+          saleId: id,
+          clientName: draftSale.clientName,
+          total: draftSale.total,
+          paymentMethod: draftSale.paymentMethod
+        }
+      )
+
+      return updatedSale
     } catch (error) {
       // Error silencioso en producción
       throw error

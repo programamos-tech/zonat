@@ -7,7 +7,6 @@ import { Badge } from '@/components/ui/badge'
 import {
   Search,
   Filter,
-  Eye,
   ArrowRightLeft,
   ShoppingCart,
   Package,
@@ -23,7 +22,6 @@ import { LogEntry } from '@/types/logs'
 
 interface LogsTableProps {
   logs: LogEntry[]
-  onViewDetails: (log: LogEntry) => void
   searchTerm?: string
   onSearchChange?: (term: string) => void
   moduleFilter?: string
@@ -40,7 +38,6 @@ interface LogsTableProps {
 
 export function LogsTable({ 
   logs, 
-  onViewDetails, 
   searchTerm = '', 
   onSearchChange,
   moduleFilter = 'all',
@@ -392,11 +389,8 @@ export function LogsTable({
                     <th className="w-20 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                       Usuario
                     </th>
-                    <th className="w-24 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-24 md:w-32 pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Fecha
-                    </th>
-                    <th className="w-16 md:w-20 pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-3 text-center text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Acciones
                     </th>
                   </tr>
                 </thead>
@@ -663,7 +657,7 @@ export function LogsTable({
                             {log.user_name || 'Desconocido'}
                           </div>
                         </td>
-                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4">
+                        <td className="pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-4">
                           <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                             {new Date(log.created_at).toLocaleDateString('es-CO', {
                               month: '2-digit',
@@ -672,17 +666,6 @@ export function LogsTable({
                               minute: '2-digit'
                             })}
                           </div>
-                        </td>
-                        <td className="pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-4 text-center">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onViewDetails(log)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100 h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
-                            title="Ver detalles"
-                          >
-                            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          </Button>
                         </td>
                       </tr>
                     )

@@ -182,7 +182,7 @@ export interface Sale {
   tax: number
   discount: number
   discountType?: 'percentage' | 'amount'
-  status: 'pending' | 'completed' | 'cancelled'
+  status: 'pending' | 'completed' | 'cancelled' | 'draft'
   paymentMethod: 'cash' | 'credit' | 'transfer' | 'warranty' | 'mixed'
   payments?: SalePayment[] // Para pagos mixtos
   invoiceNumber?: string

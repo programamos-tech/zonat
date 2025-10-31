@@ -19,7 +19,8 @@ export default function SalesPage() {
     hasMore, 
     createSale, 
     deleteSale, 
-    cancelSale, 
+    cancelSale,
+    finalizeDraftSale,
     goToPage,
     searchSales,
     refreshSales
@@ -458,6 +459,23 @@ export default function SalesPage() {
     }
   }
 
+  const handleFinalizeDraft = async (saleId: string) => {
+    try {
+      await finalizeDraftSale(saleId)
+      // Actualizar la venta seleccionada si es la misma
+      if (selectedSale && selectedSale.id === saleId) {
+        const updatedSale = sales.find(s => s.id === saleId)
+        if (updatedSale) {
+          setSelectedSale(updatedSale)
+        }
+      }
+    } catch (error) {
+      // Error silencioso en producción
+      alert('Error al facturar el borrador')
+      throw error
+    }
+  }
+
   if (loading) {
     return (
       <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
@@ -471,7 +489,7 @@ export default function SalesPage() {
 
   return (
     <RoleProtectedRoute module="sales" requiredAction="view">
-      <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-white dark:bg-gray-900 min-h-screen">
       <SalesTable
         sales={sales}
         loading={loading}
@@ -503,6 +521,7 @@ export default function SalesPage() {
         sale={selectedSale}
         onCancel={handleCancelSale}
         onPrint={handlePrint}
+        onFinalizeDraft={handleFinalizeDraft}
       />
     </div>
     </RoleProtectedRoute>

@@ -105,17 +105,17 @@ export function CategoryModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Tag className="h-8 w-8 text-green-600" />
+            <Tag className="h-5 w-5 md:h-8 md:w-8 text-green-600" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Gestión de Categorías
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                 Crea nuevas categorías y gestiona las existentes
               </p>
             </div>
@@ -131,8 +131,8 @@ export function CategoryModal({
         </div>
 
         {/* Content */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="flex-1 overflow-y-auto p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="flex-1 overflow-y-auto p-4 md:p-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
             {/* Información de la Categoría */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
@@ -297,7 +297,7 @@ export function CategoryModal({
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             type="button"
             onClick={handleClose}
