@@ -626,7 +626,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
           </Button>
         </div>
 
-        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800 pb-24 md:pb-6">
+        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800 pb-32 md:pb-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column - Client and Products */}
             <div className="space-y-6">
@@ -1226,7 +1226,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="sticky bottom-0 left-0 right-0 z-[60] flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 backdrop-blur shadow-lg" style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}>
+        <div className="sticky bottom-0 left-0 right-0 z-[60] flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 backdrop-blur shadow-lg" style={{ paddingBottom: 'calc(max(0px, env(safe-area-inset-bottom)) + 4px)' }}>
           <Button
             onClick={handleClose}
             variant="outline"
