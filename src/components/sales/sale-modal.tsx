@@ -36,12 +36,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
   const { products, refreshProducts, searchProducts } = useProducts()
   
-  // Debug: Log products when modal opens
-  useEffect(() => {
-    if (isOpen) {
-
-    }
-  }, [isOpen, products])
+  // Debug: Log products when modal opens (removed products dependency to prevent infinite loop)
+  // useEffect(() => {
+  //   if (isOpen) {
+  //   }
+  // }, [isOpen])
   
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
@@ -69,7 +68,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       getAllClients()
       refreshProducts()
     }
-  }, [isOpen, getAllClients, refreshProducts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]) // Solo ejecutar cuando se abre/cierra el modal
 
   // Manejar cambio de método de pago
   useEffect(() => {
@@ -332,9 +332,10 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const getRemainingAmount = () => {
     // Si no hay productos seleccionados, no hay pago que completar
     if (validProducts.length === 0) {
-      return total // Devolver el total (que será 0) para que no muestre "Pago completo"
+      return Math.round(total) // Devolver el total redondeado (que será 0) para que no muestre "Pago completo"
     }
-    return total - getTotalMixedPayments()
+    // Redondear el faltante a números enteros (sin centavos)
+    return Math.round(total - getTotalMixedPayments())
   }
 
   // Solo considerar productos con cantidad > 0 para cálculos
@@ -539,8 +540,12 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     // Validar pagos mixtos si es necesario
     if (paymentMethod === 'mixed') {
       const totalMixedPayments = getTotalMixedPayments()
-      if (Math.abs(totalMixedPayments - total) > 0.01) {
-        setPaymentError(`Los pagos mixtos ($${totalMixedPayments.toLocaleString()}) deben sumar exactamente el total ($${total.toLocaleString()})`)
+      const roundedTotal = Math.round(total)
+      const roundedPayments = Math.round(totalMixedPayments)
+      
+      if (roundedPayments !== roundedTotal) {
+        const faltante = Math.abs(roundedTotal - roundedPayments)
+        setPaymentError(`El total ingresado ($${roundedPayments.toLocaleString('es-CO', { maximumFractionDigits: 0 })}) no coincide con el total de la venta ($${roundedTotal.toLocaleString('es-CO', { maximumFractionDigits: 0 })}). Falta: $${faltante.toLocaleString('es-CO', { maximumFractionDigits: 0 })}`)
         return
       }
     }
@@ -605,15 +610,15 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-0 md:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-end md:items-center justify-center md:pl-6 md:pr-4">
-        <div className="bg-white dark:bg-gray-800 rounded-t-2xl md:rounded-2xl shadow-2xl w-full md:w-auto md:max-w-7xl max-h-[92vh] md:max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col">
+        <div className="bg-white dark:bg-gray-800 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:h-auto lg:w-auto lg:max-w-7xl lg:max-h-[95vh] lg:m-auto flex flex-col border-0 lg:border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <Calculator className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Nueva Venta</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Factura {invoiceNumber}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Nueva Venta</h2>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Factura {invoiceNumber}</p>
             </div>
           </div>
           <Button
@@ -626,7 +631,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
           </Button>
         </div>
 
-        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-800 pb-32 md:pb-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column - Client and Products */}
             <div className="space-y-6">
@@ -1082,33 +1087,27 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                           </div>
                           
                           {/* Resumen de pagos mixtos */}
-                          <div className="pt-3 border-t border-gray-200 dark:border-gray-600">
-                            <div className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600 dark:text-gray-400">Total asignado:</span>
-                              <span className="font-medium text-gray-900 dark:text-white">
-                                ${getTotalMixedPayments().toLocaleString('es-CO')}
+                          <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                            <div className="flex justify-between items-center text-sm bg-gray-50 dark:bg-gray-800/50 p-2 rounded-md">
+                              <span className="text-gray-600 dark:text-gray-400 font-medium">Total a pagar:</span>
+                              <span className="font-bold text-gray-900 dark:text-white text-base">
+                                ${Math.round(total).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                               </span>
                             </div>
                             <div className="flex justify-between items-center text-sm">
-                              <span className="text-gray-600 dark:text-gray-400">Total de la venta:</span>
-                              <span className="font-medium text-gray-900 dark:text-white">
-                                ${total.toLocaleString('es-CO')}
+                              <span className="text-gray-600 dark:text-gray-400">Total ingresado:</span>
+                              <span className={`font-medium ${Math.round(getTotalMixedPayments()) === Math.round(total) && validProducts.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}>
+                                ${Math.round(getTotalMixedPayments()).toLocaleString('es-CO', { maximumFractionDigits: 0 })}
                               </span>
                             </div>
-                            <div className="flex justify-between items-center text-sm font-medium">
-                              <span className={getRemainingAmount() === 0 && validProducts.length > 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>
-                                {getRemainingAmount() === 0 && validProducts.length > 0 ? (
-                                  <div className="flex items-center gap-2">
-                                    <CheckCircle className="h-4 w-4 text-green-600" />
-                                    <span>Pago completo</span>
-                                  </div>
-                                ) : validProducts.length === 0 ? (
-                                  <span className="text-gray-500 dark:text-gray-400">Agregue productos para calcular el pago</span>
-                                ) : (
-                                  `Faltante: $${getRemainingAmount().toLocaleString('es-CO')}`
-                                )}
-                              </span>
-                            </div>
+                            {Math.round(getTotalMixedPayments()) === Math.round(total) && validProducts.length > 0 && (
+                              <div className="flex justify-between items-center text-sm font-medium pt-1 border-t border-gray-200 dark:border-gray-700">
+                                <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
+                                  <CheckCircle className="h-4 w-4" />
+                                  <span>Pago completo</span>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1225,22 +1224,24 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="sticky bottom-0 left-0 right-0 z-[60] flex items-center justify-end space-x-3 p-4 border-t border-gray-200 dark:border-gray-600 bg-white/95 dark:bg-gray-800/95 backdrop-blur shadow-lg" style={{ paddingBottom: 'calc(max(0px, env(safe-area-inset-bottom)) + 4px)' }}>
-          <Button
-            onClick={handleClose}
-            variant="outline"
-            className="border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium px-4 py-2"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-            className="font-medium px-4 py-2 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            Crear Venta
-          </Button>
+        {/* Footer - Sticky siempre visible */}
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 md:p-6" style={{ paddingBottom: 'calc(max(56px, env(safe-area-inset-bottom)) + 1rem)' }}>
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              onClick={handleClose}
+              variant="outline"
+              className="border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium px-4 py-2 md:px-6 md:py-2.5"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
+              className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Crear Venta
+            </Button>
+          </div>
         </div>
       </div>
 

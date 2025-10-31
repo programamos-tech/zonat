@@ -158,17 +158,17 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center lg:pl-6 lg:pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:w-full lg:max-w-6xl lg:h-auto lg:max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <CreditCard className="h-8 w-8 text-pink-600" />
+            <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-pink-600" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Detalles del Crédito
               </h2>
-              <p className="text-gray-600 dark:text-gray-300">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                 {currentCredit?.invoiceNumber}
               </p>
             </div>
@@ -184,17 +184,17 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-6">
-          <div className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 mb-6">
+          <div className="space-y-4 md:space-y-6">
             {clientCredits.length > 1 && (
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-5 w-5 text-gray-600 dark:text-gray-400" />
+                <CardHeader className="p-4 md:p-6">
+                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <User className="h-4 w-4 md:h-5 md:w-5 text-gray-600 dark:text-gray-400" />
                     Todos los Créditos de {credit.clientName}
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-4 md:p-6 pt-0">
                   <div className="space-y-3 max-h-64 overflow-y-auto">
                     {clientCredits.map((c) => {
                       const isSelected = selectedCreditId === c.id
@@ -243,16 +243,16 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
               </Card>
             )}
             
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información del Crédito */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-5 w-5 text-pink-600" />
+              <CardHeader className="p-4 md:p-6">
+                <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <Receipt className="h-4 w-4 md:h-5 md:w-5 text-pink-600" />
                   Información del Crédito
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="p-4 md:p-6 pt-0 space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -344,10 +344,10 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
 
             {/* Historial de Abonos */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <CreditCard className="h-5 w-5 text-pink-600" />
+              <CardHeader className="p-4 md:p-6">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-pink-600" />
                     Historial de Abonos
                   </CardTitle>
                   <Button 
@@ -362,7 +362,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                     }}
                     disabled={!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)}
                     size="sm"
-                    className={`${
+                    className={`w-full sm:w-auto ${
                       !currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)
                         ? 'bg-gray-400 hover:bg-gray-400 text-gray-200 cursor-not-allowed' 
                         : 'bg-pink-600 hover:bg-pink-700 text-white'
@@ -373,7 +373,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                   </Button>
                 </div>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 md:p-6 pt-0">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-600"></div>
@@ -433,7 +433,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="sticky bottom-0 flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={onClose}
             className="bg-pink-600 hover:bg-pink-700 text-white"

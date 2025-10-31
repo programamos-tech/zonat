@@ -33,31 +33,35 @@ export function ConfirmModal({
     switch (type) {
       case 'danger':
         return {
-          iconColor: 'text-green-400',
-          iconBg: 'bg-green-900/20',
-          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
-          borderColor: 'border-green-700'
+          iconColor: 'text-purple-400',
+          iconBg: 'bg-purple-900/20',
+          confirmButton: 'bg-purple-600 hover:bg-purple-700 text-white',
+          borderColor: 'border-purple-700',
+          headerBg: 'bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20'
         }
       case 'warning':
         return {
           iconColor: 'text-orange-400',
           iconBg: 'bg-orange-900/20',
           confirmButton: 'bg-orange-600 hover:bg-orange-700 text-white',
-          borderColor: 'border-orange-700'
+          borderColor: 'border-orange-700',
+          headerBg: 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
         }
       case 'info':
         return {
           iconColor: 'text-blue-400',
           iconBg: 'bg-blue-900/20',
           confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white',
-          borderColor: 'border-blue-700'
+          borderColor: 'border-blue-700',
+          headerBg: 'bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20'
         }
       default:
         return {
-          iconColor: 'text-green-400',
-          iconBg: 'bg-green-900/20',
-          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
-          borderColor: 'border-green-700'
+          iconColor: 'text-purple-400',
+          iconBg: 'bg-purple-900/20',
+          confirmButton: 'bg-purple-600 hover:bg-purple-700 text-white',
+          borderColor: 'border-purple-700',
+          headerBg: 'bg-gradient-to-r from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20'
         }
     }
   }
@@ -65,15 +69,15 @@ export function ConfirmModal({
   const styles = getTypeStyles()
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 lg:pl-6 lg:pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+        <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 ${styles.headerBg} flex-shrink-0`}>
           <div className="flex items-center space-x-3">
             <div className={`p-2 rounded-full ${styles.iconBg}`}>
-              <AlertTriangle className={`h-5 w-5 ${styles.iconColor}`} />
+              <AlertTriangle className={`h-4 w-4 md:h-5 md:w-5 ${styles.iconColor}`} />
             </div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
+            <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
           </div>
           <Button
             onClick={onClose}
@@ -86,12 +90,12 @@ export function ConfirmModal({
         </div>
 
         {/* Content */}
-        <div className="p-6">
-          <p className="text-gray-600 dark:text-gray-300 leading-relaxed">{message}</p>
+        <div className="p-4 md:p-6">
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{message}</p>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
           <Button
             onClick={onClose}
             variant="outline"

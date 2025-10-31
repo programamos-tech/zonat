@@ -27,9 +27,17 @@ export default function SalesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+  const [isMounted, setIsMounted] = useState(false)
 
-  // Verificar si hay una factura seleccionada en sessionStorage
+  // Marcar como montado para evitar errores de hidratación
   useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  // Verificar si hay una factura seleccionada en sessionStorage (solo en cliente)
+  useEffect(() => {
+    if (!isMounted || typeof window === 'undefined') return
+    
     const selectedInvoice = sessionStorage.getItem('selectedInvoice')
     if (selectedInvoice) {
       // Buscar la venta correspondiente a esta factura
@@ -43,7 +51,7 @@ export default function SalesPage() {
         sessionStorage.removeItem('selectedInvoice')
       }
     }
-  }, [sales])
+  }, [sales, isMounted])
 
   // Sincronizar selectedSale con el estado actualizado del contexto
   useEffect(() => {

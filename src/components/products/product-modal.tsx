@@ -227,17 +227,17 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   if (!isOpen) return null
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col lg:items-center lg:justify-center lg:pl-6 lg:pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:h-auto lg:w-auto lg:max-w-6xl lg:max-h-[95vh] overflow-hidden flex flex-col border-0 lg:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
+        <div className="flex items-center justify-between p-4 md:p-6 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <Package className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            <Package className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 dark:text-emerald-400" />
             <div>
-              <h2 className="text-xl font-semibold text-emerald-800 dark:text-emerald-200">
+              <h2 className="text-lg md:text-xl font-semibold text-emerald-800 dark:text-emerald-200">
                 {product ? 'Editar Producto' : 'Nuevo Producto'}
               </h2>
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+              <p className="text-xs md:text-sm text-emerald-700 dark:text-emerald-300">
                 {product ? `Editando ${product.name}` : 'Crea un nuevo producto en tu inventario'}
               </p>
             </div>
@@ -252,9 +252,9 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           </Button>
         </div>
 
-        <div className="p-6 flex-1 bg-white dark:bg-gray-900 overflow-hidden">
+        <div className="p-4 md:p-6 flex-1 bg-white dark:bg-gray-900 overflow-y-auto">
           <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="h-full">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Columna Izquierda */}
               <div className="space-y-6">
                 {/* Información Básica */}
@@ -615,7 +615,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={handleClose}
             variant="outline"

@@ -531,16 +531,16 @@ export default function SaleDetailModal({
   }
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col">
+      <div className="bg-white dark:bg-gray-800 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:h-auto lg:w-auto lg:max-w-7xl lg:max-h-[95vh] lg:m-auto flex flex-col border-0 lg:border border-gray-200 dark:border-gray-700 overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-blue-50 dark:bg-blue-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-blue-50 dark:bg-blue-900/20">
           <div className="flex items-center space-x-3">
             <Receipt className="h-6 w-6 text-blue-600" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Detalle de Venta</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">{getInvoiceNumber(sale)}</p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Detalle de Venta</h2>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">{getInvoiceNumber(sale)}</p>
             </div>
           </div>
           <Button
@@ -556,7 +556,7 @@ export default function SaleDetailModal({
 
         {/* Mensaje de confirmación de anulación */}
         {cancelSuccessMessage && (
-          <div className={`mx-6 mb-4 p-4 rounded-lg border-2 ${
+          <div className={`mx-4 md:mx-6 mt-4 p-4 rounded-lg border-2 ${
             cancelSuccessMessage.includes('exitosamente') 
               ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800'
               : 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800'
@@ -591,11 +591,11 @@ export default function SaleDetailModal({
         )}
 
         {/* Content */}
-        <div className="p-4 overflow-y-auto flex-1 bg-white dark:bg-gray-800 min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6">
             
             {/* Left Column - Sale Information */}
-            <div className="space-y-4">
+            <div className="space-y-6">
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
@@ -763,7 +763,7 @@ export default function SaleDetailModal({
               </div>
 
           {/* Products Table - Full Width */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm mt-6">
             <CardHeader className="pb-3">
               <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                 <Package className="h-5 w-5 mr-2 text-blue-600" />
@@ -900,7 +900,7 @@ export default function SaleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <div className="flex space-x-3">
             {sale.status !== 'cancelled' && (
               <Button
@@ -915,23 +915,6 @@ export default function SaleDetailModal({
           </div>
           
           <div className="flex space-x-3">
-            <Button
-              onClick={handlePrint}
-              disabled={isLoadingPrint || !companyConfig || sale.status === 'cancelled' || isCancelling}
-              className="bg-gray-600 hover:bg-gray-700 text-white border-gray-600 hover:border-gray-700 font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isLoadingPrint ? (
-                <>
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                  Generando...
-                </>
-              ) : (
-                <>
-              <Printer className="h-4 w-4 mr-2" />
-              Imprimir
-                </>
-              )}
-            </Button>
             <Button
               onClick={onClose}
               disabled={isCancelling}

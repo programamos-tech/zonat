@@ -28,6 +28,9 @@ interface ProductsContextType {
 
 const ProductsContext = createContext<ProductsContextType | undefined>(undefined)
 
+// Número de productos por página
+const ITEMS_PER_PAGE = 15
+
 export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
@@ -37,10 +40,10 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [isSearching, setIsSearching] = useState(false)
   const { user: currentUser } = useAuth()
 
-  const refreshProducts = async () => {
+  const refreshProducts = useCallback(async () => {
     setLoading(true)
     try {
-      const result = await ProductsService.getAllProducts(1, 10)
+      const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE)
       setProducts(result.products)
       setCurrentPage(1)
       setTotalProducts(result.total)
@@ -51,11 +54,11 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     refreshProducts()
-  }, []) // Empty dependency array to run only once on mount
+  }, [refreshProducts]) // refreshProducts is now memoized with useCallback
 
   const createProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     const newProduct = await ProductsService.createProduct(productData, currentUser?.id)
@@ -112,7 +115,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     setIsSearching(false)
     try {
       setLoading(true)
-      const result = await ProductsService.getAllProducts(1, 10)
+      const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE)
       setProducts(result.products)
       setCurrentPage(1)
       setTotalProducts(result.total)
@@ -125,10 +128,10 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const goToPage = async (page: number) => {
-    if (page >= 1 && page <= Math.ceil(totalProducts / 10) && !loading) {
+    if (page >= 1 && page <= Math.ceil(totalProducts / ITEMS_PER_PAGE) && !loading) {
       try {
         setLoading(true)
-        const result = await ProductsService.getAllProducts(page, 10)
+        const result = await ProductsService.getAllProducts(page, ITEMS_PER_PAGE)
         setProducts(result.products)
         setCurrentPage(page)
         setTotalProducts(result.total)

@@ -46,6 +46,9 @@ interface ProductTableProps {
   onSearch: (searchTerm: string) => Promise<Product[]>
 }
 
+// Número de productos por página
+const ITEMS_PER_PAGE = 15
+
 export function ProductTable({
   products,
   categories,
@@ -218,38 +221,38 @@ export function ProductTable({
 
   return (
     <TooltipProvider>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6">
         {/* Header */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <CardHeader className="p-4 md:p-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
               <div>
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-6 w-6 text-emerald-600" />
+                <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                  <Package className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />
                   Gestión de Productos
                   {isSearching && (
-                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
                       Búsqueda activa
                     </Badge>
                   )}
                 </CardTitle>
-                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
                   {isSearching 
                     ? `Mostrando resultados de búsqueda (${filteredProducts.length} productos)`
                     : 'Administra tu inventario de productos'
                   }
                 </p>
               </div>
-              <div className="flex items-center space-x-2">
-                <Button onClick={onCreate} className="bg-emerald-600 hover:bg-emerald-700 text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nuevo Producto
+              <div className="flex items-center gap-2 flex-wrap">
+                <Button onClick={onCreate} className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-3 md:px-4">
+                  <span className="hidden sm:inline">Nuevo Producto</span>
+                  <span className="sm:hidden">Nuevo</span>
                 </Button>
                 <Button 
                   onClick={onManageCategories} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-3 md:px-4"
                 >
-                  <Tag className="h-4 w-4 mr-2" />
+                  <Tag className="h-4 w-4 mr-1 md:mr-2" />
                   Categorías
                 </Button>
                 {onRefresh && (
@@ -257,10 +260,10 @@ export function ProductTable({
                     onClick={onRefresh}
                     disabled={loading}
                     variant="outline"
-                    className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50"
+                    className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-sm px-3 md:px-4"
                   >
-                    <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                    Actualizar
+                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                    <span className="hidden sm:inline ml-2">Actualizar</span>
                   </Button>
                 )}
               </div>
@@ -270,8 +273,8 @@ export function ProductTable({
 
         {/* Search and Filters */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-4">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <input
@@ -316,7 +319,7 @@ export function ProductTable({
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(category => (
@@ -328,7 +331,7 @@ export function ProductTable({
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 {statuses.map(status => (
                   <option key={status.value} value={status.value}>
@@ -341,8 +344,8 @@ export function ProductTable({
         </Card>
 
         {/* Table */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-0">
+        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-hidden">
+          <CardContent className="p-0 m-0">
             {filteredProducts.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -356,40 +359,40 @@ export function ProductTable({
                   onClick={onCreate}
                   className="bg-emerald-600 hover:bg-emerald-700 text-white"
                 >
-                  <Plus className="h-4 w-4 mr-2" />
                   Nuevo Producto
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              <div className="overflow-x-auto products-table-tablet-container lg:overflow-x-visible">
+                <table className="w-full table-auto lg:table-auto products-table-tablet">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="pl-4 pr-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12">
+                      <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10 md:w-12">
                         #
                       </th>
-                      <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20">
-                        Referencia
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16 md:w-20">
+                        <span className="hidden lg:inline">Referencia</span>
+                        <span className="lg:hidden">Ref.</span>
                       </th>
-                      <th className="px-3 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-48">
+                      <th className="px-2 md:px-3 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Producto
                       </th>
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12 md:w-16">
                         Bodega
                       </th>
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12 md:w-16">
                         Local
                       </th>
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16">
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12 md:w-16">
                         Total
                       </th>
-                      <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-32">
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24 md:w-32">
                         Estado Stock
                       </th>
-                      <th className="px-2 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
-                        Estado Producto
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20 md:w-24 hidden lg:table-cell">
+                        Estado
                       </th>
-                      <th className="px-2 py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24">
+                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20 md:w-24">
                         Acciones
                       </th>
                     </tr>
@@ -399,65 +402,65 @@ export function ProductTable({
                       const StatusIcon = getStatusIcon(product.status)
                       return (
                         <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="pl-4 pr-2 py-4 whitespace-nowrap w-12">
-                            <div className="text-sm font-medium text-gray-900 dark:text-white">
+                          <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 whitespace-nowrap w-10 md:w-12">
+                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                               {index + 1}
                             </div>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap w-20">
-                            <div className="text-sm font-mono text-gray-900 dark:text-white font-semibold">
+                          <td className="px-1 md:px-2 py-2 md:py-4 w-16 md:w-20">
+                            <div className="text-xs md:text-sm font-mono text-gray-900 dark:text-white font-semibold" title={product.reference}>
                               {product.reference}
                             </div>
                           </td>
-                          <td className="px-3 py-4 w-48 max-w-48">
-                            <div className="text-sm">
-                              <div className="font-medium text-gray-900 dark:text-white truncate" title={product.name}>
+                          <td className="px-2 md:px-3 py-2 md:py-4">
+                            <div className="text-xs md:text-sm">
+                              <div className="font-medium text-gray-900 dark:text-white truncate max-w-[120px] md:max-w-[200px] lg:max-w-none" title={product.name}>
                                 {product.name}
                               </div>
-                              <div className="text-gray-500 dark:text-gray-400 text-xs truncate">
+                              <div className="text-gray-500 dark:text-gray-400 text-xs truncate max-w-[120px] md:max-w-[200px] lg:max-w-none" title={getCategoryName(product.categoryId)}>
                                 {getCategoryName(product.categoryId)}
                               </div>
                             </div>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap w-16 text-center">
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap w-12 md:w-16 text-center">
+                            <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
                               {product.stock.warehouse}
                             </div>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap w-16 text-center">
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap w-12 md:w-16 text-center">
+                            <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
                               {product.stock.store}
                             </div>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap w-16 text-center">
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap w-12 md:w-16 text-center">
+                            <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
                               {product.stock.total}
                             </div>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap w-32">
-                            <Badge className={getStockStatusColor(product)}>
-                              {getStockStatusLabel(product)}
+                          <td className="px-1 md:px-2 py-2 md:py-4 w-24 md:w-32">
+                            <Badge className={`${getStockStatusColor(product)} text-xs badge-no-truncate`} title={getStockStatusLabel(product)}>
+                              <span className="block">{getStockStatusLabel(product)}</span>
                             </Badge>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap w-24">
-                            <Badge className={getStatusColor(product.status)}>
+                          <td className="px-1 md:px-2 py-2 md:py-4 w-20 md:w-24 hidden lg:table-cell">
+                            <Badge className={`${getStatusColor(product.status)} text-xs`}>
                               <div className="flex items-center space-x-1">
-                                <StatusIcon className="h-3 w-3" />
+                                <StatusIcon className="h-3 w-3 flex-shrink-0" />
                                 <span>{getStatusLabel(product.status)}</span>
                               </div>
                             </Badge>
                           </td>
-                          <td className="px-2 py-4 whitespace-nowrap text-right text-sm font-medium w-24">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap text-center w-20 md:w-24">
+                            <div className="flex items-center justify-end gap-2 md:gap-3">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => onEdit(product)}
-                                    className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                                    className="h-7 w-7 md:h-8 md:w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95 touch-manipulation"
                                   >
-                                    <Edit className="h-4 w-4" />
+                                    <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
@@ -475,9 +478,9 @@ export function ProductTable({
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => onStockAdjustment(product)}
-                                      className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100"
+                                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95 touch-manipulation"
                                     >
-                                      <Package className="h-4 w-4" />
+                                      <Package className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
@@ -496,9 +499,9 @@ export function ProductTable({
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => onStockTransfer(product)}
-                                      className="text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100"
+                                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95 touch-manipulation"
                                     >
-                                      <ArrowRightLeft className="h-4 w-4" />
+                                      <ArrowRightLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
@@ -516,9 +519,9 @@ export function ProductTable({
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => onDelete(product)}
-                                    className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                                    className="h-7 w-7 md:h-8 md:w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95 touch-manipulation"
                                   >
-                                    <Trash2 className="h-4 w-4" />
+                                    <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
@@ -539,10 +542,10 @@ export function ProductTable({
             )}
 
             {/* Paginación - Solo mostrar cuando no está en modo búsqueda */}
-            {!isSearching && totalProducts > 10 && (
-              <div className="flex items-center justify-between px-6 py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+            {!isSearching && totalProducts > ITEMS_PER_PAGE && (
+              <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
                 <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrando {((currentPage - 1) * 10) + 1} a {Math.min(currentPage * 10, totalProducts)} de {totalProducts} productos
+                  Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)} de {totalProducts} productos
                 </div>
                 
                 <div className="flex items-center space-x-2">
@@ -557,11 +560,11 @@ export function ProductTable({
                   
                   {/* Números de página */}
                   <div className="flex items-center space-x-1">
-                    {Array.from({ length: Math.ceil(totalProducts / 10) }, (_, i) => i + 1)
+                    {Array.from({ length: Math.ceil(totalProducts / ITEMS_PER_PAGE) }, (_, i) => i + 1)
                       .filter(page => {
                         // Mostrar solo páginas cercanas a la actual
                         return page === 1 || 
-                               page === Math.ceil(totalProducts / 10) || 
+                               page === Math.ceil(totalProducts / ITEMS_PER_PAGE) || 
                                Math.abs(page - currentPage) <= 2
                       })
                       .map((page, index, array) => {

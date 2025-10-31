@@ -740,8 +740,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Métricas principales con estilo de cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+      {/* Métricas principales - 3 cards arriba */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Total Ingresos */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
           <div className="flex items-center justify-between mb-4">
@@ -825,8 +825,8 @@ export default function DashboardPage() {
 
       </div>
 
-      {/* Segunda fila de métricas */}
-      <div className={`grid grid-cols-1 md:grid-cols-2 ${canViewCredits ? 'lg:grid-cols-3' : 'lg:grid-cols-2'} ${isSuperAdmin ? 'lg:grid-cols-4' : ''} gap-4 md:gap-6 mb-6 md:mb-8`}>
+      {/* Segunda fila de métricas - 4 cards abajo */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Dinero Afuera - Para usuarios con permisos de créditos */}
         {canViewCredits && (
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
@@ -971,7 +971,7 @@ export default function DashboardPage() {
               })}
             </div>
           )}
-                    </div>
+        </div>
 
         {/* Productos en Stock - Solo para Super Admin */}
         {isSuperAdmin && (
@@ -1011,7 +1011,7 @@ export default function DashboardPage() {
             </div>
           </div>
         )}
-                
+
         {/* Facturas Anuladas - Solo para Super Admin */}
         {isSuperAdmin && (
           <div 
