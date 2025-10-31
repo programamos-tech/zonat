@@ -6,13 +6,29 @@ export function EnvironmentBanner() {
   const [isDevelopment, setIsDevelopment] = useState(false)
 
   useEffect(() => {
-    // Verificar si estamos en desarrollo local
-    const isLocal = typeof window !== 'undefined' && 
-      (window.location.hostname === 'localhost' || 
-       window.location.hostname === '127.0.0.1' ||
-       window.location.hostname.includes('local'))
+    // Mostrar banner en desarrollo, staging, o ambientes de pruebas
+    // Ocultar solo en producción explícita
     
-    setIsDevelopment(isLocal)
+    if (typeof window === 'undefined') return
+    
+    const hostname = window.location.hostname
+    const isProduction = process.env.NEXT_PUBLIC_ENV === 'production' || 
+                         hostname.includes('zonat.') && !hostname.includes('develop') && !hostname.includes('staging')
+    
+    // Mostrar si:
+    // - Es localhost/local
+    // - Contiene 'develop' en el hostname (como en Vercel)
+    // - Contiene 'staging' o 'test'
+    // - NO es producción
+    const shouldShow = !isProduction || 
+                      hostname.includes('localhost') ||
+                      hostname.includes('local') ||
+                      hostname.includes('develop') ||
+                      hostname.includes('staging') ||
+                      hostname.includes('test') ||
+                      hostname.includes('127.0.0.1')
+    
+    setIsDevelopment(shouldShow)
   }, [])
 
   if (!isDevelopment) return null
