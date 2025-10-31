@@ -34,26 +34,26 @@ export function BottomNav() {
   const visibleItems = items.filter(item => canView(item.module))
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden border-t border-gray-200 dark:border-gray-700 bg-white/95 dark:bg-gray-900/95 backdrop-blur supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))] overflow-x-auto">
-      <ul className="inline-flex items-stretch h-14 gap-1 px-2 min-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 xl:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))]">
+      <ul className="flex items-stretch h-14 md:h-16 gap-0.5 px-1 md:px-1.5 overflow-x-auto scrollbar-hide justify-center">
         {visibleItems.map(({ href, label, icon: Icon }) => {
           const active = currentPathname === href || (href !== '/dashboard' && currentPathname?.startsWith(href))
           return (
-            <li key={href} className="flex-1 min-w-[72px]">
+            <li key={href} className="flex-shrink-0 flex-1 min-w-[65px] md:min-w-[75px] max-w-[85px] md:max-w-[95px]">
               <Link
                 href={href}
-                className={`flex h-full flex-col items-center justify-center gap-0.5 px-2 text-[10px] md:text-[11px] transition-all duration-200 rounded-t-lg ${
+                className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1 md:px-1.5 text-[8px] md:text-[9px] lg:text-[10px] transition-all duration-200 rounded-t-lg touch-manipulation ${
                   active 
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm' 
-                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700'
+                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm font-medium' 
+                    : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
                 }`}
               >
-                <Icon className={`h-5 w-5 md:h-6 md:w-6 transition-colors ${
+                <Icon className={`h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 flex-shrink-0 transition-colors ${
                   active 
                     ? 'text-blue-600 dark:text-blue-400' 
                     : 'text-gray-500 dark:text-gray-400'
                 }`} />
-                <span className="leading-tight text-center truncate max-w-[70px]">{label}</span>
+                <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
               </Link>
             </li>
           )
