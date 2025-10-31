@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   LogOut,
-  ShieldCheck
+  ShieldCheck,
+  UserCircle
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -31,6 +32,7 @@ const navigation = [
   { name: 'Créditos', href: '/payments', icon: CreditCard, module: 'payments' },
   { name: 'Roles', href: '/roles', icon: Shield, module: 'roles' },
   { name: 'Registro de Actividades', href: '/logs', icon: Activity, module: 'logs' },
+  { name: 'Perfil', href: '/profile', icon: UserCircle, module: 'dashboard' },
 ]
 
 interface SidebarProps {

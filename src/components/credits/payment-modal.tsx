@@ -153,8 +153,8 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center lg:pl-6 lg:pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:w-full lg:max-w-4xl lg:h-auto lg:max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:w-full xl:max-w-4xl xl:h-auto xl:max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-pink-100 dark:from-pink-900/20 dark:to-pink-800/20 flex-shrink-0">
           <div className="flex items-center gap-3">

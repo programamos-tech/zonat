@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield } from 'lucide-react'
+import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 
 const items = [
@@ -15,6 +15,7 @@ const items = [
   { href: '/payments', label: 'Créditos', icon: CreditCard, module: 'payments' },
   { href: '/roles', label: 'Roles', icon: Shield, module: 'roles' },
   { href: '/logs', label: 'Registro de Actividades', icon: Activity, module: 'logs' },
+  { href: '/profile', label: 'Perfil', icon: UserCircle, module: 'dashboard' },
 ]
 
 export function BottomNav() {

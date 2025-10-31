@@ -610,8 +610,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col">
-        <div className="bg-white dark:bg-gray-800 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:h-auto lg:w-auto lg:max-w-7xl lg:max-h-[95vh] lg:m-auto flex flex-col border-0 lg:border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col pt-10 xl:pt-0">
+        <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-7xl xl:max-h-[95vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20 flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -632,7 +632,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
             {/* Left Column - Client and Products */}
             <div className="space-y-6">
               {/* Client Selection */}
