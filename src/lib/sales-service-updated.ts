@@ -419,7 +419,10 @@ export class SalesService {
 
   static async searchSales(searchTerm: string): Promise<Sale[]> {
     try {
-      const { data, error } = await supabase
+      const cleanTerm = searchTerm.trim()
+      if (!cleanTerm) return []
+
+      let query = supabase
         .from('sales')
         .select(`
           *,
@@ -435,8 +438,46 @@ export class SalesService {
             total
           )
         `)
-        .or(`client_name.ilike.%${searchTerm}%,id.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
+
+      // Detectar si es un número (ID de factura) o una fecha
+      const isDate = /^\d{1,2}\/\d{1,2}\/\d{4}$/.test(cleanTerm) || /^\d{4}-\d{1,2}-\d{1,2}$/.test(cleanTerm)
+      const isNumber = !isNaN(Number(cleanTerm)) && cleanTerm.length > 0
+
+      if (isDate) {
+        // Búsqueda por fecha
+        let dateToSearch: Date | null = null
+        
+        // Intentar parsear formato DD/MM/YYYY
+        if (cleanTerm.includes('/')) {
+          const [day, month, year] = cleanTerm.split('/').map(Number)
+          dateToSearch = new Date(year, month - 1, day)
+        } 
+        // Intentar parsear formato YYYY-MM-DD
+        else if (cleanTerm.includes('-')) {
+          dateToSearch = new Date(cleanTerm)
+        }
+
+        if (dateToSearch && !isNaN(dateToSearch.getTime())) {
+          // Buscar por fecha (sin hora)
+          const startOfDay = new Date(dateToSearch)
+          startOfDay.setHours(0, 0, 0, 0)
+          const endOfDay = new Date(dateToSearch)
+          endOfDay.setHours(23, 59, 59, 999)
+
+          query = query
+            .gte('created_at', startOfDay.toISOString())
+            .lte('created_at', endOfDay.toISOString())
+        }
+      } else if (isNumber) {
+        // Búsqueda por número de factura (sin el #)
+        const numericValue = cleanTerm.replace('#', '')
+        query = query.or(`invoice_number.eq.#${numericValue.padStart(3, '0')},invoice_number.ilike.%${numericValue}%`)
+      } else {
+        // Si no es número ni fecha, no buscar nada
+        return []
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
       // Error silencioso en producción

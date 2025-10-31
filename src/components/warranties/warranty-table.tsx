@@ -110,17 +110,17 @@ export function WarrantyTable({
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <CardHeader className="p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-6">
             <div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Shield className="h-6 w-6 text-orange-600" />
+              <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <Shield className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
                 Gestión de Garantías
               </CardTitle>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
+              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
                 Administra las garantías y productos devueltos
               </p>
             </div>
@@ -129,7 +129,7 @@ export function WarrantyTable({
                 <Button 
                   onClick={onRefresh} 
                   variant="outline"
-                  className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20"
+                  className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 whitespace-nowrap min-w-[120px]"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
                   Actualizar
@@ -137,9 +137,8 @@ export function WarrantyTable({
               )}
               <Button 
                 onClick={onCreate}
-                className="bg-orange-600 hover:bg-orange-700 text-white"
+                className="bg-orange-600 hover:bg-orange-700 text-white whitespace-nowrap min-w-[120px]"
               >
-                <Plus className="h-4 w-4 mr-2" />
                 Nueva Garantía
               </Button>
             </div>
@@ -149,7 +148,7 @@ export function WarrantyTable({
 
       {/* Search */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-4">
+        <CardContent className="p-3 md:p-4">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -185,34 +184,33 @@ export function WarrantyTable({
                 onClick={onCreate}
                 className="bg-orange-600 hover:bg-orange-700 text-white"
               >
-                <Plus className="h-4 w-4 mr-2" />
                 Nueva Garantía
               </Button>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto warranty-table-tablet-container">
+              <table className="w-full table-fixed md:table-auto lg:table-fixed warranty-table-tablet">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Garantía
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-2 md:px-3 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Cliente
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Producto
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                       Motivo
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Estado
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
                       Fecha
                     </th>
-                    <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="px-1 md:px-2 py-3 md:py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -220,52 +218,54 @@ export function WarrantyTable({
                 <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
                   {warranties.map((warranty) => (
                     <tr key={warranty.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-5">
+                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                           #{warranty.id.slice(-6)}
                         </div>
-                        <div className="text-sm text-gray-500 dark:text-gray-400">
+                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
                           Factura: {warranty.originalSale?.invoiceNumber || 'N/A'}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="px-2 md:px-3 py-3 md:py-5">
+                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate max-w-full" title={warranty.clientName}>
                           {warranty.clientName}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-white">
+                      <td className="px-1 md:px-2 py-3 md:py-5">
+                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate" title={warranty.productReceivedName}>
                           {warranty.productReceivedName}
                         </div>
                         {warranty.productReceivedSerial && (
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate" title={`S/N: ${warranty.productReceivedSerial}`}>
                             S/N: {warranty.productReceivedSerial}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-900 dark:text-white max-w-xs truncate">
+                      <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
+                        <div className="text-xs md:text-sm text-gray-900 dark:text-white truncate" title={warranty.reason}>
                           {warranty.reason}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <Badge className={getStatusColor(warranty.status)}>
+                      <td className="px-1 md:px-2 py-3 md:py-5">
+                        <Badge className={`${getStatusColor(warranty.status)} flex items-center gap-1 w-fit text-xs`}>
                           {getStatusIcon(warranty.status)}
-                          <span className="ml-1">{getStatusLabel(warranty.status)}</span>
+                          <span className="hidden sm:inline">{getStatusLabel(warranty.status)}</span>
                         </Badge>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                        {new Date(warranty.createdAt).toLocaleDateString('es-CO')}
+                      <td className="px-1 md:px-2 py-3 md:py-5 hidden md:table-cell">
+                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                          {new Date(warranty.createdAt).toLocaleDateString('es-CO')}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
+                      <td className="px-1 md:px-2 py-3 md:py-5 text-right">
+                        <div className="flex items-center justify-end gap-1 md:gap-2">
                           <Button
                             onClick={() => onView(warranty)}
                             variant="ghost"
                             size="sm"
-                            className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                            className="h-7 w-7 md:h-8 md:w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95 touch-manipulation"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
                         </div>
                       </td>

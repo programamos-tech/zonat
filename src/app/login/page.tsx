@@ -48,9 +48,9 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-7xl mx-auto">
-        <div className="flex h-screen max-h-[900px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
+        <div className="flex flex-col md:flex-row md:min-h-[680px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
           {/* Panel Izquierdo con Logo */}
-          <div className="w-1/2 bg-gray-900 dark:bg-gray-800 flex items-center justify-center p-16">
+          <div className="hidden md:flex md:w-1/2 bg-gray-900 dark:bg-gray-800 items-center justify-center p-10 md:p-16">
             <Image
               src="/zonat-logo.png"
               alt="ZONA T Logo"
@@ -64,16 +64,16 @@ export default function LoginPage() {
           </div>
 
           {/* Panel Derecho con Formulario */}
-          <div className="w-1/2 bg-white dark:bg-gray-800 flex items-center justify-center p-16">
+          <div className="w-full md:w-1/2 bg-white dark:bg-gray-800 flex items-center justify-center p-6 md:p-16">
             <div className="w-full max-w-md">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-3">Bienvenido</h2>
-                <p className="text-gray-600 dark:text-gray-300 text-lg">
+              <div className="text-center mb-8 md:mb-12">
+                <h2 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">Bienvenido</h2>
+                <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg">
                   Ingresa tus credenciales para acceder al sistema
                 </p>
               </div>
 
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
                 {/* Email */}
                 <div className="space-y-3">
                   <label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
@@ -85,7 +85,7 @@ export default function LoginPage() {
                       id="email"
                       type="email"
                       placeholder="diego@zonat.com"
-                      className="pl-12 h-14 text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white"
+                      className="pl-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white"
                       {...register('email')}
                     />
                   </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className="pl-12 pr-12 h-14 text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white"
+                      className="pl-12 pr-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white"
                       {...register('password')}
                     />
                     <button
@@ -138,7 +138,7 @@ export default function LoginPage() {
                 <Button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full h-14 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-lg rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  className="w-full h-12 md:h-14 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-base md:text-lg rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                 >
                   {isLoading ? (
                     <>
@@ -152,7 +152,7 @@ export default function LoginPage() {
               </form>
 
               {/* Footer */}
-              <div className="text-center mt-12">
+              <div className="text-center mt-8 md:mt-12">
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">
                   © 2025 ZONA T. Todos los derechos reservados.
                 </p>

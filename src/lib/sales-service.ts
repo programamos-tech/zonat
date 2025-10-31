@@ -724,7 +724,7 @@ export class SalesService {
             discount_type,
             tax,
             total,
-            products!inner (
+            products (
               reference
             )
           )
@@ -844,6 +844,115 @@ export class SalesService {
       }
 
       return results
+    } catch (error) {
+      // Error silencioso en producción
+      throw error
+    }
+  }
+
+  static async searchSales(searchTerm: string): Promise<Sale[]> {
+    try {
+      const cleanTerm = searchTerm.trim()
+      if (!cleanTerm) return []
+
+      // Solo buscar por número de factura (solo aceptar números)
+      const isNumber = !isNaN(Number(cleanTerm)) && cleanTerm.length > 0
+      
+      if (!isNumber) {
+        // Si no es un número, no buscar nada
+        return []
+      }
+
+      // Búsqueda por número de factura (sin el #)
+      const numericValue = cleanTerm.replace('#', '')
+      
+      const { data, error } = await supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            id,
+            product_id,
+            product_name,
+            quantity,
+            unit_price,
+            discount,
+            discount_type,
+            tax,
+            total
+          )
+        `)
+        .or(`invoice_number.eq.#${numericValue.padStart(3, '0')},invoice_number.ilike.%${numericValue}%`)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        // Error silencioso en producción
+        throw error
+      }
+
+      return await Promise.all(data?.map(async sale => {
+        // Obtener items de la venta con referencia de productos
+        const items = await Promise.all((sale.sale_items || []).map(async (item: any) => {
+          const { data: product } = await supabase
+            .from('products')
+            .select('reference')
+            .eq('id', item.product_id)
+            .single()
+          
+          return {
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: product?.reference || 'N/A',
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
+          }
+        }))
+
+        // Obtener pagos mixtos si existe
+        let payments: SalePayment[] = []
+        if (sale.payment_method === 'mixed') {
+          const { data: paymentData } = await supabase
+            .from('sale_payments')
+            .select('*')
+            .eq('sale_id', sale.id)
+          
+          payments = (paymentData || []).map((p: any) => ({
+            id: p.id,
+            saleId: p.sale_id,
+            paymentType: p.payment_type,
+            amount: p.amount,
+            reference: p.reference || '',
+            notes: p.notes || '',
+            createdAt: p.created_at,
+            updatedAt: p.updated_at || p.created_at
+          }))
+        }
+
+        return {
+          id: sale.id,
+          clientId: sale.client_id,
+          clientName: sale.client_name,
+          total: sale.total,
+          subtotal: sale.subtotal,
+          tax: sale.tax,
+          discount: sale.discount,
+          discountType: sale.discount_type || 'amount',
+          status: sale.status,
+          paymentMethod: sale.payment_method,
+          invoiceNumber: sale.invoice_number,
+          sellerId: sale.seller_id,
+          sellerName: sale.seller_name || '',
+          sellerEmail: sale.seller_email || '',
+          createdAt: sale.created_at,
+          items,
+          payments: payments.length > 0 ? payments : undefined
+        }
+      }) || [])
     } catch (error) {
       // Error silencioso en producción
       throw error

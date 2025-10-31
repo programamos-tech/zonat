@@ -184,17 +184,17 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const isEdit = !!client
 
   return (
-    <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col lg:items-center lg:justify-center lg:pl-6 lg:pr-4">
+      <div className="bg-white dark:bg-gray-900 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:h-auto lg:w-auto lg:max-w-6xl lg:max-h-[95vh] overflow-hidden flex flex-col border-0 lg:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-purple-50 dark:bg-purple-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-purple-50 dark:bg-purple-900/20">
           <div className="flex items-center space-x-3">
-            <Users className="h-6 w-6 text-purple-600" />
+            <Users className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
             <div>
-              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
               </h2>
-              <p className="text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                 {isEdit ? 'Modifica la información del cliente' : 'Agrega un nuevo cliente al sistema'}
               </p>
             </div>
@@ -209,8 +209,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           </Button>
         </div>
 
-        <div className="p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900 min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información Básica */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-3">
@@ -445,7 +445,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-end space-x-4 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={handleClose}
             variant="outline"

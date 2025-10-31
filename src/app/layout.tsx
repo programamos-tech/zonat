@@ -11,7 +11,8 @@ import { WarrantyProvider } from "@/contexts/warranty-context";
 import { ProtectedRoute } from "@/components/auth/protected-route";
 import { ConditionalLayout } from "@/components/layout/conditional-layout";
 import { GlobalLoading } from "@/components/ui/global-loading";
-import { Toaster } from "sonner";
+import { MobileNavWrapper } from "@/components/ui/mobile-nav-wrapper";
+import { ToasterWrapper } from "@/components/ui/toaster-wrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,11 +27,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "ZONA T - Panel de Control",
   description: "Sistema de gestión de inventario y ventas para ZONA T",
-  icons: {
-    icon: '/zonat-logo.webp',
-    shortcut: '/zonat-logo.webp',
-    apple: '/zonat-logo.webp'
-  },
 };
 
 export default function RootLayout({
@@ -41,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased pb-16 lg:pb-0`}
       >
         <AuthProvider>
           <ClientsProvider>
@@ -53,7 +49,8 @@ export default function RootLayout({
                     <ConditionalLayout>
                       {children}
                     </ConditionalLayout>
-                    <Toaster />
+                    <MobileNavWrapper />
+                    <ToasterWrapper />
                   </WarrantyProvider>
                 </SalesProvider>
               </CategoriesProvider>

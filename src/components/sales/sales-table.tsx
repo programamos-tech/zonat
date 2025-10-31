@@ -16,6 +16,7 @@ import {
   RefreshCcw
 } from 'lucide-react'
 import { Sale } from '@/types'
+import { usePermissions } from '@/hooks/usePermissions'
 
 interface SalesTableProps {
   sales: Sale[]
@@ -48,6 +49,9 @@ export function SalesTable({
   onSearch,
   onRefresh
 }: SalesTableProps) {
+  const { canCreate } = usePermissions()
+  const canCreateSales = canCreate('sales')
+  
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchResults, setSearchResults] = useState<Sale[]>([])
@@ -182,7 +186,12 @@ export function SalesTable({
   // Pero si está buscando, no mostrar nada hasta que termine la búsqueda
   const salesToShow = searchTerm.trim() ? (isSearching ? [] : searchResults) : sales
   
-  const filteredSales = salesToShow.filter(sale => {
+  // Eliminar duplicados por ID antes de filtrar
+  const uniqueSales = salesToShow.filter((sale, index, self) => 
+    index === self.findIndex((s) => s.id === sale.id)
+  )
+  
+  const filteredSales = uniqueSales.filter(sale => {
     const matchesStatus = filterStatus === 'all' || sale.status === filterStatus
     return matchesStatus
   })
@@ -213,10 +222,12 @@ export function SalesTable({
                   Actualizar
                 </Button>
               )}
-              <Button onClick={onCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
-                Nueva Venta
-              </Button>
+              {canCreateSales && (
+                <Button onClick={onCreate} className="bg-blue-600 hover:bg-blue-700 text-white">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Venta
+                </Button>
+              )}
             </div>
           </div>
         </CardHeader>
@@ -230,7 +241,7 @@ export function SalesTable({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder={isSearching ? "Buscando..." : "Buscar por factura, cliente o método de pago..."}
+                placeholder={isSearching ? "Buscando..." : "Buscar por número de factura..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -285,29 +296,71 @@ export function SalesTable({
             </div>
           ) : (
             <>
-              <div className="overflow-x-auto">
-                <table className="w-full">
+              {/* Mobile list */}
+              <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-800">
+                {filteredSales.map((sale) => {
+                  const { date, time } = formatDateTime(sale.createdAt)
+                  return (
+                    <div key={sale.id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div>
+                          <div className="text-blue-600 dark:text-blue-400 font-semibold">
+                            {generateInvoiceNumber(sale)}
+                          </div>
+                          <div className="text-sm text-gray-900 dark:text-white font-medium truncate max-w-[220px]">
+                            {sale.clientName}
+                          </div>
+                        </div>
+                        <Badge className={getStatusColor(sale.status)}>{getStatusLabel(sale.status)}</Badge>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <Badge className={getPaymentMethodColor(sale.paymentMethod)}>
+                          {getPaymentMethodLabel(sale.paymentMethod)}
+                        </Badge>
+                        <div className="text-right">
+                          <div className="text-gray-900 dark:text-white font-semibold">
+                            {formatCurrency(sale.total)}
+                          </div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{date} • {time}</div>
+                        </div>
+                      </div>
+                      <div className="mt-3 flex items-center justify-end gap-2">
+                        <Button size="sm" variant="outline" onClick={() => onView(sale)} className="h-8 px-2">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="outline" onClick={() => onPrint(sale)} className="h-8 px-2">
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Desktop table */}
+              <div className="overflow-x-auto hidden md:block">
+                <table className="w-full table-fixed">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="w-20 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         # Factura
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="w-32 md:w-40 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Cliente
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Método de Pago
+                      <th className="w-28 md:w-32 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                        Método
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="w-28 md:w-36 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Total
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="w-32 md:w-36 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                         Fecha
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="w-24 md:w-28 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                         Estado
                       </th>
-                      <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <th className="w-24 px-3 md:px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         Acciones
                       </th>
                     </tr>
@@ -317,42 +370,44 @@ export function SalesTable({
                       const { date, time } = formatDateTime(sale.createdAt)
                       return (
                         <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-semibold text-blue-600 dark:text-blue-400">
+                          <td className="px-3 md:px-4 py-4 whitespace-nowrap">
+                            <div className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
                               {generateInvoiceNumber(sale)}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900 dark:text-white">{sale.clientName}</div>
+                          <td className="px-3 md:px-4 py-4">
+                            <div className="font-medium text-gray-900 dark:text-white text-sm truncate" title={sale.clientName}>
+                              {sale.clientName}
+                            </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge className={getPaymentMethodColor(sale.paymentMethod)}>
+                          <td className="px-3 md:px-4 py-4 whitespace-nowrap">
+                            <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} text-xs`}>
                               {getPaymentMethodLabel(sale.paymentMethod)}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-semibold text-gray-900 dark:text-white">
+                          <td className="px-3 md:px-4 py-4 whitespace-nowrap">
+                            <div className="font-semibold text-gray-900 dark:text-white text-sm">
                               {formatCurrency(sale.total)}
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-600 dark:text-gray-300">
+                          <td className="px-3 md:px-4 py-4 whitespace-nowrap hidden lg:table-cell">
+                            <div className="text-xs text-gray-600 dark:text-gray-300">
                               <div className="font-medium">{date}</div>
                               <div className="text-gray-500 dark:text-gray-400">{time}</div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <Badge className={getStatusColor(sale.status)}>
+                          <td className="px-3 md:px-4 py-4 whitespace-nowrap hidden lg:table-cell">
+                            <Badge className={`${getStatusColor(sale.status)} text-xs whitespace-nowrap`}>
                               {getStatusLabel(sale.status)}
                             </Badge>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-2">
+                          <td className="px-3 md:px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex items-center justify-end gap-1 md:gap-2">
                               <Button
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onView(sale)}
-                                className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -360,7 +415,7 @@ export function SalesTable({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onPrint(sale)}
-                                className="text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100"
+                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100"
                               >
                                 <Printer className="h-4 w-4" />
                               </Button>

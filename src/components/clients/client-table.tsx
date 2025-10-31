@@ -112,14 +112,16 @@ export function ClientTable({
                 <Button 
                   onClick={onRefresh} 
                   variant="outline"
-                  className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20"
+                  className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 whitespace-nowrap min-w-[120px]"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
                   Actualizar
                 </Button>
               )}
-              <Button onClick={onCreate} className="bg-purple-600 hover:bg-purple-700 text-white">
-                <Plus className="h-4 w-4 mr-2" />
+              <Button 
+                onClick={onCreate}
+                className="bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap min-w-[120px]"
+              >
                 Nuevo Cliente
               </Button>
             </div>
@@ -170,9 +172,8 @@ export function ClientTable({
               </p>
               <Button 
                 onClick={onCreate}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-purple-600 hover:bg-purple-700 text-white"
               >
-                <Plus className="h-4 w-4 mr-2" />
                 Nuevo Cliente
               </Button>
             </div>

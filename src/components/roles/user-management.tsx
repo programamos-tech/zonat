@@ -315,7 +315,7 @@ export function UserManagement() {
             </div>
             <Dialog open={isCreateModalOpen} onOpenChange={setIsCreateModalOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-emerald-600 hover:bg-emerald-700 text-white">
+                <Button className="bg-indigo-600 hover:bg-indigo-700 text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Nuevo Usuario
                 </Button>
@@ -633,17 +633,17 @@ export function UserManagement() {
 
       {/* Modal de edición */}
       {isEditModalOpen && (
-        <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-6xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+        <div className="fixed inset-0 lg:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col lg:items-center lg:justify-center lg:pl-6 lg:pr-4">
+          <div className="bg-white dark:bg-gray-900 rounded-none lg:rounded-2xl shadow-2xl w-full h-full lg:h-auto lg:w-auto lg:max-w-6xl lg:max-h-[95vh] overflow-hidden flex flex-col border-0 lg:border border-gray-200 dark:border-gray-700">
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <UserCheck className="h-8 w-8 text-indigo-600" />
+                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-indigo-600" />
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     Editar Usuario
                   </h2>
-                  <p className="text-gray-600 dark:text-gray-300">
+                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                     Modifica la información del usuario y sus permisos
                   </p>
                 </div>
@@ -659,8 +659,8 @@ export function UserManagement() {
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-6">
                   {/* Información Personal */}
@@ -781,7 +781,7 @@ export function UserManagement() {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+            <div className="flex justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
               <Button 
                 variant="outline" 
                 onClick={() => setIsEditModalOpen(false)}

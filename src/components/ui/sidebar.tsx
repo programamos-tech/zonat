@@ -70,17 +70,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
   return (
     <>
       {/* Mobile/Tablet menu button - solo visible cuando el sidebar está cerrado */}
-      {!isMobileMenuOpen && (
-        <div className="xl:hidden fixed top-6 left-6 z-50">
-          <button
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 bg-gray-700 hover:bg-gray-600 text-white rounded-md shadow-lg transition-all duration-200 flex items-center justify-center w-10 h-10"
-            aria-label="Abrir menú"
-          >
-            <Menu size={18} />
-          </button>
-        </div>
-      )}
+      {/* Hidden hamburger on mobile: usamos bottom nav */}
 
       {/* Mobile/Tablet overlay - removido para evitar pantalla negra */}
 

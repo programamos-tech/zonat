@@ -271,14 +271,14 @@ export function LogsTable({
     <div className="space-y-6">
       {/* Header */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <CardHeader className="p-4 md:p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-6">
             <div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <RefreshCw className="h-6 w-6 text-gray-600" />
+              <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <RefreshCw className="h-5 w-5 md:h-6 md:w-6 text-gray-600" />
                 Registro de Actividades
               </CardTitle>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1">
                 Historial completo de todas las operaciones del sistema
               </p>
             </div>
@@ -298,8 +298,8 @@ export function LogsTable({
 
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -327,7 +327,7 @@ export function LogsTable({
                   setLocalFilterType(value)
                 }
               }}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
             >
               <option value="all">Todos los tipos</option>
               {types.slice(1).map(type => (
@@ -346,7 +346,7 @@ export function LogsTable({
                   setLocalFilterAction(value)
                 }
               }}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
             >
               <option value="all">Todas las acciones</option>
               {actions.slice(1).map(action => (
@@ -373,29 +373,29 @@ export function LogsTable({
               </p>
             </div>
           ) : (
-            <div className="overflow-hidden">
-              <table className="w-full table-fixed">
+            <div className="overflow-x-auto logs-table-tablet-container">
+              <table className="w-full table-fixed md:table-auto lg:table-fixed logs-table-tablet">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="w-16 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-10 md:w-16 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       #
                     </th>
-                    <th className="w-40 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-28 md:w-40 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Tipo
                     </th>
-                    <th className="w-32 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-20 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acción
                     </th>
-                    <th className="w-80 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                       Descripción
                     </th>
-                    <th className="w-32 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-20 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                       Usuario
                     </th>
-                    <th className="w-32 px-4 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-24 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Fecha
                     </th>
-                    <th className="w-20 px-4 py-3 text-center text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-16 md:w-20 pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-3 text-center text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acciones
                     </th>
                   </tr>
@@ -472,21 +472,21 @@ export function LogsTable({
                     const TypeIcon = getTypeIcon(logType)
                     return (
                       <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 whitespace-nowrap">
+                          <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                             {totalLogs - ((currentPage - 1) * 20) - index}
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="flex items-center space-x-3">
-                            <div className={`p-2 rounded-lg ${getTypeColor(logType)} flex-shrink-0`}>
-                              <TypeIcon className="h-4 w-4" />
+                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4">
+                          <div className="flex items-center space-x-2 md:space-x-3">
+                            <div className={`p-1.5 md:p-2 rounded-lg ${getTypeColor(logType)} flex-shrink-0`}>
+                              <TypeIcon className="h-3.5 w-3.5 md:h-4 md:w-4" />
                             </div>
                             <div className="min-w-0 flex-1">
-                              <div className="text-sm font-medium text-gray-900 dark:text-white">
+                              <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate" title={getTypeLabel(logType)}>
                                 {getTypeLabel(logType)}
                               </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                              <div className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 truncate">
                                 {log.module === 'roles' ? 'Usuarios' : 
                                  log.module === 'products' ? 'Productos' :
                                  log.module === 'clients' ? 'Clientes' :
@@ -500,8 +500,46 @@ export function LogsTable({
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4">
+                          <div 
+                            className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate" 
+                            title={
+                              log.module === 'auth' ? 'Acceso' : 
+                              log.module === 'sales' ?
+                                (log.action === 'sale_create' ? 'Crear Venta' :
+                                 log.action === 'credit_sale_create' ? 'Crear Venta a Crédito' :
+                                 log.action === 'sale_cancel' ? 'Cancelar Venta' :
+                                 log.action === 'sale_stock_deduction' ? 'Descontar Stock' :
+                                 log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
+                                 log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
+                                 log.action) :
+                              log.module === 'products' ? 
+                                (log.action === 'product_create' ? 'Crear' :
+                                 log.action === 'product_update' ? 'Actualizar' :
+                                 log.action === 'product_delete' ? 'Eliminar' :
+                                 log.action === 'stock_transfer' ? 'Transferir' :
+                                 log.action === 'stock_adjustment' ? 'Ajustar' :
+                                 log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
+                                 log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
+                                 log.action) :
+                              log.module === 'categories' ?
+                                (log.action === 'category_create' ? 'Crear' :
+                                 log.action === 'category_update' ? 'Actualizar' :
+                                 log.action === 'category_delete' ? 'Eliminar' :
+                                 log.action) :
+                              log.module === 'clients' ?
+                                (log.action === 'client_create' ? 'Crear Cliente' :
+                                 log.action === 'client_update' ? 'Actualizar Cliente' :
+                                 log.action === 'client_delete' ? 'Eliminar Cliente' :
+                                 log.action) :
+                              log.module === 'warranties' ?
+                                (log.action === 'warranty_create' ? 'Crear Garantía' :
+                                 log.action === 'warranty_status_update' ? 'Actualizar Estado' :
+                                 log.action === 'warranty_update' ? 'Actualizar Garantía' :
+                                 log.action) :
+                              log.action
+                            }
+                          >
                             {log.module === 'auth' ? 'Acceso' : 
                              log.module === 'sales' ?
                                (log.action === 'sale_create' ? 'Crear Venta' :
@@ -538,8 +576,49 @@ export function LogsTable({
                              log.action}
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-600 dark:text-gray-300 leading-relaxed">
+                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 hidden lg:table-cell">
+                          <div 
+                            className="text-xs md:text-sm text-gray-600 dark:text-gray-300 leading-relaxed overflow-hidden text-overflow-ellipsis line-clamp-2" 
+                            title={
+                              log.details ? 
+                                (log.module === 'sales' ?
+                                  (log.action === 'sale_create' ? `Nueva venta: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
+                                   log.action === 'credit_sale_create' ? `Venta a crédito: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
+                                   log.action === 'sale_cancel' ? `Venta cancelada: ${log.details.reason || 'Sin motivo'}` :
+                                   log.action === 'sale_stock_deduction' ? log.details.description || 'Stock descontado por venta' :
+                                   log.action === 'sale_cancellation_stock_return' ? log.details.description || 'Stock devuelto por cancelación' :
+                                   log.details.description || log.action) :
+                                 log.module === 'roles' ? 
+                                  (log.action === 'Usuario Creado' ? `Nuevo usuario: ${log.details.newUser?.name || 'Usuario'}` :
+                                   log.action === 'Usuario Editado' ? `Actualización: ${log.details.userName || 'Usuario'}` :
+                                   log.action === 'Usuario Eliminado' ? `Usuario eliminado: ${log.details.deletedUser?.name || 'Usuario'}` :
+                                   log.action === 'Permisos Asignados' ? `${log.details.description || 'Permisos asignados'}` :
+                                   log.action) :
+                                  log.module === 'products' ?
+                                    (log.details.description || log.action) :
+                                  log.module === 'categories' ?
+                                    (log.action === 'category_create' ? `Nueva categoría: "${log.details.categoryName || 'Categoría'}"` :
+                                     log.action === 'category_update' ? `Categoría actualizada: "${log.details.categoryName || 'Categoría'}"` :
+                                     log.action === 'category_delete' ? `Categoría eliminada: "${log.details.categoryName || 'Categoría'}"` :
+                                     log.details.description || log.action) :
+                                  log.module === 'clients' ?
+                                    (log.action === 'client_create' ? `Nuevo cliente: "${log.details.clientName || 'Cliente'}"` :
+                                     log.action === 'client_update' ? `Cliente actualizado: "${log.details.clientName || 'Cliente'}"` :
+                                     log.action === 'client_delete' ? `Cliente eliminado: "${log.details.clientName || 'Cliente'}"` :
+                                     log.details.description || log.action) :
+                                  log.module === 'warranties' ?
+                                    (log.action === 'warranty_create' ? `Nueva garantía: "${log.details.clientName || 'Cliente'}" - ${log.details.productReceivedName || 'Producto'}` :
+                                     log.action === 'warranty_status_update' ? `Estado actualizado: ${log.details.previousStatus || 'N/A'} → ${log.details.newStatus || 'N/A'}` :
+                                     log.action === 'warranty_update' ? `Garantía actualizada: "${log.details.clientName || 'Cliente'}"` :
+                                     log.details.description || log.action) :
+                                  log.module === 'auth' ? 
+                                    `Ingresó al sistema` :
+                                  log.action) :
+                                log.module === 'auth' ? 
+                                  `Ingresó al sistema` :
+                                log.action
+                            }
+                          >
                             {log.details ? 
                               (log.module === 'sales' ?
                                 (log.action === 'sale_create' ? `Nueva venta: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
@@ -579,13 +658,13 @@ export function LogsTable({
                               log.action}
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-900 dark:text-white">
+                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 hidden lg:table-cell">
+                          <div className="text-xs md:text-sm text-gray-900 dark:text-white truncate" title={log.user_name || 'Desconocido'}>
                             {log.user_name || 'Desconocido'}
                           </div>
                         </td>
-                        <td className="px-4 py-4">
-                          <div className="text-sm text-gray-600 dark:text-gray-300">
+                        <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4">
+                          <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                             {new Date(log.created_at).toLocaleDateString('es-CO', {
                               month: '2-digit',
                               day: '2-digit',
@@ -594,15 +673,15 @@ export function LogsTable({
                             })}
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-center">
+                        <td className="pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-4 text-center">
                           <Button
                             size="sm"
                             variant="ghost"
                             onClick={() => onViewDetails(log)}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100 h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
                             title="Ver detalles"
                           >
-                            <Eye className="h-4 w-4" />
+                            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
                         </td>
                       </tr>
