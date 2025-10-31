@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/ui/sidebar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
+import { EnvironmentBanner } from '@/components/ui/environment-banner'
 import { useState, useEffect } from 'react'
 
 interface ConditionalLayoutProps {
@@ -21,7 +22,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Para todas las demás páginas, mostrar el layout completo con sidebar
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-white dark:bg-gray-900">
+      <EnvironmentBanner />
+      <div className="flex h-screen bg-white dark:bg-gray-900 pt-8 md:pt-10">
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
         <main className={`flex-1 xl:ml-64 relative z-10 bg-white dark:bg-gray-900 transition-all duration-300 ${
           isMobileMenuOpen ? 'blur-sm' : ''
