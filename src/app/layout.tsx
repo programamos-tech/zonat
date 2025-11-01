@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Fira_Code } from "next/font/google";
 import "./globals.css";
 // ThemeProvider removed
+import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ClientsProvider } from "@/contexts/clients-context";
 import { ProductsProvider } from "@/contexts/products-context";
@@ -62,6 +63,7 @@ export default function RootLayout({
             </ProductsProvider>
           </ClientsProvider>
         </AuthProvider>
+        <Analytics />
       </body>
     </html>
   );
