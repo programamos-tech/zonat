@@ -4,7 +4,6 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -51,16 +50,14 @@ export default function LoginPage() {
         <div className="flex flex-col md:flex-row md:min-h-[680px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
           {/* Panel Izquierdo con Logo */}
           <div className="hidden md:flex md:w-1/2 bg-gray-900 dark:bg-gray-800 items-center justify-center p-10 md:p-16">
-            <Image
-              src="/zonat-logo.png"
-              alt="ZONA T Logo"
-              width={200}
-              height={200}
-              className="rounded-xl"
-              priority
-              unoptimized
-              quality={100}
-            />
+            <div className="relative w-[200px] h-[200px] flex items-center justify-center">
+              <img
+                src="/zonat-logo.png"
+                alt="ZONA T Logo"
+                className="max-w-full max-h-full object-contain rounded-xl"
+                style={{ display: 'block' }}
+              />
+            </div>
           </div>
 
           {/* Panel Derecho con Formulario */}

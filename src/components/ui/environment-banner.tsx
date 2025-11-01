@@ -45,8 +45,8 @@ export function EnvironmentBanner() {
     <div 
       className="fixed top-0 left-0 right-0 xl:left-64 z-[100] border-b-2 shadow-lg"
       style={{ 
-        backgroundColor: '#230f49',
-        borderColor: '#3d1f6b',
+        backgroundColor: '#1a1a1a',
+        borderColor: '#2a2a2a',
         fontFamily: 'var(--font-fira-code), "Courier New", monospace'
       }}
     >
