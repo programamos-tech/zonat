@@ -40,6 +40,20 @@ export class AuthService {
 
       }
 
+      // Si el usuario no tiene permisos o tiene permisos vacíos, obtenerlos del rol
+      let permissions = user.permissions || []
+      if (!permissions || permissions.length === 0) {
+        permissions = await this.getRolePermissions(user.role)
+        
+        // Actualizar los permisos del usuario en la BD si se obtuvieron del rol
+        if (permissions.length > 0) {
+          await supabaseAdmin
+            .from('users')
+            .update({ permissions, updated_at: new Date().toISOString() })
+            .eq('id', user.id)
+        }
+      }
+
       // Registrar log de login (no bloquear si falla)
       try {
         await this.logActivity(user.id, 'login', 'auth', {
@@ -56,7 +70,7 @@ export class AuthService {
         name: user.name,
         email: user.email,
         role: user.role,
-        permissions: user.permissions || [],
+        permissions: permissions,
         isActive: user.is_active,
         lastLogin: user.last_login,
         createdAt: user.created_at,
@@ -468,6 +482,81 @@ export class AuthService {
     }
   }
 
+  // Obtener permisos del rol desde la tabla roles
+  static async getRolePermissions(roleName: string): Promise<any[]> {
+    try {
+      // Mapear nombres de roles comunes
+      const roleMap: { [key: string]: string } = {
+        'superadmin': 'Super Administrador',
+        'super administrador': 'Super Administrador',
+        'admin': 'Administrador',
+        'administrador': 'Administrador',
+        'vendedor': 'Vendedor',
+        'vendedora': 'Vendedor',
+        'inventario': 'Inventario',
+        'contador': 'Contador'
+      }
+      
+      const normalizedRoleName = roleName.toLowerCase().trim()
+      const mappedRole = roleMap[normalizedRoleName] || roleName
+      
+      // Intentar buscar primero con el nombre exacto mapeado
+      let { data: role, error } = await supabaseAdmin
+        .from('roles')
+        .select('permissions')
+        .ilike('name', mappedRole)
+        .single()
+
+      // Si no se encuentra, intentar con búsqueda más flexible
+      if (error || !role) {
+        const { data: roles, error: rolesError } = await supabaseAdmin
+          .from('roles')
+          .select('permissions, name')
+        
+        if (!rolesError && roles) {
+          // Buscar el rol que contenga el nombre normalizado
+          const foundRole = roles.find(r => 
+            r.name?.toLowerCase().includes(normalizedRoleName) || 
+            normalizedRoleName.includes(r.name?.toLowerCase() || '')
+          )
+          if (foundRole) {
+            role = foundRole
+            error = null
+          }
+        }
+      }
+
+      if (error || !role) {
+        // Si es vendedor y no se encuentra el rol, retornar permisos por defecto
+        if (normalizedRoleName === 'vendedor' || normalizedRoleName === 'vendedora') {
+          return [
+            { module: 'dashboard', actions: ['view'] },
+            { module: 'products', actions: ['view'] },
+            { module: 'clients', actions: ['view', 'create', 'edit'] },
+            { module: 'sales', actions: ['view', 'create', 'edit'] },
+            { module: 'payments', actions: ['view', 'create', 'edit'] }
+          ]
+        }
+        return []
+      }
+
+      return role.permissions || []
+    } catch (error) {
+      // Si falla y es vendedor, retornar permisos por defecto
+      const normalizedRoleName = roleName.toLowerCase().trim()
+      if (normalizedRoleName === 'vendedor' || normalizedRoleName === 'vendedora') {
+        return [
+          { module: 'dashboard', actions: ['view'] },
+          { module: 'products', actions: ['view'] },
+          { module: 'clients', actions: ['view', 'create', 'edit'] },
+          { module: 'sales', actions: ['view', 'create', 'edit'] },
+          { module: 'payments', actions: ['view', 'create', 'edit'] }
+        ]
+      }
+      return []
+    }
+  }
+
   // Obtener usuario actual
   static async getCurrentUser(): Promise<User | null> {
     try {
@@ -498,12 +587,31 @@ export class AuthService {
         return null
       }
 
+      // Si el usuario no tiene permisos o tiene permisos vacíos, obtenerlos del rol
+      let permissions = dbUser.permissions || []
+      if (!permissions || permissions.length === 0) {
+        permissions = await this.getRolePermissions(dbUser.role)
+        
+        // Actualizar los permisos del usuario en la BD si se obtuvieron del rol
+        // Usar supabaseAdmin para evitar problemas de permisos RLS
+        if (permissions.length > 0) {
+          try {
+            await supabaseAdmin
+              .from('users')
+              .update({ permissions, updated_at: new Date().toISOString() })
+              .eq('id', dbUser.id)
+          } catch (updateError) {
+            // Error silencioso - los permisos se asignarán en el próximo login
+          }
+        }
+      }
+
       return {
         id: dbUser.id,
         name: dbUser.name,
         email: dbUser.email,
         role: dbUser.role,
-        permissions: dbUser.permissions || [],
+        permissions: permissions,
         isActive: dbUser.is_active,
         lastLogin: dbUser.last_login,
         createdAt: dbUser.created_at,

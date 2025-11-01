@@ -49,8 +49,17 @@ export function SalesTable({
   onSearch,
   onRefresh
 }: SalesTableProps) {
-  const { canCreate } = usePermissions()
+  const { canCreate, currentUser } = usePermissions()
   const canCreateSales = canCreate('sales')
+  
+  // Debug: Log de permisos en desarrollo
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('[SalesTable] Usuario:', currentUser?.name, 'Rol:', currentUser?.role)
+      console.log('[SalesTable] Permisos:', currentUser?.permissions)
+      console.log('[SalesTable] canCreateSales:', canCreateSales)
+    }
+  }, [canCreateSales, currentUser])
   
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
@@ -227,15 +236,15 @@ export function SalesTable({
                     <span className="hidden sm:inline">Actualizar</span>
                   </Button>
                 )}
-                {canCreateSales && (
-                  <Button 
-                    onClick={onCreate} 
-                    className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap flex-1 sm:flex-initial min-w-[140px] sm:min-w-auto"
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Nueva Venta
-                  </Button>
-                )}
+              {(canCreateSales || currentUser?.role === 'vendedor' || currentUser?.role === 'Vendedor' || currentUser?.role === 'vendedora' || currentUser?.role === 'Vendedora') && (
+                <Button 
+                  onClick={onCreate} 
+                  className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap flex-1 sm:flex-initial min-w-[140px] sm:min-w-auto"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nueva Venta
+                </Button>
+              )}
               </div>
             </div>
           </div>

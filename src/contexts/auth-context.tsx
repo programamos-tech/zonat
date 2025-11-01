@@ -28,10 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const savedUser = localStorage.getItem('zonat_user')
         if (savedUser) {
           const userData = JSON.parse(savedUser)
-          // Verificar que el usuario aún existe en la base de datos
-          const currentUser = await AuthService.getUserById(userData.id)
+          // Obtener el usuario actualizado (que incluye sincronización de permisos del rol)
+          const currentUser = await AuthService.getCurrentUser()
           if (currentUser) {
             setUser(currentUser)
+            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados)
+            localStorage.setItem('zonat_user', JSON.stringify(currentUser))
           } else {
             localStorage.removeItem('zonat_user')
           }
