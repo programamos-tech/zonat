@@ -65,34 +65,68 @@ export class ProductsService {
   // Obtener todos los productos (sin paginación - para compatibilidad)
   static async getAllProductsLegacy(): Promise<Product[]> {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('*')
-        .order('created_at', { ascending: false })
+      // Supabase tiene un límite por defecto de 1000 registros, necesitamos obtener todos en lotes
+      const allProducts: Product[] = []
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
 
-      if (error) {
-      // Error silencioso en producción
-        return []
+      while (hasMore) {
+        const from = page * pageSize
+        const to = from + pageSize - 1
+        
+        const { data, error, count } = await supabase
+          .from('products')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .range(from, to)
+
+        if (error) {
+          // Error silencioso en producción
+          break
+        }
+
+        if (!data || data.length === 0) {
+          hasMore = false
+          break
+        }
+
+        const products = data.map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          categoryId: product.category_id,
+          brand: product.brand,
+          reference: product.reference,
+          price: product.price,
+          cost: product.cost,
+          stock: {
+            warehouse: product.stock_warehouse || 0,
+            store: product.stock_store || 0,
+            total: (product.stock_warehouse || 0) + (product.stock_store || 0)
+          },
+          status: product.status,
+          createdAt: product.created_at,
+          updatedAt: product.updated_at
+        }))
+
+        allProducts.push(...products)
+
+        // Si obtuvimos menos productos que el tamaño de página, no hay más
+        if (data.length < pageSize) {
+          hasMore = false
+        } else {
+          // Verificar si hay más productos basado en el count
+          const totalCount = count || 0
+          if (to >= totalCount - 1) {
+            hasMore = false
+          } else {
+            page++
+          }
+        }
       }
 
-      return data.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        categoryId: product.category_id,
-        brand: product.brand,
-        reference: product.reference,
-        price: product.price,
-        cost: product.cost,
-        stock: {
-          warehouse: product.stock_warehouse || 0,
-          store: product.stock_store || 0,
-          total: (product.stock_warehouse || 0) + (product.stock_store || 0)
-        },
-        status: product.status,
-        createdAt: product.created_at,
-        updatedAt: product.updated_at
-      }))
+      return allProducts
     } catch (error) {
       // Error silencioso en producción
       return []

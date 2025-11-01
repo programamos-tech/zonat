@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -37,6 +37,7 @@ import {
   AreaChart
 } from 'recharts'
 import { useSales } from '@/contexts/sales-context'
+import { useProducts } from '@/contexts/products-context'
 import { useAuth } from '@/contexts/auth-context'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Sale } from '@/types'
@@ -46,6 +47,7 @@ type DateFilter = 'today' | 'specific' | 'all'
 
 export default function DashboardPage() {
   const { sales } = useSales()
+  const { totalProducts: totalProductsFromContext, products: productsFromContext, productsLastUpdated } = useProducts()
   const { user } = useAuth()
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
   const [specificDate, setSpecificDate] = useState<Date | null>(null)
@@ -117,6 +119,17 @@ export default function DashboardPage() {
         .filter(result => result.status === 'rejected')
         .map(result => (result as PromiseRejectedResult).reason)
       
+      // Debug: Log información sobre productos obtenidos
+      if (process.env.NODE_ENV === 'development') {
+        console.log(`[Dashboard] Productos obtenidos: ${products.length}`)
+        const totalStockDebug = products.reduce((sum, p) => {
+          const localStock = p.stock?.store || 0
+          const warehouseStock = p.stock?.warehouse || 0
+          return sum + localStock + warehouseStock
+        }, 0)
+        console.log(`[Dashboard] Stock total calculado (sin filtros): ${totalStockDebug}`)
+      }
+      
       setAllSales(sales)
       setAllWarranties(warranties)
       setAllCredits(credits)
@@ -137,13 +150,45 @@ export default function DashboardPage() {
 
   // Función para actualización manual del dashboard
   const handleRefresh = () => {
+    // Forzar recarga completa de todos los datos, especialmente productos
+    setAllProducts([]) // Limpiar productos existentes para forzar recarga
     loadDashboardData(true) // Mostrar loading
   }
 
-  // Cargar todos los datos para el dashboard
+  // Cargar todos los datos para el dashboard cuando cambian las ventas
   useEffect(() => {
     loadDashboardData()
   }, [sales]) // Re-ejecutar cuando sales del contexto cambie
+  
+  // Cargar datos del dashboard cuando cambian los productos (para actualizar stock total)
+  // Usamos una referencia previa para detectar cambios reales
+  const prevTotalProductsRef = useRef(totalProductsFromContext)
+  const prevProductsLastUpdatedRef = useRef(productsLastUpdated)
+  
+  useEffect(() => {
+    // Detectar cambios en el total de productos (creación/eliminación)
+    if (prevTotalProductsRef.current !== totalProductsFromContext && totalProductsFromContext > 0) {
+      prevTotalProductsRef.current = totalProductsFromContext
+      const timeoutId = setTimeout(() => {
+        loadDashboardData()
+      }, 500)
+      return () => clearTimeout(timeoutId)
+    }
+    
+    // Detectar cambios cuando se actualiza stock/costo/precio de productos (productsLastUpdated)
+    if (prevProductsLastUpdatedRef.current !== productsLastUpdated && prevProductsLastUpdatedRef.current !== 0) {
+      prevProductsLastUpdatedRef.current = productsLastUpdated
+      const timeoutId = setTimeout(() => {
+        loadDashboardData()
+      }, 500)
+      return () => clearTimeout(timeoutId)
+    }
+    
+    // Inicializar las referencias en el primer render
+    if (prevProductsLastUpdatedRef.current === 0) {
+      prevProductsLastUpdatedRef.current = productsLastUpdated
+    }
+  }, [totalProductsFromContext, productsLastUpdated]) // Re-ejecutar cuando cambian productos o cuando se actualiza stock
 
   // Actualización automática cuando el usuario regresa a la página
   useEffect(() => {
@@ -420,22 +465,30 @@ export default function DashboardPage() {
     // Facturas anuladas en el período seleccionado
     const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
 
-    // Total de unidades en stock (local + bodega)
-    const totalStockUnits = allProducts.reduce((sum, p) => {
+    // Contar TODOS los productos para stock e inversión (activos e inactivos)
+    // Solo excluir productos discontinuados explícitamente
+    const productsForCalculation = allProducts.filter(p => {
+      const status = p.status?.toLowerCase()
+      // Excluir solo productos explícitamente discontinuados
+      return status !== 'discontinued'
+    })
+    
+    // Total de unidades en stock (local + bodega) - todos los productos excepto discontinuados
+    const totalStockUnits = productsForCalculation.reduce((sum, p) => {
       const localStock = p.stock?.store || 0;  // Corregido: usar 'store' en lugar de 'local'
       const warehouseStock = p.stock?.warehouse || 0;
       return sum + localStock + warehouseStock;
     }, 0)
     
-    // Productos con stock bajo
-    const lowStockProducts = allProducts.filter(p => {
+    // Productos con stock bajo - todos los productos excepto discontinuados
+    const lowStockProducts = productsForCalculation.filter(p => {
       const localStock = p.stock?.store || 0;  // Corregido: usar 'store' en lugar de 'local'
       const warehouseStock = p.stock?.warehouse || 0;
       return (localStock + warehouseStock) <= 5 && (localStock + warehouseStock) > 0;
     }).length
 
-    // Calcular inversión total en stock (precio de compra * stock actual)
-    const totalStockInvestment = allProducts.reduce((sum, product) => {
+    // Calcular inversión total en stock (precio de compra * stock actual) - todos los productos excepto discontinuados
+    const totalStockInvestment = productsForCalculation.reduce((sum, product) => {
       const localStock = product.stock?.store || 0;
       const warehouseStock = product.stock?.warehouse || 0;
       const totalStock = localStock + warehouseStock;
@@ -443,8 +496,8 @@ export default function DashboardPage() {
       return sum + (costPrice * totalStock);
     }, 0)
 
-    // Calcular valor estimado de ventas (precio de venta * stock actual)
-    const estimatedSalesValue = allProducts.reduce((sum, product) => {
+    // Calcular valor estimado de ventas (precio de venta * stock actual) - todos los productos excepto discontinuados
+    const estimatedSalesValue = productsForCalculation.reduce((sum, product) => {
       const localStock = product.stock?.store || 0;
       const warehouseStock = product.stock?.warehouse || 0;
       const totalStock = localStock + warehouseStock;

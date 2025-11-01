@@ -12,6 +12,7 @@ interface ProductsContextType {
   totalProducts: number
   hasMore: boolean
   isSearching: boolean
+  productsLastUpdated: number
   createProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>
   updateProduct: (id: string, updates: Partial<Product>) => Promise<boolean>
   deleteProduct: (id: string) => Promise<boolean>
@@ -38,6 +39,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [totalProducts, setTotalProducts] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+  const [productsLastUpdated, setProductsLastUpdated] = useState(Date.now()) // Timestamp para notificar cambios
   const { user: currentUser } = useAuth()
 
   const refreshProducts = useCallback(async () => {
@@ -64,6 +66,10 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     const newProduct = await ProductsService.createProduct(productData, currentUser?.id)
     if (newProduct) {
       setProducts(prev => [newProduct, ...prev])
+      // Actualizar el total de productos para que el dashboard se actualice
+      setTotalProducts(prev => prev + 1)
+      // Notificar cambio para que el dashboard se actualice
+      setProductsLastUpdated(Date.now())
       return true
     }
     return false
@@ -75,6 +81,10 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
       setProducts(prev => prev.map(product => 
         product.id === id ? { ...product, ...updates } as Product : product
       ))
+      // Si se actualizó stock, costo o precio, notificar cambio para el dashboard
+      if (updates.stock || updates.cost || updates.price) {
+        setProductsLastUpdated(Date.now())
+      }
       return true
     }
     return false
@@ -84,6 +94,8 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     const success = await ProductsService.deleteProduct(id, currentUser?.id)
     if (success) {
       setProducts(prev => prev.filter(product => product.id !== id))
+      // Actualizar el total de productos para que el dashboard se actualice
+      setTotalProducts(prev => Math.max(0, prev - 1))
       return true
     }
     return false
@@ -163,6 +175,8 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
         }
         return product
       }))
+      // Notificar cambio para que el dashboard se actualice
+      setProductsLastUpdated(Date.now())
     }
     return success
   }
@@ -186,6 +200,8 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
         }
         return product
       }))
+      // Notificar cambio para que el dashboard se actualice
+      setProductsLastUpdated(Date.now())
     }
     return success
   }
@@ -223,6 +239,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     totalProducts,
     hasMore,
     isSearching,
+    productsLastUpdated,
     createProduct, 
     updateProduct, 
     deleteProduct, 
