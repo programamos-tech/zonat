@@ -88,9 +88,21 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-20 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
-              <Logo size="lg" />
-            </Link>
+            {(() => {
+              const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
+              if (isSuperAdmin) {
+                return (
+                  <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
+                    <Logo size="lg" />
+                  </Link>
+                )
+              }
+              return (
+                <Link href="/products" className="cursor-pointer hover:opacity-80 transition-opacity">
+                  <Logo size="lg" />
+                </Link>
+              )
+            })()}
           </div>
 
           {/* Navigation */}
@@ -98,6 +110,12 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             {navigation.map((item) => {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
+              
+              // Ocultar dashboard para usuarios que no sean superadmin
+              if (item.module === 'dashboard' && item.name === 'Dashboard') {
+                const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
+                if (!isSuperAdmin) return null
+              }
               
               const isActive = pathname === item.href
               return (

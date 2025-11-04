@@ -326,6 +326,22 @@ export default function SalesPage() {
             <!-- Título de Factura -->
             <div class="invoice-title">FACTURA DE VENTA</div>
 
+            <!-- Detalles de la Factura -->
+            <div class="invoice-details">
+              <div class="detail-row">
+                <span><strong>No. Factura:</strong></span>
+                <span><strong>${sale.invoiceNumber}</strong></span>
+              </div>
+              <div class="detail-row">
+                <span>Fecha:</span>
+                <span>${new Date(sale.createdAt).toLocaleDateString('es-CO')}</span>
+              </div>
+              <div class="detail-row">
+                <span>Hora:</span>
+                <span>${new Date(sale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>
+              </div>
+            </div>
+
             <!-- Información del Cliente -->
             <div class="client-info">
               <div class="client-title">CLIENTE:</div>
@@ -418,6 +434,7 @@ export default function SalesPage() {
             <!-- Footer -->
             <div class="footer">
               <div class="separator">═══════════════════════════════</div>
+              <div><strong>Factura: ${sale.invoiceNumber}</strong></div>
               <div>¡Gracias por su compra!</div>
               <div>ZONA T</div>
               <div class="separator">═══════════════════════════════</div>
@@ -476,18 +493,7 @@ export default function SalesPage() {
     }
   }
 
-  if (loading) {
-    return (
-      <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500 dark:border-emerald-500 mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-300">Cargando ventas...</p>
-        </div>
-      </div>
-    )
-  }
-
-  // Calcular total de ventas del día de hoy
+  // Calcular total de ventas del día de hoy (debe estar antes de cualquier return condicional)
   const todaySalesTotal = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -501,6 +507,17 @@ export default function SalesPage() {
       })
       .reduce((sum, sale) => sum + sale.total, 0)
   }, [sales])
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500 dark:border-emerald-500 mx-auto mb-4"></div>
+          <p className="text-gray-600 dark:text-gray-300">Cargando ventas...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <RoleProtectedRoute module="sales" requiredAction="view">

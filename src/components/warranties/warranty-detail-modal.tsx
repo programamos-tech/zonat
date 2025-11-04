@@ -107,9 +107,9 @@ export function WarrantyDetailModal({
       <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
         <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 flex-shrink-0">
+          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
             <div className="flex items-center gap-3">
-              <Shield className="h-5 w-5 md:h-8 md:w-8 text-orange-600" />
+              <Shield className="h-5 w-5 md:h-8 md:w-8 text-purple-600" />
               <div>
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   Garantía #{warranty.id.slice(-6)}
@@ -136,7 +136,7 @@ export function WarrantyDetailModal({
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <FileText className="h-5 w-5 text-orange-600" />
+                    <FileText className="h-5 w-5 text-purple-600" />
                     Información General
                   </CardTitle>
                 </CardHeader>
@@ -193,7 +193,7 @@ export function WarrantyDetailModal({
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-5 w-5 text-orange-600" />
+                    <User className="h-5 w-5 text-purple-600" />
                     Información del Cliente
                   </CardTitle>
                 </CardHeader>
@@ -278,7 +278,7 @@ export function WarrantyDetailModal({
                       {warranty.notes?.includes('Devolución de dinero') ? (
                         <div className="space-y-3">
                           <div className="flex items-center justify-center">
-                            <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-full">
+                            <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-full">
                               <span className="text-2xl">💰</span>
                             </div>
                           </div>

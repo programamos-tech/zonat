@@ -764,6 +764,37 @@ export default function DashboardPage() {
     )
   }
 
+  // Si no es superadmin, mostrar mensaje de acceso denegado
+  if (!isSuperAdmin) {
+    return (
+      <RoleProtectedRoute module="dashboard" requiredAction="view">
+        <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
+          <div className="text-center max-w-md">
+            <div className="mb-6">
+              <div className="w-24 h-24 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
+                <svg className="w-12 h-12 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+              </div>
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+              Acceso Restringido
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              El dashboard está temporalmente deshabilitado. Solo usuarios con permisos de Super Admin pueden acceder.
+            </p>
+            <button
+              onClick={() => router.push('/products')}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            >
+              Ir a Productos
+            </button>
+          </div>
+        </div>
+      </RoleProtectedRoute>
+    )
+  }
+
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
       <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen relative">

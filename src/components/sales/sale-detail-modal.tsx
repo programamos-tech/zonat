@@ -149,13 +149,13 @@ export default function SaleDetailModal({
       case 'cash':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       case 'credit':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       case 'transfer':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       case 'warranty':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200'
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       case 'mixed':
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200'
+        return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
     }
@@ -550,12 +550,12 @@ export default function SaleDetailModal({
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col pt-10 xl:pt-0">
-      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-7xl xl:max-h-[95vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[90vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-blue-50 dark:bg-blue-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-green-50 dark:bg-green-900/20">
           <div className="flex items-center space-x-3">
-            <Receipt className="h-6 w-6 text-blue-600" />
+            <Receipt className="h-6 w-6 text-green-600" />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Detalle de Venta</h2>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">{getInvoiceNumber(sale)}</p>
@@ -609,30 +609,30 @@ export default function SaleDetailModal({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mb-6">
+        <div className="flex-1 overflow-hidden p-3 md:p-4 bg-white dark:bg-gray-800">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
             
             {/* Left Column - Sale Information */}
-            <div className="space-y-6">
+            <div className="space-y-3 md:space-y-4">
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                <Receipt className="h-5 w-5 mr-2 text-blue-600" />
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
+                <Receipt className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
                 Información de la Venta
               </CardTitle>
             </CardHeader>
-            <CardContent>
-                  <div className="grid grid-cols-2 gap-4">
+            <CardContent className="p-3">
+                  <div className="grid grid-cols-2 gap-2 md:gap-3">
                 <div className="flex items-center space-x-3">
-                  <Receipt className="h-5 w-5 text-blue-600" />
+                  <Receipt className="h-5 w-5 text-green-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
-                        <div className="font-bold text-blue-600 text-lg">{getInvoiceNumber(sale)}</div>
+                        <div className="font-bold text-green-600 text-lg">{getInvoiceNumber(sale)}</div>
                   </div>
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-blue-600" />
+                  <User className="h-5 w-5 text-green-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Cliente</div>
                     <div className="font-semibold text-gray-900 dark:text-white">{sale.clientName}</div>
@@ -640,7 +640,7 @@ export default function SaleDetailModal({
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-blue-600" />
+                  <Calendar className="h-5 w-5 text-green-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Fecha</div>
                     <div className="font-semibold text-gray-900 dark:text-white">{formatDateTime(sale.createdAt)}</div>
@@ -648,7 +648,7 @@ export default function SaleDetailModal({
                 </div>
                 
                 <div className="flex items-center space-x-3">
-                  <CreditCard className="h-5 w-5 text-blue-600" />
+                  <CreditCard className="h-5 w-5 text-green-600" />
                   <div>
                     <div className="text-sm text-gray-600 dark:text-gray-300">Tipo de Pago</div>
                         <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} mt-1`}>
@@ -668,7 +668,7 @@ export default function SaleDetailModal({
                     {sale.payments.map((payment, index) => (
                       <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500">
                         <div className="flex items-center space-x-3">
-                          <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-300">
+                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                             {getPaymentMethodLabel(payment.paymentType)}
                           </Badge>
                           {payment.notes && (
@@ -712,11 +712,11 @@ export default function SaleDetailModal({
             </div>
 
             {/* Right Column - Financial Summary */}
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="h-5 w-5 mr-2 text-blue-600" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
+                    <DollarSign className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
                     Resumen Financiero
                   </CardTitle>
                 </CardHeader>
@@ -761,7 +761,7 @@ export default function SaleDetailModal({
                     {sale.tax && sale.tax > 0 && (
                       <div className="flex justify-between items-center py-2">
                         <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
-                        <span className="font-semibold text-blue-500">
+                        <span className="font-semibold text-green-500">
                           {formatCurrency(sale.tax)}
                         </span>
                       </div>
@@ -781,24 +781,24 @@ export default function SaleDetailModal({
               </div>
 
           {/* Products Table - Full Width */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm mt-6">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                <Package className="h-5 w-5 mr-2 text-blue-600" />
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm mt-3 md:mt-4">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
+                <Package className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
                 Productos Vendidos
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto max-h-96">
+            <CardContent className="p-3">
+              <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-200 dark:border-gray-600">
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Producto</th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Cantidad</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Precio Unit.</th>
-                      <th className="text-center py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Descuento</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Subtotal</th>
-                      <th className="text-left py-3 px-4 font-medium text-gray-700 dark:text-gray-300">Vendedor</th>
+                      <th className="text-left py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Producto</th>
+                      <th className="text-center py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Cantidad</th>
+                      <th className="text-right py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Precio Unit.</th>
+                      <th className="text-center py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Descuento</th>
+                      <th className="text-right py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Subtotal</th>
+                      <th className="text-left py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Vendedor</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -811,19 +811,19 @@ export default function SaleDetailModal({
                       
                       return (
                         <tr key={item.id} className={`border-b border-gray-600 ${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-600' : ''}`}>
-                          <td className="py-6 px-4">
+                          <td className="py-2 md:py-3 px-2 md:px-4">
                           <div className="font-medium text-gray-900 dark:text-white">{item.productName}</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">Ref: {item.productReferenceCode || 'N/A'}</div>
                           </td>
-                          <td className="py-6 px-4 text-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-emerald-100 dark:bg-emerald-900 text-emerald-800 dark:text-emerald-200 rounded-full text-sm font-medium">
+                          <td className="py-2 md:py-3 px-2 md:px-4 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
                               {item.quantity}
                             </span>
                           </td>
-                          <td className="py-6 px-4 text-right text-gray-600 dark:text-gray-300">
+                          <td className="py-2 md:py-3 px-2 md:px-4 text-right text-gray-600 dark:text-gray-300">
                             {formatCurrency(item.unitPrice)}
                           </td>
-                          <td className="py-6 px-4 text-center">
+                          <td className="py-2 md:py-3 px-2 md:px-4 text-center">
                             {item.discount && item.discount > 0 ? (
                               <div className="flex flex-col items-center">
                                 <span className="text-red-500 font-medium">
@@ -839,7 +839,7 @@ export default function SaleDetailModal({
                               <span className="text-gray-400">-</span>
                             )}
                           </td>
-                          <td className="py-6 px-4 text-right">
+                          <td className="py-2 md:py-3 px-2 md:px-4 text-right">
                             <div className="font-semibold text-gray-900 dark:text-white">
                               {formatCurrency(subtotalAfterDiscount)}
                             </div>
@@ -946,7 +946,7 @@ export default function SaleDetailModal({
             <Button
               onClick={onClose}
               disabled={isCancelling || isFinalizing}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Cerrar
             </Button>

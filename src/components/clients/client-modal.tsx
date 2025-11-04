@@ -72,9 +72,9 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
       case 'mayorista':
         return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
       case 'minorista':
-        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600'
+        return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
       case 'consumidor_final':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600'
+        return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
     }
@@ -187,9 +187,9 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-purple-50 dark:bg-purple-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-red-50 dark:bg-red-900/20">
           <div className="flex items-center space-x-3">
-            <Users className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
+            <Users className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
@@ -215,7 +215,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <User className="h-5 w-5 mr-2 text-purple-600" />
+                  <User className="h-5 w-5 mr-2 text-red-600" />
                   Información Básica
                 </CardTitle>
               </CardHeader>
@@ -228,7 +228,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                       errors.name ? 'border-red-400' : 'border-gray-600'
                     }`}
                     placeholder="Ingresa el nombre del cliente"
@@ -255,7 +255,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                                   onClick={() => handleInputChange('type', type.value)}
                                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                                     formData.type === type.value
-                                      ? 'border-purple-500 bg-purple-600 text-white'
+                                      ? 'border-red-500 bg-red-600 text-white'
                                       : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
                                   }`}
                                 >
@@ -275,7 +275,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Mail className="h-5 w-5 mr-2 text-purple-600" />
+                  <Mail className="h-5 w-5 mr-2 text-red-600" />
                   Información de Contacto
                 </CardTitle>
               </CardHeader>
@@ -288,7 +288,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.document}
                     onChange={(e) => handleInputChange('document', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                       errors.document ? 'border-red-400' : 'border-gray-600'
                     }`}
                     placeholder="12345678-9 o 900123456-7"
@@ -306,7 +306,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                       errors.phone ? 'border-red-400' : 'border-gray-600'
                     }`}
                     placeholder="+52 55 1234 5678"
@@ -324,7 +324,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                       errors.email ? 'border-red-400' : 'border-gray-600'
                     }`}
                     placeholder="cliente@ejemplo.com o déjalo vacío"
@@ -343,7 +343,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-purple-600" />
+                  <MapPin className="h-5 w-5 mr-2 text-red-600" />
                   Información de Ubicación
                 </CardTitle>
               </CardHeader>
@@ -356,7 +356,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                       errors.address ? 'border-red-400' : 'border-gray-600'
                     }`}
                     placeholder="Calle 30 #25-15, Barrio La Palma"
@@ -375,7 +375,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       type="text"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                         errors.city ? 'border-red-400' : 'border-gray-600'
                       }`}
                       placeholder="Sincelejo"
@@ -393,7 +393,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       type="text"
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
                         errors.state ? 'border-red-400' : 'border-gray-600'
                       }`}
                       placeholder="Sucre"
@@ -410,7 +410,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Phone className="h-5 w-5 mr-2 text-purple-600" />
+                  <Phone className="h-5 w-5 mr-2 text-red-600" />
                   Estado del Cliente
                 </CardTitle>
               </CardHeader>
@@ -423,7 +423,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       value="active"
                       checked={formData.status === 'active'}
                       onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
                     />
                     <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
                   </label>
@@ -434,7 +434,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       value="inactive"
                       checked={formData.status === 'inactive'}
                       onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
                     />
                     <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Inactivo</span>
                   </label>
@@ -455,7 +455,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-purple-600 hover:bg-purple-700 text-white font-medium px-6 py-2 shadow-md"
+            className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 shadow-md"
           >
             {isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
           </Button>

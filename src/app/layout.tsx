@@ -33,6 +33,11 @@ const firaCode = Fira_Code({
 export const metadata: Metadata = {
   title: "ZONA T - Panel de Control",
   description: "Sistema de gestión de inventario y ventas para ZONA T",
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg'
+  },
 };
 
 export default function RootLayout({

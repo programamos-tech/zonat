@@ -209,11 +209,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const getClientTypeColor = (type: string) => {
     switch (type) {
       case 'mayorista':
-        return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
+        return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
       case 'minorista':
-        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600'
+        return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
       case 'consumidor_final':
-        return 'bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600'
+        return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
     }
@@ -617,9 +617,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
         <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-blue-50 dark:bg-blue-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-green-50 dark:bg-green-900/20 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <Calculator className="h-6 w-6 text-blue-600" />
+            <Calculator className="h-6 w-6 text-green-600" />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Nueva Venta</h2>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Factura {invoiceNumber}</p>
@@ -643,7 +643,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
-                    <User className="h-5 w-5 mr-2 text-blue-600" />
+                    <User className="h-5 w-5 mr-2 text-green-600" />
                     Cliente
                   </CardTitle>
                 </CardHeader>
@@ -662,7 +662,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                           setShowClientDropdown(value.length > 0)
                         }}
                           onFocus={() => setShowClientDropdown(true)}
-                          className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600"
+                          className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600"
                         />
                       </div>
                     </div>
@@ -710,7 +710,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                   </div>
 
                   {selectedClient && (
-                    <div className="mt-3 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-500/30">
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-500/30">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="font-bold text-gray-900 dark:text-white">{selectedClient.name}</div>
@@ -741,7 +741,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center justify-between text-lg text-gray-900 dark:text-white">
                     <div className="flex items-center">
-                      <Package className="h-5 w-5 mr-2 text-blue-600" />
+                      <Package className="h-5 w-5 mr-2 text-green-600" />
                       Agregar Productos
                     </div>
                   </CardTitle>
@@ -762,7 +762,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                         }}
                         onFocus={() => setShowProductDropdown(true)}
                         onClick={() => setShowProductDropdown(true)}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
+                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
                       />
                     </div>
                     
@@ -825,7 +825,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                         getStockStatus(product.id) === 'Disponible Local' 
                                           ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600' 
                                           : getStockStatus(product.id).includes('Bodega')
-                                          ? 'bg-blue-100 text-blue-800 border border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
+                                          ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
                                           : getStockStatus(product.id).includes('Bajo')
                                           ? 'bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600'
                                           : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
@@ -889,7 +889,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                     type="number"
                                     value={item.unitPrice || ''}
                                     onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
-                                    className="w-32 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
+                                    className="w-32 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
                                     min="0"
                                     step="100"
                                     placeholder="0"
@@ -919,7 +919,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                     type="text"
                                     value={item.quantity}
                                     onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                    className="w-16 h-8 text-center font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600"
+                                    className="w-16 h-8 text-center font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600"
                                     min="1"
                                   />
                                   <Button
@@ -955,7 +955,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                   type="number"
                                   value={item.discount || ''}
                                   onChange={(e) => handleUpdateDiscount(item.id, parseFloat(e.target.value) || 0, item.discountType || 'amount')}
-                                  className="flex-1 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
+                                  className="flex-1 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
                                   min="0"
                                   step="0.01"
                                   placeholder="0"
@@ -963,7 +963,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                 <select
                                   value={item.discountType || 'amount'}
                                   onChange={(e) => handleUpdateDiscount(item.id, item.discount || 0, e.target.value as 'percentage' | 'amount')}
-                                  className="h-8 text-xs border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white px-2"
+                                  className="h-8 text-xs border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white px-2"
                                 >
                                   <option value="amount">$</option>
                                   <option value="percentage">%</option>
@@ -997,7 +997,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
-                    <CreditCard className="h-5 w-5 mr-2 text-blue-600" />
+                    <CreditCard className="h-5 w-5 mr-2 text-green-600" />
                     Método de Pago
                   </CardTitle>
                 </CardHeader>
@@ -1008,7 +1008,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                       <select
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value as any)}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 appearance-none cursor-pointer text-gray-900 dark:text-white font-medium"
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 appearance-none cursor-pointer text-gray-900 dark:text-white font-medium"
                       >
                         <option value="" className="bg-white dark:bg-gray-600 text-gray-500 dark:text-gray-400">Seleccionar método de pago</option>
                         <option value="cash" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Efectivo/Contado</option>
@@ -1045,7 +1045,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                     updateMixedPayment(index, 'amount', numericValue)
                                   }}
                                   placeholder="0"
-                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
                                 />
                               </div>
                             </div>
@@ -1068,7 +1068,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                 setMixedPayments(updatedPayments)
                               }}
                               placeholder="Notas sobre el pago mixto..."
-                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
+                              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white text-sm"
                             />
                           </div>
                           
@@ -1116,7 +1116,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="h-5 w-5 mr-2 text-blue-600" />
+                    <DollarSign className="h-5 w-5 mr-2 text-green-600" />
                     Resumen de Venta
                   </CardTitle>
                 </CardHeader>
@@ -1139,7 +1139,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             type="number"
                             value={totalDiscount || ''}
                             onChange={(e) => setTotalDiscount(Number(e.target.value) || 0)}
-                            className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
+                            className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
                             min="0"
                             step={totalDiscountType === 'percentage' ? '0.1' : '1'}
                             placeholder="0"
@@ -1147,7 +1147,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                           <select
                             value={totalDiscountType}
                             onChange={(e) => setTotalDiscountType(e.target.value as 'percentage' | 'amount')}
-                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
+                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
                           >
                             <option value="percentage" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">%</option>
                             <option value="amount" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">$</option>
@@ -1179,7 +1179,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             type="checkbox"
                             checked={includeTax}
                             onChange={(e) => setIncludeTax(e.target.checked)}
-                            className="h-4 w-4 text-emerald-600 focus:ring-emerald-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
+                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
                           />
                           <span className="text-sm text-gray-700 dark:text-gray-300">
                             Incluir IVA
@@ -1232,7 +1232,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             <Button
               onClick={() => handleSave(false)}
               disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-              className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-blue-600 hover:bg-blue-700 text-white"
+              className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
             >
               Crear Venta
             </Button>

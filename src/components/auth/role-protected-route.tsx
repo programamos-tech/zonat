@@ -24,9 +24,13 @@ export function RoleProtectedRoute({
     if (!isLoading && user) {
       // Verificar si el usuario tiene permisos para este módulo
       if (!hasPermission(module, requiredAction)) {
-
-        // Redirigir al dashboard si no tiene permisos
-        router.push('/dashboard')
+        // Redirigir según el rol del usuario
+        const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
+        if (isSuperAdmin) {
+          router.push('/dashboard')
+        } else {
+          router.push('/products')
+        }
       }
     }
   }, [user, isLoading, module, requiredAction, hasPermission, router])

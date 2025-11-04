@@ -368,11 +368,11 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-visible flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-pink-50 to-white dark:from-pink-900/20 dark:to-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-pink-600" />
+            <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-orange-600" />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Crear Venta a Crédito
@@ -399,7 +399,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <User className="h-5 w-5 text-pink-600" />
+                  <User className="h-5 w-5 text-orange-600" />
                   Cliente
                 </CardTitle>
               </CardHeader>
@@ -411,7 +411,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                   <select
                     value={formData.clientId}
                     onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">Selecciona un cliente...</option>
                     {clients.map((client) => (
@@ -440,7 +440,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-5 w-5 text-pink-600" />
+                  <Package className="h-5 w-5 text-orange-600" />
                   Productos
                 </CardTitle>
               </CardHeader>
@@ -459,14 +459,14 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         setProductSearch(e.target.value)
                         setShowProductDropdown(e.target.value.length > 0)
                       }}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                     
                     {showProductDropdown && productSearch && (
                     <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
                       {isSearchingProducts ? (
                         <div className="p-4 text-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-pink-600 mx-auto mb-2"></div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2"></div>
                           <div className="text-sm text-gray-500">Buscando productos...</div>
                         </div>
                       ) : filteredProducts.length === 0 ? (
@@ -547,7 +547,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                 const numericValue = parseFloat(cleanValue) || 0
                                 updatePrice(item.productId, numericValue)
                               }}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
                               placeholder="0"
                             />
                             {basePrice > 0 && (
@@ -574,7 +574,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                 type="number"
                                 value={item.quantity}
                                 onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 0)}
-                                className="w-12 h-7 text-center text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                                className="w-12 h-7 text-center text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
                                 min="1"
                               />
                               <Button
@@ -604,7 +604,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         {item.totalPrice > 0 && (
                           <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-600">
                             <span className="text-xs text-gray-600 dark:text-gray-400">Total:</span>
-                            <span className="font-semibold text-pink-600">${item.totalPrice.toLocaleString('es-CO')}</span>
+                            <span className="font-semibold text-orange-600">${item.totalPrice.toLocaleString('es-CO')}</span>
                           </div>
                         )}
                       </div>
@@ -631,7 +631,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-pink-600" />
+                  <Calendar className="h-5 w-5 text-orange-600" />
                   Configuración del Crédito
                 </CardTitle>
               </CardHeader>
@@ -657,7 +657,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Agregar observaciones sobre la venta a crédito..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   />
                 </div>
               </CardContent>
@@ -667,7 +667,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-pink-600" />
+                  <DollarSign className="h-5 w-5 text-orange-600" />
                   Resumen de la Venta
                 </CardTitle>
               </CardHeader>
@@ -713,7 +713,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                           type="checkbox"
                           checked={includeTax}
                           onChange={(e) => setIncludeTax(e.target.checked)}
-                          className="h-4 w-4 text-pink-600 focus:ring-pink-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
+                          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">
                           Incluir IVA (19%)
@@ -732,7 +732,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
                           Total:
                         </span>
-                        <span className="text-lg font-bold text-pink-600">
+                        <span className="text-lg font-bold text-orange-600">
                           ${calculateTotal().toLocaleString('es-CO')}
                         </span>
                       </div>
@@ -761,7 +761,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           <Button
             onClick={handleSubmit}
             disabled={loading || selectedProducts.length === 0 || !formData.clientId || !formData.dueDate}
-            className="bg-pink-600 hover:bg-pink-700 text-white disabled:bg-gray-400"
+            className="bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400"
           >
             {loading ? (
               <div className="flex items-center gap-2">
