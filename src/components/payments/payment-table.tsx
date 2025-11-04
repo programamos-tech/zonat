@@ -102,9 +102,10 @@ interface CreditTableProps {
   onCreate: () => void
   isLoading?: boolean
   onRefresh?: () => void
+  todayPaymentsTotal?: number
 }
 
-export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = false, onRefresh }: CreditTableProps) {
+export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = false, onRefresh, todayPaymentsTotal }: CreditTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
 
@@ -220,8 +221,13 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-6">
             <div>
             <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-pink-600" />
+              <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
               Gestión de Créditos
+              {todayPaymentsTotal !== undefined && (
+                <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                  • Hoy: {formatCurrency(todayPaymentsTotal)}
+                </span>
+              )}
             </CardTitle>
               <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
                 Administra los créditos y pagos pendientes de tus clientes
@@ -230,7 +236,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
               <div className="text-right hidden lg:block">
                 <div className="text-sm text-gray-600 dark:text-gray-300">Total Deuda:</div>
-                <div className="text-2xl font-bold text-pink-600">
+                <div className="text-2xl font-extrabold text-orange-600">
                   {formatCurrency(totalDebt)}
                 </div>
               </div>
@@ -239,13 +245,13 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                   <Button 
                     onClick={onRefresh} 
                     variant="outline"
-                    className="text-pink-600 border-pink-600 hover:bg-pink-50 dark:text-pink-400 dark:border-pink-400 dark:hover:bg-pink-900/20 whitespace-nowrap min-w-[120px]"
+                    className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 whitespace-nowrap min-w-[120px]"
                   >
                     <RefreshCcw className="h-4 w-4 mr-2" />
                     Actualizar
                   </Button>
                 )}
-                <Button onClick={onCreate} className="bg-pink-600 hover:bg-pink-700 text-white whitespace-nowrap min-w-[120px]">
+                <Button onClick={onCreate} className="bg-orange-600 hover:bg-orange-700 text-white whitespace-nowrap min-w-[120px]">
                   Nuevo Crédito
                 </Button>
               </div>

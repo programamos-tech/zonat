@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CreditTable } from '@/components/payments/payment-table'
 import { CreditModal } from '@/components/credits/credit-modal'
@@ -21,6 +21,7 @@ export default function CreditsPage() {
   const [clientCredits, setClientCredits] = useState<Credit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [initialSearch, setInitialSearch] = useState('')
+  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([])
 
   // Cargar créditos al montar el componente
   useEffect(() => {
@@ -71,6 +72,8 @@ export default function CreditsPage() {
     try {
       setIsLoading(true)
       const creditsData = await CreditsService.getAllCredits()
+      const paymentRecordsData = await CreditsService.getAllPaymentRecords()
+      setPaymentRecords(paymentRecordsData)
       
       // Agrupar créditos por cliente
       const groupedCredits = creditsData.reduce((acc, credit) => {
@@ -250,10 +253,28 @@ export default function CreditsPage() {
     }
   }
 
+  // Calcular total de abonos recogidos hoy
+  const todayPaymentsTotal = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    return paymentRecords
+      .filter(payment => {
+        const paymentDate = new Date(payment.paymentDate || payment.createdAt)
+        return paymentDate >= today && paymentDate < tomorrow && 
+               payment.status !== 'cancelled' && 
+               !payment.cancelledAt
+      })
+      .reduce((sum, payment) => sum + payment.amount, 0)
+  }, [paymentRecords])
+
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
       <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <CreditTable
+        todayPaymentsTotal={todayPaymentsTotal}
         credits={credits}
         onView={handleView}
         onPayment={handlePayment}

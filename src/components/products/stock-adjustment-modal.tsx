@@ -112,9 +112,9 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-4xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Package className="h-5 w-5 md:h-8 md:w-8 text-green-600" />
+            <Package className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Ajustar Stock
@@ -141,7 +141,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-green-600" />
+                  <FileText className="h-5 w-5 text-cyan-600" />
                   Información del Producto
                 </CardTitle>
               </CardHeader>
@@ -173,7 +173,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-green-600" />
+                  <AlertTriangle className="h-5 w-5 text-cyan-600" />
                   Configuración del Ajuste
                 </CardTitle>
               </CardHeader>
@@ -189,14 +189,14 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       onClick={() => handleInputChange('location', 'warehouse')}
                           className={`p-4 rounded-lg border-2 transition-all ${
                             formData.location === 'warehouse'
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
                               : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                           }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-green-600' : 'text-gray-400'}`} />
+                        <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
                         <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'warehouse' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
                             Bodega
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -211,14 +211,14 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       onClick={() => handleInputChange('location', 'store')}
                           className={`p-4 rounded-lg border-2 transition-all ${
                             formData.location === 'store'
-                              ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
                               : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
                           }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <Store className={`h-5 w-5 ${formData.location === 'store' ? 'text-green-600' : 'text-gray-400'}`} />
+                        <Store className={`h-5 w-5 ${formData.location === 'store' ? 'text-cyan-600' : 'text-gray-400'}`} />
                         <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'store' ? 'text-green-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <div className={`font-medium ${formData.location === 'store' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
                             Local
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -242,7 +242,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       const numericValue = parseFormattedNumber(e.target.value)
                       handleInputChange('newQuantity', numericValue)
                     }}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
                       errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Ingrese la nueva cantidad"
@@ -260,7 +260,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <textarea
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
                       errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Ej: Inventario físico, producto dañado, corrección de error... (opcional)"
@@ -288,12 +288,12 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Diferencia:</span>
                     <div className="flex items-center space-x-2">
                       {getStockDifference() > 0 ? (
-                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <TrendingUp className="h-4 w-4 text-cyan-600" />
                       ) : (
                         <TrendingDown className="h-4 w-4 text-red-600" />
                       )}
                       <span className={`text-lg font-bold ${
-                        getStockDifference() > 0 ? 'text-green-600' : 'text-red-600'
+                        getStockDifference() > 0 ? 'text-cyan-600' : 'text-red-600'
                       }`}>
                         {getStockDifference() > 0 ? '+' : ''}{formatNumber(getStockDifference())} unidades
                       </span>
@@ -321,7 +321,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           <Button
             type="button"
             onClick={handleSubmit}
-            className="bg-green-600 hover:bg-green-700 text-white"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
           >
             Ajustar Stock
           </Button>

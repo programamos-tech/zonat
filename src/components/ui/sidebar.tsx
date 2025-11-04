@@ -88,7 +88,9 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="flex items-center justify-center h-20 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            <Logo size="lg" />
+            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
+              <Logo size="lg" />
+            </Link>
           </div>
 
           {/* Navigation */}

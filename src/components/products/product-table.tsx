@@ -44,6 +44,7 @@ interface ProductTableProps {
   onRefresh?: () => void
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Product[]>
+  totalStock?: number
 }
 
 // Número de productos por página
@@ -62,6 +63,7 @@ export function ProductTable({
   onCreate,
   onManageCategories,
   onStockAdjustment,
+  totalStock,
   onStockTransfer,
   onRefresh,
   onPageChange,
@@ -196,7 +198,7 @@ export function ProductTable({
     }
     
     if (warehouse > 0) {
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400 hover:bg-blue-100 hover:text-blue-800 dark:hover:bg-blue-900/20 dark:hover:text-blue-400'
+      return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400 hover:bg-cyan-100 hover:text-cyan-800 dark:hover:bg-cyan-900/20 dark:hover:text-cyan-400'
     }
     
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
@@ -228,10 +230,15 @@ export function ProductTable({
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
               <div>
                 <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-5 w-5 md:h-6 md:w-6 text-emerald-600" />
+                  <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600" />
                   Gestión de Productos
+                  {totalStock !== undefined && (
+                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                      • Stock Total: {new Intl.NumberFormat('es-CO').format(totalStock)} unidades
+                    </span>
+                  )}
                   {isSearching && (
-                    <Badge className="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-xs">
+                    <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200 text-xs ml-2">
                       Búsqueda activa
                     </Badge>
                   )}
@@ -244,13 +251,13 @@ export function ProductTable({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button onClick={onCreate} className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-3 md:px-4">
+                <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-3 md:px-4">
                   <span className="hidden sm:inline">Nuevo Producto</span>
                   <span className="sm:hidden">Nuevo</span>
                 </Button>
                 <Button 
                   onClick={onManageCategories} 
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white text-sm px-3 md:px-4"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-3 md:px-4"
                 >
                   <Tag className="h-4 w-4 mr-1 md:mr-2" />
                   Categorías
@@ -260,7 +267,7 @@ export function ProductTable({
                     onClick={onRefresh}
                     disabled={loading}
                     variant="outline"
-                    className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-sm px-3 md:px-4"
+                    className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-400 dark:hover:bg-cyan-900/20 disabled:opacity-50 text-sm px-3 md:px-4"
                   >
                     <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     <span className="hidden sm:inline ml-2">Actualizar</span>
@@ -289,7 +296,7 @@ export function ProductTable({
               handleSearch(searchTerm)
             }
           }}
-          className="w-full pl-10 pr-20 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+          className="w-full pl-10 pr-20 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
                 {searchTerm && (
                   <button
@@ -310,7 +317,7 @@ export function ProductTable({
                     // Botón de búsqueda busca inmediatamente
                     handleSearch(searchTerm)
                   }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                   title="Buscar"
                 >
                   <Search className="h-4 w-4" />
@@ -319,7 +326,7 @@ export function ProductTable({
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(category => (
@@ -331,7 +338,7 @@ export function ProductTable({
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 {statuses.map(status => (
                   <option key={status.value} value={status.value}>
@@ -348,7 +355,7 @@ export function ProductTable({
           {/* Overlay de carga para búsquedas/refresh sin perder el contenido */}
           {loading && (
             <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
             </div>
           )}
           <CardContent className="p-0 m-0">
@@ -363,7 +370,7 @@ export function ProductTable({
                 </p>
                 <Button 
                   onClick={onCreate}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
                 >
                   Nuevo Producto
                 </Button>
@@ -469,10 +476,10 @@ export function ProductTable({
                                     <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
+                                <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
                                   <div className="text-center">
                                     <p className="font-medium text-white">Editar Producto</p>
-                                    <p className="text-xs text-emerald-100">Modificar datos del producto</p>
+                                    <p className="text-xs text-cyan-100">Modificar datos del producto</p>
                                   </div>
                                 </TooltipContent>
                               </Tooltip>
@@ -489,10 +496,10 @@ export function ProductTable({
                                       <Package className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
+                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
                                     <div className="text-center">
                                       <p className="font-medium text-white">Ajustar Stock</p>
-                                      <p className="text-xs text-emerald-100">Modificar cantidad de inventario</p>
+                                      <p className="text-xs text-cyan-100">Modificar cantidad de inventario</p>
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -510,10 +517,10 @@ export function ProductTable({
                                       <ArrowRightLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
+                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
                                     <div className="text-center">
                                       <p className="font-medium text-white">Transferir Stock</p>
-                                      <p className="text-xs text-emerald-100">Mover entre Bodega y Local</p>
+                                      <p className="text-xs text-cyan-100">Mover entre Bodega y Local</p>
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -530,10 +537,10 @@ export function ProductTable({
                                     <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-50 bg-emerald-600 text-white border-emerald-700 shadow-lg">
+                                <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
                                   <div className="text-center">
                                     <p className="font-medium text-white">Eliminar Producto</p>
-                                    <p className="text-xs text-emerald-100">Borrar producto permanentemente</p>
+                                    <p className="text-xs text-cyan-100">Borrar producto permanentemente</p>
                                   </div>
                                 </TooltipContent>
                               </Tooltip>
@@ -587,7 +594,7 @@ export function ProductTable({
                               disabled={loading}
                               className={`px-3 py-1.5 text-sm rounded-md transition-colors min-w-[32px] ${
                                 page === currentPage 
-                                  ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium" 
+                                  ? "bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 font-medium" 
                                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                               }`}
                             >

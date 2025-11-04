@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { WarrantyTable } from '@/components/warranties/warranty-table'
 import { WarrantyDetailModal } from '@/components/warranties/warranty-detail-modal'
 import { WarrantyModal } from '@/components/warranties/warranty-modal'
@@ -84,9 +84,23 @@ export default function WarrantiesPage() {
 
   const warrantiesToShow = searchResults.length > 0 ? searchResults : warranties
 
+  // Calcular cantidad de garantías creadas hoy
+  const todayWarrantiesCount = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    return warranties.filter(warranty => {
+      const warrantyDate = new Date(warranty.createdAt)
+      return warrantyDate >= today && warrantyDate < tomorrow
+    }).length
+  }, [warranties])
+
   return (
     <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
       <WarrantyTable
+        todayWarrantiesCount={todayWarrantiesCount}
           warranties={warrantiesToShow}
           loading={loading || isSearching}
           onCreate={handleCreateWarranty}

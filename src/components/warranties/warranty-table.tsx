@@ -27,6 +27,7 @@ interface WarrantyTableProps {
   onStatusChange: (warrantyId: string, newStatus: string, notes?: string) => void
   onSearch: (searchTerm: string) => void
   onRefresh?: () => void
+  todayWarrantiesCount?: number
 }
 
 export function WarrantyTable({ 
@@ -37,7 +38,8 @@ export function WarrantyTable({
   onEdit, 
   onStatusChange,
   onSearch,
-  onRefresh
+  onRefresh,
+  todayWarrantiesCount
 }: WarrantyTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -117,8 +119,13 @@ export function WarrantyTable({
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-6">
             <div>
               <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Shield className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
+                <Shield className="h-5 w-5 md:h-6 md:w-6 text-purple-600" />
                 Gestión de Garantías
+                {todayWarrantiesCount !== undefined && (
+                  <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                    • Hoy: {todayWarrantiesCount}
+                  </span>
+                )}
               </CardTitle>
               <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
                 Administra las garantías y productos devueltos
@@ -129,7 +136,7 @@ export function WarrantyTable({
                 <Button 
                   onClick={onRefresh} 
                   variant="outline"
-                  className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 whitespace-nowrap min-w-[120px]"
+                    className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 whitespace-nowrap min-w-[120px]"
                 >
                   <RefreshCcw className="h-4 w-4 mr-2" />
                   Actualizar
@@ -137,7 +144,7 @@ export function WarrantyTable({
               )}
               <Button 
                 onClick={onCreate}
-                className="bg-orange-600 hover:bg-orange-700 text-white whitespace-nowrap min-w-[120px]"
+                className="bg-purple-600 hover:bg-purple-700 text-white whitespace-nowrap min-w-[120px]"
               >
                 Nueva Garantía
               </Button>

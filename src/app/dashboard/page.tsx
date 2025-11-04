@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useMemo, useEffect, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -46,6 +47,7 @@ import { CancelledInvoicesModal } from '@/components/dashboard/cancelled-invoice
 type DateFilter = 'today' | 'specific' | 'all'
 
 export default function DashboardPage() {
+  const router = useRouter()
   const { sales } = useSales()
   const { totalProducts: totalProductsFromContext, products: productsFromContext, productsLastUpdated } = useProducts()
   const { user } = useAuth()
@@ -68,6 +70,7 @@ export default function DashboardPage() {
   const [allProducts, setAllProducts] = useState<any[]>([])
   const [allPaymentRecords, setAllPaymentRecords] = useState<any[]>([])
   const [isRefreshing, setIsRefreshing] = useState(false)
+  const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCancelledModal, setShowCancelledModal] = useState(false)
 
@@ -86,6 +89,11 @@ export default function DashboardPage() {
     try {
       if (showLoading) {
         setIsRefreshing(true)
+      }
+      
+      // Si es la carga inicial, mostrar loading
+      if (isInitialLoading) {
+        setIsInitialLoading(true)
       }
       
       // Importar servicios
@@ -142,6 +150,7 @@ export default function DashboardPage() {
       // No cambiar los datos en caso de error, mantener los existentes
     } finally {
       // Siempre desactivar el indicador de carga
+      setIsInitialLoading(false)
       if (showLoading) {
         setIsRefreshing(false)
       }
@@ -335,9 +344,11 @@ export default function DashboardPage() {
     // Ingresos totales (solo efectivo + transferencia - dinero que realmente ha ingresado)
     const totalRevenue = cashRevenue + transferRevenue
 
-    const creditRevenue = sales
-      .filter(s => s.paymentMethod === 'credit')
-      .reduce((sum, sale) => sum + sale.total, 0)
+    // Calcular el saldo pendiente de créditos (no el total de ventas a crédito)
+    // Solo contar créditos que están pendientes o parciales (no completados)
+    const creditRevenue = credits
+      .filter(c => c.status === 'pending' || c.status === 'partial')
+      .reduce((sum, credit) => sum + (credit.pendingAmount || 0), 0)
 
     // Calcular el total real de métodos de pago conocidos
     const knownPaymentMethodsTotal = cashRevenue + transferRevenue + creditRevenue
@@ -701,9 +712,76 @@ export default function DashboardPage() {
     }
   }
 
+  // Mostrar skeleton loader durante la carga inicial
+  if (isInitialLoading && allSales.length === 0 && allProducts.length === 0) {
+    return (
+      <RoleProtectedRoute module="dashboard" requiredAction="view">
+        <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
+          {/* Header Skeleton */}
+          <div className="mb-4 md:mb-8">
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  <div className="h-7 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                </div>
+                <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Cards Skeleton */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
+                  <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                </div>
+                <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+              </div>
+            ))}
+          </div>
+
+          {/* Loading indicator */}
+          <div className="flex items-center justify-center min-h-[60vh]">
+            <div className="text-center">
+              {/* Spinner minimalista */}
+              <div className="w-16 h-16 mx-auto mb-6">
+                <div className="w-full h-full border-2 border-green-200 dark:border-green-900/30 rounded-full border-t-green-600 dark:border-t-green-400 animate-spin"></div>
+              </div>
+              <p className="text-lg font-medium text-green-600 dark:text-green-400 mb-1">
+                Cargando datos del dashboard...
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                Esto puede tomar unos segundos
+              </p>
+            </div>
+          </div>
+        </div>
+      </RoleProtectedRoute>
+    )
+  }
+
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen relative">
+      {/* Overlay de carga para actualizaciones */}
+      {(isRefreshing || isFiltering) && (
+        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="flex flex-col items-center justify-center -mt-[200px]">
+            {/* Spinner minimalista */}
+            <div className="w-12 h-12 mb-4">
+              <div className="w-full h-full border-2 border-green-200 dark:border-green-900/30 rounded-full border-t-green-600 dark:border-t-green-400 animate-spin"></div>
+            </div>
+            <p className="text-base font-medium text-green-600 dark:text-green-400">
+              {isFiltering ? 'Cargando datos del día...' : 'Actualizando dashboard...'}
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Header con estilo de las otras páginas */}
       <div className="mb-4 md:mb-8">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -793,10 +871,13 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Métricas principales - 3 cards arriba */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
+      {/* Métricas principales - 4 cards arriba */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Total Ingresos */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div 
+          onClick={() => router.push('/sales')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
               <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
@@ -823,7 +904,10 @@ export default function DashboardPage() {
               </div>
 
         {/* Efectivo */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div 
+          onClick={() => router.push('/sales')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -850,7 +934,10 @@ export default function DashboardPage() {
               </div>
 
         {/* Transferencia */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div 
+          onClick={() => router.push('/sales')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
@@ -875,6 +962,36 @@ export default function DashboardPage() {
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
+
+        {/* Crédito */}
+        <div 
+          onClick={() => router.push('/payments')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+            </div>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {effectiveDateFilter === 'today' ? 'Hoy' : 
+                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                 'Todos los Períodos'}
+              </p>
+            </div>
+          </div>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
+            }).format(metrics.creditRevenue)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
+          </p>
+        </div>
 
       </div>
 
@@ -935,7 +1052,10 @@ export default function DashboardPage() {
         )}
 
         {/* Garantías Completadas */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div 
+          onClick={() => router.push('/warranties')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
           <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
               <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -976,7 +1096,10 @@ export default function DashboardPage() {
         </div>
 
         {/* Ganancia Bruta */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+        <div 
+          onClick={() => router.push('/sales')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
                 <div className="flex items-center justify-between mb-4">
             <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
               <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
@@ -1028,7 +1151,10 @@ export default function DashboardPage() {
 
         {/* Productos en Stock - Solo para Super Admin */}
         {isSuperAdmin && (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+          <div 
+            onClick={() => router.push('/products')}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
                 <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />

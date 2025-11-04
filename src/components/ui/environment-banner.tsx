@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 
 export function EnvironmentBanner() {
   const [isDevelopment, setIsDevelopment] = useState(false)
+  const [deploymentDate, setDeploymentDate] = useState<string>('')
 
   useEffect(() => {
     // Mostrar banner en desarrollo, staging, o ambientes de pruebas
@@ -30,6 +31,33 @@ export function EnvironmentBanner() {
                       hostname.includes('127.0.0.1')
     
     setIsDevelopment(shouldShow)
+
+    // Obtener fecha de despliegue
+    // Intentar usar variable de entorno, si no existe usar fecha actual
+    const deploymentDateEnv = process.env.NEXT_PUBLIC_DEPLOYMENT_DATE
+    if (deploymentDateEnv) {
+      try {
+        const date = new Date(deploymentDateEnv)
+        setDeploymentDate(date.toLocaleDateString('es-CO', {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit'
+        }))
+      } catch {
+        setDeploymentDate(deploymentDateEnv)
+      }
+    } else {
+      // Si no hay variable de entorno, usar fecha actual
+      setDeploymentDate(new Date().toLocaleDateString('es-CO', {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      }))
+    }
   }, [])
 
   const handleReportError = () => {
@@ -62,6 +90,12 @@ export function EnvironmentBanner() {
           <span className="whitespace-nowrap">Ambiente de Pruebas</span>
           <span className="mx-1">-</span>
           <span className="whitespace-nowrap">Versión 1</span>
+          {deploymentDate && (
+            <>
+              <span className="mx-1">-</span>
+              <span className="whitespace-nowrap">Desplegado: {deploymentDate}</span>
+            </>
+          )}
         </div>
         <Button
           onClick={handleReportError}

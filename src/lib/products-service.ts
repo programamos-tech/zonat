@@ -133,6 +133,35 @@ export class ProductsService {
     }
   }
 
+  // Obtener el stock total de todos los productos (más eficiente que obtener todos los productos)
+  static async getTotalStock(): Promise<number> {
+    try {
+      const { data, error } = await supabase
+        .from('products')
+        .select('stock_warehouse, stock_store')
+
+      if (error) {
+        console.error('Error obteniendo stock total:', error)
+        return 0
+      }
+
+      if (!data || data.length === 0) {
+        return 0
+      }
+
+      const totalStock = data.reduce((sum, product) => {
+        const warehouseStock = product.stock_warehouse || 0
+        const storeStock = product.stock_store || 0
+        return sum + warehouseStock + storeStock
+      }, 0)
+
+      return totalStock
+    } catch (error) {
+      console.error('Error calculando stock total:', error)
+      return 0
+    }
+  }
+
   // Obtener producto por ID
   static async getProductById(id: string): Promise<Product | null> {
     try {

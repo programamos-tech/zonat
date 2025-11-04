@@ -32,6 +32,7 @@ interface SalesTableProps {
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Sale[]>
   onRefresh?: () => void
+  todaySalesTotal?: number
 }
 
 export function SalesTable({ 
@@ -47,7 +48,8 @@ export function SalesTable({
   onPrint,
   onPageChange,
   onSearch,
-  onRefresh
+  onRefresh,
+  todaySalesTotal
 }: SalesTableProps) {
   const { canCreate, currentUser } = usePermissions()
   const canCreateSales = canCreate('sales')
@@ -218,8 +220,17 @@ export function SalesTable({
             <div className="flex items-center justify-between gap-4 flex-wrap">
               <div className="flex-shrink-0">
                 <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-6 w-6 text-blue-600" />
+                  <Receipt className="h-6 w-6 text-green-600" />
                   Gestión de Ventas
+                  {todaySalesTotal !== undefined && (
+                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                      • Hoy: {new Intl.NumberFormat('es-CO', { 
+                        style: 'currency', 
+                        currency: 'COP',
+                        minimumFractionDigits: 0 
+                      }).format(todaySalesTotal)}
+                    </span>
+                  )}
                 </CardTitle>
                 <p className="text-gray-600 dark:text-gray-300 mt-1">
                   Administra tus ventas y genera facturas
@@ -230,7 +241,7 @@ export function SalesTable({
                   <Button 
                     onClick={onRefresh} 
                     variant="outline"
-                    className="text-blue-600 border-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:border-blue-400 dark:hover:bg-blue-900/20 whitespace-nowrap flex-1 sm:flex-initial"
+                    className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-green-900/20 whitespace-nowrap flex-1 sm:flex-initial"
                   >
                     <RefreshCcw className="h-4 w-4 mr-2" />
                     <span className="hidden sm:inline">Actualizar</span>
@@ -239,7 +250,7 @@ export function SalesTable({
               {(canCreateSales || currentUser?.role === 'vendedor' || currentUser?.role === 'Vendedor' || currentUser?.role === 'vendedora' || currentUser?.role === 'Vendedora') && (
                 <Button 
                   onClick={onCreate} 
-                  className="bg-blue-600 hover:bg-blue-700 text-white whitespace-nowrap flex-1 sm:flex-initial min-w-[140px] sm:min-w-auto"
+                  className="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap flex-1 sm:flex-initial min-w-[140px] sm:min-w-auto"
                 >
                   <Plus className="h-4 w-4 mr-2" />
                   Nueva Venta

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { SalesTable } from '@/components/sales/sales-table'
 import { SaleModal } from '@/components/sales/sale-modal'
@@ -487,10 +487,26 @@ export default function SalesPage() {
     )
   }
 
+  // Calcular total de ventas del día de hoy
+  const todaySalesTotal = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+
+    return sales
+      .filter(sale => {
+        const saleDate = new Date(sale.createdAt)
+        return saleDate >= today && saleDate < tomorrow && sale.status !== 'cancelled'
+      })
+      .reduce((sum, sale) => sum + sale.total, 0)
+  }, [sales])
+
   return (
     <RoleProtectedRoute module="sales" requiredAction="view">
       <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-white dark:bg-gray-900 min-h-screen">
       <SalesTable
+        todaySalesTotal={todaySalesTotal}
         sales={sales}
         loading={loading}
         currentPage={currentPage}

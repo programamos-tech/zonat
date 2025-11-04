@@ -177,14 +177,14 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
     <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 bg-emerald-50 dark:bg-emerald-900/20 border-b border-emerald-200 dark:border-emerald-800">
+        <div className="flex items-center justify-between p-6 bg-cyan-50 dark:bg-cyan-900/20 border-b border-cyan-200 dark:border-cyan-800">
           <div className="flex items-center space-x-3">
-            <Upload className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+            <Upload className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
             <div>
-              <h2 className="text-xl font-semibold text-emerald-800 dark:text-emerald-200">
+              <h2 className="text-xl font-semibold text-cyan-800 dark:text-cyan-200">
                 Importar Productos desde CSV
               </h2>
-              <p className="text-sm text-emerald-700 dark:text-emerald-300">
+              <p className="text-sm text-cyan-700 dark:text-cyan-300">
                 Importa productos masivamente desde un archivo CSV
               </p>
             </div>
@@ -193,23 +193,23 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-emerald-100 dark:hover:bg-emerald-800/30"
+            className="h-8 w-8 p-0 hover:bg-cyan-100 dark:hover:bg-cyan-800/30"
           >
-            <X className="h-5 w-5 text-emerald-600 dark:text-emerald-400 hover:text-emerald-800 dark:hover:text-emerald-200" />
+            <X className="h-5 w-5 text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-200" />
           </Button>
         </div>
 
         <div className="p-6 flex-1 bg-white dark:bg-gray-900 overflow-y-auto">
           <div className="space-y-6">
             {/* Instrucciones */}
-            <Card className="bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
+            <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
               <CardHeader>
-                <CardTitle className="text-lg text-blue-800 dark:text-blue-200 flex items-center">
+                <CardTitle className="text-lg text-cyan-800 dark:text-cyan-200 flex items-center">
                   <FileText className="h-5 w-5 mr-2" />
                   Formato del Archivo CSV
                 </CardTitle>
               </CardHeader>
-              <CardContent className="text-blue-700 dark:text-blue-300">
+              <CardContent className="text-cyan-700 dark:text-cyan-300">
                 <p className="mb-2">El archivo CSV debe tener el siguiente formato:</p>
                 <div className="bg-white dark:bg-gray-800 p-3 rounded border font-mono text-sm">
                   Referencia;Descripción;Precio Compra;Stock
@@ -281,7 +281,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                    <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
+                    <CheckCircle className="h-5 w-5 mr-2 text-cyan-500" />
                     Productos a Importar ({parsedProducts.length})
                   </CardTitle>
                 </CardHeader>
@@ -291,7 +291,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
                       {parsedProducts.map((product, index) => (
                         <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
                           <div className="flex items-center space-x-2">
-                            <Package className="h-3 w-3 text-emerald-500" />
+                            <Package className="h-3 w-3 text-cyan-500" />
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-white">
                                 {product.name}
@@ -331,7 +331,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
           <Button
             onClick={handleImport}
             disabled={parsedProducts.length === 0 || errors.length > 0 || isLoading}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+            className="bg-cyan-600 hover:bg-cyan-700 text-white"
           >
             {isLoading ? (
               <>
