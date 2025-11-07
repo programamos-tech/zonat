@@ -172,6 +172,24 @@ export default function SalesPage() {
               font-size: 12px;
               line-height: 1.2;
             }
+            .ticket {
+              color: #000 !important;
+            }
+            .ticket * {
+              color: #000 !important;
+            }
+            .product-details, .product-details *, .product-details span, .product-details strong {
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            .product-ref, .product-ref *, .product-ref strong {
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            /* Mantener color rojo para descuentos */
+            [style*="color: #d32f2f"], [style*="color:#d32f2f"] {
+              color: #d32f2f !important;
+            }
             .ticket { 
               width: 300px; 
               margin: 0 auto; 
@@ -197,6 +215,7 @@ export default function SalesPage() {
             .company-info { 
               font-size: 10px; 
               line-height: 1.1;
+              color: #000;
             }
             .invoice-title { 
               text-align: center; 
@@ -212,8 +231,13 @@ export default function SalesPage() {
             .detail-row { 
               display: flex; 
               justify-content: space-between; 
-              margin: 2px 0; 
+              margin: 3px 0; 
               font-size: 11px;
+              color: #000;
+            }
+            .detail-row strong {
+              font-weight: bold;
+              color: #000;
             }
             .client-info { 
               padding: 8px 5px; 
@@ -222,11 +246,14 @@ export default function SalesPage() {
             .client-title { 
               font-weight: bold; 
               margin-bottom: 5px; 
-              font-size: 11px;
+              font-size: 12px;
+              color: #000;
             }
             .client-details { 
-              font-size: 10px; 
-              line-height: 1.1;
+              font-size: 11px; 
+              line-height: 1.3;
+              font-weight: 600;
+              color: #000;
             }
             .products { 
               border-bottom: 1px dashed #000;
@@ -239,16 +266,37 @@ export default function SalesPage() {
               font-weight: bold; 
               font-size: 11px; 
               margin-bottom: 2px;
+              color: #000;
             }
             .product-details { 
               display: flex; 
               justify-content: space-between; 
-              font-size: 10px;
+              font-size: 11px;
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            .product-details span {
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            .product-details * {
+              color: #000 !important;
+              font-weight: bold !important;
+            }
+            .product-price {
+              font-weight: bold;
+              color: #000;
+              font-size: 11px;
             }
             .product-ref { 
-              font-size: 9px; 
-              color: #666; 
+              font-size: 10px; 
+              color: #000 !important; 
               margin-top: 2px;
+              font-weight: bold !important;
+            }
+            .product-ref * {
+              color: #000 !important;
+              font-weight: bold !important;
             }
             .summary { 
               padding: 8px 5px; 
@@ -257,25 +305,44 @@ export default function SalesPage() {
             .summary-row { 
               display: flex; 
               justify-content: space-between; 
-              margin: 2px 0; 
+              margin: 3px 0; 
               font-size: 11px;
+              font-weight: bold;
+              color: #000;
+            }
+            .subtotal-row {
+              background-color: #f5f5f5;
+              padding: 4px 5px;
+              margin: 5px 0;
+              border: 1px solid #000;
             }
             .total-row { 
-              border-top: 1px solid #000; 
-              padding-top: 5px; 
-              margin-top: 5px; 
+              border-top: 2px solid #000; 
+              padding-top: 8px; 
+              margin-top: 8px; 
               font-weight: bold; 
-              font-size: 12px;
+              font-size: 14px;
+              color: #000;
+            }
+            .total-row span {
+              font-size: 14px;
+              font-weight: bold;
             }
             .payment-info { 
               padding: 8px 5px; 
               border-bottom: 1px dashed #000;
             }
+            .payment-info .detail-row {
+              font-weight: 600;
+              color: #000;
+            }
             .footer { 
               text-align: center; 
               padding: 10px 5px; 
-              font-size: 9px; 
-              line-height: 1.1;
+              font-size: 10px; 
+              line-height: 1.3;
+              color: #000;
+              font-weight: 600;
             }
             .separator { 
               text-align: center; 
@@ -317,9 +384,9 @@ export default function SalesPage() {
               <img src="/zonat-logo.png" class="logo" alt="ZONA T" />
               <div class="company-name">ZONA T</div>
               <div class="company-info">
-                NIT 1035770226 - 9<br>
-                Carrera 20#22-02, Sincelejo, Colombia.<br>
-                3135206736
+                <strong>NIT 1035770226 - 9</strong><br>
+                <strong>Carrera 20#22-02, Sincelejo, Colombia.</strong><br>
+                <strong>3135206736</strong>
               </div>
             </div>
 
@@ -333,12 +400,12 @@ export default function SalesPage() {
                 <span><strong>${sale.invoiceNumber}</strong></span>
               </div>
               <div class="detail-row">
-                <span>Fecha:</span>
-                <span>${new Date(sale.createdAt).toLocaleDateString('es-CO')}</span>
+                <span><strong>Fecha:</strong></span>
+                <span><strong>${new Date(sale.createdAt).toLocaleDateString('es-CO')}</strong></span>
               </div>
               <div class="detail-row">
-                <span>Hora:</span>
-                <span>${new Date(sale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</span>
+                <span><strong>Hora:</strong></span>
+                <span><strong>${new Date(sale.createdAt).toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}</strong></span>
               </div>
             </div>
 
@@ -346,8 +413,8 @@ export default function SalesPage() {
             <div class="client-info">
               <div class="client-title">CLIENTE:</div>
               <div class="client-details">
-                ${client.name}<br>
-                ${client.nit && client.nit !== 'N/A' ? `NIT: ${client.nit}` : ''}
+                <strong>${client.name}</strong><br>
+                ${client.nit && client.nit !== 'N/A' ? `<strong>NIT: ${client.nit}</strong>` : ''}
               </div>
             </div>
 
@@ -363,16 +430,16 @@ export default function SalesPage() {
                 return `
                   <div class="product-item">
                     <div class="product-name">${item.productName}</div>
-                    <div class="product-details">
-                      <span>${item.quantity} x ${formatCurrency(item.unitPrice)}</span>
-                      <span>${formatCurrency(subtotalAfterDiscount)}</span>
+                    <div class="product-details" style="color: #000 !important; font-weight: bold !important;">
+                      <span style="color: #000 !important; font-weight: bold !important;"><strong style="color: #000 !important; font-weight: bold !important;">${item.quantity} x ${formatCurrency(item.unitPrice)}</strong></span>
+                      <span class="product-price" style="color: #000 !important; font-weight: bold !important;">${formatCurrency(subtotalAfterDiscount)}</span>
                     </div>
                     ${item.discount && item.discount > 0 ? `
-                      <div style="font-size: 9px; color: #d32f2f;">
-                        Desc: ${item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}
+                      <div style="font-size: 9px; color: #d32f2f !important;">
+                        <strong>Desc: ${item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}</strong>
                       </div>
                     ` : ''}
-                    <div class="product-ref">Ref: ${item.productReferenceCode || 'N/A'}</div>
+                    <div class="product-ref" style="color: #000 !important; font-weight: bold !important;"><strong style="color: #000 !important; font-weight: bold !important;">Ref: ${item.productReferenceCode || 'N/A'}</strong></div>
                   </div>
                 `
               }).join('')}
@@ -380,15 +447,15 @@ export default function SalesPage() {
 
             <!-- Resumen -->
             <div class="summary">
-              <div class="summary-row">
-                <span>Subtotal:</span>
-                <span>${formatCurrency(sale.items.reduce((sum, item) => {
+              <div class="summary-row subtotal-row">
+                <span><strong>Subtotal:</strong></span>
+                <span><strong>${formatCurrency(sale.items.reduce((sum, item) => {
                   const baseTotal = item.quantity * item.unitPrice
                   const discountAmount = item.discountType === 'percentage' 
                     ? (baseTotal * (item.discount || 0)) / 100 
                     : (item.discount || 0)
                   return sum + Math.max(0, baseTotal - discountAmount)
-                }, 0))}</span>
+                }, 0))}</strong></span>
               </div>
               ${sale.discount && sale.discount > 0.001 ? `
                 <div class="summary-row" style="color: #d32f2f;">
@@ -403,8 +470,8 @@ export default function SalesPage() {
                 </div>
               ` : ''}
               <div class="summary-row total-row">
-                <span>TOTAL:</span>
-                <span>${formatCurrency(sale.total)}</span>
+                <span><strong>TOTAL:</strong></span>
+                <span><strong>${formatCurrency(sale.total)}</strong></span>
               </div>
             </div>
 
