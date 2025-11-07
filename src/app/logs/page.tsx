@@ -1,0 +1,107 @@
+'use client'
+
+import { useState, useEffect, useCallback, useRef } from 'react'
+import { LogsTable } from '@/components/logs/logs-table'
+import { LogDetailModal } from '@/components/logs/log-detail-modal'
+import { LogsService, LogEntry } from '@/lib/logs-service'
+
+export default function LogsPage() {
+  const [logs, setLogs] = useState<LogEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null)
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [moduleFilter, setModuleFilter] = useState('all')
+  const [actionFilter, setActionFilter] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalLogs, setTotalLogs] = useState(0)
+  const [hasMore, setHasMore] = useState(true)
+
+  // Cargar logs iniciales al montar el componente
+  useEffect(() => {
+    loadLogs()
+  }, [])
+
+  const loadLogs = async (page: number = 1) => {
+    setLoading(true)
+    try {
+      const { logs: logsData, total, hasMore: hasMoreData } = await LogsService.getLogsByPage(page, 20)
+      setLogs(logsData)
+      setTotalLogs(total)
+      setHasMore(hasMoreData)
+      setCurrentPage(page)
+    } catch (error) {
+      // Error silencioso en producción
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handlePageChange = (page: number) => {
+    loadLogs(page)
+  }
+
+  const handleCloseDetail = () => {
+    setIsDetailModalOpen(false)
+    setSelectedLog(null)
+  }
+
+  // Filtrar logs
+  const filteredLogs = logs.filter(log => {
+    const matchesSearch = searchTerm === '' || 
+      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.module.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      log.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      JSON.stringify(log.details).toLowerCase().includes(searchTerm.toLowerCase())
+    
+    const matchesModule = moduleFilter === 'all' || log.module === moduleFilter
+    const matchesAction = actionFilter === 'all' || log.action === actionFilter
+
+    return matchesSearch && matchesModule && matchesAction
+  })
+
+  if (loading) {
+    return (
+      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <LogsTable
+        logs={filteredLogs as any}
+        searchTerm={searchTerm}
+        onSearchChange={setSearchTerm}
+        moduleFilter={moduleFilter}
+        onModuleFilterChange={setModuleFilter}
+        actionFilter={actionFilter}
+        onActionFilterChange={setActionFilter}
+        onRefresh={() => loadLogs(currentPage)}
+        loading={loading}
+        currentPage={currentPage}
+        totalLogs={totalLogs}
+        hasMore={hasMore}
+        onPageChange={handlePageChange}
+      />
+
+      {/* Mensaje cuando no hay más logs */}
+      {!hasMore && logs.length > 0 && (
+        <div className="flex items-center justify-center py-8">
+          <div className="text-gray-500 dark:text-gray-400 text-sm">
+            No hay más actividades para mostrar
+          </div>
+        </div>
+      )}
+
+      <LogDetailModal
+        isOpen={isDetailModalOpen}
+        onClose={handleCloseDetail}
+        log={selectedLog as any}
+      />
+    </div>
+  )
+}

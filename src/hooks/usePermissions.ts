@@ -1,0 +1,88 @@
+'use client'
+
+import { User, Permission } from '@/types'
+import { useAuth } from '@/contexts/auth-context'
+
+export function usePermissions() {
+  const { user: currentUser } = useAuth()
+
+  const hasPermission = (module: string, action: string): boolean => {
+    if (!currentUser) return false
+    
+    // Super admin tiene todos los permisos
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') return true
+    
+    // Verificar que el usuario tenga permisos
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return false
+    
+    // Buscar el módulo en los permisos del usuario
+    const modulePermission = currentUser.permissions.find(p => p.module === module)
+    if (!modulePermission || !modulePermission.actions || !Array.isArray(modulePermission.actions)) return false
+    
+    // Verificar si tiene la acción específica
+    return modulePermission.actions.includes(action)
+  }
+
+  const canView = (module: string): boolean => {
+    return hasPermission(module, 'view')
+  }
+
+  const canCreate = (module: string): boolean => {
+    return hasPermission(module, 'create')
+  }
+
+  const canEdit = (module: string): boolean => {
+    return hasPermission(module, 'edit')
+  }
+
+  const canDelete = (module: string): boolean => {
+    return hasPermission(module, 'delete')
+  }
+
+  const canCancel = (module: string): boolean => {
+    return hasPermission(module, 'cancel')
+  }
+
+  const getAccessibleModules = (): string[] => {
+    if (!currentUser) return []
+    
+    // Super admin tiene acceso a todos los módulos
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
+      return ['dashboard', 'products', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs']
+    }
+    
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
+    
+    return currentUser.permissions
+      .filter(p => p.actions && Array.isArray(p.actions) && p.actions.includes('view'))
+      .map(p => p.module)
+  }
+
+  const getModuleActions = (module: string): string[] => {
+    if (!currentUser) return []
+    
+    // Super admin tiene todas las acciones
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
+      return ['view', 'create', 'edit', 'delete', 'cancel']
+    }
+    
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
+    
+    const modulePermission = currentUser.permissions.find(p => p.module === module)
+    return (modulePermission && modulePermission.actions && Array.isArray(modulePermission.actions)) 
+      ? modulePermission.actions 
+      : []
+  }
+
+  return {
+    currentUser,
+    hasPermission,
+    canView,
+    canCreate,
+    canEdit,
+    canDelete,
+    canCancel,
+    getAccessibleModules,
+    getModuleActions
+  }
+}
