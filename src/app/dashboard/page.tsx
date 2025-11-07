@@ -764,37 +764,6 @@ export default function DashboardPage() {
     )
   }
 
-  // Si no es superadmin, mostrar mensaje de acceso denegado
-  if (!isSuperAdmin) {
-    return (
-      <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
-          <div className="text-center max-w-md">
-            <div className="mb-6">
-              <div className="w-24 h-24 mx-auto bg-red-100 dark:bg-red-900/20 rounded-full flex items-center justify-center">
-                <svg className="w-12 h-12 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              </div>
-            </div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-              Acceso Restringido
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
-              El dashboard está temporalmente deshabilitado. Solo usuarios con permisos de Super Admin pueden acceder.
-            </p>
-            <button
-              onClick={() => router.push('/products')}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
-            >
-              Ir a Productos
-            </button>
-          </div>
-        </div>
-      </RoleProtectedRoute>
-    )
-  }
-
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
       <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen relative">
@@ -891,19 +860,31 @@ export default function DashboardPage() {
                 )}
               </div>
             ) : (
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                <Calendar className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                  Vista del día actual
-                </span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                  <Calendar className="h-4 w-4 text-emerald-600" />
+                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                    Vista del día actual
+                  </span>
+                </div>
+                {/* Botón de actualizar para vendedores */}
+                <Button 
+                  onClick={handleRefresh}
+                  disabled={isRefreshing}
+                  variant="outline"
+                  className="w-full sm:w-auto text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  Actualizar
+                </Button>
               </div>
             )}
           </div>
         </div>
       </div>
 
-      {/* Métricas principales - 4 cards arriba */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+      {/* Métricas principales - 3 o 4 cards según el rol */}
+      <div className={`grid grid-cols-1 sm:grid-cols-2 ${user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 md:gap-6 mb-6 md:mb-8`}>
         {/* Total Ingresos */}
         <div 
           onClick={() => router.push('/sales')}
@@ -994,35 +975,37 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-        {/* Crédito */}
-        <div 
-          onClick={() => router.push('/payments')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+        {/* Crédito - Solo para superadmin y admin, no para vendedores */}
+        {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
+          <div 
+            onClick={() => router.push('/payments')}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <div className="text-right">
+                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                  {effectiveDateFilter === 'today' ? 'Hoy' : 
+                   effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                   'Todos los Períodos'}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                {effectiveDateFilter === 'today' ? 'Hoy' : 
-                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
-                 'Todos los Períodos'}
-              </p>
-            </div>
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+              {new Intl.NumberFormat('es-CO', { 
+                style: 'currency', 
+                currency: 'COP',
+                minimumFractionDigits: 0 
+              }).format(metrics.creditRevenue)}
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
+            </p>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.creditRevenue)}
-          </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
-            {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
-          </p>
-        </div>
+        ) : null}
 
       </div>
 
@@ -1222,12 +1205,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Facturas Anuladas - Solo para Super Admin */}
-        {isSuperAdmin && (
-          <div 
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-            onClick={() => setShowCancelledModal(true)}
-          >
+        {/* Facturas Anuladas - Disponible para todos */}
+        <div 
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          onClick={() => setShowCancelledModal(true)}
+        >
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                 <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -1263,7 +1245,6 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
-        )}
       </div>
 
       {/* Gráficos y estadísticas */}
@@ -1481,15 +1462,13 @@ export default function DashboardPage() {
         </div>
       </div>
       
-      {/* Modal de Facturas Anuladas - Solo para Super Admin */}
-      {isSuperAdmin && (
-        <CancelledInvoicesModal
-          isOpen={showCancelledModal}
-          onClose={() => setShowCancelledModal(false)}
-          sales={filteredData.sales}
-          allSales={allSales}
-        />
-      )}
+      {/* Modal de Facturas Anuladas - Disponible para todos */}
+      <CancelledInvoicesModal
+        isOpen={showCancelledModal}
+        onClose={() => setShowCancelledModal(false)}
+        sales={filteredData.sales}
+        allSales={allSales}
+      />
     </div>
     </RoleProtectedRoute>
   )

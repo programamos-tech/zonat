@@ -53,6 +53,7 @@ const rolePermissions = {
     { module: 'payments', actions: ['view'] }
   ],
   'vendedor': [
+    { module: 'dashboard', actions: ['view'] },
     { module: 'sales', actions: ['view'] },
     { module: 'payments', actions: ['view'] },
     { module: 'warranties', actions: ['view'] }
