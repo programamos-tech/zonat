@@ -111,12 +111,6 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
               
-              // Ocultar dashboard para usuarios que no sean superadmin
-              if (item.module === 'dashboard' && item.name === 'Dashboard') {
-                const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
-                if (!isSuperAdmin) return null
-              }
-              
               const isActive = pathname === item.href
               return (
                 <Link
