@@ -846,8 +846,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* Métricas principales - 3 o 4 cards según el rol */}
-      <div className={`grid grid-cols-1 sm:grid-cols-2 ${user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 md:gap-6 mb-6 md:mb-8`}>
+      {/* Métricas principales - 3 cards para todos los roles */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-6 md:mb-8">
         {/* Total Ingresos */}
         <div 
           onClick={() => router.push('/sales')}
@@ -938,37 +938,7 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-        {/* Crédito - Solo para superadmin y admin, no para vendedores */}
-        {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
-          <div 
-            onClick={() => router.push('/payments')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  {effectiveDateFilter === 'today' ? 'Hoy' : 
-                   effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
-                   'Todos los Períodos'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {new Intl.NumberFormat('es-CO', { 
-                style: 'currency', 
-                currency: 'COP',
-                minimumFractionDigits: 0 
-              }).format(metrics.creditRevenue)}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
-            </p>
-          </div>
-        ) : null}
+        {/* Crédito - Removido para evitar duplicación con "Dinero Afuera" */}
 
       </div>
 
