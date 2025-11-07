@@ -164,62 +164,11 @@ export default function DashboardPage() {
     loadDashboardData(true) // Mostrar loading
   }
 
-  // Cargar todos los datos para el dashboard cuando cambian las ventas
+  // Cargar datos solo una vez al montar el componente
   useEffect(() => {
     loadDashboardData()
-  }, [sales]) // Re-ejecutar cuando sales del contexto cambie
-  
-  // Cargar datos del dashboard cuando cambian los productos (para actualizar stock total)
-  // Usamos una referencia previa para detectar cambios reales
-  const prevTotalProductsRef = useRef(totalProductsFromContext)
-  const prevProductsLastUpdatedRef = useRef(productsLastUpdated)
-  
-  useEffect(() => {
-    // Detectar cambios en el total de productos (creación/eliminación)
-    if (prevTotalProductsRef.current !== totalProductsFromContext && totalProductsFromContext > 0) {
-      prevTotalProductsRef.current = totalProductsFromContext
-      const timeoutId = setTimeout(() => {
-        loadDashboardData()
-      }, 500)
-      return () => clearTimeout(timeoutId)
-    }
-    
-    // Detectar cambios cuando se actualiza stock/costo/precio de productos (productsLastUpdated)
-    if (prevProductsLastUpdatedRef.current !== productsLastUpdated && prevProductsLastUpdatedRef.current !== 0) {
-      prevProductsLastUpdatedRef.current = productsLastUpdated
-      const timeoutId = setTimeout(() => {
-        loadDashboardData()
-      }, 500)
-      return () => clearTimeout(timeoutId)
-    }
-    
-    // Inicializar las referencias en el primer render
-    if (prevProductsLastUpdatedRef.current === 0) {
-      prevProductsLastUpdatedRef.current = productsLastUpdated
-    }
-  }, [totalProductsFromContext, productsLastUpdated]) // Re-ejecutar cuando cambian productos o cuando se actualiza stock
-
-  // Actualización automática cuando el usuario regresa a la página
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        loadDashboardData(true) // Mostrar loading
-      }
-    }
-
-    const handleFocus = () => {
-      loadDashboardData(true) // Mostrar loading
-    }
-
-    // Escuchar cambios de visibilidad de la página
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    window.addEventListener('focus', handleFocus)
-
-    return () => {
-      document.removeEventListener('visibilitychange', handleVisibilityChange)
-      window.removeEventListener('focus', handleFocus)
-    }
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Solo ejecutar una vez al montar
 
   // Función para obtener fechas de filtro
   const getDateRange = (filter: DateFilter) => {
@@ -470,11 +419,24 @@ export default function DashboardPage() {
       return { ...sale, profit: saleProfit }
     })
     .filter(sale => sale.profit > 0) // Solo ventas con ganancia positiva
-    .sort((a, b) => b.profit - a.profit) // Ordenar por ganancia descendente
-    .slice(0, 5) // Tomar las 5 más rentables
+    .sort((a, b) => {
+      // Ordenar por fecha más reciente primero, luego por ganancia descendente
+      const dateA = new Date(a.createdAt).getTime()
+      const dateB = new Date(b.createdAt).getTime()
+      if (dateB !== dateA) {
+        return dateB - dateA // Más reciente primero
+      }
+      return b.profit - a.profit // Si misma fecha, por ganancia descendente
+    })
+    .slice(0, 5) // Tomar las 5 más recientes con ganancia
 
     // Facturas anuladas en el período seleccionado
     const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
+    
+    // Valor perdido por facturas anuladas en el período seleccionado
+    const lostValue = sales
+      .filter(sale => sale.status === 'cancelled')
+      .reduce((sum, sale) => sum + sale.total, 0)
 
     // Contar TODOS los productos para stock e inversión (activos e inactivos)
     // Solo excluir productos discontinuados explícitamente
@@ -653,6 +615,7 @@ export default function DashboardPage() {
       grossProfit,
       topProfitableSales,
       cancelledSales,
+      lostValue,
       lowStockProducts,
       totalProducts: totalStockUnits,
       totalStockInvestment,
@@ -828,6 +791,16 @@ export default function DashboardPage() {
                   </div>
                 </div>
 
+                {/* Calendario para fecha específica */}
+                {dateFilter === 'specific' && (
+                  <DatePicker
+                    selectedDate={specificDate}
+                    onDateSelect={handleDateSelect}
+                    placeholder="Seleccionar fecha específica"
+                    className="w-full sm:w-48"
+                  />
+                )}
+
                 {/* Botón de actualizar */}
                 <Button 
                   onClick={handleRefresh}
@@ -838,16 +811,6 @@ export default function DashboardPage() {
                   <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
                   Actualizar
                 </Button>
-
-                {/* Calendario para fecha específica */}
-                {dateFilter === 'specific' && (
-                  <DatePicker
-                    selectedDate={specificDate}
-                    onDateSelect={handleDateSelect}
-                    placeholder="Seleccionar fecha específica"
-                    className="w-full sm:w-48"
-                  />
-                )}
 
                 {/* Indicador de carga para filtro específico */}
                 {isFiltering && (
@@ -1234,7 +1197,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Valor perdido:</span>
                 <span className="font-semibold text-orange-600 dark:text-orange-400">
-                  ${sales.filter(sale => sale.status === 'cancelled').reduce((sum, sale) => sum + sale.total, 0).toLocaleString('es-CO')}
+                  ${metrics.lostValue.toLocaleString('es-CO')}
                 </span>
               </div>
               <div className="text-center pt-2">

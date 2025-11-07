@@ -224,7 +224,7 @@ export function SalesTable({
                   Gestión de Ventas
                   {todaySalesTotal !== undefined && (
                     <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                      • Hoy: {new Intl.NumberFormat('es-CO', { 
+                      • Ventas directas hoy: {new Intl.NumberFormat('es-CO', { 
                         style: 'currency', 
                         currency: 'COP',
                         minimumFractionDigits: 0 

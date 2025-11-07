@@ -493,7 +493,7 @@ export default function SalesPage() {
     }
   }
 
-  // Calcular total de ventas del día de hoy (debe estar antes de cualquier return condicional)
+  // Calcular total de ventas directas del día de hoy (solo efectivo y transferencia)
   const todaySalesTotal = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
@@ -505,7 +505,20 @@ export default function SalesPage() {
         const saleDate = new Date(sale.createdAt)
         return saleDate >= today && saleDate < tomorrow && sale.status !== 'cancelled'
       })
-      .reduce((sum, sale) => sum + sale.total, 0)
+      .reduce((sum, sale) => {
+        // Solo contar ventas con pago directo (efectivo o transferencia)
+        if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+          return sum + sale.total
+        } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+          // Para pagos mixtos, solo contar la parte en efectivo/transferencia
+          const directPaymentAmount = sale.payments
+            .filter(payment => payment.paymentType === 'cash' || payment.paymentType === 'transfer')
+            .reduce((paymentSum, payment) => paymentSum + payment.amount, 0)
+          return sum + directPaymentAmount
+        }
+        // No contar ventas a crédito o garantía
+        return sum
+      }, 0)
   }, [sales])
 
   if (loading) {

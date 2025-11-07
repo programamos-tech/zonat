@@ -550,7 +550,7 @@ export default function SaleDetailModal({
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col pt-10 xl:pt-0">
-      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[90vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-green-50 dark:bg-green-900/20">
@@ -609,8 +609,8 @@ export default function SaleDetailModal({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-3 md:p-4 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 md:gap-4 mb-3 md:mb-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
             
             {/* Left Column - Sale Information */}
             <div className="space-y-3 md:space-y-4">
@@ -789,9 +789,9 @@ export default function SaleDetailModal({
               </CardTitle>
             </CardHeader>
             <CardContent className="p-3">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '500px' }}>
                 <table className="w-full">
-                  <thead>
+                  <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
                     <tr className="border-b border-gray-200 dark:border-gray-600">
                       <th className="text-left py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Producto</th>
                       <th className="text-center py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Cantidad</th>

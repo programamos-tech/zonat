@@ -253,22 +253,21 @@ export default function CreditsPage() {
     }
   }
 
-  // Calcular total de abonos recogidos hoy
+  // Calcular total de créditos otorgados hoy (dinero en crédito dado hoy)
   const todayPaymentsTotal = useMemo(() => {
     const today = new Date()
     today.setHours(0, 0, 0, 0)
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
 
-    return paymentRecords
-      .filter(payment => {
-        const paymentDate = new Date(payment.paymentDate || payment.createdAt)
-        return paymentDate >= today && paymentDate < tomorrow && 
-               payment.status !== 'cancelled' && 
-               !payment.cancelledAt
+    return credits
+      .filter(credit => {
+        const creditDate = new Date(credit.createdAt)
+        return creditDate >= today && creditDate < tomorrow && 
+               credit.status !== 'cancelled'
       })
-      .reduce((sum, payment) => sum + payment.amount, 0)
-  }, [paymentRecords])
+      .reduce((sum, credit) => sum + (credit.totalAmount || 0), 0)
+  }, [credits])
 
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
