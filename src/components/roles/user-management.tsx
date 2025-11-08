@@ -298,24 +298,30 @@ export function UserManagement() {
     <div className="space-y-6">
       {/* Header */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <UserCheck className="h-6 w-6 text-indigo-600" />
-                Gestión de Usuarios
-              </CardTitle>
-              <p className="text-gray-600 dark:text-gray-300 mt-1">
-                Administra los usuarios y sus permisos del sistema
-              </p>
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-indigo-600 flex-shrink-0" />
+                  <span className="flex-shrink-0">Gestión de Usuarios</span>
+                </CardTitle>
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
+                  Administra los usuarios y sus permisos del sistema
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 md:hidden">
+                  Administra los usuarios
+                </p>
+              </div>
+              <Button 
+                onClick={() => setIsCreateModalOpen(true)}
+                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+              >
+                <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
+                <span className="hidden sm:inline">Nuevo Usuario</span>
+                <span className="sm:hidden">Nuevo</span>
+              </Button>
             </div>
-            <Button 
-              onClick={() => setIsCreateModalOpen(true)}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Usuario
-            </Button>
           </div>
         </CardHeader>
       </Card>
@@ -525,51 +531,49 @@ export function UserManagement() {
 
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="search">Buscar usuarios</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  id="search"
-                  placeholder="Nombre o email..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col gap-2 md:gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input
+                id="search"
+                placeholder="Buscar usuario..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9 md:pl-10 py-2 md:py-2.5 text-sm"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2 md:gap-4">
+              <div>
+                <Label htmlFor="roleFilter" className="text-xs md:text-sm mb-1 md:mb-2 hidden md:block">Filtrar por rol</Label>
+                <Select value={roleFilter} onValueChange={setRoleFilter}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos los roles</SelectItem>
+                    {roleOptions.map(role => (
+                      <SelectItem key={role.value} value={role.value}>
+                        {role.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-            </div>
-            
-            <div>
-              <Label htmlFor="roleFilter">Filtrar por rol</Label>
-              <Select value={roleFilter} onValueChange={setRoleFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos los roles</SelectItem>
-                  {roleOptions.map(role => (
-                    <SelectItem key={role.value} value={role.value}>
-                      {role.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div>
-              <Label htmlFor="statusFilter">Filtrar por estado</Label>
-              <Select value={statusFilter} onValueChange={setStatusFilter}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todos</SelectItem>
-                  <SelectItem value="active">Activos</SelectItem>
-                  <SelectItem value="inactive">Inactivos</SelectItem>
-                </SelectContent>
-              </Select>
+              
+              <div>
+                <Label htmlFor="statusFilter" className="text-xs md:text-sm mb-1 md:mb-2 hidden md:block">Filtrar por estado</Label>
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="text-sm">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Todos</SelectItem>
+                    <SelectItem value="active">Activos</SelectItem>
+                    <SelectItem value="inactive">Inactivos</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -596,55 +600,151 @@ export function UserManagement() {
               </Button>
             </div>
           ) : (
-            <div className="divide-y divide-gray-200 dark:divide-gray-700">
-              {filteredUsers.map(user => (
-                <div key={user.id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-3">
-                        <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+            <>
+              {/* Vista de Tarjetas para Mobile */}
+              <div className="md:hidden space-y-3 p-3">
+                {filteredUsers.map((user, index) => {
+                  const formatDateTime = (dateString: string) => {
+                    if (!dateString) return 'Nunca'
+                    const date = new Date(dateString)
+                    return date.toLocaleDateString('es-CO', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  }
+                  return (
+                    <div
+                      key={user.id}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 truncate" title={user.email}>
+                              {user.email}
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={user.name}>
+                            {user.name}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={roleOptions.find(r => r.value === user.role)?.label || user.role}>
+                            {roleOptions.find(r => r.value === user.role)?.label || user.role}
+                          </p>
                         </div>
-                        <Badge variant={user.isActive ? "default" : "secondary"}>
-                          {user.isActive ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
-                          {user.isActive ? 'Activo' : 'Inactivo'}
-                        </Badge>
-                        <Badge variant="outline">
-                          {roleOptions.find(r => r.value === user.role)?.label || user.role}
+                        <Badge className={`${user.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'} text-xs shrink-0`}>
+                          <div className="flex items-center space-x-1">
+                            {user.isActive ? (
+                              <span className="text-green-600 dark:text-green-400">●</span>
+                            ) : (
+                              <span className="text-red-600 dark:text-red-400">●</span>
+                            )}
+                            <span className="hidden sm:inline">{user.isActive ? 'Activo' : 'Inactivo'}</span>
+                          </div>
                         </Badge>
                       </div>
                       
-                      <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                        Último acceso: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Rol</div>
+                          <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={roleOptions.find(r => r.value === user.role)?.label || user.role}>
+                            {roleOptions.find(r => r.value === user.role)?.label || user.role}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Último Acceso</div>
+                          <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={formatDateTime(user.lastLogin || '')}>
+                            {formatDateTime(user.lastLogin || '').split(',')[0]}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={formatDateTime(user.lastLogin || '')}>
+                            {user.lastLogin ? formatDateTime(user.lastLogin) : 'Nunca ha iniciado sesión'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => openEditModal(user)}
+                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          {user.id !== currentUser?.id && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => openDeleteModal(user)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => openEditModal(user)}
-                        className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
+                  )
+                })}
+              </div>
+
+              {/* Vista de Lista para Desktop */}
+              <div className="hidden md:block divide-y divide-gray-200 dark:divide-gray-700">
+                {filteredUsers.map(user => (
+                  <div key={user.id} className="p-4 md:p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <div className="flex items-center justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center space-x-3">
+                          <div>
+                            <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                          </div>
+                          <Badge variant={user.isActive ? "default" : "secondary"}>
+                            {user.isActive ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
+                            {user.isActive ? 'Activo' : 'Inactivo'}
+                          </Badge>
+                          <Badge variant="outline">
+                            {roleOptions.find(r => r.value === user.role)?.label || user.role}
+                          </Badge>
+                        </div>
+                        
+                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                          Último acceso: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                        </div>
+                      </div>
                       
-                      {user.id !== currentUser?.id && (
+                      <div className="flex items-center space-x-2">
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => openDeleteModal(user)}
-                          className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                          onClick={() => openEditModal(user)}
+                          className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </Button>
-                      )}
+                        
+                        {user.id !== currentUser?.id && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => openDeleteModal(user)}
+                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

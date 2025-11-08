@@ -268,27 +268,32 @@ export function LogsTable({
     <div className="space-y-6">
       {/* Header */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader className="p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-6">
-            <div>
-              <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <RefreshCw className="h-5 w-5 md:h-6 md:w-6 text-gray-600" />
-                Registro de Actividades
-              </CardTitle>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1">
-                Historial completo de todas las operaciones del sistema
-              </p>
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <RefreshCw className="h-5 w-5 md:h-6 md:w-6 text-gray-600 flex-shrink-0" />
+                  <span className="flex-shrink-0">Registro de Actividades</span>
+                </CardTitle>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
+                  Historial completo de todas las operaciones del sistema
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 md:hidden">
+                  Historial de operaciones
+                </p>
+              </div>
+              {onRefresh && (
+                <Button
+                  onClick={onRefresh}
+                  variant="outline"
+                  className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                >
+                  <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                  <span className="hidden md:inline">Actualizar</span>
+                </Button>
+              )}
             </div>
-            {onRefresh && (
-              <Button
-                onClick={onRefresh}
-                variant="outline"
-                className="px-4 py-2"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                Actualizar
-              </Button>
-            )}
           </div>
         </CardHeader>
       </Card>
@@ -296,12 +301,12 @@ export function LogsTable({
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+          <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar en registros..."
+                placeholder="Buscar registro..."
                 value={onSearchChange ? searchTerm : localSearchTerm}
                 onChange={(e) => {
                   const value = e.target.value
@@ -311,47 +316,49 @@ export function LogsTable({
                     setLocalSearchTerm(value)
                   }
                 }}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
-            <select
-              value={onModuleFilterChange ? moduleFilter : localFilterType}
-              onChange={(e) => {
-                const value = e.target.value
-                if (onModuleFilterChange) {
-                  onModuleFilterChange(value)
-                } else {
-                  setLocalFilterType(value)
-                }
-              }}
-              className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-            >
-              <option value="all">Todos los tipos</option>
-              {types.slice(1).map(type => (
-                <option key={type} value={type}>
-                  {getTypeLabel(type)}
-                </option>
-              ))}
-            </select>
-            <select
-              value={onActionFilterChange ? actionFilter : localFilterAction}
-              onChange={(e) => {
-                const value = e.target.value
-                if (onActionFilterChange) {
-                  onActionFilterChange(value)
-                } else {
-                  setLocalFilterAction(value)
-                }
-              }}
-              className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-            >
-              <option value="all">Todas las acciones</option>
-              {actions.slice(1).map(action => (
-                <option key={action} value={action}>
-                  {action}
-                </option>
-              ))}
-            </select>
+            <div className="grid grid-cols-2 gap-2 md:gap-4">
+              <select
+                value={onModuleFilterChange ? moduleFilter : localFilterType}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (onModuleFilterChange) {
+                    onModuleFilterChange(value)
+                  } else {
+                    setLocalFilterType(value)
+                  }
+                }}
+                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              >
+                <option value="all">Todos los tipos</option>
+                {types.slice(1).map(type => (
+                  <option key={type} value={type}>
+                    {getTypeLabel(type)}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={onActionFilterChange ? actionFilter : localFilterAction}
+                onChange={(e) => {
+                  const value = e.target.value
+                  if (onActionFilterChange) {
+                    onActionFilterChange(value)
+                  } else {
+                    setLocalFilterAction(value)
+                  }
+                }}
+                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              >
+                <option value="all">Todas las acciones</option>
+                {actions.slice(1).map(action => (
+                  <option key={action} value={action}>
+                    {action}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -370,8 +377,156 @@ export function LogsTable({
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto logs-table-tablet-container">
-              <table className="w-full table-fixed md:table-auto lg:table-fixed logs-table-tablet">
+            <>
+              {/* Vista de Tarjetas para Mobile */}
+              <div className="md:hidden space-y-3 p-3">
+                {filteredLogs.map((log, index) => {
+                  const getLogType = (log: any) => {
+                    if (log.action === 'sale_cancellation_stock_return') return 'sale_cancellation_stock_return'
+                    if (log.action === 'sale_cancellation_stock_return_batch') return 'sale_cancellation_stock_return'
+                    
+                    if (log.module === 'sales') {
+                      if (log.action === 'sale_create') return 'sale'
+                      if (log.action === 'credit_sale_create') return 'credit_sale_create'
+                      if (log.action === 'sale_cancel') return 'sale_cancel'
+                      if (log.action === 'sale_stock_deduction') return 'sale_stock_deduction'
+                      if (log.action === 'sale_cancellation_stock_return') return 'sale_cancellation_stock_return'
+                      return 'sale'
+                    }
+                    if (log.module === 'roles') return 'roles'
+                    if (log.module === 'products') {
+                      if (log.action === 'product_create') return 'product_create'
+                      if (log.action === 'product_update') return 'product_update'
+                      if (log.action === 'product_delete') return 'product_delete'
+                      if (log.action === 'stock_transfer') return 'transfer'
+                      if (log.action === 'stock_adjustment') return 'adjustment'
+                      return 'product_create'
+                    }
+                    if (log.module === 'categories') {
+                      if (log.action === 'category_create') return 'category_create'
+                      if (log.action === 'category_update') return 'category_update'
+                      if (log.action === 'category_delete') return 'category_delete'
+                      return 'category_create'
+                    }
+                    if (log.module === 'clients') {
+                      if (log.action === 'client_create') return 'client_create'
+                      if (log.action === 'client_update') return 'client_edit'
+                      if (log.action === 'client_delete') return 'client_delete'
+                      return 'client_create'
+                    }
+                    if (log.module === 'warranties') {
+                      if (log.action === 'warranty_create') return 'warranty_create'
+                      if (log.action === 'warranty_status_update') return 'warranty_status_update'
+                      if (log.action === 'warranty_update') return 'warranty_update'
+                      return 'warranty_create'
+                    }
+                    if (log.module === 'auth') return 'login'
+                    return 'roles'
+                  }
+                  
+                  const logType = getLogType(log)
+                  const TypeIcon = getTypeIcon(logType)
+                  const formatDate = (timestamp: string) => {
+                    const date = new Date(timestamp)
+                    return date.toLocaleDateString('es-CO', {
+                      month: '2-digit',
+                      day: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })
+                  }
+                  
+                  const getActionLabel = () => {
+                    if (log.module === 'auth') return 'Acceso'
+                    if (log.module === 'sales') {
+                      if (log.action === 'sale_create') return 'Crear Venta'
+                      if (log.action === 'credit_sale_create') return 'Crear Venta a Crédito'
+                      if (log.action === 'sale_cancel') return 'Cancelar Venta'
+                      if (log.action === 'sale_stock_deduction') return 'Descontar Stock'
+                      if (log.action === 'sale_cancellation_stock_return') return 'Devolver Stock'
+                      return log.action
+                    }
+                    if (log.module === 'products') {
+                      if (log.action === 'product_create') return 'Crear'
+                      if (log.action === 'product_update') return 'Actualizar'
+                      if (log.action === 'product_delete') return 'Eliminar'
+                      if (log.action === 'stock_transfer') return 'Transferir'
+                      if (log.action === 'stock_adjustment') return 'Ajustar'
+                      return log.action
+                    }
+                    if (log.module === 'categories') {
+                      if (log.action === 'category_create') return 'Crear'
+                      if (log.action === 'category_update') return 'Actualizar'
+                      if (log.action === 'category_delete') return 'Eliminar'
+                      return log.action
+                    }
+                    if (log.module === 'clients') {
+                      if (log.action === 'client_create') return 'Crear Cliente'
+                      if (log.action === 'client_update') return 'Actualizar Cliente'
+                      if (log.action === 'client_delete') return 'Eliminar Cliente'
+                      return log.action
+                    }
+                    if (log.module === 'warranties') {
+                      if (log.action === 'warranty_create') return 'Crear Garantía'
+                      if (log.action === 'warranty_status_update') return 'Actualizar Estado'
+                      if (log.action === 'warranty_update') return 'Actualizar Garantía'
+                      return log.action
+                    }
+                    return log.action
+                  }
+                  
+                  return (
+                    <div
+                      key={log.id}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          <div className={`p-1.5 rounded-lg ${getTypeColor(logType)} flex-shrink-0`}>
+                            <TypeIcon className="h-3.5 w-3.5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{totalLogs - ((currentPage - 1) * 20) - index}</span>
+                            </div>
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={getTypeLabel(logType)}>
+                              {getTypeLabel(logType)}
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={getActionLabel()}>
+                              {getActionLabel()}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {log.description && (
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2" title={log.description}>
+                            {log.description}
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Usuario</div>
+                          <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={log.user_name || 'Desconocido'}>
+                            {log.user_name || 'Desconocido'}
+                          </div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Fecha</div>
+                          <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatDate(log.created_at)}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Vista de Tabla para Desktop */}
+              <div className="hidden md:block overflow-x-auto logs-table-tablet-container">
+                <table className="w-full table-fixed md:table-auto lg:table-fixed logs-table-tablet">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="w-10 md:w-16 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -672,32 +827,42 @@ export function LogsTable({
                   })}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>
 
       {/* Paginación */}
       {totalLogs > 20 && (
-        <div className="flex items-center justify-between px-6 py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
           {/* Información de página */}
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Mostrando {((currentPage - 1) * 20) + 1} - {Math.min(currentPage * 20, totalLogs)} de {totalLogs} registros
+          <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
+            <span className="hidden sm:inline">Mostrando </span>
+            <span className="font-semibold">{((currentPage - 1) * 20) + 1}</span>
+            <span className="hidden sm:inline"> - </span>
+            <span className="sm:hidden">-</span>
+            <span className="font-semibold">{Math.min(currentPage * 20, totalLogs)}</span>
+            <span className="hidden sm:inline"> de </span>
+            <span className="sm:hidden">/</span>
+            <span className="font-semibold">{totalLogs}</span>
+            <span className="hidden md:inline"> registros</span>
           </div>
           
           {/* Controles de paginación */}
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-1 md:space-x-2">
             {/* Botón Anterior */}
             <button
               onClick={() => onPageChange && onPageChange(currentPage - 1)}
               disabled={currentPage === 1 || loading}
-              className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95"
             >
-              Anterior
+              <span className="hidden sm:inline">Anterior</span>
+              <span className="sm:hidden">‹</span>
             </button>
             
             {/* Números de página */}
-            <div className="flex items-center space-x-1">
+            <div className="flex items-center space-x-0.5 md:space-x-1">
               {Array.from({ length: Math.ceil(totalLogs / 20) }, (_, i) => i + 1)
                 .filter(page => {
                   // Mostrar solo páginas cercanas a la actual
@@ -712,14 +877,14 @@ export function LogsTable({
                   return (
                     <div key={page} className="flex items-center">
                       {showEllipsis && (
-                        <span className="px-2 text-gray-400 text-sm">...</span>
+                        <span className="px-1 md:px-2 text-gray-400 text-xs md:text-sm">...</span>
                       )}
                       <button
                         onClick={() => onPageChange && onPageChange(page)}
                         disabled={loading}
-                        className={`px-3 py-1.5 text-sm rounded-md transition-colors min-w-[32px] ${
+                        className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                           page === currentPage 
-                            ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium" 
+                            ? "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-medium" 
                             : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
                       >
@@ -734,9 +899,10 @@ export function LogsTable({
             <button
               onClick={() => onPageChange && onPageChange(currentPage + 1)}
               disabled={currentPage >= Math.ceil(totalLogs / 20) || loading}
-              className="px-3 py-1.5 text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95"
             >
-              Siguiente
+              <span className="hidden sm:inline">Siguiente</span>
+              <span className="sm:hidden">›</span>
             </button>
           </div>
         </div>

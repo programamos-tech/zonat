@@ -205,48 +205,53 @@ export function SalesTable({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 overflow-visible">
-        <CardHeader className="overflow-visible">
-          <div className="flex flex-col gap-4">
-            <div className="flex items-center justify-between gap-4 flex-wrap">
-              <div className="flex-shrink-0">
-                <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-6 w-6 text-green-600" />
-                  Gestión de Ventas
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <Receipt className="h-5 w-5 md:h-6 md:w-6 text-green-600 flex-shrink-0" />
+                  <span className="flex-shrink-0">Gestión de Ventas</span>
                   {todaySalesTotal !== undefined && (
-                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                      • Ventas directas hoy: {new Intl.NumberFormat('es-CO', { 
+                    <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                      <span className="hidden md:inline">• Ventas directas hoy: </span>
+                      <span className="font-semibold">{new Intl.NumberFormat('es-CO', { 
                         style: 'currency', 
                         currency: 'COP',
                         minimumFractionDigits: 0 
-                      }).format(todaySalesTotal)}
+                      }).format(todaySalesTotal)}</span>
                     </span>
                   )}
                 </CardTitle>
-                <p className="text-gray-600 dark:text-gray-300 mt-1">
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   Administra tus ventas y genera facturas
                 </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 md:hidden">
+                  Administra tus ventas
+                </p>
               </div>
-              <div className="flex items-center gap-3 flex-shrink-0 flex-wrap w-full sm:w-auto">
+              <div className="flex items-center gap-2 flex-wrap">
                 {onRefresh && (
                   <Button 
                     onClick={onRefresh} 
                     variant="outline"
-                    className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-green-900/20 whitespace-nowrap flex-1 sm:flex-initial"
+                    className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-green-900/20 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
                   >
-                    <RefreshCcw className="h-4 w-4 mr-2" />
-                    <span className="hidden sm:inline">Actualizar</span>
+                    <RefreshCcw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                    <span className="hidden md:inline">Actualizar</span>
                   </Button>
                 )}
-              {(canCreateSales || currentUser?.role === 'vendedor' || currentUser?.role === 'Vendedor' || currentUser?.role === 'vendedora' || currentUser?.role === 'Vendedora') && (
-                <Button 
-                  onClick={onCreate} 
-                  className="bg-green-600 hover:bg-green-700 text-white whitespace-nowrap flex-1 sm:flex-initial min-w-[140px] sm:min-w-auto"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Venta
-                </Button>
-              )}
+                {(canCreateSales || currentUser?.role === 'vendedor' || currentUser?.role === 'Vendedor' || currentUser?.role === 'vendedora' || currentUser?.role === 'Vendedora') && (
+                  <Button 
+                    onClick={onCreate} 
+                    className="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                  >
+                    <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
+                    <span className="hidden sm:inline">Nueva Venta</span>
+                    <span className="sm:hidden">Nueva</span>
+                  </Button>
+                )}
               </div>
             </div>
           </div>
@@ -255,19 +260,19 @@ export function SalesTable({
 
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
+        <CardContent className="p-3 md:p-4">
+          <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder={isSearching ? "Buscando..." : "Buscar por número de factura..."}
+                placeholder={isSearching ? "Buscando..." : "Buscar factura..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-10 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
               {isSearching && (
-                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
                 </div>
               )}
@@ -275,7 +280,7 @@ export function SalesTable({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
             >
               {statuses.map(status => (
                 <option key={status} value={status}>
@@ -307,41 +312,76 @@ export function SalesTable({
             </div>
           ) : (
             <>
-              {/* Mobile list */}
-              <div className="md:hidden divide-y divide-gray-200 dark:divide-gray-800">
-                {filteredSales.map((sale) => {
+              {/* Vista de Tarjetas para Mobile */}
+              <div className="md:hidden space-y-3 p-3">
+                {filteredSales.map((sale, index) => {
                   const { date, time } = formatDateTime(sale.createdAt)
                   return (
-                    <div key={sale.id} className="p-4">
+                    <div
+                      key={sale.id}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                    >
                       <div className="flex items-start justify-between">
-                        <div>
-                          <div className="text-blue-600 dark:text-blue-400 font-semibold">
-                            {generateInvoiceNumber(sale)}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                            <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">{generateInvoiceNumber(sale)}</span>
                           </div>
-                          <div className="text-sm text-gray-900 dark:text-white font-medium truncate max-w-[220px]">
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={sale.clientName}>
                             {sale.clientName}
-                          </div>
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={getPaymentMethodLabel(sale.paymentMethod)}>
+                            {getPaymentMethodLabel(sale.paymentMethod)}
+                          </p>
                         </div>
-                        <Badge className={getStatusColor(sale.status)}>{getStatusLabel(sale.status)}</Badge>
+                        <Badge className={`${getStatusColor(sale.status)} text-xs shrink-0`}>
+                          <div className="flex items-center space-x-1">
+                            {sale.status === 'completed' ? (
+                              <span className="text-green-600 dark:text-green-400">●</span>
+                            ) : sale.status === 'cancelled' ? (
+                              <span className="text-red-600 dark:text-red-400">●</span>
+                            ) : (
+                              <span className="text-yellow-600 dark:text-yellow-400">●</span>
+                            )}
+                            <span className="hidden sm:inline">{getStatusLabel(sale.status)}</span>
+                          </div>
+                        </Badge>
                       </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <Badge className={getPaymentMethodColor(sale.paymentMethod)}>
+                      
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
+                          <div className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(sale.total)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Fecha</div>
+                          <div className="text-xs font-semibold text-gray-900 dark:text-white">{date}</div>
+                          <div className="text-xs text-gray-500 dark:text-gray-400">{time}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} text-xs`} title={getPaymentMethodLabel(sale.paymentMethod)}>
                           {getPaymentMethodLabel(sale.paymentMethod)}
                         </Badge>
-                        <div className="text-right">
-                          <div className="text-gray-900 dark:text-white font-semibold">
-                            {formatCurrency(sale.total)}
-                          </div>
-                          <div className="text-xs text-gray-500 dark:text-gray-400">{date} • {time}</div>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onView(sale)}
+                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onPrint(sale)}
+                            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
                         </div>
-                      </div>
-                      <div className="mt-3 flex items-center justify-end gap-2">
-                        <Button size="sm" variant="outline" onClick={() => onView(sale)} className="h-8 px-2">
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" onClick={() => onPrint(sale)} className="h-8 px-2">
-                          <Printer className="h-4 w-4" />
-                        </Button>
                       </div>
                     </div>
                   )
@@ -441,23 +481,28 @@ export function SalesTable({
 
               {/* Paginación - solo mostrar si no hay búsqueda activa */}
               {!searchTerm.trim() && (
-                <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200 dark:border-gray-600">
-                  <div className="text-sm text-gray-600 dark:text-gray-400">
-                    Mostrando {sales.length} de {totalSales} ventas
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
+                    <span className="hidden sm:inline">Mostrando </span>
+                    <span className="font-semibold">{sales.length}</span>
+                    <span className="hidden sm:inline"> de </span>
+                    <span className="sm:hidden">/</span>
+                    <span className="font-semibold">{totalSales}</span>
+                    <span className="hidden md:inline"> ventas</span>
                   </div>
                   
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-1 md:space-x-2">
                     {/* Botón Anterior */}
                     <button
                       onClick={() => onPageChange(currentPage - 1)}
                       disabled={currentPage === 1 || loading}
-                      className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                     >
                       ‹
                     </button>
                     
                     {/* Números de página */}
-                    <div className="flex items-center space-x-1">
+                    <div className="flex items-center space-x-0.5 md:space-x-1">
                       {Array.from({ length: Math.ceil(totalSales / 10) }, (_, i) => i + 1)
                         .filter(page => {
                           // Mostrar solo páginas cercanas a la actual
@@ -472,14 +517,14 @@ export function SalesTable({
                           return (
                             <div key={page} className="flex items-center">
                               {showEllipsis && (
-                                <span className="px-2 text-gray-400 text-sm">...</span>
+                                <span className="px-1 md:px-2 text-gray-400 text-xs md:text-sm">...</span>
                               )}
                               <button
                                 onClick={() => onPageChange(page)}
                                 disabled={loading}
-                                className={`px-3 py-1.5 text-sm rounded-md transition-colors min-w-[32px] ${
+                                className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                                   page === currentPage 
-                                    ? "bg-emerald-100 dark:bg-emerald-900 text-emerald-700 dark:text-emerald-300 font-medium" 
+                                    ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-medium" 
                                     : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                                 }`}
                               >
@@ -494,7 +539,7 @@ export function SalesTable({
                     <button
                       onClick={() => onPageChange(currentPage + 1)}
                       disabled={currentPage >= Math.ceil(totalSales / 10) || loading}
-                      className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                     >
                       ›
                     </button>

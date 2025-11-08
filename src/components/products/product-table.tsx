@@ -226,24 +226,28 @@ export function ProductTable({
       <div className="space-y-4 md:space-y-6">
         {/* Header */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader className="p-4 md:p-6">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
-              <div>
-                <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600" />
-                  Gestión de Productos
-                  {totalStock !== undefined && (
-                    <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                      • Stock Total: {new Intl.NumberFormat('es-CO').format(totalStock)} unidades
-                    </span>
-                  )}
+          <CardHeader className="p-3 md:p-6">
+            <div className="flex flex-col gap-3 md:gap-4">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+                <div className="flex-1 min-w-0">
+                  <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                    <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 flex-shrink-0" />
+                    <span className="flex-shrink-0">Gestión de Productos</span>
                   {isSearching && (
-                    <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200 text-xs ml-2">
+                      <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200 text-xs flex-shrink-0">
                       Búsqueda activa
                     </Badge>
                   )}
                 </CardTitle>
-                <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
+                  {totalStock !== undefined && (
+                    <div className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 mt-1">
+                      <span className="hidden md:inline">Stock Total: </span>
+                      <span className="font-semibold">{new Intl.NumberFormat('es-CO').format(totalStock)}</span>
+                      <span className="hidden md:inline"> unidades</span>
+                      <span className="md:hidden"> u.</span>
+                    </div>
+                  )}
+                  <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   {isSearching 
                     ? `Mostrando resultados de búsqueda (${filteredProducts.length} productos)`
                     : 'Administra tu inventario de productos'
@@ -251,29 +255,37 @@ export function ProductTable({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-3 md:px-4">
+                  <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
+                    <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
                   <span className="hidden sm:inline">Nuevo Producto</span>
                   <span className="sm:hidden">Nuevo</span>
                 </Button>
                 <Button 
                   onClick={onManageCategories} 
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-3 md:px-4"
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
                 >
-                  <Tag className="h-4 w-4 mr-1 md:mr-2" />
-                  Categorías
+                    <Tag className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                    <span className="hidden md:inline">Categorías</span>
                 </Button>
                 {onRefresh && (
                   <Button 
                     onClick={onRefresh}
                     disabled={loading}
                     variant="outline"
-                    className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-400 dark:hover:bg-cyan-900/20 disabled:opacity-50 text-sm px-3 md:px-4"
+                      className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-400 dark:hover:bg-cyan-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
                   >
-                    <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-                    <span className="hidden sm:inline ml-2">Actualizar</span>
+                      <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${loading ? 'animate-spin' : ''}`} />
+                      <span className="hidden md:inline ml-2">Actualizar</span>
                   </Button>
                 )}
+                </div>
               </div>
+              <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
+                {isSearching 
+                  ? `${filteredProducts.length} resultados`
+                  : 'Administra tu inventario'
+                }
+              </p>
             </div>
           </CardHeader>
         </Card>
@@ -281,52 +293,51 @@ export function ProductTable({
         {/* Search and Filters */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-3 md:p-4">
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+            <div className="flex flex-col gap-2 md:gap-4">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
         <input
           type="text"
-          placeholder="Buscar por nombre, referencia o marca..."
+                  placeholder="Buscar producto..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           onKeyDown={(e) => {
             if (e.key === 'Enter') {
-              // Enter busca inmediatamente, sin esperar debounce
-              e.preventDefault() // Prevenir recarga de página
+                      e.preventDefault()
               handleSearch(searchTerm)
             }
           }}
-          className="w-full pl-10 pr-20 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
         />
                 {searchTerm && (
                   <button
                     onClick={(e) => {
-                      e.preventDefault() // Prevenir recarga de página
+                      e.preventDefault()
                       setSearchTerm('')
-                      handleSearch('') // Limpiar búsqueda y volver a todos los productos
+                      handleSearch('')
                     }}
-                    className="absolute right-12 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                    title="Limpiar búsqueda y volver a todos los productos"
+                    className="absolute right-10 md:right-12 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
+                    title="Limpiar búsqueda"
                   >
                     <X className="h-4 w-4" />
                   </button>
                 )}
                 <button
                   onClick={(e) => {
-                    e.preventDefault() // Prevenir recarga de página
-                    // Botón de búsqueda busca inmediatamente
+                    e.preventDefault()
                     handleSearch(searchTerm)
                   }}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
                   title="Buscar"
                 >
                   <Search className="h-4 w-4" />
                 </button>
               </div>
+              <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(category => (
@@ -338,7 +349,7 @@ export function ProductTable({
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="px-3 md:px-4 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 {statuses.map(status => (
                   <option key={status.value} value={status.value}>
@@ -346,6 +357,7 @@ export function ProductTable({
                   </option>
                 ))}
               </select>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -376,7 +388,102 @@ export function ProductTable({
                 </Button>
               </div>
             ) : (
-              <div className="overflow-x-auto products-table-tablet-container lg:overflow-x-visible">
+              <>
+                {/* Vista de Tarjetas para Mobile */}
+                <div className="md:hidden space-y-3 p-3">
+                  {filteredProducts.map((product, index) => {
+                    const StatusIcon = getStatusIcon(product.status)
+                    return (
+                      <div
+                        key={product.id}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                              <span className="text-xs font-mono font-semibold text-gray-600 dark:text-gray-300">{product.reference}</span>
+                            </div>
+                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={product.name}>
+                              {product.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={getCategoryName(product.categoryId)}>
+                              {getCategoryName(product.categoryId)}
+                            </p>
+                          </div>
+                          <Badge className={`${getStatusColor(product.status)} text-xs shrink-0`}>
+                            <div className="flex items-center space-x-1">
+                              <StatusIcon className="h-3 w-3 flex-shrink-0" />
+                              <span className="hidden sm:inline">{getStatusLabel(product.status)}</span>
+                            </div>
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Bodega</div>
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.warehouse}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Local</div>
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
+                          </div>
+                          <div className="text-center">
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
+                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.total}</div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
+                            {getStockStatusLabel(product)}
+                          </Badge>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onEdit(product)}
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            {onStockAdjustment && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onStockAdjustment(product)}
+                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
+                              >
+                                <Package className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {onStockTransfer && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onStockTransfer(product)}
+                                className="h-8 w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95"
+                              >
+                                <ArrowRightLeft className="h-4 w-4" />
+                              </Button>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onDelete(product)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+
+                {/* Vista de Tabla para Desktop */}
+                <div className="hidden md:block overflow-x-auto products-table-tablet-container lg:overflow-x-visible">
                 <table className="w-full table-auto lg:table-auto products-table-tablet">
                   <thead className="bg-gray-50 dark:bg-gray-700">
                     <tr>
@@ -551,28 +658,37 @@ export function ProductTable({
                     })}
                   </tbody>
                 </table>
-              </div>
+                </div>
+              </>
             )}
 
             {/* Paginación - Solo mostrar cuando no está en modo búsqueda */}
             {!isSearching && totalProducts > ITEMS_PER_PAGE && (
-              <div className="flex items-center justify-between px-4 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                <div className="text-sm text-gray-600 dark:text-gray-400">
-                  Mostrando {((currentPage - 1) * ITEMS_PER_PAGE) + 1} a {Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)} de {totalProducts} productos
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
+                  <span className="hidden sm:inline">Mostrando </span>
+                  <span className="font-semibold">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span>
+                  <span className="hidden sm:inline"> a </span>
+                  <span className="sm:hidden">-</span>
+                  <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)}</span>
+                  <span className="hidden sm:inline"> de </span>
+                  <span className="sm:hidden">/</span>
+                  <span className="font-semibold">{totalProducts}</span>
+                  <span className="hidden md:inline"> productos</span>
                 </div>
                 
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center space-x-1 md:space-x-2">
                   {/* Botón Anterior */}
                   <button
                     onClick={() => onPageChange(currentPage - 1)}
                     disabled={currentPage === 1 || loading}
-                    className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                   >
                     ‹
                   </button>
                   
                   {/* Números de página */}
-                  <div className="flex items-center space-x-1">
+                  <div className="flex items-center space-x-0.5 md:space-x-1">
                     {Array.from({ length: Math.ceil(totalProducts / ITEMS_PER_PAGE) }, (_, i) => i + 1)
                       .filter(page => {
                         // Mostrar solo páginas cercanas a la actual
@@ -587,12 +703,12 @@ export function ProductTable({
                         return (
                           <div key={page} className="flex items-center">
                             {showEllipsis && (
-                              <span className="px-2 text-gray-400 text-sm">...</span>
+                              <span className="px-1 md:px-2 text-gray-400 text-xs md:text-sm">...</span>
                             )}
                             <button
                               onClick={() => onPageChange(page)}
                               disabled={loading}
-                              className={`px-3 py-1.5 text-sm rounded-md transition-colors min-w-[32px] ${
+                              className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                                 page === currentPage 
                                   ? "bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 font-medium" 
                                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
@@ -609,7 +725,7 @@ export function ProductTable({
                   <button
                     onClick={() => onPageChange(currentPage + 1)}
                     disabled={!hasMore || loading}
-                    className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
                   >
                     ›
                   </button>

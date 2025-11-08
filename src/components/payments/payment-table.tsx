@@ -217,43 +217,60 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-        <CardHeader className="p-4 md:p-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 md:gap-6">
-            <div>
-            <CardTitle className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-600" />
-              Gestión de Créditos
-              {todayPaymentsTotal !== undefined && (
-                <span className="text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
-                  • Hoy: {formatCurrency(todayPaymentsTotal)}
-                </span>
-              )}
-            </CardTitle>
-              <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 mt-1">
-                Administra los créditos y pagos pendientes de tus clientes
-              </p>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-              <div className="text-right hidden lg:block">
-                <div className="text-sm text-gray-600 dark:text-gray-300">Total Deuda:</div>
-                <div className="text-2xl font-extrabold text-orange-600">
-                  {formatCurrency(totalDebt)}
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-600 flex-shrink-0" />
+                  <span className="flex-shrink-0">Gestión de Créditos</span>
+                  {todayPaymentsTotal !== undefined && (
+                    <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
+                      <span className="hidden md:inline">• Hoy: </span>
+                      <span className="font-semibold">{formatCurrency(todayPaymentsTotal)}</span>
+                    </span>
+                  )}
+                </CardTitle>
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
+                  Administra los créditos y pagos pendientes de tus clientes
+                </p>
+                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 md:hidden">
+                  Administra los créditos
+                </p>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1 md:hidden">
+                  <span className="font-semibold text-orange-600">Deuda: {formatCurrency(totalDebt)}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                {onRefresh && (
-                  <Button 
-                    onClick={onRefresh} 
-                    variant="outline"
-                    className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 whitespace-nowrap min-w-[120px]"
-                  >
-                    <RefreshCcw className="h-4 w-4 mr-2" />
-                    Actualizar
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 md:gap-4">
+                <div className="text-right hidden md:block lg:hidden">
+                  <div className="text-xs text-gray-600 dark:text-gray-300">Total Deuda:</div>
+                  <div className="text-lg font-extrabold text-orange-600">
+                    {formatCurrency(totalDebt)}
+                  </div>
+                </div>
+                <div className="text-right hidden lg:block">
+                  <div className="text-sm text-gray-600 dark:text-gray-300">Total Deuda:</div>
+                  <div className="text-2xl font-extrabold text-orange-600">
+                    {formatCurrency(totalDebt)}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
+                  {onRefresh && (
+                    <Button 
+                      onClick={onRefresh} 
+                      variant="outline"
+                      className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                    >
+                      <RefreshCcw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                      <span className="hidden md:inline">Actualizar</span>
+                    </Button>
+                  )}
+                  <Button onClick={onCreate} className="bg-orange-600 hover:bg-orange-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
+                    <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
+                    <span className="hidden sm:inline">Nuevo Crédito</span>
+                    <span className="sm:hidden">Nuevo</span>
                   </Button>
-                )}
-                <Button onClick={onCreate} className="bg-orange-600 hover:bg-orange-700 text-white whitespace-nowrap min-w-[120px]">
-                  Nuevo Crédito
-                </Button>
+                </div>
               </div>
             </div>
           </div>
@@ -263,21 +280,21 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
+          <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar factura o cliente..."
+                placeholder="Buscar crédito..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
             >
               <option value="all">Todos los estados</option>
               <option value="pending">Pendiente</option>
@@ -314,8 +331,102 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
               </p>
             </div>
           ) : (
-            <div className="overflow-x-auto credits-table-tablet-container">
-              <table className="w-full table-fixed md:table-auto lg:table-fixed credits-table-tablet">
+            <>
+              {/* Vista de Tarjetas para Mobile */}
+              <div className="md:hidden space-y-3 p-3">
+                {filteredCredits.map((credit, index) => {
+                  return (
+                    <div
+                      key={credit.id}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                            <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
+                              {credit.invoiceNumber}
+                            </span>
+                          </div>
+                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={credit.clientName}>
+                            {credit.clientName}
+                          </h3>
+                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={getStatusLabel(credit.status, credit)}>
+                            {getStatusLabel(credit.status, credit)}
+                          </p>
+                        </div>
+                        <Badge className={`${getStatusColor(credit.status, credit)} text-xs shrink-0`}>
+                          <div className="flex items-center space-x-1">
+                            {getStatusIcon(credit.status, credit)}
+                            <span className="hidden sm:inline">{getStatusLabel(credit.status, credit)}</span>
+                          </div>
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
+                          <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatCurrency(credit.totalAmount)}</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Pendiente</div>
+                          <div className={`text-xs font-semibold ${credit.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {formatCurrency(credit.pendingAmount)}
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {credit.dueDate && credit.status !== 'completed' && (
+                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-gray-500 dark:text-gray-400">Vencimiento:</span>
+                            <span className={`font-semibold ${getDueDateColor(credit.dueDate)}`}>
+                              {formatDate(credit.dueDate)}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex-1 min-w-0">
+                          {credit.lastPaymentAmount && (
+                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={`Último abono: ${formatCurrency(credit.lastPaymentAmount)}`}>
+                              Último: {formatCurrency(credit.lastPaymentAmount)}
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0">
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onView(credit)}
+                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => onPayment(credit)}
+                            disabled={credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1}
+                            className={`h-8 w-8 p-0 active:scale-95 ${
+                              credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1
+                                ? 'text-gray-400 cursor-not-allowed opacity-50' 
+                                : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
+                            }`}
+                          >
+                            <DollarSign className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Vista de Tabla para Desktop */}
+              <div className="hidden md:block overflow-x-auto credits-table-tablet-container">
+                <table className="w-full table-fixed md:table-auto lg:table-fixed credits-table-tablet">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
                     <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
@@ -428,7 +539,8 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                   ))}
                 </tbody>
               </table>
-            </div>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

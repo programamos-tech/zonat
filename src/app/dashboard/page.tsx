@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { DatePicker } from '@/components/ui/date-picker'
 import { 
@@ -804,134 +805,125 @@ export default function DashboardPage() {
       )}
 
       {/* Header con estilo de las otras páginas */}
-      <div className="mb-4 md:mb-8">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-3 mb-2">
-              <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-                <BarChart3 className="h-5 w-5 text-white" />
-              </div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Dashboard</h1>
-            </div>
-            <p className="text-gray-600 dark:text-gray-400 dark:text-gray-400 text-sm">
-              Resumen ejecutivo y métricas de rendimiento
-            </p>
-            
-            {/* Indicador de última actualización */}
-            {lastUpdated && (
-              <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Última actualización: {lastUpdated.toLocaleTimeString()}
-              </div>
-            )}
-        </div>
-          
-          {/* Filtros simplificados */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full md:w-auto">
-            {isSuperAdmin ? (
-              <div className="flex items-center gap-3">
-                {/* Selector de período simplificado */}
-                <div className="relative w-full sm:w-auto">
-                  <select
-                    value={dateFilter}
-                    onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
-                    className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 pr-8 text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  >
-                    {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
-                      <option key={filter} value={filter}>
-                        {getDateFilterLabel(filter)}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                    </svg>
-                  </div>
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-4 md:mb-6">
+        <CardHeader className="p-3 md:p-6">
+          <div className="flex flex-col gap-3 md:gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
+              <div className="flex-1 min-w-0">
+                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
+                  <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 flex-shrink-0" />
+                  <span className="flex-shrink-0">Dashboard</span>
+                  {(isRefreshing || isFiltering) && (
+                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs flex-shrink-0">
+                      Actualizando...
+                    </Badge>
+                  )}
+                </CardTitle>
+                <div className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 mt-1">
+                  <span className="hidden md:inline">Total Ingresos: </span>
+                  <span className="font-semibold">
+                    {new Intl.NumberFormat('es-CO', { 
+                      style: 'currency', 
+                      currency: 'COP',
+                      minimumFractionDigits: 0 
+                    }).format(metrics.totalRevenue)}
+                  </span>
+                  <span className="md:hidden"> hoy</span>
                 </div>
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
+                  Resumen ejecutivo y métricas de rendimiento
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                {isSuperAdmin ? (
+                  <>
+                    {/* Selector de período simplificado */}
+                    <div className="relative w-full sm:w-auto">
+                      <select
+                        value={dateFilter}
+                        onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
+                        className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 md:px-3 py-1.5 md:py-2 pr-7 md:pr-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                      >
+                        {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
+                          <option key={filter} value={filter}>
+                            {getDateFilterLabel(filter)}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                        <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </div>
+                    </div>
 
-                {/* Calendario para fecha específica */}
-                {dateFilter === 'specific' && (
-                  <DatePicker
-                    selectedDate={specificDate}
-                    onDateSelect={handleDateSelect}
-                    placeholder="Seleccionar fecha específica"
-                    className="w-full sm:w-48"
-                  />
-                )}
-
-                {/* Botón de actualizar */}
-                <Button 
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  variant="outline"
-                  className="w-full sm:w-auto text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Actualizar
-                </Button>
-
-                {/* Indicador de carga para filtro específico */}
-                {isFiltering && (
-                  <div className="flex items-center gap-2 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
-                    <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
-                    <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
-                      Cargando datos del día...
+                    {/* Calendario para fecha específica */}
+                    {dateFilter === 'specific' && (
+                      <DatePicker
+                        selectedDate={specificDate}
+                        onDateSelect={handleDateSelect}
+                        placeholder="Seleccionar fecha"
+                        className="w-full sm:w-40 text-xs md:text-sm"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                    <Calendar className="h-3 w-3 md:h-4 md:w-4 text-emerald-600" />
+                    <span className="text-xs md:text-sm font-medium text-emerald-700 dark:text-emerald-300 hidden sm:inline">
+                      Vista del día actual
+                    </span>
+                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 sm:hidden">
+                      Hoy
                     </span>
                   </div>
                 )}
-              </div>
-            ) : (
-              <div className="flex items-center gap-3">
-              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                <Calendar className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                  Vista del día actual
-                </span>
-                </div>
-                {/* Botón de actualizar para vendedores */}
                 <Button 
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   variant="outline"
-                  className="w-full sm:w-auto text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-800 disabled:opacity-50"
+                  className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
                 >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  Actualizar
+                  <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden md:inline ml-2">Actualizar</span>
                 </Button>
               </div>
-            )}
+            </div>
+            <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
+              Resumen ejecutivo y métricas
+            </p>
           </div>
-        </div>
-      </div>
+        </CardHeader>
+      </Card>
 
       {/* Métricas principales - 3 o 4 cards según el rol */}
       <div className={`grid grid-cols-1 sm:grid-cols-2 ${user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 md:gap-6 mb-6 md:mb-8`}>
         {/* Total Ingresos */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <BarChart3 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
+              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
                     minimumFractionDigits: 0 
             }).format(metrics.totalRevenue)}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
             {metrics.totalSales} ventas realizadas
                 </p>
               </div>
@@ -939,29 +931,29 @@ export default function DashboardPage() {
         {/* Efectivo */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
             </div>
             <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
+              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
               minimumFractionDigits: 0 
             }).format(metrics.cashRevenue)}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
@@ -969,29 +961,29 @@ export default function DashboardPage() {
         {/* Transferencia */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
+              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
                     minimumFractionDigits: 0 
             }).format(metrics.transferRevenue)}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 dark:text-gray-400 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
@@ -1000,29 +992,29 @@ export default function DashboardPage() {
         {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
         <div 
           onClick={() => router.push('/payments')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
             </div>
             <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
               minimumFractionDigits: 0 
             }).format(metrics.creditRevenue)}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
             {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
           </p>
         </div>
@@ -1031,29 +1023,29 @@ export default function DashboardPage() {
       </div>
 
       {/* Segunda fila de métricas - 4 cards abajo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
         {/* Dinero Afuera - Para usuarios con permisos de créditos */}
         {canViewCredits && (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
               </div>
               <div className="text-right">
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
+                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                   {isSuperAdmin ? 'Total' : 'Hoy'}
                 </p>
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
               {new Intl.NumberFormat('es-CO', { 
                 style: 'currency', 
                 currency: 'COP',
                 minimumFractionDigits: 0 
               }).format(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
               {isSuperAdmin 
                 ? `${metrics.pendingCreditsCount} créditos pendientes/parciales`
                 : `${metrics.dailyCreditsCount || 0} créditos del día`
@@ -1062,20 +1054,20 @@ export default function DashboardPage() {
 
             {/* Información adicional para vendedores */}
             {!isSuperAdmin && (
-              <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
-                <div className="flex items-center justify-between text-sm">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+                <div className="flex items-center justify-between text-xs md:text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Créditos vencidos:</span>
                   <span className="font-semibold text-red-600 dark:text-red-400">
                     {metrics.overdueCreditsCount || 0}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs md:text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Deuda vencida:</span>
                   <span className="font-semibold text-red-600 dark:text-red-400">
                     ${(metrics.overdueCreditsDebt || 0).toLocaleString('es-CO')}
                   </span>
                 </div>
-                <div className="flex items-center justify-between text-sm">
+                <div className="flex items-center justify-between text-xs md:text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Créditos pendientes:</span>
                   <span className="font-semibold text-orange-600 dark:text-orange-400">
                     {metrics.pendingCreditsCount || 0}
@@ -1089,36 +1081,36 @@ export default function DashboardPage() {
         {/* Garantías Completadas */}
         <div 
           onClick={() => router.push('/warranties')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+          <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Shield className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
             </div>
-            <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
+            <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
           </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
             {metrics.completedWarranties}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
             {metrics.pendingWarranties} pendientes
           </p>
 
           {/* Resumen adicional */}
-          <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
-            <div className="flex items-center justify-between text-sm">
+          <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+            <div className="flex items-center justify-between text-xs md:text-sm">
               <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
               <span className="font-semibold text-purple-600 dark:text-purple-400">
                 {metrics.warrantyRate}% de ventas
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs md:text-sm">
               <span className="text-gray-600 dark:text-gray-400">Valor:</span>
               <span className="font-semibold text-orange-600 dark:text-orange-400">
                 ${metrics.totalWarrantyValue.toLocaleString('es-CO')}
               </span>
             </div>
-            <div className="flex items-center justify-between text-sm">
+            <div className="flex items-center justify-between text-xs md:text-sm">
               <span className="text-gray-600 dark:text-gray-400">Última:</span>
               <span className="font-semibold text-blue-600 dark:text-blue-400">
                 {metrics.daysSinceLastWarranty !== null 
@@ -1133,48 +1125,49 @@ export default function DashboardPage() {
         {/* Ganancia Bruta */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
         >
-                <div className="flex items-center justify-between mb-4">
-            <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-400" />
+                <div className="flex items-center justify-between mb-2 md:mb-4">
+            <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
             </div>
             <div className="text-right">
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
-              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
+              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
                     </div>
-          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
               minimumFractionDigits: 0 
             }).format(metrics.grossProfit)}
           </p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
             Beneficio por ventas realizadas
           </p>
           
           {/* Lista de ventas más rentables */}
           {metrics.topProfitableSales.length > 0 && (
-            <div className="space-y-1">
+            <div className="space-y-0.5 md:space-y-1">
               {metrics.topProfitableSales.map((sale, index) => {
                 const saleTime = new Date(sale.createdAt).toLocaleTimeString('es-CO', { 
                   hour: '2-digit', 
                   minute: '2-digit' 
                 })
                 const clientName = sale.clientName || 'Cliente'
+                const shortName = clientName.length > 15 ? clientName.substring(0, 15) + '...' : clientName
                 
                 return (
-                  <div key={sale.id} className="flex justify-between items-center text-sm">
-                    <span className="text-gray-600 dark:text-gray-400">
-                      • {clientName} ({saleTime})
+                  <div key={sale.id} className="flex justify-between items-center text-xs md:text-sm">
+                    <span className="text-gray-600 dark:text-gray-400 truncate mr-2">
+                      • {shortName} ({saleTime})
                     </span>
-                    <span className="text-green-600 dark:text-green-400 font-medium">
+                    <span className="text-green-600 dark:text-green-400 font-medium flex-shrink-0">
                       +${sale.profit.toLocaleString('es-CO')}
                     </span>
                   </div>
@@ -1188,37 +1181,37 @@ export default function DashboardPage() {
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/products')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-                <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                <Package className="h-4 w-4 md:h-5 md:w-5 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div className="text-right">
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Stock Total</p>
+                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
+                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">Stock Total</p>
               </div>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
               {metrics.totalProductsCount}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2">
               {metrics.totalProducts} unidades en stock • {metrics.lowStockProducts} con stock bajo
             </p>
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-2">
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
               <div>
-                <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
+                <p className="text-base md:text-lg font-semibold text-orange-600 dark:text-orange-400">
                   ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
                   {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
                 </p>
               </div>
               <div>
-                <p className="text-lg font-semibold text-blue-600 dark:text-blue-400">
+                <p className="text-base md:text-lg font-semibold text-blue-600 dark:text-blue-400">
                   ${metrics.estimatedSalesValue.toLocaleString('es-CO')}
                 </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">
+                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
                   Valor Estimado de Ventas
                 </p>
               </div>
@@ -1228,40 +1221,41 @@ export default function DashboardPage() {
 
         {/* Facturas Anuladas - Disponible para todos */}
           <div 
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
             onClick={() => setShowCancelledModal(true)}
           >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
               {metrics.cancelledSales}
             </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
               de {metrics.totalSales} ventas totales
             </p>
             
             {/* Resumen adicional */}
-            <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
-              <div className="flex items-center justify-between text-sm">
+            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+              <div className="flex items-center justify-between text-xs md:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
                 <span className="font-semibold text-red-600 dark:text-red-400">
                   {metrics.totalSales > 0 ? ((metrics.cancelledSales / metrics.totalSales) * 100).toFixed(1) : 0}%
                 </span>
               </div>
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex items-center justify-between text-xs md:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Valor perdido:</span>
                 <span className="font-semibold text-orange-600 dark:text-orange-400">
                   ${metrics.lostValue.toLocaleString('es-CO')}
                 </span>
               </div>
-              <div className="text-center pt-2">
-                <span className="text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1">
-                  <BarChart3 className="h-3 w-3" />
-                  Haz clic para ver análisis detallado
+              <div className="text-center pt-1 md:pt-2">
+                <span className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1">
+                  <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <span className="hidden sm:inline">Haz clic para ver análisis detallado</span>
+                  <span className="sm:hidden">Ver detalles</span>
                 </span>
               </div>
             </div>
@@ -1269,34 +1263,34 @@ export default function DashboardPage() {
       </div>
 
       {/* Gráficos y estadísticas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         {/* Gráfico de ventas por día */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="p-4 md:p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+          <div className="p-3 md:p-6 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
               </div>
               <div className="text-right">
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ventas por Día</span>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ventas por Día</span>
+                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                   {effectiveDateFilter === 'today' ? 'Hoy' : 
                    effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                    'Todos los Períodos'}
                 </p>
               </div>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
               {metrics.salesChartData.length > 0 
                 ? `${metrics.salesChartData.length} días con ventas en el período seleccionado`
                 : 'No hay ventas en el período seleccionado'
               }
             </p>
           </div>
-          <div className="p-4 md:p-6">
+          <div className="p-3 md:p-6">
             {metrics.salesChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={220} className="md:!h-[300px]">
-                <BarChart data={metrics.salesChartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+              <ResponsiveContainer width="100%" height={200} className="md:!h-[300px]">
+                <BarChart data={metrics.salesChartData} margin={{ top: 10, right: 10, left: 5, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
@@ -1307,12 +1301,15 @@ export default function DashboardPage() {
                   <XAxis 
                     dataKey="date" 
                     stroke="#666"
-                    fontSize={11}
-                    tick={{ fontSize: 11 }}
+                    fontSize={9}
+                    tick={{ fontSize: 9 }}
+                    className="md:text-xs"
                   />
                   <YAxis 
                     stroke="#666"
-                    fontSize={11}
+                    fontSize={9}
+                    tick={{ fontSize: 9 }}
+                    className="md:text-xs"
                     tickFormatter={(value) => {
                       if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
                       if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
@@ -1365,25 +1362,26 @@ export default function DashboardPage() {
 
         {/* Gráfico de métodos de pago */}
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <CreditCard className="h-5 w-5 text-green-600" />
+          <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2 md:gap-3">
+              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
               </div>
-              <h2 className="text-lg font-bold text-gray-900 dark:text-white">Métodos de Pago</h2>
+              <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Métodos de Pago</h2>
             </div>
           </div>
-          <div className="p-4 md:p-6">
-            <ResponsiveContainer width="100%" height={300}>
+          <div className="p-3 md:p-6">
+            <ResponsiveContainer width="100%" height={200} className="md:!h-[300px]">
               <PieChart>
                 <Pie
                   data={metrics.paymentMethodData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
+                  innerRadius={40}
+                  outerRadius={70}
                   paddingAngle={5}
                   dataKey="value"
+                  className="md:!innerRadius-[60px] md:!outerRadius-[100px]"
                 >
                   {metrics.paymentMethodData.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
@@ -1402,22 +1400,23 @@ export default function DashboardPage() {
                     backgroundColor: 'white', 
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                    fontSize: '12px'
                   }}
                 />
               </PieChart>
             </ResponsiveContainer>
-            <div className="mt-4 space-y-2">
+            <div className="mt-3 md:mt-4 space-y-1.5 md:space-y-2">
               {metrics.paymentMethodData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
+                <div key={index} className="flex items-center justify-between text-xs md:text-sm">
+                  <div className="flex items-center gap-1.5 md:gap-2">
                     <div 
-                      className="w-3 h-3 rounded-full" 
+                      className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" 
                       style={{ backgroundColor: item.color }}
                     ></div>
                     <span className="text-gray-600 dark:text-white">{item.name}</span>
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white">
+                  <span className="font-medium text-gray-900 dark:text-white text-xs md:text-sm">
                     {new Intl.NumberFormat('es-CO', { 
                       style: 'currency', 
                       currency: 'COP',
@@ -1433,30 +1432,34 @@ export default function DashboardPage() {
 
       {/* Productos más vendidos con gráfico de barras */}
       <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-        <div className="px-4 md:px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex items-center gap-2 md:gap-3">
+            <div className="p-1.5 md:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <Package className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Productos Más Vendidos</h2>
+            <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Productos Más Vendidos</h2>
           </div>
         </div>
-        <div className="p-4 md:p-6">
+        <div className="p-3 md:p-6">
           {metrics.topProductsChart.length > 0 ? (
-            <ResponsiveContainer width="100%" height={220} className="md:!h-[300px]">
-              <BarChart data={metrics.topProductsChart} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+            <ResponsiveContainer width="100%" height={200} className="md:!h-[300px]">
+              <BarChart data={metrics.topProductsChart} margin={{ top: 10, right: 10, left: 5, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                 <XAxis 
                   dataKey="name" 
                   stroke="#666"
-                  fontSize={12}
+                  fontSize={9}
+                  tick={{ fontSize: 9 }}
                   angle={-45}
                   textAnchor="end"
-                  height={80}
+                  height={60}
+                  className="md:text-xs"
                 />
                 <YAxis 
                   stroke="#666"
-                  fontSize={12}
+                  fontSize={9}
+                  tick={{ fontSize: 9 }}
+                  className="md:text-xs"
                 />
                 <Tooltip 
                   formatter={(value: number, name: string) => [
