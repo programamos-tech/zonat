@@ -1,13 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://bbkihtgpuzyywhmkwtgc.supabase.co'
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJia2lodGdwdXp5eXdobWt3dGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjEzMjgwMzIsImV4cCI6MjA3NjkwNDAzMn0.IkllhPygyMvL1Wha1g803_0iTBzgc2RKLj8KLLGLiNg'
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJia2lodGdwdXp5eXdobWt3dGdjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MTMyODAzMiwiZXhwIjoyMDc2OTA0MDMyfQ.IVwGBykWyy2UH724J1TKUnaq47ccIXVUOoPxI2E-ghw'
+// Obtener variables de entorno - NO usar valores por defecto para evitar conexiones incorrectas
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Validar que las variables estén definidas
 if (!supabaseUrl || !supabaseAnonKey) {
-      // Error silencioso en producción
-      // Error silencioso en producción
+  if (typeof window === 'undefined') {
+    // Solo mostrar error en servidor, no en cliente
+    console.error('❌ Error: Variables de entorno de Supabase no configuradas')
+    console.error('NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '✅' : '❌')
+    console.error('NEXT_PUBLIC_SUPABASE_ANON_KEY:', supabaseAnonKey ? '✅' : '❌')
+  }
+  throw new Error('Variables de entorno de Supabase no configuradas. Verifica las variables de entorno en Vercel.')
 }
 
 // Cliente para operaciones del cliente (anon)
