@@ -36,12 +36,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
   const { products, refreshProducts, searchProducts } = useProducts()
   
-  // Debug: Log products when modal opens (removed products dependency to prevent infinite loop)
-  // useEffect(() => {
-  //   if (isOpen) {
-  //   }
-  // }, [isOpen])
-  
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mixed' | ''>('')
@@ -199,13 +193,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     })
   }, [products, debouncedProductSearch, searchedProducts, isSearchingProducts])
 
-  // Debug: Log filtered products
-  useEffect(() => {
-
-    if (filteredProducts.length > 0) {
-
-    }
-  }, [filteredProducts])
 
   // Scroll automático cuando se selecciona un producto con las flechas
   useEffect(() => {
@@ -427,6 +414,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const handleUpdatePrice = (itemId: string, newPrice: number) => {
     if (newPrice < 0) return
 
+    // Permitir escribir libremente, la validación se hará al perder el foco
     setSelectedProducts(prev =>
       prev.map(item => {
         if (item.id === itemId) {
@@ -442,6 +430,22 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         return item
       })
     )
+  }
+
+  const handlePriceBlur = (itemId: string) => {
+    // Validar solo cuando el campo pierde el foco
+    const item = selectedProducts.find(i => i.id === itemId)
+    if (item) {
+      const product = products.find(p => p.id === item.productId)
+      const productCost = product?.cost || 0
+      
+      // Si el precio es menor al costo, mostrar alerta y ajustar al costo mínimo
+      if (item.unitPrice < productCost) {
+        showStockAlert(`El precio de venta debe ser igual o mayor al costo base ($${productCost.toLocaleString('es-CO')}). Se ajustó al costo mínimo.`, item.productId)
+        // Ajustar al costo mínimo
+        handleUpdatePrice(itemId, productCost)
+      }
+    }
   }
 
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
@@ -545,6 +549,22 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const handleSave = (isDraft: boolean = false) => {
     // Validar que hay cliente, productos, método de pago y que todos tengan cantidad > 0
     if (!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod) return
+
+    // Validar que todos los precios de venta sean >= costo base
+    const invalidProducts: string[] = []
+    validProducts.forEach(item => {
+      const product = products.find(p => p.id === item.productId)
+      const productCost = product?.cost || 0
+      if (item.unitPrice < productCost) {
+        invalidProducts.push(`${item.productName} (Costo: $${productCost.toLocaleString('es-CO')})`)
+      }
+    })
+
+    if (invalidProducts.length > 0) {
+      const productsList = invalidProducts.join(', ')
+      showStockAlert(`El precio de venta debe ser igual o mayor al costo base para: ${productsList}. Por favor ajusta los precios antes de continuar.`, undefined)
+      return
+    }
 
     // Si NO es borrador, validar pagos mixtos si es necesario
     if (!isDraft && paymentMethod === 'mixed') {
@@ -775,16 +795,18 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                         onFocus={() => setShowProductDropdown(true)}
                         onClick={() => setShowProductDropdown(true)}
                         onKeyDown={(e) => {
-                          if (!showProductDropdown || filteredProducts.length === 0) return
-                          
-                          if (e.key === 'ArrowDown') {
+                          // Permitir navegación solo si hay productos y el dropdown está visible
+                          if (e.key === 'ArrowDown' && showProductDropdown && filteredProducts.length > 0) {
+                            e.preventDefault()
+                            setShowProductDropdown(true)
+                            setSelectedProductIndex(prev => 
+                              prev < filteredProducts.length - 1 ? prev + 1 : 0
+                            )
+                          } else if (e.key === 'ArrowUp' && showProductDropdown && filteredProducts.length > 0) {
                             e.preventDefault()
                             setSelectedProductIndex(prev => 
-                              prev < filteredProducts.length - 1 ? prev + 1 : prev
+                              prev > 0 ? prev - 1 : filteredProducts.length - 1
                             )
-                          } else if (e.key === 'ArrowUp') {
-                            e.preventDefault()
-                            setSelectedProductIndex(prev => prev > 0 ? prev - 1 : -1)
                           } else if (e.key === 'Enter' && selectedProductIndex >= 0 && selectedProductIndex < filteredProducts.length) {
                             e.preventDefault()
                             handleAddProduct(filteredProducts[selectedProductIndex])
@@ -926,7 +948,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                               <div className="flex-1">
                                 <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
                                 <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                  <span>Precio base: <span className="font-medium text-gray-500 dark:text-gray-400">${products.find(p => p.id === item.productId)?.price.toLocaleString() || 0}</span></span>
+                                  <span>Costo base: <span className="font-medium text-gray-500 dark:text-gray-400">${products.find(p => p.id === item.productId)?.cost.toLocaleString() || 0}</span></span>
                                   <span>Stock: <span className="font-medium">{getAvailableStock(item.productId)} unidades</span></span>
                                 </div>
                                 <div className="flex items-center space-x-2 mt-2">
@@ -937,8 +959,13 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                     type="number"
                                     value={item.unitPrice || ''}
                                     onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
-                                    className="w-32 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
-                                    min="0"
+                                    onBlur={() => handlePriceBlur(item.id)}
+                                    className={`w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2 ${
+                                      item.unitPrice && products.find(p => p.id === item.productId)?.cost && item.unitPrice < (products.find(p => p.id === item.productId)?.cost || 0)
+                                        ? 'border-red-500 dark:border-red-500'
+                                        : 'border-gray-300 dark:border-gray-500'
+                                    }`}
+                                    min={products.find(p => p.id === item.productId)?.cost || 0}
                                     step="100"
                                     placeholder="0"
                                   />

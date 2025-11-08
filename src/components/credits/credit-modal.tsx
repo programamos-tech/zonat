@@ -228,6 +228,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const updatePrice = (productId: string, newPrice: number) => {
     if (newPrice < 0) return
 
+    // Permitir escribir libremente, la validación se hará al perder el foco
     setSelectedProducts(prev =>
       prev.map(item => {
         if (item.productId === productId) {
@@ -236,6 +237,22 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         return item
       })
     )
+  }
+
+  const handlePriceBlur = (productId: string) => {
+    // Validar solo cuando el campo pierde el foco
+    const item = selectedProducts.find(i => i.productId === productId)
+    if (item) {
+      const product = products.find(p => p.id === productId)
+      const productCost = product?.cost || 0
+      
+      // Si el precio es menor al costo, mostrar alerta y ajustar al costo mínimo
+      if (item.unitPrice < productCost) {
+        showStockAlert(`El precio de venta no puede ser menor al costo base ($${productCost.toLocaleString('es-CO')}). Se ajustó al costo mínimo.`, productId)
+        // Ajustar al costo mínimo
+        updatePrice(productId, productCost)
+      }
+    }
   }
 
   const calculateTotal = () => {
@@ -518,7 +535,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       const warehouseStock = product?.stock?.warehouse || 0
                       const localStock = product?.stock?.store || 0
                       const reference = product?.reference || 'N/A'
-                      const basePrice = product?.price || 0
+                      const baseCost = product?.cost || 0
                       
                       return (
                       <div key={item.productId} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
@@ -547,12 +564,13 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                 const numericValue = parseFloat(cleanValue) || 0
                                 updatePrice(item.productId, numericValue)
                               }}
+                              onBlur={() => handlePriceBlur(item.productId)}
                               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
                               placeholder="0"
                             />
-                            {basePrice > 0 && (
+                            {baseCost > 0 && (
                               <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-                                Base: ${basePrice.toLocaleString('es-CO')}
+                                Costo base: ${baseCost.toLocaleString('es-CO')}
                               </div>
                             )}
                           </div>

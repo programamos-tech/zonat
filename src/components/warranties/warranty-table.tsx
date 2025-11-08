@@ -184,15 +184,9 @@ export function WarrantyTable({
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 No hay garantías registradas
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-gray-500 dark:text-gray-400">
                 Comienza creando una nueva garantía
               </p>
-              <Button 
-                onClick={onCreate}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                Nueva Garantía
-              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto warranty-table-tablet-container">

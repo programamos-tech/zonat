@@ -95,10 +95,6 @@ export function UserManagement() {
     isActive: true
   })
 
-  // Debug: Log formData changes
-  useEffect(() => {
-
-  }, [formData])
 
   // Aplicar permisos cuando se cambia el rol
   useEffect(() => {

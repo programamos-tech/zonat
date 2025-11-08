@@ -167,15 +167,9 @@ export function ClientTable({
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 No se encontraron clientes
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-gray-500 dark:text-gray-400">
                 Comienza creando un nuevo cliente
               </p>
-              <Button 
-                onClick={onCreate}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
-              >
-                Nuevo Cliente
-              </Button>
             </div>
           ) : (
             <div className="overflow-x-auto">

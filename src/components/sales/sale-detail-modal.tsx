@@ -237,10 +237,26 @@ export default function SaleDetailModal({
   }
 
   const handlePrint = async () => {
-    if (!sale || !companyConfig) {
-      // Error silencioso en producción
+    if (!sale) {
       return
     }
+
+    // Usar valores por defecto si no hay configuración de empresa
+    const defaultCompanyConfig = {
+      id: 'default',
+      name: 'Zona T',
+      nit: '1035770226-9',
+      address: 'Carrera 20 #22-02, Sincelejo, Sucre',
+      phone: '3135206736',
+      email: 'info@zonat.com',
+      logo: '/zonat-logo.png',
+      dianResolution: undefined,
+      numberingRange: undefined,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+
+    const config = companyConfig || defaultCompanyConfig
 
     setIsLoadingPrint(true)
     
@@ -391,13 +407,13 @@ export default function SaleDetailModal({
             <!-- Header -->
             <div class="header">
               <div class="company-info">
-                <h1>${companyConfig.name}</h1>
-                <p><strong>NIT:</strong> ${companyConfig.nit}</p>
-                <p><strong>Dirección:</strong> ${companyConfig.address}</p>
-                <p><strong>Teléfono:</strong> ${companyConfig.phone}</p>
-                <p><strong>Email:</strong> ${companyConfig.email}</p>
-                ${companyConfig.dianResolution ? `<p><strong>${companyConfig.dianResolution}</strong></p>` : ''}
-                ${companyConfig.numberingRange ? `<p><strong>Rango autorizado:</strong> ${companyConfig.numberingRange}</p>` : ''}
+                <h1>${config.name}</h1>
+                <p><strong>NIT:</strong> ${config.nit}</p>
+                <p><strong>Dirección:</strong> ${config.address}</p>
+                <p><strong>Teléfono:</strong> ${config.phone}</p>
+                <p><strong>Email:</strong> ${config.email}</p>
+                ${config.dianResolution ? `<p><strong>${config.dianResolution}</strong></p>` : ''}
+                ${config.numberingRange ? `<p><strong>Rango autorizado:</strong> ${config.numberingRange}</p>` : ''}
               </div>
               <div class="invoice-info">
                 <h2>FACTURA DE VENTA</h2>
@@ -521,7 +537,7 @@ export default function SaleDetailModal({
             <!-- Footer -->
             <div class="footer">
               <p>Esta factura cumple con los requisitos legales establecidos por la DIAN</p>
-              <p>Gracias por su compra - ${companyConfig.name}</p>
+              <p>Gracias por su compra - ${config.name}</p>
             </div>
           </div>
         </body>

@@ -106,19 +106,8 @@ export default function SalesPage() {
 
   const handlePrint = async (sale: Sale) => {
     try {
-      // Importar el servicio de empresa dinámicamente
-      const { CompanyService } = await import('@/lib/company-service')
-      
-      // Obtener configuración de empresa
-      let companyConfig = await CompanyService.getCompanyConfig()
-      if (!companyConfig) {
-        companyConfig = await CompanyService.initializeDefaultConfig()
-      }
-      
-      if (!companyConfig) {
-        alert('Error: No se pudo cargar la configuración de la empresa')
-        return
-      }
+      // Los datos de la empresa están hardcodeados en el HTML generado
+      // No necesitamos cargar la configuración de la base de datos
 
       // Crear datos del cliente (usar datos de la venta o valores por defecto)
       const client = {
@@ -172,7 +161,7 @@ export default function SalesPage() {
               font-size: 12px;
               line-height: 1.2;
             }
-            .ticket {
+            .ticket { 
               color: #000 !important;
             }
             .ticket * {

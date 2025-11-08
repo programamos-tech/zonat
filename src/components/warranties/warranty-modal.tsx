@@ -275,7 +275,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
 
     setLoading(true)
     try {
-      const warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> = {
+      const warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number } = {
         originalSaleId: selectedSale!.id,
         clientId: selectedSale!.clientId,
         clientName: selectedSale!.clientName,
@@ -286,7 +286,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         productDeliveredName: selectedReplacementProduct?.name,
         reason: formData.reason,
         notes: `${formData.notes || ''}\n\nCantidad: ${defectiveQuantity} producto(s) defectuoso(s) → ${defectiveQuantity} producto(s) de reemplazo`.trim(),
-        status: 'completed'
+        status: 'completed',
+        replacementQuantity: defectiveQuantity // Enviar la cantidad de reemplazo (siempre 1 para garantías uno a uno)
       }
 
       await onSave(warrantyData)
@@ -304,14 +305,14 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 md:h-8 md:w-8 text-purple-600" />
+            <Shield className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 dark:text-cyan-400" />
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+              <h2 className="text-lg md:text-xl font-semibold text-cyan-800 dark:text-cyan-200">
                 {warranty ? 'Editar Garantía' : 'Nueva Garantía'}
               </h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
+              <p className="text-xs md:text-sm text-cyan-700 dark:text-cyan-300">
                 {warranty ? 'Modificar información de la garantía' : 'Crear una nueva garantía para un producto defectuoso'}
               </p>
             </div>
@@ -320,9 +321,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 w-8 p-0 hover:bg-cyan-100 dark:hover:bg-cyan-800/30"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-200" />
           </Button>
         </div>
 
@@ -333,7 +334,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-purple-600" />
+                  <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                   Venta Original
                 </CardTitle>
               </CardHeader>
@@ -350,7 +351,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           setSearchSale(e.target.value)
                           searchSales(e.target.value)
                         }}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     
@@ -447,13 +448,13 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                   </div>
                 ) : checkingWarranty ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600"></div>
                     <span className="ml-2 text-sm text-gray-600 dark:text-gray-300">
                       Verificando garantías existentes...
                     </span>
                   </div>
                 ) : hasExistingWarranty ? (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <div className="p-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">
@@ -470,7 +471,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         </div>
                       </div>
                       <div className="text-right">
-                        <div className="text-xs text-green-600 dark:text-green-400 mb-1 flex items-center gap-1">
+                        <div className="text-xs text-cyan-600 dark:text-cyan-400 mb-1 flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />
                           Información cargada automáticamente
                         </div>
@@ -483,7 +484,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           }}
                           variant="outline"
                           size="sm"
-                          className="text-purple-600 border-purple-300 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-600 dark:hover:bg-purple-900/20"
+                          className="text-cyan-600 border-cyan-300 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-600 dark:hover:bg-cyan-900/20"
                         >
                           Cambiar Venta
                         </Button>
@@ -497,7 +498,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <div className="p-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">
@@ -554,7 +555,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <User className="h-5 w-5 text-purple-600" />
+                  <User className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                   Cliente
                 </CardTitle>
               </CardHeader>
@@ -731,7 +732,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-5 w-5 text-green-600" />
+                  <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                   Producto de Reemplazo
                 </CardTitle>
               </CardHeader>
@@ -758,7 +759,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                               setSearchReplacement(e.target.value)
                               searchReplacementProducts(e.target.value)
                             }}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                           />
                         </div>
                         <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
@@ -804,7 +805,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                                     })
                                   }
                                 }}
-                                className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-green-50 dark:hover:bg-green-900/20 cursor-pointer transition-colors"
+                                className="p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-cyan-50 dark:hover:bg-cyan-900/20 cursor-pointer transition-colors"
                               >
                                 <div className="font-medium text-gray-900 dark:text-white">
                                   {product.name}
@@ -834,7 +835,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         </div>
                   </div>
                 ) : (
-                  <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+                  <div className="p-4 bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg">
                     <div className="flex items-center justify-between mb-4">
                       <div>
                         <div className="font-medium text-gray-900 dark:text-white">
@@ -846,12 +847,12 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         <div className="text-sm text-gray-600 dark:text-gray-300">
                           Precio: ${(selectedReplacementProduct.price || 0).toLocaleString()}
                         </div>
-                        <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                        <div className="text-xs text-cyan-600 dark:text-cyan-400 mt-1 flex items-center gap-1">
                           <CheckCircle className="h-3 w-3" />
                           Producto de reemplazo seleccionado
                         </div>
                         {stockValidation.hasStock && (
-                          <div className="text-xs text-green-600 dark:text-green-400 mt-1 flex items-center gap-1">
+                          <div className="text-xs text-cyan-600 dark:text-cyan-400 mt-1 flex items-center gap-1">
                             <CheckCircle className="h-3 w-3" />
                             Stock disponible: {stockValidation.stockCount} unidades
                           </div>
@@ -902,7 +903,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-purple-600" />
+                  <FileText className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
                   Información Adicional
                 </CardTitle>
               </CardHeader>
@@ -917,7 +918,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     disabled={hasExistingWarranty}
                     onChange={hasExistingWarranty ? undefined : (e) => setFormData(prev => ({ ...prev, productSerial: e.target.value }))}
                     placeholder="Ingrese el número de serie del producto defectuoso"
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
                 <div>
@@ -930,7 +931,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     onChange={hasExistingWarranty ? undefined : (e) => setFormData(prev => ({ ...prev, reason: e.target.value }))}
                     placeholder="Describa el problema o defecto del producto..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                   {errors.reason && (
                     <p className="text-sm text-red-600 dark:text-red-400 flex items-center gap-1 mt-1">
@@ -949,7 +950,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     onChange={hasExistingWarranty ? undefined : (e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Agregue cualquier información adicional relevante..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed"
                   />
                 </div>
               </CardContent>
@@ -969,7 +970,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
           <Button
             onClick={handleSave}
             disabled={loading || hasExistingWarranty}
-            className={`bg-purple-600 hover:bg-purple-700 text-white disabled:bg-gray-400 ${hasExistingWarranty ? 'opacity-50 cursor-not-allowed' : ''}`}
+            className={`bg-cyan-600 hover:bg-cyan-700 text-white disabled:bg-gray-400 ${hasExistingWarranty ? 'opacity-50 cursor-not-allowed' : ''}`}
           >
             {loading ? (
               <div className="flex items-center gap-2">

@@ -152,7 +152,6 @@ export class ProductsService {
           .range(from, to)
 
         if (error) {
-          console.error('Error obteniendo stock total:', error)
           break
         }
 
@@ -179,7 +178,6 @@ export class ProductsService {
 
       return totalStock
     } catch (error) {
-      console.error('Error calculando stock total:', error)
       return 0
     }
   }

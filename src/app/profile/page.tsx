@@ -194,8 +194,8 @@ export default function ProfilePage() {
                       <KeyRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
                     </div>
                     <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                      Módulos Accesibles
-                    </p>
+                    Módulos Accesibles
+                  </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     {user.permissions.map((permission, index) => (

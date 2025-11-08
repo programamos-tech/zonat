@@ -241,7 +241,7 @@ export class WarrantyService {
   }
 
   // Crear nueva garantía
-  static async createWarranty(warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'>): Promise<Warranty> {
+  static async createWarranty(warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number }): Promise<Warranty> {
     try {
       const { data, error } = await supabase
         .from('warranties')
@@ -301,26 +301,59 @@ export class WarrantyService {
       // Si la garantía está completada y tiene producto de reemplazo, descontar del inventario
       if (warrantyData.status === 'completed' && warrantyData.productDeliveredId) {
         try {
-          // Importar el servicio de productos dinámicamente para evitar dependencias circulares
-          const { ProductsService } = await import('./products-service')
+          // Para garantías, siempre es uno a uno, así que siempre descontar EXACTAMENTE 1 unidad
+          const quantityToDeduct = 1
           
-          // Obtener el producto actual para verificar el stock
-          const product = await ProductsService.getProductById(warrantyData.productDeliveredId)
-          if (product) {
-            const currentStock = (product.stock?.local || 0) + (product.stock?.warehouse || 0)
-            const quantityToDeduct = warrantyData.replacementQuantity || 1
+          // Leer directamente desde la base de datos para obtener el stock más reciente
+          const { data: productData, error: productError } = await supabase
+            .from('products')
+            .select('stock_store, stock_warehouse')
+            .eq('id', warrantyData.productDeliveredId)
+            .single()
+          
+          if (!productError && productData) {
+            const storeStock = Number(productData.stock_store) || 0
+            const warehouseStock = Number(productData.stock_warehouse) || 0
+            const currentStock = storeStock + warehouseStock
             
             if (currentStock >= quantityToDeduct) {
-              // Descontar del stock local primero, luego del warehouse
-              let localDeduction = Math.min(quantityToDeduct, product.stock?.local || 0)
-              let warehouseDeduction = quantityToDeduct - localDeduction
+              // Calcular los nuevos valores de stock descontando EXACTAMENTE 1 unidad
+              // Inicializar con los valores actuales
+              let newStoreStock = storeStock
+              let newWarehouseStock = warehouseStock
               
-              await ProductsService.updateProductStock(warrantyData.productDeliveredId, {
-                local: (product.stock?.local || 0) - localDeduction,
-                warehouse: (product.stock?.warehouse || 0) - warehouseDeduction
-              })
+              // Descontar EXACTAMENTE 1 unidad: primero del local, luego del warehouse
+              if (storeStock > 0) {
+                // Si hay stock en local (aunque sea 1), descontar 1 del local
+                newStoreStock = storeStock - 1
+                // NO tocar el warehouse si hay stock en local
+                newWarehouseStock = warehouseStock
+              } else {
+                // Si NO hay stock en local, descontar 1 del warehouse
+                newStoreStock = 0
+                newWarehouseStock = warehouseStock - 1
+              }
+              
+              // Actualizar directamente en la base de datos
+              // Usar condiciones para evitar actualizaciones concurrentes
+              const { data: updateData, error: updateError } = await supabase
+                .from('products')
+                .update({
+                  stock_store: newStoreStock,
+                  stock_warehouse: newWarehouseStock
+                })
+                .eq('id', warrantyData.productDeliveredId)
+                .eq('stock_store', storeStock) // Solo actualizar si el stock local no ha cambiado
+                .eq('stock_warehouse', warehouseStock) // Solo actualizar si el stock warehouse no ha cambiado
+                .select()
+              
+              // Si no se actualizó ninguna fila, significa que el stock cambió entre la lectura y la actualización
+              // Esto previene deducciones múltiples
+              if (updateError || !updateData || updateData.length === 0) {
+                // Error silencioso en producción - el stock probablemente cambió entre la lectura y la actualización
+              }
             } else {
-
+              // No hay suficiente stock, pero no lanzamos error para no interrumpir la creación
             }
           }
         } catch (stockError) {

@@ -127,16 +127,6 @@ export default function DashboardPage() {
         .filter(result => result.status === 'rejected')
         .map(result => (result as PromiseRejectedResult).reason)
       
-      // Debug: Log información sobre productos obtenidos
-      if (process.env.NODE_ENV === 'development') {
-        console.log(`[Dashboard] Productos obtenidos: ${products.length}`)
-        const totalStockDebug = products.reduce((sum, p) => {
-          const localStock = p.stock?.store || 0
-          const warehouseStock = p.stock?.warehouse || 0
-          return sum + localStock + warehouseStock
-        }, 0)
-        console.log(`[Dashboard] Stock total calculado (sin filtros): ${totalStockDebug}`)
-      }
       
       setAllSales(sales)
       setAllWarranties(warranties)
@@ -247,8 +237,9 @@ export default function DashboardPage() {
   const metrics = useMemo(() => {
     const { sales, warranties, credits, paymentRecords } = filteredData
     
-    // Ingresos por ventas (nuevas ventas)
-    const salesRevenue = sales.reduce((sum, sale) => sum + sale.total, 0)
+    // Ingresos por ventas (nuevas ventas) - excluir canceladas
+    const activeSalesForRevenue = sales.filter(sale => sale.status !== 'cancelled')
+    const salesRevenue = activeSalesForRevenue.reduce((sum, sale) => sum + sale.total, 0)
     
     // Filtrar abonos cancelados (los abonos de facturas canceladas se marcan como 'cancelled' en payment_records)
     const validPaymentRecords = paymentRecords.filter(payment => {
@@ -260,11 +251,14 @@ export default function DashboardPage() {
     const creditPaymentsRevenue = validPaymentRecords.reduce((sum, payment) => sum + payment.amount, 0)
     
     // Ingresos por método de pago (ventas + abonos válidos)
+    // Excluir ventas canceladas del cálculo de ingresos
+    const activeSales = sales.filter(sale => sale.status !== 'cancelled')
+    
     let cashRevenue = 0
     let transferRevenue = 0
     
-    // Procesar ventas
-    sales.forEach(sale => {
+    // Procesar solo ventas activas (no canceladas)
+    activeSales.forEach(sale => {
       if (sale.paymentMethod === 'cash') {
         cashRevenue += sale.total
       } else if (sale.paymentMethod === 'transfer') {
@@ -341,13 +335,18 @@ export default function DashboardPage() {
         return sum + (replacementProduct?.price || 0)
       }, 0)
     
-    // Calcular días desde la última garantía
-    const lastWarranty = warranties
+    // Calcular días desde la última garantía completada (usar todas las garantías, no solo las filtradas)
+    const lastWarranty = allWarranties
       .filter(w => w.status === 'completed')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())[0]
+      .sort((a, b) => {
+        // Usar updatedAt si está disponible (fecha de completado), sino createdAt
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime()
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime()
+        return dateB - dateA
+      })[0]
     
     const daysSinceLastWarranty = lastWarranty 
-      ? Math.floor((new Date().getTime() - new Date(lastWarranty.createdAt).getTime()) / (1000 * 60 * 60 * 24))
+      ? Math.floor((new Date().getTime() - new Date(lastWarranty.updatedAt || lastWarranty.createdAt).getTime()) / (1000 * 60 * 60 * 24))
       : null
 
     // Créditos pendientes y parciales (dinero afuera) - TODOS los créditos, no filtrados por fecha
@@ -385,16 +384,40 @@ export default function DashboardPage() {
     const uniqueClients = new Set(sales.map(sale => sale.clientId)).size
 
     // Calcular ganancia bruta (ventas - costo de productos vendidos)
-    const grossProfit = sales.reduce((totalProfit, sale) => {
+    // Excluir ventas canceladas del cálculo de ganancia bruta
+    // Para ventas a crédito: solo contar la ganancia cuando el crédito esté completado
+    const grossProfit = activeSales.reduce((totalProfit, sale) => {
+      // Si es una venta a crédito, verificar si el crédito está completado
+      if (sale.paymentMethod === 'credit') {
+        // Buscar el crédito asociado a esta venta
+        const associatedCredit = allCredits.find(c => c.saleId === sale.id)
+        
+        // Solo contar la ganancia si el crédito está completado
+        // Si no hay crédito asociado o no está completado, no contar la ganancia
+        if (!associatedCredit || associatedCredit.status !== 'completed') {
+          return totalProfit
+        }
+      }
+      
       if (!sale.items) return totalProfit
       
       const saleProfit = sale.items.reduce((itemProfit, item) => {
         // Buscar el producto para obtener su costo
         const product = allProducts.find(p => p.id === item.productId)
         const cost = product?.cost || 0
-        const salePrice = item.unitPrice
-        const quantity = item.quantity
-        const itemGrossProfit = (salePrice - cost) * quantity
+        
+        // Calcular el precio real de venta después de descuentos
+        const baseTotal = item.quantity * item.unitPrice
+        const discountAmount = item.discountType === 'percentage' 
+          ? (baseTotal * (item.discount || 0)) / 100 
+          : (item.discount || 0)
+        const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
+        
+        // El precio unitario real después de descuentos
+        const realUnitPrice = item.quantity > 0 ? salePriceAfterDiscount / item.quantity : 0
+        
+        // Ganancia bruta = (precio de venta real - costo) * cantidad
+        const itemGrossProfit = (realUnitPrice - cost) * item.quantity
         
         return itemProfit + itemGrossProfit
       }, 0)
@@ -403,15 +426,39 @@ export default function DashboardPage() {
     }, 0)
 
     // Calcular las ventas más rentables para mostrar en la lista
-    const topProfitableSales = sales.map(sale => {
+    // Excluir ventas canceladas
+    // Para ventas a crédito: solo contar la ganancia cuando el crédito esté completado
+    const topProfitableSales = activeSales.map(sale => {
+      // Si es una venta a crédito, verificar si el crédito está completado
+      if (sale.paymentMethod === 'credit') {
+        // Buscar el crédito asociado a esta venta
+        const associatedCredit = allCredits.find(c => c.saleId === sale.id)
+        
+        // Solo contar la ganancia si el crédito está completado
+        // Si no hay crédito asociado o no está completado, retornar ganancia 0
+        if (!associatedCredit || associatedCredit.status !== 'completed') {
+          return { ...sale, profit: 0 }
+        }
+      }
+      
       if (!sale.items) return { ...sale, profit: 0 }
       
       const saleProfit = sale.items.reduce((itemProfit, item) => {
         const product = allProducts.find(p => p.id === item.productId)
         const cost = product?.cost || 0
-        const salePrice = item.unitPrice
-        const quantity = item.quantity
-        const itemGrossProfit = (salePrice - cost) * quantity
+        
+        // Calcular el precio real de venta después de descuentos
+        const baseTotal = item.quantity * item.unitPrice
+        const discountAmount = item.discountType === 'percentage' 
+          ? (baseTotal * (item.discount || 0)) / 100 
+          : (item.discount || 0)
+        const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
+        
+        // El precio unitario real después de descuentos
+        const realUnitPrice = item.quantity > 0 ? salePriceAfterDiscount / item.quantity : 0
+        
+        // Ganancia bruta = (precio de venta real - costo) * cantidad
+        const itemGrossProfit = (realUnitPrice - cost) * item.quantity
         
         return itemProfit + itemGrossProfit
       }, 0)
@@ -448,16 +495,19 @@ export default function DashboardPage() {
     
     // Total de unidades en stock (local + bodega) - todos los productos excepto discontinuados
     const totalStockUnits = productsForCalculation.reduce((sum, p) => {
-      const localStock = p.stock?.store || 0;  // Corregido: usar 'store' en lugar de 'local'
-      const warehouseStock = p.stock?.warehouse || 0;
-      return sum + localStock + warehouseStock;
+      const storeStock = Number(p.stock?.store) || 0;
+      const warehouseStock = Number(p.stock?.warehouse) || 0;
+      const productTotal = storeStock + warehouseStock;
+      return sum + productTotal;
     }, 0)
     
     // Productos con stock bajo - todos los productos excepto discontinuados
+    // Stock bajo = total <= 5 unidades y > 0
     const lowStockProducts = productsForCalculation.filter(p => {
-      const localStock = p.stock?.store || 0;  // Corregido: usar 'store' en lugar de 'local'
-      const warehouseStock = p.stock?.warehouse || 0;
-      return (localStock + warehouseStock) <= 5 && (localStock + warehouseStock) > 0;
+      const storeStock = Number(p.stock?.store) || 0;
+      const warehouseStock = Number(p.stock?.warehouse) || 0;
+      const totalStock = storeStock + warehouseStock;
+      return totalStock > 0 && totalStock <= 5;
     }).length
 
     // Calcular inversión total en stock (precio de compra * stock actual) - todos los productos excepto discontinuados
@@ -633,7 +683,7 @@ export default function DashboardPage() {
       paymentMethodData,
       topProductsChart
     }
-  }, [filteredData, allProducts, allClients])
+  }, [filteredData, allProducts, allClients, allWarranties, allCredits])
 
   // Obtener etiqueta del filtro de fecha
   const getDateFilterLabel = (filter: DateFilter) => {
@@ -832,11 +882,11 @@ export default function DashboardPage() {
               </div>
             ) : (
               <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                  <Calendar className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
-                    Vista del día actual
-                  </span>
+              <div className="flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
+                <Calendar className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
+                  Vista del día actual
+                </span>
                 </div>
                 {/* Botón de actualizar para vendedores */}
                 <Button 
@@ -948,34 +998,34 @@ export default function DashboardPage() {
 
         {/* Crédito - Solo para superadmin y admin, no para vendedores */}
         {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
-          <div 
-            onClick={() => router.push('/payments')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
-              </div>
-              <div className="text-right">
-                <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-                <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
-                  {effectiveDateFilter === 'today' ? 'Hoy' : 
-                   effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
-                   'Todos los Períodos'}
-                </p>
-              </div>
+        <div 
+          onClick={() => router.push('/payments')}
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+        >
+          <div className="flex items-center justify-between mb-4">
+            <div className="p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400" />
             </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {new Intl.NumberFormat('es-CO', { 
-                style: 'currency', 
-                currency: 'COP',
-                minimumFractionDigits: 0 
-              }).format(metrics.creditRevenue)}
-            </p>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
-            </p>
+            <div className="text-right">
+              <span className="text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
+                {effectiveDateFilter === 'today' ? 'Hoy' : 
+                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                 'Todos los Períodos'}
+              </p>
+            </div>
           </div>
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
+            }).format(metrics.creditRevenue)}
+          </p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
+          </p>
+        </div>
         ) : null}
 
       </div>
@@ -1177,10 +1227,10 @@ export default function DashboardPage() {
         )}
 
         {/* Facturas Anuladas - Disponible para todos */}
-        <div 
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-          onClick={() => setShowCancelledModal(true)}
-        >
+          <div 
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            onClick={() => setShowCancelledModal(true)}
+          >
             <div className="flex items-center justify-between mb-4">
               <div className="p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                 <XCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
@@ -1434,12 +1484,12 @@ export default function DashboardPage() {
       </div>
       
       {/* Modal de Facturas Anuladas - Disponible para todos */}
-      <CancelledInvoicesModal
-        isOpen={showCancelledModal}
-        onClose={() => setShowCancelledModal(false)}
-        sales={filteredData.sales}
-        allSales={allSales}
-      />
+        <CancelledInvoicesModal
+          isOpen={showCancelledModal}
+          onClose={() => setShowCancelledModal(false)}
+          sales={filteredData.sales}
+          allSales={allSales}
+        />
     </div>
     </RoleProtectedRoute>
   )

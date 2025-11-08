@@ -54,15 +54,6 @@ export function SalesTable({
   const { canCreate, currentUser } = usePermissions()
   const canCreateSales = canCreate('sales')
   
-  // Debug: Log de permisos en desarrollo
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('[SalesTable] Usuario:', currentUser?.name, 'Rol:', currentUser?.role)
-      console.log('[SalesTable] Permisos:', currentUser?.permissions)
-      console.log('[SalesTable] canCreateSales:', canCreateSales)
-    }
-  }, [canCreateSales, currentUser])
-  
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchResults, setSearchResults] = useState<Sale[]>([])
@@ -310,18 +301,9 @@ export function SalesTable({
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 {searchTerm.trim() ? 'No se encontraron ventas' : 'No hay ventas registradas'}
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
+              <p className="text-gray-500 dark:text-gray-400">
                 {searchTerm.trim() ? 'Intenta con otros criterios de búsqueda' : 'Comienza creando una nueva venta'}
               </p>
-              {!searchTerm.trim() && (
-                <Button 
-                  onClick={onCreate}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Nueva Venta
-                </Button>
-              )}
             </div>
           ) : (
             <>

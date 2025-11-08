@@ -55,7 +55,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     // Also set the data-theme attribute for better compatibility
     root.setAttribute('data-theme', resolvedTheme)
     
-    // Debug log
 
     // Save theme preference
     localStorage.setItem('theme', theme)
