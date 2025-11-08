@@ -56,7 +56,7 @@ export default function DashboardPage() {
   const [isFiltering, setIsFiltering] = useState(false)
   
   // Verificar si el usuario es Super Admin (Diego)
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
   
   // Verificar si el usuario puede ver información de créditos (superadmin, admin, vendedor)
   const canViewCredits = user?.role === 'superadmin' || user?.role === 'admin' || user?.role === 'vendedor'
