@@ -16,16 +16,26 @@ if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Variables de entorno de Supabase no configuradas. Verifica las variables de entorno en Vercel.')
 }
 
+// Validar service role key (solo para operaciones del servidor)
+if (!supabaseServiceKey) {
+  if (typeof window === 'undefined') {
+    console.error('⚠️  Warning: SUPABASE_SERVICE_ROLE_KEY no configurada. Algunas operaciones del servidor pueden fallar.')
+  }
+}
+
 // Cliente para operaciones del cliente (anon)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Cliente para operaciones del servidor (service role)
-export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    autoRefreshToken: false,
-    persistSession: false
-  }
-})
+// Solo crear si la key está disponible
+export const supabaseAdmin = supabaseServiceKey 
+  ? createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    })
+  : supabase // Fallback al cliente anon si no hay service key (solo para desarrollo local)
 
 // Tipos para la base de datos
 export interface Database {
