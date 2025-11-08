@@ -17,10 +17,14 @@ export function usePermissions() {
     
     // Buscar el módulo en los permisos del usuario
     const modulePermission = currentUser.permissions.find(p => p.module === module)
-    if (!modulePermission || !modulePermission.actions || !Array.isArray(modulePermission.actions)) return false
+    if (!modulePermission) return false
+    
+    // Soporte para ambas estructuras: "actions" o "permissions"
+    const actions = modulePermission.actions || modulePermission.permissions || []
+    if (!Array.isArray(actions)) return false
     
     // Verificar si tiene la acción específica
-    return modulePermission.actions.includes(action)
+    return actions.includes(action)
   }
 
   const canView = (module: string): boolean => {
@@ -54,7 +58,10 @@ export function usePermissions() {
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
     
     return currentUser.permissions
-      .filter(p => p.actions && Array.isArray(p.actions) && p.actions.includes('view'))
+      .filter(p => {
+        const actions = p.actions || p.permissions || []
+        return Array.isArray(actions) && actions.includes('view')
+      })
       .map(p => p.module)
   }
 
@@ -69,9 +76,11 @@ export function usePermissions() {
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
     
     const modulePermission = currentUser.permissions.find(p => p.module === module)
-    return (modulePermission && modulePermission.actions && Array.isArray(modulePermission.actions)) 
-      ? modulePermission.actions 
-      : []
+    if (!modulePermission) return []
+    
+    // Soporte para ambas estructuras: "actions" o "permissions"
+    const actions = modulePermission.actions || modulePermission.permissions || []
+    return Array.isArray(actions) ? actions : []
   }
 
   return {
