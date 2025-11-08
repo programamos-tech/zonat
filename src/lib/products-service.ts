@@ -136,24 +136,46 @@ export class ProductsService {
   // Obtener el stock total de todos los productos (más eficiente que obtener todos los productos)
   static async getTotalStock(): Promise<number> {
     try {
-      const { data, error } = await supabase
-        .from('products')
-        .select('stock_warehouse, stock_store')
+      // Obtener todos los productos en lotes para evitar el límite de 1000
+      let totalStock = 0
+      let page = 0
+      const pageSize = 1000
+      let hasMore = true
 
-      if (error) {
-        console.error('Error obteniendo stock total:', error)
-        return 0
+      while (hasMore) {
+        const from = page * pageSize
+        const to = from + pageSize - 1
+
+        const { data, error } = await supabase
+          .from('products')
+          .select('stock_warehouse, stock_store')
+          .range(from, to)
+
+        if (error) {
+          console.error('Error obteniendo stock total:', error)
+          break
+        }
+
+        if (!data || data.length === 0) {
+          hasMore = false
+          break
+        }
+
+        const pageStock = data.reduce((sum, product) => {
+          const warehouseStock = product.stock_warehouse || 0
+          const storeStock = product.stock_store || 0
+          return sum + warehouseStock + storeStock
+        }, 0)
+
+        totalStock += pageStock
+
+        // Si obtuvimos menos productos que el tamaño de página, no hay más
+        if (data.length < pageSize) {
+          hasMore = false
+        } else {
+          page++
+        }
       }
-
-      if (!data || data.length === 0) {
-        return 0
-      }
-
-      const totalStock = data.reduce((sum, product) => {
-        const warehouseStock = product.stock_warehouse || 0
-        const storeStock = product.stock_store || 0
-        return sum + warehouseStock + storeStock
-      }, 0)
 
       return totalStock
     } catch (error) {

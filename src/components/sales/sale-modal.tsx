@@ -103,6 +103,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
   const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
+  const [selectedProductIndex, setSelectedProductIndex] = useState<number>(-1)
 
   // Buscar productos cuando el usuario escriba
   useEffect(() => {
@@ -205,6 +206,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
     }
   }, [filteredProducts])
+
+  // Scroll automático cuando se selecciona un producto con las flechas
+  useEffect(() => {
+    if (selectedProductIndex >= 0 && showProductDropdown) {
+      const element = document.getElementById(`product-item-${selectedProductIndex}`)
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+      }
+    }
+  }, [selectedProductIndex, showProductDropdown])
 
   const getClientTypeColor = (type: string) => {
     switch (type) {
@@ -759,16 +770,42 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                           const value = e.target.value
                           setProductSearch(value)
                           setShowProductDropdown(true) // Siempre mostrar dropdown
+                          setSelectedProductIndex(-1) // Resetear índice al escribir
                         }}
                         onFocus={() => setShowProductDropdown(true)}
                         onClick={() => setShowProductDropdown(true)}
+                        onKeyDown={(e) => {
+                          if (!showProductDropdown || filteredProducts.length === 0) return
+                          
+                          if (e.key === 'ArrowDown') {
+                            e.preventDefault()
+                            setSelectedProductIndex(prev => 
+                              prev < filteredProducts.length - 1 ? prev + 1 : prev
+                            )
+                          } else if (e.key === 'ArrowUp') {
+                            e.preventDefault()
+                            setSelectedProductIndex(prev => prev > 0 ? prev - 1 : -1)
+                          } else if (e.key === 'Enter' && selectedProductIndex >= 0 && selectedProductIndex < filteredProducts.length) {
+                            e.preventDefault()
+                            handleAddProduct(filteredProducts[selectedProductIndex])
+                            setProductSearch('')
+                            setSelectedProductIndex(-1)
+                            setShowProductDropdown(false)
+                          } else if (e.key === 'Escape') {
+                            setShowProductDropdown(false)
+                            setSelectedProductIndex(-1)
+                          }
+                        }}
                         className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
                       />
                     </div>
                     
                     {/* Product Dropdown */}
                     {showProductDropdown && (
-                      <div className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-50 mt-2">
+                      <div 
+                        id="product-dropdown"
+                        className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-50 mt-2"
+                      >
                         {/* Botón para cerrar */}
                         <div className="flex justify-end p-2 border-b border-gray-200 dark:border-gray-600">
                           <button
@@ -801,11 +838,22 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                 </div>
                               </div>
                             )}
-                            {filteredProducts.map(product => (
+                            {filteredProducts.map((product, index) => (
                               <button
                                 key={product.id}
-                                onClick={() => handleAddProduct(product)}
-                                className="w-full px-3 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-600 rounded-lg transition-colors group"
+                                id={`product-item-${index}`}
+                                onClick={() => {
+                                  handleAddProduct(product)
+                                  setProductSearch('')
+                                  setSelectedProductIndex(-1)
+                                  setShowProductDropdown(false)
+                                }}
+                                onMouseEnter={() => setSelectedProductIndex(index)}
+                                className={`w-full px-3 py-3 text-left rounded-lg transition-colors group ${
+                                  selectedProductIndex === index
+                                    ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-500 dark:border-green-600'
+                                    : 'hover:bg-gray-100 dark:hover:bg-gray-600 border-2 border-transparent'
+                                }`}
                               >
                                 <div className="flex items-center justify-between">
                                   <div className="flex-1 min-w-0">

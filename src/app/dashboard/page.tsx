@@ -468,6 +468,12 @@ export default function DashboardPage() {
       const costPrice = product.cost || 0; // Precio de compra/costo
       return sum + (costPrice * totalStock);
     }, 0)
+    
+    // Calcular inversión potencial (costo total de todos los productos, asumiendo 1 unidad de cada uno)
+    const potentialInvestment = productsForCalculation.reduce((sum, product) => {
+      const costPrice = product.cost || 0;
+      return sum + costPrice;
+    }, 0)
 
     // Calcular valor estimado de ventas (precio de venta * stock actual) - todos los productos excepto discontinuados
     const estimatedSalesValue = productsForCalculation.reduce((sum, product) => {
@@ -618,7 +624,9 @@ export default function DashboardPage() {
       lostValue,
       lowStockProducts,
       totalProducts: totalStockUnits,
+      totalProductsCount: productsForCalculation.length, // Número total de productos
       totalStockInvestment,
+      potentialInvestment, // Inversión potencial (costo de todos los productos)
       estimatedSalesValue,
       totalClients: allClients.length,
       salesChartData,
@@ -1142,18 +1150,18 @@ export default function DashboardPage() {
               </div>
             </div>
             <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {metrics.totalProducts}
+              {metrics.totalProductsCount}
             </p>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-              {metrics.lowStockProducts} con stock bajo
+              {metrics.totalProducts} unidades en stock • {metrics.lowStockProducts} con stock bajo
             </p>
             <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-2">
               <div>
                 <p className="text-lg font-semibold text-orange-600 dark:text-orange-400">
-                  ${metrics.totalStockInvestment.toLocaleString('es-CO')}
+                  ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">
-                  Inversión Total en Stock
+                  {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
                 </p>
               </div>
               <div>
