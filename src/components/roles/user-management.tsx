@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { User } from '@/types'
+import { User, Permission } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -220,16 +220,61 @@ export function UserManagement() {
 
   // Abrir modal de edición
   const openEditModal = (user: User) => {
-    setSelectedUser(user)
-    setFormData({
-      name: user.name,
-      email: user.email,
-      password: '', // No mostrar contraseña
-      role: user.role,
-      permissions: user.permissions || [],
-      isActive: user.isActive
-    })
-    setIsEditModalOpen(true)
+    try {
+      setSelectedUser(user)
+      
+      // Validar y normalizar permisos
+      // Soporta dos formatos:
+      // 1. Formato nuevo: { module: "dashboard", actions: ["view"] }
+      // 2. Formato DB actual: { module: "dashboard", permissions: ["view", "create", ...] }
+      let normalizedPermissions: Permission[] = []
+      if (user.permissions) {
+        if (Array.isArray(user.permissions)) {
+          normalizedPermissions = user.permissions
+            .filter((p: any) => p && typeof p === 'object' && p.module)
+            .map((p: any) => {
+              // Detectar formato: si tiene 'permissions' (DB) o 'actions' (código)
+              const actionsArray = p.actions || p.permissions || []
+              return {
+                module: String(p.module),
+                actions: Array.isArray(actionsArray) ? actionsArray.map((a: any) => String(a)) : []
+              }
+            })
+        } else if (typeof user.permissions === 'string') {
+          // Intentar parsear si es un string JSON
+          try {
+            const parsed = JSON.parse(user.permissions)
+            if (Array.isArray(parsed)) {
+              normalizedPermissions = parsed
+                .filter((p: any) => p && typeof p === 'object' && p.module)
+                .map((p: any) => {
+                  const actionsArray = p.actions || p.permissions || []
+                  return {
+                    module: String(p.module),
+                    actions: Array.isArray(actionsArray) ? actionsArray.map((a: any) => String(a)) : []
+                  }
+                })
+            }
+          } catch (e) {
+            console.error('[UserManagement] Error parsing permissions:', e)
+            normalizedPermissions = []
+          }
+        }
+      }
+      
+      setFormData({
+        name: user.name || '',
+        email: user.email || '',
+        password: '', // No mostrar contraseña
+        role: user.role || 'vendedor',
+        permissions: normalizedPermissions,
+        isActive: user.isActive !== undefined ? user.isActive : true
+      })
+      setIsEditModalOpen(true)
+    } catch (error: any) {
+      console.error('[UserManagement] Error opening edit modal:', error)
+      toast.error('Error al abrir el modal de edición. Por favor, intenta nuevamente.')
+    }
   }
 
   // Resetear formulario
@@ -245,33 +290,86 @@ export function UserManagement() {
   }
 
   // Toggle permiso
+  // Normaliza a formato 'actions' (código) al guardar
   const togglePermission = (module: string, action: string) => {
-    const newPermissions = [...formData.permissions]
-    const existingPermission = newPermissions.find(p => p.module === module)
-    
-    if (existingPermission) {
-      if (existingPermission.actions.includes(action)) {
-        existingPermission.actions = existingPermission.actions.filter(a => a !== action)
-        if (existingPermission.actions.length === 0) {
-          newPermissions.splice(newPermissions.indexOf(existingPermission), 1)
+    try {
+      if (!formData.permissions || !Array.isArray(formData.permissions)) {
+        setFormData({ ...formData, permissions: [{ module, actions: [action] }] })
+        return
+      }
+      
+      const newPermissions = [...formData.permissions]
+      const existingPermission = newPermissions.find(p => 
+        p && typeof p === 'object' && p.module === module
+      )
+      
+      if (existingPermission) {
+        // Normalizar: usar 'actions' (eliminar 'permissions' si existe)
+        const currentActions = existingPermission.actions || existingPermission.permissions || []
+        const actionsArray = Array.isArray(currentActions) ? [...currentActions] : []
+        
+        if (actionsArray.includes(action)) {
+          // Remover acción
+          const filteredActions = actionsArray.filter(a => a !== action)
+          if (filteredActions.length === 0) {
+            // Eliminar permiso completo si no quedan acciones
+            const index = newPermissions.indexOf(existingPermission)
+            if (index > -1) {
+              newPermissions.splice(index, 1)
+            }
+          } else {
+            // Actualizar acciones (normalizar a formato 'actions')
+            existingPermission.actions = filteredActions
+            delete existingPermission.permissions // Eliminar formato antiguo si existe
+          }
+        } else {
+          // Agregar acción
+          actionsArray.push(action)
+          existingPermission.actions = actionsArray
+          delete existingPermission.permissions // Eliminar formato antiguo si existe
         }
       } else {
-        existingPermission.actions.push(action)
+        // Crear nuevo permiso en formato normalizado
+        newPermissions.push({ module, actions: [action] })
       }
-    } else {
-      newPermissions.push({ module, actions: [action] })
+      
+      setFormData({ ...formData, permissions: newPermissions })
+    } catch (error: any) {
+      console.error('[UserManagement] Error toggling permission:', error)
+      toast.error('Error al modificar el permiso')
     }
-    
-    setFormData({ ...formData, permissions: newPermissions })
   }
 
   // Verificar si tiene permiso
+  // Soporta ambos formatos: actions (código) y permissions (DB)
   const hasPermission = (module: string, action: string) => {
-
-    const permission = formData.permissions.find(p => p.module === module)
-    const hasAccess = permission?.actions.includes(action) || false
-
-    return hasAccess
+    try {
+      if (!formData.permissions || !Array.isArray(formData.permissions)) {
+        return false
+      }
+      
+      const permission = formData.permissions.find(p => 
+        p && 
+        typeof p === 'object' && 
+        p.module === module
+      )
+      
+      if (!permission) {
+        return false
+      }
+      
+      // Soportar ambos formatos: 'actions' (código) o 'permissions' (DB)
+      const actionsArray = permission.actions || permission.permissions || []
+      if (!Array.isArray(actionsArray)) {
+        return false
+      }
+      
+      const hasAccess = actionsArray.includes(action) || false
+      return hasAccess
+    } catch (error: any) {
+      console.error('[UserManagement] Error checking permission:', error)
+      return false
+    }
   }
 
   // Aplicar permisos predefinidos del rol
