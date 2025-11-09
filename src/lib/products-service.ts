@@ -11,6 +11,7 @@ export class ProductsService {
       const to = from + limit - 1
 
       // Obtener productos paginados
+      // Ordenar por created_at (más recientes primero)
       const { data, error } = await supabase
         .from('products')
         .select('*')
@@ -32,7 +33,7 @@ export class ProductsService {
         return { products: [], total: 0, hasMore: false }
       }
 
-      const products = data.map((product: any) => ({
+      const mappedProducts = data.map((product: any) => ({
         id: product.id,
         name: product.name,
         description: product.description,
@@ -50,6 +51,21 @@ export class ProductsService {
         createdAt: product.created_at,
         updatedAt: product.updated_at
       }))
+
+      // Ordenar en el cliente: productos con stock primero, luego por fecha más reciente
+      const products = mappedProducts.sort((a, b) => {
+        const aHasStock = a.stock.total > 0
+        const bHasStock = b.stock.total > 0
+        
+        // Si uno tiene stock y el otro no, el que tiene stock va primero
+        if (aHasStock && !bHasStock) return -1
+        if (!aHasStock && bHasStock) return 1
+        
+        // Si ambos tienen stock o ambos no tienen stock, ordenar por fecha más reciente
+        const aDate = a.updatedAt || a.createdAt
+        const bDate = b.updatedAt || b.createdAt
+        return new Date(bDate).getTime() - new Date(aDate).getTime()
+      })
 
       return {
         products,
@@ -91,7 +107,7 @@ export class ProductsService {
           break
         }
 
-        const products = data.map((product: any) => ({
+        const mappedProducts = data.map((product: any) => ({
           id: product.id,
           name: product.name,
           description: product.description,
@@ -110,7 +126,20 @@ export class ProductsService {
           updatedAt: product.updated_at
         }))
 
-        allProducts.push(...products)
+        // Ordenar: productos con stock primero, luego por fecha más reciente
+        const sortedProducts = mappedProducts.sort((a, b) => {
+          const aHasStock = a.stock.total > 0
+          const bHasStock = b.stock.total > 0
+          
+          if (aHasStock && !bHasStock) return -1
+          if (!aHasStock && bHasStock) return 1
+          
+          const aDate = a.updatedAt || a.createdAt
+          const bDate = b.updatedAt || b.createdAt
+          return new Date(bDate).getTime() - new Date(aDate).getTime()
+        })
+
+        allProducts.push(...sortedProducts)
 
         // Si obtuvimos menos productos que el tamaño de página, no hay más
         if (data.length < pageSize) {
@@ -126,7 +155,18 @@ export class ProductsService {
         }
       }
 
-      return allProducts
+      // Ordenar todos los productos al final: productos con stock primero, luego por fecha más reciente
+      return allProducts.sort((a, b) => {
+        const aHasStock = a.stock.total > 0
+        const bHasStock = b.stock.total > 0
+        
+        if (aHasStock && !bHasStock) return -1
+        if (!aHasStock && bHasStock) return 1
+        
+        const aDate = a.updatedAt || a.createdAt
+        const bDate = b.updatedAt || b.createdAt
+        return new Date(bDate).getTime() - new Date(aDate).getTime()
+      })
     } catch (error) {
       // Error silencioso en producción
       return []
@@ -411,7 +451,7 @@ export class ProductsService {
         return []
       }
 
-      return data.map((product: any) => ({
+      const mappedProducts = data.map((product: any) => ({
         id: product.id,
         name: product.name,
         description: product.description,
@@ -429,6 +469,19 @@ export class ProductsService {
         createdAt: product.created_at,
         updatedAt: product.created_at // Usar created_at como fallback
       }))
+
+      // Ordenar: productos con stock primero, luego por fecha más reciente
+      return mappedProducts.sort((a, b) => {
+        const aHasStock = a.stock.total > 0
+        const bHasStock = b.stock.total > 0
+        
+        if (aHasStock && !bHasStock) return -1
+        if (!aHasStock && bHasStock) return 1
+        
+        const aDate = a.updatedAt || a.createdAt
+        const bDate = b.updatedAt || b.createdAt
+        return new Date(bDate).getTime() - new Date(aDate).getTime()
+      })
     } catch (error) {
       // Error silencioso en producción
       return []
