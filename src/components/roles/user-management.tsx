@@ -96,15 +96,14 @@ export function UserManagement() {
   })
 
 
-  // Aplicar permisos cuando se cambia el rol
+  // Aplicar permisos cuando se cambia el rol (solo al crear, no al editar)
   useEffect(() => {
-    if (formData.role) {
-
+    // Solo aplicar permisos del rol si estamos creando un usuario nuevo (no hay selectedUser)
+    if (formData.role && !selectedUser && isCreateModalOpen) {
       const permissions = rolePermissions[formData.role as keyof typeof rolePermissions] || []
-
       setFormData(prev => ({ ...prev, permissions }))
     }
-  }, [formData.role])
+  }, [formData.role, selectedUser, isCreateModalOpen])
 
   // Cargar usuarios
   useEffect(() => {
@@ -373,14 +372,18 @@ export function UserManagement() {
   }
 
   // Aplicar permisos predefinidos del rol
+  // Solo aplica permisos cuando se está creando un usuario nuevo, no al editar
   const applyRolePermissions = (role: string) => {
-
     const permissions = rolePermissions[role as keyof typeof rolePermissions] || []
-
+    
     setFormData(prev => {
-      const newData = { ...prev, role, permissions }
-
-      return newData
+      // Si estamos editando (hay selectedUser), mantener los permisos existentes
+      // Solo cambiar el rol, no los permisos
+      if (selectedUser) {
+        return { ...prev, role }
+      }
+      // Si estamos creando, aplicar permisos del rol
+      return { ...prev, role, permissions }
     })
   }
 

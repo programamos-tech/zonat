@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 
 export interface LogEntry {
   id: string
@@ -18,17 +18,18 @@ export class LogsService {
     try {
       const offset = (page - 1) * limit
       
-      // Obtener total de logs
-      const { count: totalCount, error: countError } = await supabase
+      // Obtener total de logs (usar supabaseAdmin para evitar problemas de RLS)
+      const { count: totalCount, error: countError } = await supabaseAdmin
         .from('logs')
         .select('*', { count: 'exact', head: true })
 
       if (countError) {
+        console.error('[LogsService] Error counting logs:', countError)
         return { logs: [], total: 0, hasMore: false }
       }
 
-      // Obtener logs de la página
-      const { data: logs, error } = await supabase
+      // Obtener logs de la página (usar supabaseAdmin para evitar problemas de RLS)
+      const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -40,20 +41,63 @@ export class LogsService {
         .range(offset, offset + limit - 1)
 
       if (error) {
-        return { logs: [], total: 0, hasMore: false }
+        console.error('[LogsService] Error fetching logs:', error)
+        // Si hay error con el join, intentar sin el join
+        const { data: logsWithoutJoin, error: errorWithoutJoin } = await supabaseAdmin
+          .from('logs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1)
+        
+        if (errorWithoutJoin) {
+          console.error('[LogsService] Error fetching logs without join:', errorWithoutJoin)
+          return { logs: [], total: 0, hasMore: false }
+        }
+        
+        // Mapear sin el nombre del usuario
+        const mappedLogs = (logsWithoutJoin || [])
+          .filter(log => log && typeof log === 'object' && log.id)
+          .map(log => ({
+            id: log.id || '',
+            user_id: log.user_id || null,
+            action: log.action || 'unknown',
+            module: log.module || 'unknown',
+            details: log.details || {},
+            ip_address: log.ip_address || null,
+            user_agent: log.user_agent || null,
+            created_at: log.created_at || new Date().toISOString(),
+            user_name: 'Usuario Desconocido'
+          }))
+        
+        const total = totalCount || 0
+        const hasMore = offset + limit < total
+        return { logs: mappedLogs, total, hasMore }
       }
       
-      const mappedLogs = logs.map(log => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        module: log.module,
-        details: log.details,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        created_at: log.created_at,
-        user_name: log.users?.name || 'Usuario Desconocido'
-      }))
+      // Validar y normalizar logs para evitar errores de renderizado
+      const mappedLogs = (logs || [])
+        .filter(log => log && typeof log === 'object' && log.id)
+        .map(log => {
+          try {
+            return {
+              id: log.id || '',
+              user_id: log.user_id || null,
+              action: log.action || 'unknown',
+              module: log.module || 'unknown',
+              details: log.details || {},
+              ip_address: log.ip_address || null,
+              user_agent: log.user_agent || null,
+              created_at: log.created_at || new Date().toISOString(),
+              user_name: (log.users && typeof log.users === 'object' && log.users.name) 
+                ? String(log.users.name) 
+                : 'Usuario Desconocido'
+            }
+          } catch (mapError) {
+            console.error('[LogsService] Error mapping log:', mapError, log)
+            return null
+          }
+        })
+        .filter(log => log !== null) as LogEntry[]
 
       const total = totalCount || 0
       const hasMore = offset + limit < total
@@ -67,7 +111,7 @@ export class LogsService {
   // Obtener todos los logs (método legacy para compatibilidad)
   static async getAllLogs(): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabase
+      const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -78,23 +122,38 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
+        console.error('[LogsService] Error fetching all logs:', error)
         return []
       }
 
-      const mappedLogs = logs.map(log => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        module: log.module,
-        details: log.details,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        created_at: log.created_at,
-        user_name: log.users?.name || 'Usuario Desconocido'
-      }))
+      // Validar y normalizar logs
+      const mappedLogs = (logs || [])
+        .filter(log => log && typeof log === 'object' && log.id)
+        .map(log => {
+          try {
+            return {
+              id: log.id || '',
+              user_id: log.user_id || null,
+              action: log.action || 'unknown',
+              module: log.module || 'unknown',
+              details: log.details || {},
+              ip_address: log.ip_address || null,
+              user_agent: log.user_agent || null,
+              created_at: log.created_at || new Date().toISOString(),
+              user_name: (log.users && typeof log.users === 'object' && log.users.name) 
+                ? String(log.users.name) 
+                : 'Usuario Desconocido'
+            }
+          } catch (mapError) {
+            console.error('[LogsService] Error mapping log:', mapError, log)
+            return null
+          }
+        })
+        .filter(log => log !== null) as LogEntry[]
 
       return mappedLogs
     } catch (error) {
+      console.error('[LogsService] Exception in getAllLogs:', error)
       return []
     }
   }
@@ -102,7 +161,7 @@ export class LogsService {
   // Obtener logs por módulo
   static async getLogsByModule(module: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabase
+      const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -114,21 +173,36 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
+        console.error('[LogsService] Error fetching logs by module:', error)
         return []
       }
 
-      return logs.map(log => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        module: log.module,
-        details: log.details,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        created_at: log.created_at,
-        user_name: log.users?.name || 'Usuario Desconocido'
-      }))
+      // Validar y normalizar logs
+      return (logs || [])
+        .filter(log => log && typeof log === 'object' && log.id)
+        .map(log => {
+          try {
+            return {
+              id: log.id || '',
+              user_id: log.user_id || null,
+              action: log.action || 'unknown',
+              module: log.module || 'unknown',
+              details: log.details || {},
+              ip_address: log.ip_address || null,
+              user_agent: log.user_agent || null,
+              created_at: log.created_at || new Date().toISOString(),
+              user_name: (log.users && typeof log.users === 'object' && log.users.name) 
+                ? String(log.users.name) 
+                : 'Usuario Desconocido'
+            }
+          } catch (mapError) {
+            console.error('[LogsService] Error mapping log:', mapError, log)
+            return null
+          }
+        })
+        .filter(log => log !== null) as LogEntry[]
     } catch (error) {
+      console.error('[LogsService] Exception in getLogsByModule:', error)
       return []
     }
   }
@@ -136,7 +210,7 @@ export class LogsService {
   // Obtener logs por usuario
   static async getLogsByUser(userId: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabase
+      const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -148,21 +222,36 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
+        console.error('[LogsService] Error fetching logs by user:', error)
         return []
       }
 
-      return logs.map(log => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        module: log.module,
-        details: log.details,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        created_at: log.created_at,
-        user_name: log.users?.name || 'Usuario Desconocido'
-      }))
+      // Validar y normalizar logs
+      return (logs || [])
+        .filter(log => log && typeof log === 'object' && log.id)
+        .map(log => {
+          try {
+            return {
+              id: log.id || '',
+              user_id: log.user_id || null,
+              action: log.action || 'unknown',
+              module: log.module || 'unknown',
+              details: log.details || {},
+              ip_address: log.ip_address || null,
+              user_agent: log.user_agent || null,
+              created_at: log.created_at || new Date().toISOString(),
+              user_name: (log.users && typeof log.users === 'object' && log.users.name) 
+                ? String(log.users.name) 
+                : 'Usuario Desconocido'
+            }
+          } catch (mapError) {
+            console.error('[LogsService] Error mapping log:', mapError, log)
+            return null
+          }
+        })
+        .filter(log => log !== null) as LogEntry[]
     } catch (error) {
+      console.error('[LogsService] Exception in getLogsByUser:', error)
       return []
     }
   }
@@ -170,7 +259,7 @@ export class LogsService {
   // Buscar logs por término
   static async searchLogs(searchTerm: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabase
+      const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -182,21 +271,36 @@ export class LogsService {
         .order('created_at', { ascending: false })
 
       if (error) {
+        console.error('[LogsService] Error searching logs:', error)
         return []
       }
 
-      return logs.map(log => ({
-        id: log.id,
-        user_id: log.user_id,
-        action: log.action,
-        module: log.module,
-        details: log.details,
-        ip_address: log.ip_address,
-        user_agent: log.user_agent,
-        created_at: log.created_at,
-        user_name: log.users?.name || 'Usuario Desconocido'
-      }))
+      // Validar y normalizar logs
+      return (logs || [])
+        .filter(log => log && typeof log === 'object' && log.id)
+        .map(log => {
+          try {
+            return {
+              id: log.id || '',
+              user_id: log.user_id || null,
+              action: log.action || 'unknown',
+              module: log.module || 'unknown',
+              details: log.details || {},
+              ip_address: log.ip_address || null,
+              user_agent: log.user_agent || null,
+              created_at: log.created_at || new Date().toISOString(),
+              user_name: (log.users && typeof log.users === 'object' && log.users.name) 
+                ? String(log.users.name) 
+                : 'Usuario Desconocido'
+            }
+          } catch (mapError) {
+            console.error('[LogsService] Error mapping log:', mapError, log)
+            return null
+          }
+        })
+        .filter(log => log !== null) as LogEntry[]
     } catch (error) {
+      console.error('[LogsService] Exception in searchLogs:', error)
       return []
     }
   }
