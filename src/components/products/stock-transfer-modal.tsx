@@ -124,7 +124,7 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:p-8">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-0 xl:p-8">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
@@ -149,8 +149,9 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
           </Button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={(e) => { e.preventDefault(); handleTransfer() }} className="flex-1 overflow-y-auto p-4 md:p-6">
+        {/* Content - Todo el contenido hace scroll, incluyendo los botones */}
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
+        <form onSubmit={(e) => { e.preventDefault(); handleTransfer() }} className="p-4 md:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
             {/* Columna Izquierda - Stock Actual */}
             <div className="lg:col-span-1">
@@ -390,26 +391,26 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
               </Card>
             </div>
           </div>
-        </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
-          <Button
-            type="button"
-            onClick={handleClose}
-            variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleTransfer}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            <ArrowRightLeft className="h-4 w-4 mr-2" />
-            Transferir Stock
-          </Button>
+          {/* Botones dentro del form para que hagan scroll con el contenido */}
+          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={handleClose}
+              variant="outline"
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              <ArrowRightLeft className="h-4 w-4 mr-2" />
+              Transferir Stock
+            </Button>
+          </div>
+        </form>
         </div>
       </div>
     </div>

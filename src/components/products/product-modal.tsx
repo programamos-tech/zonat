@@ -252,8 +252,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           </Button>
         </div>
 
-        <div className="p-4 md:p-6 flex-1 bg-white dark:bg-gray-900 overflow-y-auto">
-          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="h-full">
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
+          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="p-4 md:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Columna Izquierda */}
               <div className="space-y-6">
@@ -611,25 +611,26 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </Card>
               </div>
             </div>
-          </form>
-        </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(64px, env(safe-area-inset-bottom)) + 1rem)`, marginBottom: '0' }}>
-          <Button
-            onClick={handleClose}
-            variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            <Package className="h-4 w-4 mr-2" />
-            {product ? 'Guardar Cambios' : 'Crear Producto'}
-          </Button>
+            {/* Botones dentro del form para que hagan scroll con el contenido */}
+            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+              <Button
+                type="button"
+                onClick={handleClose}
+                variant="outline"
+                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+              >
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              >
+                <Package className="h-4 w-4 mr-2" />
+                {product ? 'Guardar Cambios' : 'Crear Producto'}
+              </Button>
+            </div>
+          </form>
         </div>
       </div>
     </div>

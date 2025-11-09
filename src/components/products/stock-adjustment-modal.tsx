@@ -134,8 +134,9 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           </Button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 md:p-6">
+        {/* Content - Todo el contenido hace scroll, incluyendo los botones */}
+        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
+        <form onSubmit={handleSubmit} className="p-4 md:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información del Producto */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
@@ -306,25 +307,25 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
               </Card>
             </div>
           )}
-        </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(64px, env(safe-area-inset-bottom)) + 1rem)`, marginBottom: '0' }}>
-          <Button
-            type="button"
-            onClick={onClose}
-            variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="button"
-            onClick={handleSubmit}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            Ajustar Stock
-          </Button>
+          {/* Botones dentro del form para que hagan scroll con el contenido */}
+          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="outline"
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            >
+              Ajustar Stock
+            </Button>
+          </div>
+        </form>
         </div>
       </div>
     </div>
