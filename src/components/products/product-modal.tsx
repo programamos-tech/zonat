@@ -227,7 +227,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center pt-10 xl:pt-16">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center pt-10 xl:pt-16">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 bg-cyan-50 dark:bg-cyan-900/20 border-b border-cyan-200 dark:border-cyan-800 flex-shrink-0">
@@ -615,7 +615,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(64px, env(safe-area-inset-bottom)) + 1rem)`, marginBottom: '0' }}>
           <Button
             onClick={handleClose}
             variant="outline"

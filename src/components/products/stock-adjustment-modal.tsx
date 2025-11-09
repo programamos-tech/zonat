@@ -15,7 +15,7 @@ interface StockAdjustmentModalProps {
 
 export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: StockAdjustmentModalProps) {
   const [formData, setFormData] = useState({
-    location: 'warehouse' as 'warehouse' | 'store',
+    location: 'store' as 'warehouse' | 'store',
     newQuantity: 0,
     reason: ''
   })
@@ -51,7 +51,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   useEffect(() => {
     if (product) {
       setFormData({
-        location: 'warehouse',
+        location: 'store',
         newQuantity: 0,
         reason: ''
       })
@@ -109,7 +109,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
+    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-4xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
@@ -186,28 +186,6 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       type="button"
-                      onClick={() => handleInputChange('location', 'warehouse')}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            formData.location === 'warehouse'
-                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                          }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
-                        <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Bodega
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Stock actual: {formatNumber(product.stock.warehouse)}
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                    
-                    <button
-                      type="button"
                       onClick={() => handleInputChange('location', 'store')}
                           className={`p-4 rounded-lg border-2 transition-all ${
                             formData.location === 'store'
@@ -223,6 +201,28 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
                             Stock actual: {formatNumber(product.stock.store)}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                    
+                    <button
+                      type="button"
+                      onClick={() => handleInputChange('location', 'warehouse')}
+                          className={`p-4 rounded-lg border-2 transition-all ${
+                            formData.location === 'warehouse'
+                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                          }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
+                        <div className="text-left">
+                          <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                            Bodega
+                          </div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                            Stock actual: {formatNumber(product.stock.warehouse)}
                           </div>
                         </div>
                       </div>
@@ -309,7 +309,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(64px, env(safe-area-inset-bottom)) + 1rem)`, marginBottom: '0' }}>
           <Button
             type="button"
             onClick={onClose}
