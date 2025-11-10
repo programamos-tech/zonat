@@ -24,6 +24,7 @@ import {
 import { Sale, SaleItem, Product, Client, SalePayment } from '@/types'
 import { useClients } from '@/contexts/clients-context'
 import { useProducts } from '@/contexts/products-context'
+import { ProductsService } from '@/lib/products-service'
 import { ClientModal } from '@/components/clients/client-modal'
 
 interface SaleModalProps {
@@ -34,7 +35,7 @@ interface SaleModalProps {
 
 export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
-  const { products, refreshProducts, searchProducts } = useProducts()
+  const { products, refreshProducts } = useProducts()
   
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
@@ -107,7 +108,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       if (debouncedProductSearch.trim().length >= 2) {
         setIsSearchingProducts(true)
         try {
-          const results = await searchProducts(debouncedProductSearch)
+          const results = await ProductsService.searchProducts(debouncedProductSearch)
           if (!cancelled) {
             setSearchedProducts(results)
           }
