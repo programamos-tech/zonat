@@ -99,6 +99,26 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
   const [selectedProductIndex, setSelectedProductIndex] = useState<number>(-1)
+  const [productCache, setProductCache] = useState<Record<string, Product>>({})
+
+  const updateProductCache = useCallback((items: Product[]) => {
+    if (!items || items.length === 0) return
+    setProductCache(prev => {
+      const updated = { ...prev }
+      items.forEach(product => {
+        if (product && product.id) {
+          updated[product.id] = product
+        }
+      })
+      return updated
+    })
+  }, [])
+
+  useEffect(() => {
+    if (products.length > 0) {
+      updateProductCache(products)
+    }
+  }, [products, updateProductCache])
 
   // Buscar productos cuando el usuario escriba
   useEffect(() => {
@@ -110,6 +130,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         try {
           const results = await ProductsService.searchProducts(debouncedProductSearch)
           if (!cancelled) {
+            updateProductCache(results)
             setSearchedProducts(results)
           }
         } catch (error) {
@@ -249,15 +270,19 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   }
 
   // Función para obtener el stock disponible de un producto
+  const findProductById = useCallback((productId: string) => {
+    return productCache[productId] || products.find(p => p.id === productId)
+  }, [productCache, products])
+
   const getAvailableStock = (productId: string) => {
-    const product = products.find(p => p.id === productId)
+    const product = findProductById(productId)
     if (!product) return 0
     return (product.stock.warehouse || 0) + (product.stock.store || 0)
   }
 
   // Función para obtener el estado de stock de un producto
   const getStockStatus = (productId: string) => {
-    const product = products.find(p => p.id === productId)
+    const product = findProductById(productId)
     if (!product) return 'Sin Stock'
     
     const { warehouse, store, total } = product.stock
@@ -437,7 +462,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     // Validar solo cuando el campo pierde el foco
     const item = selectedProducts.find(i => i.id === itemId)
     if (item) {
-      const product = products.find(p => p.id === item.productId)
+      const product = findProductById(item.productId)
       const productCost = product?.cost || 0
       
       // Si el precio es menor al costo, mostrar alerta y ajustar al costo mínimo
@@ -554,7 +579,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     // Validar que todos los precios de venta sean >= costo base
     const invalidProducts: string[] = []
     validProducts.forEach(item => {
-      const product = products.find(p => p.id === item.productId)
+      const product = findProductById(item.productId)
       const productCost = product?.cost || 0
       if (item.unitPrice < productCost) {
         invalidProducts.push(`${item.productName} (Costo: $${productCost.toLocaleString('es-CO')})`)
@@ -949,7 +974,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                               <div className="flex-1">
                                 <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
                                 <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                  <span>Costo base: <span className="font-medium text-gray-500 dark:text-gray-400">${products.find(p => p.id === item.productId)?.cost.toLocaleString() || 0}</span></span>
+                                  <span>Costo base: <span className="font-medium text-gray-500 dark:text-gray-400">${findProductById(item.productId)?.cost?.toLocaleString() || 0}</span></span>
                                   <span>Stock: <span className="font-medium">{getAvailableStock(item.productId)} unidades</span></span>
                                 </div>
                                 <div className="flex items-center space-x-2 mt-2">
@@ -962,11 +987,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                     onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
                                     onBlur={() => handlePriceBlur(item.id)}
                                     className={`w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2 ${
-                                      item.unitPrice && products.find(p => p.id === item.productId)?.cost && item.unitPrice < (products.find(p => p.id === item.productId)?.cost || 0)
+                                      item.unitPrice && findProductById(item.productId)?.cost && item.unitPrice < (findProductById(item.productId)?.cost || 0)
                                         ? 'border-red-500 dark:border-red-500'
                                         : 'border-gray-300 dark:border-gray-500'
                                     }`}
-                                    min={products.find(p => p.id === item.productId)?.cost || 0}
+                                    min={findProductById(item.productId)?.cost || 0}
                                     step="100"
                                     placeholder="0"
                                   />
