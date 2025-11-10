@@ -47,13 +47,11 @@ export class SalesService {
             id,
             product_id,
             product_name,
+            product_reference_code,
             quantity,
             unit_price,
             discount,
-            total,
-            products!inner (
-              reference
-            )
+            total
           ),
           sale_payments (
             id,
@@ -99,7 +97,7 @@ export class SalesService {
           id: item.id,
           productId: item.product_id,
           productName: item.product_name,
-          productReferenceCode: item.products?.reference || 'N/A',
+          productReferenceCode: item.product_reference_code || 'N/A',
           quantity: item.quantity,
           unitPrice: item.unit_price,
           discount: item.discount || 0,
@@ -130,13 +128,11 @@ export class SalesService {
             id,
             product_id,
             product_name,
+            product_reference_code,
             quantity,
             unit_price,
             discount,
-            total,
-            products!inner (
-              reference
-            )
+            total
           ),
           sale_payments (
             id,
@@ -184,7 +180,7 @@ export class SalesService {
           id: item.id,
           productId: item.product_id,
           productName: item.product_name,
-          productReferenceCode: item.products?.reference || 'N/A',
+          productReferenceCode: item.product_reference_code || 'N/A',
           quantity: item.quantity,
           unitPrice: item.unit_price,
           discount: item.discount || 0,
@@ -791,13 +787,11 @@ export class SalesService {
             id,
             product_id,
             product_name,
+            product_reference_code,
             quantity,
             unit_price,
             discount,
-            total,
-            products (
-              reference
-            )
+            total
           )
         `)
 
@@ -882,7 +876,7 @@ export class SalesService {
           id: item.id,
           productId: item.product_id,
           productName: item.product_name,
-          productReferenceCode: item.products?.reference || 'N/A',
+          productReferenceCode: item.product_reference_code || 'N/A',
           quantity: item.quantity,
           unitPrice: item.unit_price,
           discount: item.discount || 0,
@@ -945,6 +939,7 @@ export class SalesService {
             id,
             product_id,
             product_name,
+            product_reference_code,
             quantity,
             unit_price,
             discount,
@@ -961,18 +956,11 @@ export class SalesService {
 
       return await Promise.all(data?.map(async sale => {
         // Obtener items de la venta con referencia de productos
-        const items = await Promise.all((sale.sale_items || []).map(async (item: any) => {
-          const { data: product } = await supabase
-            .from('products')
-            .select('reference')
-            .eq('id', item.product_id)
-            .single()
-          
-          return {
-            id: item.id,
-            productId: item.product_id,
-            productName: item.product_name,
-            productReferenceCode: product?.reference || 'N/A',
+        const items = (sale.sale_items || []).map((item: any) => ({
+          id: item.id,
+          productId: item.product_id,
+          productName: item.product_name,
+          productReferenceCode: item.product_reference_code || 'N/A',
             quantity: item.quantity,
             unitPrice: item.unit_price,
             discount: item.discount || 0,
