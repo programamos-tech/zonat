@@ -961,13 +961,12 @@ export class SalesService {
           productId: item.product_id,
           productName: item.product_name,
           productReferenceCode: item.product_reference_code || 'N/A',
-            quantity: item.quantity,
-            unitPrice: item.unit_price,
-            discount: item.discount || 0,
-            discountType: item.discount_type || 'amount',
-            tax: item.tax || 0,
-            total: item.total
-          }
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          discount: item.discount || 0,
+          discountType: item.discount_type || 'amount',
+          tax: item.tax || 0,
+          total: item.total
         }))
 
         // Obtener pagos mixtos si existe
