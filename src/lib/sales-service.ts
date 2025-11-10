@@ -50,7 +50,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            discount_type,
             tax,
             total,
             products!inner (
@@ -139,7 +138,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            discount_type,
             tax,
             total,
             products!inner (
@@ -231,7 +229,6 @@ export class SalesService {
           subtotal: saleData.subtotal,
           tax: saleData.tax,
           discount: saleData.discount,
-          discount_type: saleData.discountType || 'amount',
           status: saleData.status,
           payment_method: saleData.paymentMethod,
           invoice_number: invoiceNumber,
@@ -275,7 +272,6 @@ export class SalesService {
           quantity: item.quantity,
           unit_price: item.unitPrice,
           discount: item.discount || 0,
-          discount_type: item.discountType || 'amount',
           tax: item.tax || 0,
           total: item.total
         }))
@@ -416,7 +412,6 @@ export class SalesService {
           subtotal: saleData.subtotal,
           tax: saleData.tax,
           discount: saleData.discount,
-          discount_type: saleData.discountType || 'amount',
           status: saleData.status,
           payment_method: saleData.paymentMethod,
           updated_at: new Date().toISOString()
@@ -812,7 +807,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            discount_type,
             tax,
             total,
             products (
@@ -968,7 +962,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            discount_type,
             tax,
             total
           )

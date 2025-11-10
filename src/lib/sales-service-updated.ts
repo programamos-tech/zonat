@@ -37,7 +37,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            discount_type,
             tax,
             total
           )
