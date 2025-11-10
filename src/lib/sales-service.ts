@@ -57,12 +57,10 @@ export class SalesService {
           ),
           sale_payments (
             id,
+            sale_id,
             payment_type,
             amount,
-            reference,
-            notes,
-            created_at,
-            updated_at
+            created_at
           )
         `)
         .order('created_at', { ascending: false })
@@ -89,10 +87,8 @@ export class SalesService {
           saleId: payment.sale_id,
           paymentType: payment.payment_type,
           amount: payment.amount,
-          reference: payment.reference,
-          notes: payment.notes,
           createdAt: payment.created_at,
-          updatedAt: payment.updated_at
+          updatedAt: payment.updated_at || payment.created_at
         })) || [],
         invoiceNumber: sale.invoice_number,
         sellerId: sale.seller_id,
@@ -144,12 +140,10 @@ export class SalesService {
           ),
           sale_payments (
             id,
+            sale_id,
             payment_type,
             amount,
-            reference,
-            notes,
-            created_at,
-            updated_at
+            created_at
           )
         `)
         .eq('id', id)
@@ -178,10 +172,8 @@ export class SalesService {
           saleId: payment.sale_id,
           paymentType: payment.payment_type,
           amount: payment.amount,
-          reference: payment.reference,
-          notes: payment.notes,
           createdAt: payment.created_at,
-          updatedAt: payment.updated_at
+          updatedAt: payment.updated_at || payment.created_at
         })) || [],
         invoiceNumber: data.invoice_number,
         sellerId: data.seller_id,
@@ -290,9 +282,7 @@ export class SalesService {
           const paymentRecords = saleData.payments.map(payment => ({
             sale_id: sale.id,
             payment_type: payment.paymentType,
-            amount: payment.amount,
-            reference: payment.reference || null,
-            notes: payment.notes || null
+            amount: payment.amount
           }))
 
           const { error: paymentsError } = await supabase
@@ -997,7 +987,7 @@ export class SalesService {
         if (sale.payment_method === 'mixed') {
           const { data: paymentData } = await supabase
             .from('sale_payments')
-            .select('*')
+            .select('id,sale_id,payment_type,amount,created_at')
             .eq('sale_id', sale.id)
           
           payments = (paymentData || []).map((p: any) => ({
@@ -1005,8 +995,6 @@ export class SalesService {
             saleId: p.sale_id,
             paymentType: p.payment_type,
             amount: p.amount,
-            reference: p.reference || '',
-            notes: p.notes || '',
             createdAt: p.created_at,
             updatedAt: p.updated_at || p.created_at
           }))
