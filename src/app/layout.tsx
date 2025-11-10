@@ -34,9 +34,9 @@ export const metadata: Metadata = {
   title: "ZONA T - Panel de Control",
   description: "Sistema de gestión de inventario y ventas para ZONA T",
   icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg'
+    icon: '/zonat-logo.png',
+    shortcut: '/zonat-logo.png',
+    apple: '/zonat-logo.png'
   },
 };
 

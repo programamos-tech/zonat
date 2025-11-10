@@ -2,127 +2,225 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { 
   X, 
   XCircle, 
-  TrendingUp,
-  TrendingDown,
   DollarSign,
-  Calendar,
   User,
-  AlertTriangle,
-  BarChart3,
-  RefreshCw
+  FileText,
+  Calendar
 } from 'lucide-react'
 import { Sale } from '@/types'
+import { supabaseAdmin } from '@/lib/supabase'
+
+interface CancelledInvoiceInfo extends Sale {
+  cancellationReason?: string
+  cancelledBy?: string
+  cancelledByName?: string
+  cancelledAt?: string
+}
 
 interface CancelledInvoicesModalProps {
   isOpen: boolean
   onClose: () => void
   sales: Sale[]
-  allSales: Sale[]
+  allSales?: Sale[]
 }
 
-export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: CancelledInvoicesModalProps) {
+export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvoicesModalProps) {
   const [isLoading, setIsLoading] = useState(false)
-  const [selectedPeriod, setSelectedPeriod] = useState<'today' | 'week' | 'month' | 'all'>('all')
-  
-  // Calcular métricas
-  const metrics = {
-    // Facturas anuladas en el período seleccionado
-    cancelledSales: sales.filter(sale => sale.status === 'cancelled'),
-    
-    // Total de ventas en el período seleccionado
-    totalSales: sales.length,
-    
-    // Tasa de anulación
-    cancellationRate: sales.length > 0 ? (sales.filter(sale => sale.status === 'cancelled').length / sales.length) * 100 : 0,
-    
-    // Valor total anulado
-    totalCancelledValue: sales.filter(sale => sale.status === 'cancelled').reduce((sum, sale) => sum + sale.total, 0),
-    
-    // Pérdida potencial (valor de las facturas anuladas)
-    potentialLoss: sales.filter(sale => sale.status === 'cancelled').reduce((sum, sale) => sum + sale.total, 0),
-    
-    // Comparación con el mes anterior
-    previousMonthComparison: calculatePreviousMonthComparison(),
-    
-    // Facturas anuladas por día de la semana
-    cancellationsByDay: calculateCancellationsByDay(),
-    
-    // Usuarios que más anulan
-    cancellationsByUser: calculateCancellationsByUser(),
-    
-    // Facturas anuladas recientes
-    recentCancellations: sales
-      .filter(sale => sale.status === 'cancelled')
-      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-      .slice(0, 10)
-  }
+  const [cancelledInvoices, setCancelledInvoices] = useState<CancelledInvoiceInfo[]>([])
 
-  function calculatePreviousMonthComparison() {
-    const now = new Date()
-    const currentMonth = now.getMonth()
-    const currentYear = now.getFullYear()
-    
-    // Mes actual
-    const currentMonthSales = allSales.filter(sale => {
-      const saleDate = new Date(sale.createdAt)
-      return saleDate.getMonth() === currentMonth && saleDate.getFullYear() === currentYear
-    })
-    
-    // Mes anterior
-    const previousMonth = currentMonth === 0 ? 11 : currentMonth - 1
-    const previousYear = currentMonth === 0 ? currentYear - 1 : currentYear
-    
-    const previousMonthSales = allSales.filter(sale => {
-      const saleDate = new Date(sale.createdAt)
-      return saleDate.getMonth() === previousMonth && saleDate.getFullYear() === previousYear
-    })
-    
-    const currentCancellations = currentMonthSales.filter(sale => sale.status === 'cancelled').length
-    const previousCancellations = previousMonthSales.filter(sale => sale.status === 'cancelled').length
-    
-    const currentRate = currentMonthSales.length > 0 ? (currentCancellations / currentMonthSales.length) * 100 : 0
-    const previousRate = previousMonthSales.length > 0 ? (previousCancellations / previousMonthSales.length) * 100 : 0
-    
-    return {
-      current: currentRate,
-      previous: previousRate,
-      change: currentRate - previousRate,
-      trend: currentRate > previousRate ? 'up' : currentRate < previousRate ? 'down' : 'stable'
+  // Cargar información de cancelación desde los logs
+  useEffect(() => {
+    if (isOpen) {
+      loadCancellationInfo()
     }
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, sales])
 
-  function calculateCancellationsByDay() {
-    const daysOfWeek = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
-    const cancellations = sales.filter(sale => sale.status === 'cancelled')
-    
-    const byDay = daysOfWeek.map(day => ({ day, count: 0 }))
-    
-    cancellations.forEach(sale => {
-      const dayOfWeek = new Date(sale.createdAt).getDay()
-      byDay[dayOfWeek].count++
-    })
-    
-    return byDay
-  }
-
-  function calculateCancellationsByUser() {
-    const cancellations = sales.filter(sale => sale.status === 'cancelled')
-    const byUser: { [key: string]: { name: string, count: number, value: number } } = {}
-    
-    cancellations.forEach(sale => {
-      const userName = sale.sellerName || 'Usuario Desconocido'
-      if (!byUser[userName]) {
-        byUser[userName] = { name: userName, count: 0, value: 0 }
+  const loadCancellationInfo = async () => {
+    setIsLoading(true)
+    try {
+      const cancelledSales = sales.filter(sale => sale.status === 'cancelled')
+      
+      // Obtener solo los logs de cancelación directamente (más eficiente)
+      let cancellationLogs: any[] = []
+      
+      try {
+        const { data: logs, error } = await supabaseAdmin
+          .from('logs')
+          .select(`
+            id,
+            user_id,
+            action,
+            module,
+            details,
+            created_at,
+            users (
+              id,
+              name
+            )
+          `)
+          .eq('action', 'sale_cancel')
+          .eq('module', 'sales')
+          .order('created_at', { ascending: false })
+        
+        if (error) {
+          // Si falla con JOIN, intentar sin JOIN
+          const { data: logsWithoutJoin, error: errorWithoutJoin } = await supabaseAdmin
+            .from('logs')
+            .select('id, user_id, action, module, details, created_at')
+            .eq('action', 'sale_cancel')
+            .eq('module', 'sales')
+            .order('created_at', { ascending: false })
+          
+          if (!errorWithoutJoin && logsWithoutJoin) {
+            // Obtener nombres de usuarios por separado
+            const userIds = [...new Set(logsWithoutJoin.map((log: any) => log.user_id).filter(Boolean))]
+            const userNames: { [key: string]: string } = {}
+            
+            if (userIds.length > 0) {
+              const { data: users } = await supabaseAdmin
+                .from('users')
+                .select('id, name')
+                .in('id', userIds)
+              
+              if (users) {
+                users.forEach((user: any) => {
+                  userNames[user.id] = user.name
+                })
+              }
+            }
+            
+            cancellationLogs = logsWithoutJoin.map((log: any) => {
+              // Parsear details si es un string JSON
+              let parsedDetails = log.details || {}
+              if (typeof log.details === 'string') {
+                try {
+                  parsedDetails = JSON.parse(log.details)
+                } catch {
+                  parsedDetails = {}
+                }
+              }
+              
+              return {
+                id: log.id,
+                user_id: log.user_id,
+                action: log.action,
+                module: log.module,
+                details: parsedDetails,
+                created_at: log.created_at,
+                user_name: log.user_id ? (userNames[log.user_id] || 'Usuario Desconocido') : 'Usuario Desconocido'
+              }
+            })
+          }
+        } else if (logs) {
+          cancellationLogs = logs.map((log: any) => {
+            // Parsear details si es un string JSON
+            let parsedDetails = log.details || {}
+            if (typeof log.details === 'string') {
+              try {
+                parsedDetails = JSON.parse(log.details)
+              } catch {
+                parsedDetails = {}
+              }
+            }
+            
+            return {
+              id: log.id,
+              user_id: log.user_id,
+              action: log.action,
+              module: log.module,
+              details: parsedDetails,
+              created_at: log.created_at,
+              user_name: (log.users && typeof log.users === 'object' && log.users.name) 
+                ? String(log.users.name) 
+                : 'Usuario Desconocido'
+            }
+          })
+        }
+      } catch (err) {
+        // Error silencioso - continuar sin información de logs
+        console.warn('[CancelledInvoicesModal] Error fetching cancellation logs:', err)
       }
-      byUser[userName].count++
-      byUser[userName].value += sale.total
-    })
-    
-    return Object.values(byUser).sort((a, b) => b.count - a.count).slice(0, 5)
+
+      // Mapear las ventas canceladas con su información de cancelación
+      const invoicesWithInfo: CancelledInvoiceInfo[] = cancelledSales.map(sale => {
+        // Buscar el log de cancelación que coincida con esta venta
+        // Intentar por saleId en details, o por invoice_number si está disponible
+        const cancellationLog = cancellationLogs.find(log => {
+          const details = log.details || {}
+          // Buscar por saleId (el más común)
+          if (details.saleId === sale.id) return true
+          // Buscar por invoice_number si está disponible
+          if (sale.invoiceNumber && details.invoiceNumber === sale.invoiceNumber) return true
+          // Buscar por ID en la descripción si contiene el ID de la venta
+          if (details.description && typeof details.description === 'string') {
+            if (details.description.includes(sale.id)) return true
+            // También buscar por número de factura en la descripción
+            if (sale.invoiceNumber && details.description.includes(sale.invoiceNumber)) return true
+          }
+          return false
+        })
+        
+        // Extraer el motivo de diferentes lugares posibles
+        let reason = 'No especificado'
+        if (cancellationLog?.details) {
+          const details = cancellationLog.details
+          // Intentar obtener el motivo de diferentes campos
+          if (details.reason) {
+            reason = String(details.reason)
+          } else if (details.description) {
+            // Si el motivo está en la descripción, extraerlo
+            const desc = String(details.description)
+            const motivoMatch = desc.match(/Motivo:\s*(.+?)(?:\s*-|$)/i)
+            if (motivoMatch && motivoMatch[1]) {
+              reason = motivoMatch[1].trim()
+            } else if (desc.includes('Motivo:')) {
+              reason = desc.split('Motivo:')[1]?.split('-')[0]?.trim() || desc
+            }
+          }
+        }
+        
+        return {
+          ...sale,
+          cancellationReason: reason,
+          cancelledBy: cancellationLog?.user_id || sale.sellerId,
+          cancelledByName: cancellationLog?.user_name || sale.sellerName || 'Usuario desconocido',
+          cancelledAt: cancellationLog?.created_at || sale.updatedAt || sale.createdAt
+        }
+      })
+
+      // Ordenar por fecha de cancelación (más recientes primero)
+      invoicesWithInfo.sort((a, b) => {
+        const dateA = new Date(a.cancelledAt || a.createdAt).getTime()
+        const dateB = new Date(b.cancelledAt || b.createdAt).getTime()
+        return dateB - dateA
+      })
+
+      setCancelledInvoices(invoicesWithInfo)
+    } catch {
+      // Error silencioso en producción
+      // Si falla, mostrar solo las ventas sin información de cancelación
+      const cancelledSales = sales
+        .filter(sale => sale.status === 'cancelled')
+        .map(sale => ({
+          ...sale,
+          cancellationReason: 'No disponible',
+          cancelledByName: sale.sellerName || 'Usuario desconocido',
+          cancelledAt: sale.updatedAt || sale.createdAt
+        }))
+        .sort((a, b) => {
+          const dateA = new Date(a.cancelledAt || a.createdAt).getTime()
+          const dateB = new Date(b.cancelledAt || b.createdAt).getTime()
+          return dateB - dateA
+        })
+      setCancelledInvoices(cancelledSales)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -133,52 +231,28 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
     }).format(amount)
   }
 
-  const formatPercentage = (value: number) => {
-    return `${value.toFixed(1)}%`
-  }
-
-  const getTrendIcon = (trend: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up':
-        return <TrendingUp className="h-4 w-4 text-red-500" />
-      case 'down':
-        return <TrendingDown className="h-4 w-4 text-green-500" />
-      default:
-        return <BarChart3 className="h-4 w-4 text-gray-500" />
-    }
-  }
-
-  const getTrendColor = (trend: 'up' | 'down' | 'stable') => {
-    switch (trend) {
-      case 'up':
-        return 'text-red-600 dark:text-red-400'
-      case 'down':
-        return 'text-green-600 dark:text-green-400'
-      default:
-        return 'text-gray-600 dark:text-gray-400'
-    }
-  }
+  const totalLostValue = cancelledInvoices.reduce((sum, invoice) => sum + invoice.total, 0)
 
   if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-0 xl:pl-6 xl:pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[90vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
-            <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg flex-shrink-0">
-              <XCircle className="h-5 w-5 md:h-8 md:w-8 text-red-600 dark:text-red-400" />
+            <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg flex-shrink-0">
+              <XCircle className="h-5 w-5 md:h-8 md:w-8 text-red-500 dark:text-red-400" />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
-                Análisis de Facturas Anuladas
+                Facturas Anuladas
               </h2>
               <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 hidden md:block">
-                Métricas detalladas y tendencias de cancelaciones
+                Información detallada de las facturas canceladas
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
-                Métricas y tendencias
+                Facturas canceladas
               </p>
             </div>
           </div>
@@ -193,31 +267,29 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-6">
-          <div className="space-y-4 md:space-y-6">
-            {/* Métricas principales */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-              {/* Tasa de Anulación */}
+        <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
+          {/* Resumen lateral */}
+          <div className="w-full md:w-72 lg:w-80 xl:w-96 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50 dark:bg-gray-800/50 p-3 md:p-4">
+            <div className="space-y-3 md:space-y-4">
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
-                    <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                      <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
+                    <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
+                      <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-500 dark:text-red-400" />
                     </div>
                     <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                      Tasa de Anulación
+                      Total Anuladas
                     </span>
                   </div>
                   <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-                    {formatPercentage(metrics.cancellationRate)}
+                    {cancelledInvoices.length}
                   </p>
                   <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                    {metrics.cancelledSales.length} de {metrics.totalSales} ventas
+                    facturas canceladas
                   </p>
                 </CardContent>
               </Card>
 
-              {/* Valor Total Anulado */}
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
@@ -225,174 +297,119 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
                       <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
                     </div>
                     <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                      Valor Total Anulado
+                      Valor Perdido
                     </span>
                   </div>
                   <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-                    {formatCurrency(metrics.totalCancelledValue)}
+                    {formatCurrency(totalLostValue)}
                   </p>
                   <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                    Pérdida potencial
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Pérdida Potencial */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                      <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
-                    </div>
-                    <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                      Pérdida Potencial
-                    </span>
-                  </div>
-                  <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-                    {formatCurrency(metrics.potentialLoss)}
-                  </p>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                    Dinero no ingresado
-                  </p>
-                </CardContent>
-              </Card>
-
-              {/* Tendencia */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      {getTrendIcon(metrics.previousMonthComparison.trend)}
-                    </div>
-                    <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
-                      Tendencia Mensual
-                    </span>
-                  </div>
-                  <p className={`text-lg md:text-2xl font-bold mb-0.5 md:mb-1 ${getTrendColor(metrics.previousMonthComparison.trend)}`}>
-                    {formatPercentage(Math.abs(metrics.previousMonthComparison.change))}
-                  </p>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                    vs mes anterior
+                    Total de facturas anuladas
                   </p>
                 </CardContent>
               </Card>
             </div>
+          </div>
 
-            {/* Análisis detallado */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-              {/* Facturas anuladas por día */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader className="p-3 md:p-6">
-                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <Calendar className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
-                    Anulaciones por Día de la Semana
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 md:p-6 pt-0">
-                  <div className="space-y-2 md:space-y-3">
-                    {metrics.cancellationsByDay.map((day, index) => (
-                      <div key={index} className="flex items-center justify-between">
-                        <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">{day.day}</span>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 md:w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                            <div 
-                              className="bg-red-500 h-2 rounded-full" 
-                              style={{ 
-                                width: `${metrics.cancelledSales.length > 0 ? (day.count / metrics.cancelledSales.length) * 100 : 0}%` 
-                              }}
-                            ></div>
+          {/* Lista de facturas anuladas */}
+          <div className="flex-1 overflow-y-auto p-3 md:p-6">
+            <div className="mb-4">
+              <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
+                <FileText className="h-4 w-4 md:h-5 md:w-5 text-red-500 dark:text-red-400" />
+                Facturas Anuladas
+              </h3>
+            </div>
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 dark:border-red-400 mx-auto mb-3"></div>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Cargando información...</p>
+                  </div>
+              ) : cancelledInvoices.length > 0 ? (
+                <div className="space-y-3 md:space-y-4">
+                  {cancelledInvoices.map((invoice) => (
+                    <div 
+                      key={invoice.id} 
+                      className="p-3 md:p-4 bg-red-50/20 dark:bg-red-900/5 border border-red-100 dark:border-red-900/20 rounded-lg hover:bg-red-50/30 dark:hover:bg-red-900/10 transition-colors"
+                    >
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-3">
+                        {/* Información principal */}
+                        <div className="flex-1 min-w-0 lg:max-w-2xl">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-bold text-sm md:text-base text-gray-900 dark:text-white">
+                              {invoice.invoiceNumber || 'Sin número'}
+                            </h3>
+                            <span className="px-2 py-0.5 bg-red-500 dark:bg-red-600 text-white text-xs rounded">
+                              Anulada
+                            </span>
                           </div>
-                          <span className="text-xs md:text-sm font-medium text-gray-900 dark:text-white w-6 md:w-8 text-right">
-                            {day.count}
-                          </span>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 md:gap-3 text-xs md:text-sm">
+                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                              <User className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                              <span className="font-medium">Cliente:</span>
+                              <span className="truncate">{invoice.clientName}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                              <Calendar className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                              <span className="font-medium">Anulada el:</span>
+                              <span>{new Date(invoice.cancelledAt || invoice.updatedAt || invoice.createdAt).toLocaleString('es-CO')}</span>
+                            </div>
+                            
+                            <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                              <User className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                              <span className="font-medium">Anulada por:</span>
+                              <span className="truncate">{invoice.cancelledByName || 'Usuario desconocido'}</span>
+                            </div>
+                            
+                            <div className="md:col-span-2 mt-2 pt-2 border-t border-red-100 dark:border-red-900/20">
+                              <div className="flex items-start gap-2">
+                                <FileText className="h-3 w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0 text-red-500 dark:text-red-400" />
+                                <div className="flex-1 min-w-0">
+                                  <span className="font-medium text-gray-700 dark:text-gray-300 block mb-1">Motivo:</span>
+                                  <p className="text-gray-900 dark:text-white bg-white dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">
+                                    {invoice.cancellationReason || 'No especificado'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* Valor */}
+                        <div className="flex-shrink-0 lg:text-right">
+                          <div className="inline-block">
+                            <p className="text-lg md:text-xl font-bold text-red-600 dark:text-red-400 mb-1">
+                              {formatCurrency(invoice.total)}
+                            </p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                              Valor perdido
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Usuarios que más anulan */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader className="p-3 md:p-6">
-                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
-                    Usuarios con Más Anulaciones
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3 md:p-6 pt-0">
-                  <div className="space-y-2 md:space-y-3">
-                    {metrics.cancellationsByUser.map((user, index) => (
-                      <div key={index} className="flex items-center justify-between p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-sm md:text-base text-gray-900 dark:text-white truncate">{user.name}</p>
-                          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                            {user.count} anulaciones
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-2">
-                          <p className="font-semibold text-xs md:text-sm text-red-600 dark:text-red-400">
-                            {formatCurrency(user.value)}
-                          </p>
-                          <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                            Valor perdido
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Facturas anuladas recientes */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader className="p-3 md:p-6">
-                <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
-                  Facturas Anuladas Recientes
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 md:p-6 pt-0">
-                {metrics.recentCancellations.length > 0 ? (
-                  <div className="space-y-2 md:space-y-3 max-h-64 overflow-y-auto">
-                    {metrics.recentCancellations.map((sale, index) => (
-                      <div key={sale.id} className="flex items-center justify-between p-2 md:p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-                        <div className="min-w-0 flex-1">
-                          <p className="font-medium text-xs md:text-sm text-gray-900 dark:text-white truncate">
-                            {sale.invoiceNumber} - {sale.clientName}
-                          </p>
-                          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-                            {new Date(sale.createdAt).toLocaleString('es-CO')}
-                          </p>
-                        </div>
-                        <div className="text-right flex-shrink-0 ml-2">
-                          <p className="font-semibold text-xs md:text-sm text-red-600 dark:text-red-400">
-                            {formatCurrency(sale.total)}
-                          </p>
-                          <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                            {sale.sellerName || 'Usuario desconocido'}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-center py-6 md:py-8">
-                    <XCircle className="h-8 w-8 md:h-12 md:w-12 text-gray-300 mx-auto mb-3 md:mb-4" />
-                    <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">No hay facturas anuladas en este período</p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 md:py-12">
+                  <XCircle className="h-12 w-12 md:h-16 md:w-16 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+                  <p className="text-sm md:text-base text-gray-500 dark:text-gray-400 font-medium">
+                    No hay facturas anuladas
+                  </p>
+                  <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500 mt-1">
+                    Todas las facturas están activas
+                  </p>
+                </div>
+              )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-3 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(64px, env(safe-area-inset-bottom)) + 1rem)`, marginBottom: '0' }}>
+        <div className="flex items-center justify-end gap-3 p-3 md:p-6 pb-16 md:pb-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0">
           <Button
             onClick={onClose}
-            className="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
+            className="bg-red-500 hover:bg-red-600 text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"
           >
             Cerrar
           </Button>

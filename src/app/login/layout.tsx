@@ -16,9 +16,9 @@ export const metadata: Metadata = {
   title: "ZONA T - Iniciar Sesión",
   description: "Sistema de gestión de inventario y ventas para ZONA T",
   icons: {
-    icon: '/zonat-logo.webp',
-    shortcut: '/zonat-logo.webp',
-    apple: '/zonat-logo.webp'
+    icon: '/zonat-logo.png',
+    shortcut: '/zonat-logo.png',
+    apple: '/zonat-logo.png'
   },
 };
 

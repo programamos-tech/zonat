@@ -297,9 +297,9 @@ export default function DashboardPage() {
     // Calcular el total real de métodos de pago conocidos
     const knownPaymentMethodsTotal = cashRevenue + transferRevenue + creditRevenue
     
-    // Productos más vendidos
+    // Productos más vendidos - Excluir ventas canceladas
     const productSales: { [key: string]: { name: string; quantity: number; revenue: number } } = {}
-    sales.forEach(sale => {
+    activeSales.forEach(sale => {
       if (sale.items) {
         sale.items.forEach(item => {
           if (!productSales[item.productId]) {
@@ -324,8 +324,8 @@ export default function DashboardPage() {
     const completedWarranties = warranties.filter(w => w.status === 'completed').length
     const pendingWarranties = warranties.filter(w => w.status === 'pending').length
     
-    // Métricas adicionales para garantías
-    const warrantyRate = sales.length > 0 ? ((completedWarranties / sales.length) * 100).toFixed(1) : '0.0'
+    // Métricas adicionales para garantías - Excluir ventas canceladas
+    const warrantyRate = activeSales.length > 0 ? ((completedWarranties / activeSales.length) * 100).toFixed(1) : '0.0'
     
     // Calcular valor total de productos reemplazados en garantías
     const totalWarrantyValue = warranties
@@ -381,8 +381,8 @@ export default function DashboardPage() {
     const overdueCreditsCount = overdueCredits.length
     const overdueCreditsDebt = overdueCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
 
-    // Clientes únicos que han comprado en el período seleccionado
-    const uniqueClients = new Set(sales.map(sale => sale.clientId)).size
+    // Clientes únicos que han comprado en el período seleccionado - Excluir ventas canceladas
+    const uniqueClients = new Set(activeSales.map(sale => sale.clientId)).size
 
     // Calcular ganancia bruta (ventas - costo de productos vendidos)
     // Excluir ventas canceladas del cálculo de ganancia bruta
@@ -536,8 +536,9 @@ export default function DashboardPage() {
     }, 0)
 
     // Datos para gráficos - Mejorado para mostrar todos los días del período
+    // Excluir ventas canceladas del gráfico
 
-    const salesByDay = sales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
+    const salesByDay = activeSales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
       const date = new Date(sale.createdAt).toLocaleDateString('es-CO', { 
         weekday: 'short',
         day: '2-digit', 
@@ -655,7 +656,7 @@ export default function DashboardPage() {
       transferRevenue,
       creditRevenue,
       knownPaymentMethodsTotal,
-      totalSales: sales.length,
+      totalSales: activeSales.length, // Solo contar ventas activas (no canceladas)
       topProducts,
       completedWarranties,
       pendingWarranties,
@@ -988,44 +989,73 @@ export default function DashboardPage() {
                 </p>
               </div>
 
-        {/* Crédito - Solo para superadmin y admin, no para vendedores */}
+        {/* Crédito o Facturas Anuladas - Depende del rol */}
         {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
-        <div 
-          onClick={() => router.push('/payments')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-        >
-          <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-              <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
-            </div>
-            <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
-                {effectiveDateFilter === 'today' ? 'Hoy' : 
-                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
-                 'Todos los Períodos'}
+          isSuperAdmin ? (
+            // Facturas Anuladas para Super Admin
+            <div 
+              onClick={() => setShowCancelledModal(true)}
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+                  <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+                    {effectiveDateFilter === 'today' ? 'Hoy' : 
+                     effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                     'Todos los Períodos'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+                {metrics.cancelledSales}
+              </p>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                de {metrics.totalSales} ventas totales
               </p>
             </div>
-          </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.creditRevenue)}
-          </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-            {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
-          </p>
-        </div>
+          ) : (
+            // Crédito para Admin (no Super Admin)
+            <div 
+              onClick={() => router.push('/payments')}
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            >
+              <div className="flex items-center justify-between mb-2 md:mb-4">
+                <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+                  <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+                    {effectiveDateFilter === 'today' ? 'Hoy' : 
+                     effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                     'Todos los Períodos'}
+                  </p>
+                </div>
+              </div>
+              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+                {new Intl.NumberFormat('es-CO', { 
+                  style: 'currency', 
+                  currency: 'COP',
+                  minimumFractionDigits: 0 
+                }).format(metrics.creditRevenue)}
+              </p>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
+              </p>
+            </div>
+          )
         ) : null}
 
       </div>
 
       {/* Segunda fila de métricas - 4 cards abajo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
-        {/* Dinero Afuera - Para usuarios con permisos de créditos */}
-        {canViewCredits && (
+        {/* Dinero Afuera - Para usuarios con permisos de créditos, pero NO para Super Admin */}
+        {canViewCredits && !isSuperAdmin && (
           <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1219,7 +1249,55 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Facturas Anuladas - Disponible para todos */}
+        {/* Créditos o Facturas Anuladas - Depende del rol */}
+        {isSuperAdmin ? (
+          // Créditos para Super Admin
+          <div 
+            onClick={() => router.push('/credits')}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+              </div>
+              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Créditos</span>
+            </div>
+            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+              {metrics.pendingCreditsCount || 0}
+            </p>
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+              créditos pendientes/parciales
+            </p>
+            
+            {/* Resumen adicional */}
+            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+              <div className="flex items-center justify-between text-xs md:text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Total pendiente:</span>
+                <span className="font-semibold text-orange-600 dark:text-orange-400">
+                  {new Intl.NumberFormat('es-CO', { 
+                    style: 'currency', 
+                    currency: 'COP',
+                    minimumFractionDigits: 0 
+                  }).format(metrics.totalDebt || 0)}
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs md:text-sm">
+                <span className="text-gray-600 dark:text-gray-400">Total créditos:</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400">
+                  {filteredData.credits.length}
+                </span>
+              </div>
+              <div className="text-center pt-1 md:pt-2">
+                <span className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1">
+                  <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
+                  <span className="hidden sm:inline">Haz clic para ver créditos</span>
+                  <span className="sm:hidden">Ver créditos</span>
+                </span>
+              </div>
+            </div>
+          </div>
+        ) : (
+          // Facturas Anuladas para otros usuarios
           <div 
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
             onClick={() => setShowCancelledModal(true)}
@@ -1260,6 +1338,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </div>
+        )}
       </div>
 
       {/* Gráficos y estadísticas */}

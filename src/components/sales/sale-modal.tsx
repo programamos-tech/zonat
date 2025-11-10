@@ -693,9 +693,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-            {/* Left Column - Client and Products */}
-            <div className="space-y-6">
+          <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-6">
+            {/* Left Column - Client and Products (3/5 del ancho) */}
+            <div className="xl:col-span-3 space-y-6">
               {/* Client Selection */}
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
                 <CardHeader className="pb-3">
@@ -793,17 +793,17 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                 </CardContent>
               </Card>
 
-              {/* Product Selection */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              {/* Product Selection - Más prominente */}
+              <Card className="bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 shadow-lg">
                 <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between text-lg text-gray-900 dark:text-white">
+                  <CardTitle className="flex items-center justify-between text-base text-gray-900 dark:text-white">
                     <div className="flex items-center">
-                      <Package className="h-5 w-5 mr-2 text-green-600" />
+                      <Package className="h-4 w-4 mr-2 text-green-600" />
                       Agregar Productos
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-3">
                   <div className="space-y-3">
                     {/* Search Input */}
                     <div className="relative">
@@ -844,15 +844,15 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                             setSelectedProductIndex(-1)
                           }
                         }}
-                        className="w-full pl-10 pr-4 py-3 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
+                        className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
                       />
                     </div>
                     
-                    {/* Product Dropdown */}
+                    {/* Product Dropdown - Más grande y prominente */}
                     {showProductDropdown && (
                       <div 
                         id="product-dropdown"
-                        className="bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-50 mt-2"
+                        className="bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-xl max-h-96 md:max-h-[500px] overflow-y-auto relative z-50 mt-3"
                       >
                         {/* Botón para cerrar */}
                         <div className="flex justify-end p-2 border-b border-gray-200 dark:border-gray-600">
@@ -1092,24 +1092,24 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               </Card>
             </div>
 
-            {/* Right Column - Payment and Summary */}
-            <div className="space-y-4">
-              {/* Payment Method */}
+            {/* Right Column - Payment and Summary (2/5 del ancho) */}
+            <div className="xl:col-span-2 space-y-4">
+              {/* Payment Method - Más compacto */}
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
-                    <CreditCard className="h-5 w-5 mr-2 text-green-600" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center text-base text-gray-900 dark:text-white">
+                    <CreditCard className="h-4 w-4 mr-2 text-green-600" />
                     Método de Pago
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3">
+                <CardContent className="p-2">
                   <div className="space-y-2">
                     {/* Selector de Método de Pago */}
                     <div className="relative">
                       <select
                         value={paymentMethod}
                         onChange={(e) => setPaymentMethod(e.target.value as any)}
-                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 appearance-none cursor-pointer text-gray-900 dark:text-white font-medium"
+                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 appearance-none cursor-pointer text-gray-900 dark:text-white"
                       >
                         <option value="" className="bg-white dark:bg-gray-600 text-gray-500 dark:text-gray-400">Seleccionar método de pago</option>
                         <option value="cash" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Efectivo/Contado</option>
@@ -1125,11 +1125,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
                     {/* Sección de Pagos Mixtos */}
                     {showMixedPayments && (
-                      <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                        <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                      <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                        <h4 className="text-xs font-medium text-gray-900 dark:text-white mb-2">
                           Desglose de Pago Mixto
                         </h4>
-                        <div className="space-y-3">
+                        <div className="space-y-2">
                           {mixedPayments.map((payment, index) => (
                             <div key={index} className="space-y-2">
                               <div>
@@ -1213,16 +1213,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                 </CardContent>
               </Card>
 
-              {/* Summary */}
+              {/* Summary - Más compacto */}
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="h-5 w-5 mr-2 text-green-600" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-base text-gray-900 dark:text-white flex items-center">
+                    <DollarSign className="h-4 w-4 mr-2 text-green-600" />
                     Resumen de Venta
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
+                <CardContent className="p-2">
+                  <div className="space-y-1.5">
                     {/* Subtotal */}
                     <div className="flex justify-between">
                       <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal:</span>
@@ -1296,8 +1296,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                     </div>
 
                     {/* Total */}
-                    <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
-                      <div className="flex justify-between text-lg font-semibold">
+                    <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
+                      <div className="flex justify-between text-base font-semibold">
                         <span className="text-gray-900 dark:text-white">Total:</span>
                         <span className="font-bold text-gray-900 dark:text-white">
                           ${total.toLocaleString()}
