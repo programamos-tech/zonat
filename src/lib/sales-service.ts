@@ -50,7 +50,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            tax,
             total,
             products!inner (
               reference
@@ -138,7 +137,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            tax,
             total,
             products!inner (
               reference
@@ -272,7 +270,6 @@ export class SalesService {
           quantity: item.quantity,
           unit_price: item.unitPrice,
           discount: item.discount || 0,
-          tax: item.tax || 0,
           total: item.total
         }))
 
@@ -807,7 +804,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            tax,
             total,
             products (
               reference
@@ -962,7 +958,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            tax,
             total
           )
         `)

@@ -37,7 +37,6 @@ export class SalesService {
             quantity,
             unit_price,
             discount,
-            tax,
             total
           )
         `)
@@ -106,7 +105,6 @@ export class SalesService {
             unit_price,
             discount,
             discount_type,
-            tax,
             total
           )
         `)
@@ -226,7 +224,6 @@ export class SalesService {
           unit_price: item.unitPrice,
           discount: item.discount || 0,
           discount_type: item.discountType || 'amount',
-          tax: item.tax || 0,
           total: item.total
         }))
 
@@ -433,7 +430,6 @@ export class SalesService {
             unit_price,
             discount,
             discount_type,
-            tax,
             total
           )
         `)
