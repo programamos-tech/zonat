@@ -69,43 +69,67 @@ export class SalesService {
         throw error
       }
 
-      const sales = data?.map(sale => ({
-        id: sale.id,
-        clientId: sale.client_id,
-        clientName: sale.client_name,
-        total: sale.total,
-        subtotal: sale.subtotal,
-        tax: sale.tax,
-        discount: sale.discount,
-        discountType: sale.discount_type || 'amount',
-        status: sale.status,
-        paymentMethod: sale.payment_method,
-        payments: sale.sale_payments?.map((payment: any) => ({
-          id: payment.id,
-          saleId: payment.sale_id,
-          paymentType: payment.payment_type,
-          amount: payment.amount,
-          createdAt: payment.created_at,
-          updatedAt: payment.updated_at || payment.created_at
-        })) || [],
-        invoiceNumber: sale.invoice_number,
-        sellerId: sale.seller_id,
-        sellerName: sale.seller_name,
-        sellerEmail: sale.seller_email,
-        createdAt: sale.created_at,
-        items: sale.sale_items?.map((item: any) => ({
-          id: item.id,
-          productId: item.product_id,
-          productName: item.product_name,
-          productReferenceCode: item.product_reference_code || 'N/A',
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          discount: item.discount || 0,
-          discountType: item.discount_type || 'amount',
-          tax: item.tax || 0,
-          total: item.total
-        })) || []
-      })) || []
+      // Obtener referencias de productos para items que no las tienen
+      const sales = await Promise.all(
+        (data || []).map(async (sale) => {
+          const itemsWithReferences = await Promise.all(
+            (sale.sale_items || []).map(async (item: any) => {
+              let productReference = item.product_reference_code
+              
+              // Si no hay referencia guardada, obtenerla desde la tabla products
+              if (!productReference || productReference === 'N/A' || productReference === null) {
+                const { data: product } = await supabase
+                  .from('products')
+                  .select('reference')
+                  .eq('id', item.product_id)
+                  .single()
+                
+                productReference = product?.reference || 'N/A'
+              }
+              
+              return {
+                id: item.id,
+                productId: item.product_id,
+                productName: item.product_name,
+                productReferenceCode: productReference,
+                quantity: item.quantity,
+                unitPrice: item.unit_price,
+                discount: item.discount || 0,
+                discountType: item.discount_type || 'amount',
+                tax: item.tax || 0,
+                total: item.total
+              }
+            })
+          )
+
+          return {
+            id: sale.id,
+            clientId: sale.client_id,
+            clientName: sale.client_name,
+            total: sale.total,
+            subtotal: sale.subtotal,
+            tax: sale.tax,
+            discount: sale.discount,
+            discountType: sale.discount_type || 'amount',
+            status: sale.status,
+            paymentMethod: sale.payment_method,
+            payments: sale.sale_payments?.map((payment: any) => ({
+              id: payment.id,
+              saleId: payment.sale_id,
+              paymentType: payment.payment_type,
+              amount: payment.amount,
+              createdAt: payment.created_at,
+              updatedAt: payment.updated_at || payment.created_at
+            })) || [],
+            invoiceNumber: sale.invoice_number,
+            sellerId: sale.seller_id,
+            sellerName: sale.seller_name,
+            sellerEmail: sale.seller_email,
+            createdAt: sale.created_at,
+            items: itemsWithReferences
+          }
+        })
+      )
 
       return {
         sales,
@@ -152,6 +176,37 @@ export class SalesService {
 
       if (!data) return null
 
+      // Obtener referencias de productos si no están en sale_items (para ventas antiguas)
+      const itemsWithReferences = await Promise.all(
+        (data.sale_items || []).map(async (item: any) => {
+          let productReference = item.product_reference_code
+          
+          // Si no hay referencia guardada, obtenerla desde la tabla products
+          if (!productReference || productReference === 'N/A' || productReference === null) {
+            const { data: product } = await supabase
+              .from('products')
+              .select('reference')
+              .eq('id', item.product_id)
+              .single()
+            
+            productReference = product?.reference || 'N/A'
+          }
+          
+          return {
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: productReference,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
+          }
+        })
+      )
+
       const result = {
         id: data.id,
         clientId: data.client_id,
@@ -176,18 +231,7 @@ export class SalesService {
         sellerName: data.seller_name,
         sellerEmail: data.seller_email,
         createdAt: data.created_at,
-        items: data.sale_items?.map((item: any) => ({
-          id: item.id,
-          productId: item.product_id,
-          productName: item.product_name,
-          productReferenceCode: item.product_reference_code || 'N/A',
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          discount: item.discount || 0,
-          discountType: item.discount_type || 'amount',
-          tax: item.tax || 0,
-          total: item.total
-        })) || []
+        items: itemsWithReferences
       }
 
       return result
@@ -255,6 +299,7 @@ export class SalesService {
           sale_id: sale.id,
           product_id: item.productId,
           product_name: item.productName,
+          product_reference_code: item.productReferenceCode || null,
           quantity: item.quantity,
           unit_price: item.unitPrice,
           discount: item.discount || 0,

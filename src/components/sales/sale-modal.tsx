@@ -424,6 +424,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         id: Date.now().toString(),
         productId: product.id,
         productName: product.name,
+        productReferenceCode: product.reference,
         quantity: 1,
         unitPrice: product.price,
         discount: 0,
@@ -467,7 +468,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       
       // Si el precio es menor al costo, mostrar alerta y ajustar al costo mínimo
       if (item.unitPrice < productCost) {
-        showStockAlert(`El precio de venta debe ser igual o mayor al costo base ($${productCost.toLocaleString('es-CO')}). Se ajustó al costo mínimo.`, item.productId)
+        showStockAlert(`El precio debe ser mayor.`, item.productId)
         // Ajustar al costo mínimo
         handleUpdatePrice(itemId, productCost)
       }
@@ -587,8 +588,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     })
 
     if (invalidProducts.length > 0) {
-      const productsList = invalidProducts.join(', ')
-      showStockAlert(`El precio de venta debe ser igual o mayor al costo base para: ${productsList}. Por favor ajusta los precios antes de continuar.`, undefined)
+      showStockAlert(`El precio debe ser mayor.`, undefined)
       return
     }
 
@@ -974,7 +974,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                               <div className="flex-1">
                                 <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
                                 <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                  <span>Costo base: <span className="font-medium text-gray-500 dark:text-gray-400">${findProductById(item.productId)?.cost?.toLocaleString() || 0}</span></span>
                                   <span>Stock: <span className="font-medium">{getAvailableStock(item.productId)} unidades</span></span>
                                 </div>
                                 <div className="flex items-center space-x-2 mt-2">
