@@ -11,6 +11,9 @@ export function usePermissions() {
     
     // Super admin tiene todos los permisos
     if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') return true
+
+    // El dashboard es accesible para todos los usuarios autenticados
+    if (module === 'dashboard' && action === 'view') return true
     
     // Verificar que el usuario tenga permisos
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return false
@@ -57,12 +60,14 @@ export function usePermissions() {
     
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
     
-    return currentUser.permissions
+    const modules = currentUser.permissions
       .filter(p => {
         const actions = p.actions || p.permissions || []
         return Array.isArray(actions) && actions.includes('view')
       })
       .map(p => p.module)
+
+    return Array.from(new Set(['dashboard', ...modules]))
   }
 
   const getModuleActions = (module: string): string[] => {

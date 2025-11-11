@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useMemo, useEffect, useRef } from 'react'
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -74,6 +74,10 @@ export default function DashboardPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCancelledModal, setShowCancelledModal] = useState(false)
+
+  const goToCredits = useCallback(() => {
+    router.push('/payments')
+  }, [router])
 
   // Función helper para agregar timeout a las promesas
   const withTimeout = <T,>(promise: Promise<T>, timeoutMs: number = 10000): Promise<T> => {
@@ -759,7 +763,7 @@ export default function DashboardPage() {
               <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                  <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
                 </div>
                 <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
                 <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
@@ -1056,7 +1060,18 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
         {/* Dinero Afuera - Para usuarios con permisos de créditos, pero NO para Super Admin */}
         {canViewCredits && !isSuperAdmin && (
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer">
+          <div
+            role="button"
+            tabIndex={0}
+            onClick={goToCredits}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                goToCredits()
+              }
+            }}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
                 <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
@@ -1153,59 +1168,64 @@ export default function DashboardPage() {
         </div>
 
         {/* Ganancia Bruta */}
-        <div 
-          onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
-        >
-                <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+        {isSuperAdmin && (
+          <div 
+            onClick={() => router.push('/sales')}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duración-200 cursor-pointer"
+          >
+            <div className="flex items-center justify-between mb-2 md:mb-4">
+              <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
+                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+                  {effectiveDateFilter === 'today' ? 'Hoy' : 
+                   effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
+                   'Todos los Períodos'}
+                </p>
+              </div>
             </div>
-            <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
-              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
-                {effectiveDateFilter === 'today' ? 'Hoy' : 
-                 effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
-                 'Todos los Períodos'}
-              </p>
-            </div>
+            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+              {new Intl.NumberFormat('es-CO', { 
+                style: 'currency', 
+                currency: 'COP',
+                minimumFractionDigits: 0 
+              }).format(metrics.grossProfit)}
+            </p>
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+              Beneficio por ventas realizadas
+            </p>
+            
+            {/* Lista de ventas más rentables */}
+            {metrics.topProfitableSales.length > 0 && (
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Top ventas más rentables
+                </div>
+                {metrics.topProfitableSales.map((sale, index) => {
+                  const saleTime = new Date(sale.createdAt).toLocaleTimeString('es-CO', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
+                  })
+                  const clientName = sale.clientName || 'Cliente'
+                  const shortName = clientName.length > 15 ? clientName.substring(0, 15) + '...' : clientName
+                  
+                  return (
+                    <div key={sale.id} className="flex justify-between items-center text-xs md:text-sm">
+                      <span className="text-gray-600 dark:text-gray-400 truncate mr-2">
+                        • {shortName} ({saleTime})
+                      </span>
+                      <span className="text-green-600 dark:text-green-400 font-medium flex-shrink-0">
+                        +${sale.profit.toLocaleString('es-CO')}
+                      </span>
                     </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.grossProfit)}
-          </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
-            Beneficio por ventas realizadas
-          </p>
-          
-          {/* Lista de ventas más rentables */}
-          {metrics.topProfitableSales.length > 0 && (
-            <div className="space-y-0.5 md:space-y-1">
-              {metrics.topProfitableSales.map((sale, index) => {
-                const saleTime = new Date(sale.createdAt).toLocaleTimeString('es-CO', { 
-                  hour: '2-digit', 
-                  minute: '2-digit' 
-                })
-                const clientName = sale.clientName || 'Cliente'
-                const shortName = clientName.length > 15 ? clientName.substring(0, 15) + '...' : clientName
-                
-                return (
-                  <div key={sale.id} className="flex justify-between items-center text-xs md:text-sm">
-                    <span className="text-gray-600 dark:text-gray-400 truncate mr-2">
-                      • {shortName} ({saleTime})
-                    </span>
-                    <span className="text-green-600 dark:text-green-400 font-medium flex-shrink-0">
-                      +${sale.profit.toLocaleString('es-CO')}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Productos en Stock - Solo para Super Admin */}
         {isSuperAdmin && (
@@ -1253,8 +1273,16 @@ export default function DashboardPage() {
         {isSuperAdmin ? (
           // Créditos para Super Admin
           <div 
-            onClick={() => router.push('/credits')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            role="button"
+            tabIndex={0}
+            onClick={goToCredits}
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault()
+                goToCredits()
+              }
+            }}
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1288,11 +1316,15 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div className="text-center pt-1 md:pt-2">
-                <span className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1">
+                <button
+                  type="button"
+                  onClick={goToCredits}
+                  className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                >
                   <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
                   <span className="hidden sm:inline">Haz clic para ver créditos</span>
                   <span className="sm:hidden">Ver créditos</span>
-                </span>
+                </button>
               </div>
             </div>
           </div>
@@ -1330,11 +1362,15 @@ export default function DashboardPage() {
                 </span>
               </div>
               <div className="text-center pt-1 md:pt-2">
-                <span className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelledModal(true)}
+                  className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                >
                   <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
                   <span className="hidden sm:inline">Haz clic para ver análisis detallado</span>
                   <span className="sm:hidden">Ver detalles</span>
-                </span>
+                </button>
               </div>
             </div>
           </div>

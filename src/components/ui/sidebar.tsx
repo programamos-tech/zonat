@@ -89,16 +89,8 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           {/* Logo */}
           <div className="flex items-center justify-center h-20 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
             {(() => {
-              const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
-              if (isSuperAdmin) {
-                return (
-                  <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
-                    <Logo size="lg" />
-                  </Link>
-                )
-              }
               return (
-                <Link href="/products" className="cursor-pointer hover:opacity-80 transition-opacity">
+                <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
                   <Logo size="lg" />
                 </Link>
               )

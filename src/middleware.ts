@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
+const PUBLIC_FILE = /\.(.*)$/
+
 export function middleware(request: NextRequest) {
-  // Permitir la página de login
-  if (request.nextUrl.pathname === '/login') {
+  const { pathname } = request.nextUrl
+
+  // Permitir archivos estáticos (imágenes, fuentes, etc.) y rutas públicas específicas
+  if (
+    pathname === '/login' ||
+    pathname.startsWith('/_next/') ||
+    pathname.startsWith('/api/') ||
+    pathname === '/favicon.ico' ||
+    PUBLIC_FILE.test(pathname)
+  ) {
     return NextResponse.next()
   }
 
-  // Verificar si hay un usuario en localStorage (simulado con cookie)
+  // Verificar si hay un usuario en la cookie
   const user = request.cookies.get('zonat_user')
   
   if (!user) {
@@ -19,14 +29,5 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|.*\\..*).*)'],
 }

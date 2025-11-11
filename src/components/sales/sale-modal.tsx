@@ -794,60 +794,60 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               </Card>
 
               {/* Product Selection - Más prominente */}
-              <Card className="bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 shadow-lg">
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center justify-between text-base text-gray-900 dark:text-white">
-                    <div className="flex items-center">
-                      <Package className="h-4 w-4 mr-2 text-green-600" />
-                      Agregar Productos
-                    </div>
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="p-3">
-                  <div className="space-y-3">
-                    {/* Search Input */}
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
-                      <input
-                        type="text"
-                        placeholder="Buscar por nombre o referencia..."
-                        value={productSearch}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          setProductSearch(value)
-                          setShowProductDropdown(true) // Siempre mostrar dropdown
-                          setSelectedProductIndex(-1) // Resetear índice al escribir
-                        }}
-                        onFocus={() => setShowProductDropdown(true)}
-                        onClick={() => setShowProductDropdown(true)}
-                        onKeyDown={(e) => {
-                          // Permitir navegación solo si hay productos y el dropdown está visible
-                          if (e.key === 'ArrowDown' && showProductDropdown && filteredProducts.length > 0) {
-                            e.preventDefault()
-                            setShowProductDropdown(true)
-                            setSelectedProductIndex(prev => 
-                              prev < filteredProducts.length - 1 ? prev + 1 : 0
-                            )
-                          } else if (e.key === 'ArrowUp' && showProductDropdown && filteredProducts.length > 0) {
-                            e.preventDefault()
-                            setSelectedProductIndex(prev => 
-                              prev > 0 ? prev - 1 : filteredProducts.length - 1
-                            )
-                          } else if (e.key === 'Enter' && selectedProductIndex >= 0 && selectedProductIndex < filteredProducts.length) {
-                            e.preventDefault()
-                            handleAddProduct(filteredProducts[selectedProductIndex])
-                            setProductSearch('')
-                            setSelectedProductIndex(-1)
-                            setShowProductDropdown(false)
-                          } else if (e.key === 'Escape') {
-                            setShowProductDropdown(false)
-                            setSelectedProductIndex(-1)
-                          }
-                        }}
-                        className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
-                      />
-                    </div>
-                    
+              <div className={`transition-all duration-200 ${showProductDropdown ? 'pt-1 md:pt-2' : ''}`}>
+                <Card className={`bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 shadow-lg overflow-visible ${showProductDropdown ? 'ring-2 ring-emerald-400/60' : ''}`}>
+                  <CardHeader className={`pb-3 ${showProductDropdown ? 'pt-2' : ''}`}>
+                    <CardTitle className="flex items-center justify-between text-base text-gray-900 dark:text-white">
+                      <div className="flex items-center">
+                        <Package className="h-4 w-4 mr-2 text-green-600" />
+                        Agregar Productos
+                      </div>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className={`p-3 ${showProductDropdown ? 'pb-5 sm:pb-6' : 'pb-3'}`}>
+                    <div className={`space-y-3 ${showProductDropdown ? 'md:space-y-4' : ''}`}>
+                      {/* Search Input */}
+                      <div className={`relative ${showProductDropdown ? 'mt-1' : ''}`}>
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4 pointer-events-none" />
+                        <input
+                          type="text"
+                          placeholder="Buscar por nombre o referencia..."
+                          value={productSearch}
+                          onChange={(e) => {
+                            const value = e.target.value
+                            setProductSearch(value)
+                            setShowProductDropdown(true) // Siempre mostrar dropdown
+                            setSelectedProductIndex(-1) // Resetear índice al escribir
+                          }}
+                          onFocus={() => setShowProductDropdown(true)}
+                          onClick={() => setShowProductDropdown(true)}
+                          onKeyDown={(e) => {
+                            // Permitir navegación solo si hay productos y el dropdown está visible
+                            if (e.key === 'ArrowDown' && showProductDropdown && filteredProducts.length > 0) {
+                              e.preventDefault()
+                              setShowProductDropdown(true)
+                              setSelectedProductIndex(prev => 
+                                prev < filteredProducts.length - 1 ? prev + 1 : 0
+                              )
+                            } else if (e.key === 'ArrowUp' && showProductDropdown && filteredProducts.length > 0) {
+                              e.preventDefault()
+                              setSelectedProductIndex(prev => 
+                                prev > 0 ? prev - 1 : filteredProducts.length - 1
+                              )
+                            } else if (e.key === 'Enter' && selectedProductIndex >= 0 && selectedProductIndex < filteredProducts.length) {
+                              e.preventDefault()
+                              handleAddProduct(filteredProducts[selectedProductIndex])
+                              setProductSearch('')
+                              setSelectedProductIndex(-1)
+                              setShowProductDropdown(false)
+                            } else if (e.key === 'Escape') {
+                              setShowProductDropdown(false)
+                              setSelectedProductIndex(-1)
+                            }
+                          }}
+                          className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
+                        />
+                      </div>
                     {/* Product Dropdown - Más grande y prominente */}
                     {showProductDropdown && (
                       <div 
@@ -1089,9 +1089,9 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                   )}
                 </CardContent>
               </Card>
-            </div>
+              </div>
 
-            {/* Right Column - Payment and Summary (2/5 del ancho) */}
+              {/* Right Column - Payment and Summary (2/5 del ancho) */}
             <div className="xl:col-span-2 space-y-4">
               {/* Payment Method - Más compacto */}
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
