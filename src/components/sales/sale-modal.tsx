@@ -45,7 +45,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
   const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
-  const [includeTax, setIncludeTax] = useState(true)
+  const [includeTax, setIncludeTax] = useState(false)
   const [totalDiscount, setTotalDiscount] = useState(0)
   const [totalDiscountType, setTotalDiscountType] = useState<'percentage' | 'amount'>('percentage')
   const [invoiceNumber, setInvoiceNumber] = useState<string>('Pendiente') // Número de factura
@@ -641,7 +641,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     setDebouncedProductSearch('')
     setShowClientDropdown(false)
     setShowProductDropdown(false)
-    setIncludeTax(true)
+    setIncludeTax(false)
     setTotalDiscount(0)
     setTotalDiscountType('percentage')
     setInvoiceNumber('Pendiente')
