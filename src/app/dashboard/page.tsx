@@ -1057,7 +1057,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Segunda fila de métricas - 4 cards abajo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-6 mb-4 md:mb-8">
+      <div className={`grid grid-cols-1 md:grid-cols-2 ${user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 md:gap-6 mb-6 md:mb-10 items-stretch`}>
         {/* Dinero Afuera - Para usuarios con permisos de créditos, pero NO para Super Admin */}
         {canViewCredits && !isSuperAdmin && (
           <div
@@ -1070,7 +1070,7 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1099,7 +1099,7 @@ export default function DashboardPage() {
 
             {/* Información adicional para vendedores */}
             {!isSuperAdmin && (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
                 <div className="flex items-center justify-between text-xs md:text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Créditos vencidos:</span>
                   <span className="font-semibold text-red-600 dark:text-red-400">
@@ -1126,7 +1126,7 @@ export default function DashboardPage() {
         {/* Garantías Completadas */}
         <div 
           onClick={() => router.push('/warranties')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
         >
           <div className="flex items-center justify-between mb-2 md:mb-4">
             <div className="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
@@ -1142,7 +1142,7 @@ export default function DashboardPage() {
           </p>
 
           {/* Resumen adicional */}
-          <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+          <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
             <div className="flex items-center justify-between text-xs md:text-sm">
               <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
               <span className="font-semibold text-purple-600 dark:text-purple-400">
@@ -1171,7 +1171,7 @@ export default function DashboardPage() {
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duración-200 cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -1199,7 +1199,7 @@ export default function DashboardPage() {
             
             {/* Lista de ventas más rentables */}
             {metrics.topProfitableSales.length > 0 && (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
                 <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
                   Top ventas más rentables
                 </div>
@@ -1231,7 +1231,7 @@ export default function DashboardPage() {
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/products')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
@@ -1248,7 +1248,7 @@ export default function DashboardPage() {
             <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2">
               {metrics.totalProducts} unidades en stock • {metrics.lowStockProducts} con stock bajo
             </p>
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+            <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
               <div>
                 <p className="text-base md:text-lg font-semibold text-orange-600 dark:text-orange-400">
                   ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
@@ -1282,7 +1282,7 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1298,7 +1298,7 @@ export default function DashboardPage() {
             </p>
             
             {/* Resumen adicional */}
-            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
               <div className="flex items-center justify-between text-xs md:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Total pendiente:</span>
                 <span className="font-semibold text-orange-600 dark:text-orange-400">
@@ -1348,7 +1348,7 @@ export default function DashboardPage() {
             </p>
             
             {/* Resumen adicional */}
-            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2">
+            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
               <div className="flex items-center justify-between text-xs md:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
                 <span className="font-semibold text-red-600 dark:text-red-400">

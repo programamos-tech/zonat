@@ -30,8 +30,6 @@ const firaCode = Fira_Code({
   subsets: ["latin"],
 });
 
-const isDevBannerEnabled = process.env.NODE_ENV !== 'production'
-
 export const metadata: Metadata = {
   title: "ZONA T - Panel de Control",
   description: "Sistema de gestión de inventario y ventas para ZONA T",
@@ -59,11 +57,6 @@ export default function RootLayout({
                 <SalesProvider>
                   <WarrantyProvider>
                     <GlobalLoading />
-                    {isDevBannerEnabled && (
-                      <div className="fixed top-0 left-0 right-0 z-[100] bg-red-600 text-white text-center text-xs sm:text-sm py-1 uppercase tracking-widest">
-                        Entorno de desarrollo - develop
-                      </div>
-                    )}
                     <ConditionalLayout>
                       {children}
                     </ConditionalLayout>
