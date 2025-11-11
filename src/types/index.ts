@@ -204,6 +204,7 @@ export interface SaleItem {
   discountType?: 'percentage' | 'amount'
   tax?: number
   total: number
+  addedAt?: number
 }
 
 export interface Credit {

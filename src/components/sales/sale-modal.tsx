@@ -355,6 +355,15 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
   // Solo considerar productos con cantidad > 0 para cálculos
   const validProducts = selectedProducts.filter(item => item.quantity > 0)
+
+  const orderedSelectedProducts = useMemo(() => {
+    if (selectedProducts.length === 0) return []
+    return [...selectedProducts].sort((a, b) => {
+      const aTime = a.addedAt ?? Number(a.id) || 0
+      const bTime = b.addedAt ?? Number(b.id) || 0
+      return bTime - aTime
+    })
+  }, [selectedProducts])
   
   // Calcular subtotal (suma de precios sin descuentos por producto)
   const subtotal = validProducts.reduce((sum, item) => {
@@ -404,10 +413,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     const existingItem = selectedProducts.find(item => item.productId === product.id)
     
     if (existingItem) {
+      const updatedTimestamp = Date.now()
       setSelectedProducts(prev => 
         prev.map(item => {
           if (item.productId === product.id) {
-            const updatedItem = { ...item, quantity: item.quantity + 1 }
+            const updatedItem = { ...item, quantity: item.quantity + 1, addedAt: updatedTimestamp }
             // Recalcular total con descuento (sin IVA por producto)
             const baseTotal = updatedItem.quantity * updatedItem.unitPrice
             const discountAmount = updatedItem.discountType === 'percentage' 
@@ -420,6 +430,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         })
       )
     } else {
+      const now = Date.now()
       const newItem: SaleItem = {
         id: Date.now().toString(),
         productId: product.id,
@@ -430,9 +441,10 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         discount: 0,
         discountType: 'amount',
         tax: 0,
-        total: product.price
+        total: product.price,
+        addedAt: now
       }
-      setSelectedProducts(prev => [...prev, newItem])
+      setSelectedProducts(prev => [newItem, ...prev])
     }
     setShowProductDropdown(false)
     setProductSearch('')
@@ -605,6 +617,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       }
     }
 
+    const saleItems = validProducts.map(({ addedAt, ...item }) => item)
+
     const newSale: Omit<Sale, 'id' | 'createdAt'> = {
       clientId: selectedClient.id,
       clientName: selectedClient.name,
@@ -616,7 +630,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       status: isDraft ? 'draft' : 'completed',
       paymentMethod,
       payments: paymentMethod === 'mixed' ? mixedPayments : undefined,
-      items: validProducts // Solo incluir productos con cantidad > 0
+      items: saleItems // Solo incluir productos con cantidad > 0
     }
 
     // Actualizar el número de factura antes de guardar
@@ -958,16 +972,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                   )}
 
                   {/* Selected Products */}
-                  {selectedProducts.length > 0 && (
+                  {orderedSelectedProducts.length > 0 && (
                     <div className="mt-6">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
                         <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600">
-                          {selectedProducts.length} producto{selectedProducts.length !== 1 ? 's' : ''}
+                          {orderedSelectedProducts.length} producto{orderedSelectedProducts.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
                       <div className="space-y-1">
-                        {selectedProducts.map(item => (
+                        {orderedSelectedProducts.map(item => (
                           <div key={item.id} className="bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
                             {/* Product Info Header */}
                             <div className="flex items-start justify-between mb-2">
