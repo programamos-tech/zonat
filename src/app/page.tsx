@@ -17,14 +17,8 @@ export default function Home() {
       return
     }
 
-    // Si es superadmin, redirigir al dashboard
-    const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
-    if (isSuperAdmin) {
-      router.push('/dashboard')
-    } else {
-      // Para otros usuarios, redirigir a productos
-      router.push('/products')
-    }
+    // Siempre enviar a dashboard como página inicial
+    router.push('/dashboard')
   }, [router, user, isLoading])
 
   return (
