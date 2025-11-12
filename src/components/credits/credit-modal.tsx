@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useRef, KeyboardEvent } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { DatePicker } from '@/components/ui/date-picker'
@@ -53,6 +53,19 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
   const [selectedDate, setSelectedDate] = useState<Date | null>(null)
   const [includeTax, setIncludeTax] = useState(false)
+  const [highlightedProductIndex, setHighlightedProductIndex] = useState<number>(-1)
+  const productRefs = useRef<(HTMLDivElement | null)[]>([])
+
+  // Scroll automático al elemento resaltado
+  useEffect(() => {
+    if (highlightedProductIndex >= 0 && productRefs.current[highlightedProductIndex]) {
+      productRefs.current[highlightedProductIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'nearest',
+        inline: 'nearest'
+      })
+    }
+  }, [highlightedProductIndex])
 
   useEffect(() => {
     if (isOpen) {
@@ -154,6 +167,25 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         return 0
       })
 
+  const visibleProducts = useMemo(() => filteredProducts.slice(0, 10), [filteredProducts])
+
+  // Limpiar referencias cuando cambian los productos visibles
+  useEffect(() => {
+    productRefs.current = []
+  }, [visibleProducts])
+
+  useEffect(() => {
+    if (showProductDropdown && visibleProducts.length > 0) {
+      const firstAvailableIndex = visibleProducts.findIndex(product => {
+        const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+        return totalStock > 0
+      })
+      setHighlightedProductIndex(firstAvailableIndex !== -1 ? firstAvailableIndex : 0)
+    } else {
+      setHighlightedProductIndex(-1)
+    }
+  }, [showProductDropdown, visibleProducts])
+
   const addProduct = (product: Product) => {
     const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
     
@@ -171,35 +203,49 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         showStockAlert(`No puedes agregar más de "${product.name}". Stock disponible: ${totalStock}`, product.id)
         return
       }
-      setSelectedProducts(prev => 
-        prev.map(item => 
+      // Mover el producto actualizado al principio (más reciente)
+      setSelectedProducts(prev => {
+        const updated = prev.map(item => 
           item.productId === product.id 
             ? { ...item, quantity: newQuantity, totalPrice: (item.unitPrice || 0) * newQuantity }
             : item
         )
-      )
+        const updatedItem = updated.find(item => item.productId === product.id)
+        const otherItems = updated.filter(item => item.productId !== product.id)
+        return updatedItem ? [updatedItem, ...otherItems] : updated
+      })
     } else {
-      setSelectedProducts(prev => [...prev, {
+      // Agregar nuevos productos al principio (más recientes primero)
+      setSelectedProducts(prev => [{
         productId: product.id,
         productName: product.name,
         productReference: product.reference || '',
         quantity: 1,
         unitPrice: product.price || 0,
         totalPrice: product.price || 0
-      }])
+      }, ...prev])
     }
     
     setProductSearch('')
     setShowProductDropdown(false)
+    setHighlightedProductIndex(-1)
+    // Limpiar referencias
+    productRefs.current = []
   }
 
   const removeProduct = (productId: string) => {
     setSelectedProducts(prev => prev.filter(item => item.productId !== productId))
   }
 
-  const updateQuantity = (productId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
+  const updateQuantity = (productId: string, newQuantity: number, fromButton: boolean = false) => {
+    // Solo eliminar si viene del botón de menos y la cantidad es 0 o menor
+    if (fromButton && newQuantity <= 0) {
       removeProduct(productId)
+      return
+    }
+    
+    // Permitir escribir 0 temporalmente, pero no valores negativos
+    if (newQuantity < 0) {
       return
     }
     
@@ -212,8 +258,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       }
     }
     
-    setSelectedProducts(prev => 
-      prev.map(item => 
+    // Mover el producto actualizado al principio (más reciente)
+    setSelectedProducts(prev => {
+      const updated = prev.map(item => 
         item.productId === productId 
           ? { 
               ...item, 
@@ -222,21 +269,85 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             }
           : item
       )
-    )
+      const updatedItem = updated.find(item => item.productId === productId)
+      const otherItems = updated.filter(item => item.productId !== productId)
+      return updatedItem ? [updatedItem, ...otherItems] : updated
+    })
+  }
+
+  const handleQuantityBlur = (productId: string) => {
+    const item = selectedProducts.find(i => i.productId === productId)
+    if (item && item.quantity <= 0) {
+      // Si la cantidad es 0 o menor al perder el foco, restaurar a 1
+      updateQuantity(productId, 1, false)
+    }
+  }
+
+  const moveHighlightedProduct = (direction: 1 | -1) => {
+    if (visibleProducts.length === 0) return
+
+    let nextIndex = highlightedProductIndex
+    for (let i = 0; i < visibleProducts.length; i++) {
+      if (nextIndex === -1) {
+        nextIndex = direction === 1 ? 0 : visibleProducts.length - 1
+      } else {
+        nextIndex = (nextIndex + direction + visibleProducts.length) % visibleProducts.length
+      }
+
+      const product = visibleProducts[nextIndex]
+      const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+      if (totalStock > 0) {
+        setHighlightedProductIndex(nextIndex)
+        return
+      }
+    }
+
+    setHighlightedProductIndex(nextIndex === -1 ? 0 : nextIndex)
+  }
+
+  const handleProductSearchKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if (!showProductDropdown || visibleProducts.length === 0) {
+      return
+    }
+
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      moveHighlightedProduct(1)
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      moveHighlightedProduct(-1)
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      const product = highlightedProductIndex >= 0 ? visibleProducts[highlightedProductIndex] : null
+      if (product) {
+        const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+        if (totalStock > 0) {
+          addProduct(product)
+        }
+      }
+    } else if (event.key === 'Escape') {
+      event.preventDefault()
+      setShowProductDropdown(false)
+      setHighlightedProductIndex(-1)
+    }
   }
 
   const updatePrice = (productId: string, newPrice: number) => {
     if (newPrice < 0) return
 
     // Permitir escribir libremente, la validación se hará al perder el foco
-    setSelectedProducts(prev =>
-      prev.map(item => {
+    // Mover el producto actualizado al principio (más reciente)
+    setSelectedProducts(prev => {
+      const updated = prev.map(item => {
         if (item.productId === productId) {
           return { ...item, unitPrice: newPrice, totalPrice: newPrice * (item.quantity || 0) }
         }
         return item
       })
-    )
+      const updatedItem = updated.find(item => item.productId === productId)
+      const otherItems = updated.filter(item => item.productId !== productId)
+      return updatedItem ? [updatedItem, ...otherItems] : updated
+    })
   }
 
   const handlePriceBlur = (productId: string) => {
@@ -411,50 +522,11 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-            {/* Cliente */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <User className="h-5 w-5 text-orange-600" />
-                  Cliente
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Seleccionar Cliente *
-                  </label>
-                  <select
-                    value={formData.clientId}
-                    onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  >
-                    <option value="">Selecciona un cliente...</option>
-                    {clients.map((client) => (
-                      <option key={client.id} value={client.id}>
-                        {client.name} - {client.email}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                
-                {selectedClient && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="text-sm text-gray-600 dark:text-gray-300">
-                      <div className="font-medium text-gray-900 dark:text-white">
-                        {selectedClient.name}
-                      </div>
-                      <div>{selectedClient.email}</div>
-                      <div>{selectedClient.phone}</div>
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Productos */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
+            {/* Columna izquierda - Secciones grandes */}
+            <div className="xl:col-span-2 space-y-4 md:space-y-6">
+              {/* Productos */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                   <Package className="h-5 w-5 text-orange-600" />
@@ -476,6 +548,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         setProductSearch(e.target.value)
                         setShowProductDropdown(e.target.value.length > 0)
                       }}
+                      onKeyDown={handleProductSearchKeyDown}
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                     />
                     
@@ -486,31 +559,59 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                           <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2"></div>
                           <div className="text-sm text-gray-500">Buscando productos...</div>
                         </div>
-                      ) : filteredProducts.length === 0 ? (
+                      ) : visibleProducts.length === 0 ? (
                         <div className="p-4 text-center text-gray-500 text-sm">
                           No se encontraron productos
                         </div>
                       ) : (
-                        filteredProducts
-                          .slice(0, 10)
-                          .map((product) => {
+                        visibleProducts.map((product, index) => {
                           const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
                           const hasStock = totalStock > 0
+                          const isHighlighted = highlightedProductIndex === index
+
+                          const containerClasses = [
+                            'p-3',
+                            'border-b border-gray-200 dark:border-gray-600 last:border-b-0',
+                            'rounded-lg',
+                            'transition-colors duration-150 ease-in-out',
+                            hasStock ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
+                            isHighlighted
+                              ? 'bg-orange-500/15 dark:bg-orange-500/25 border-orange-300 dark:border-orange-500'
+                              : hasStock
+                                ? 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                          ].join(' ')
+
+                          const nameClasses = [
+                            'font-medium',
+                            isHighlighted
+                              ? 'text-orange-700 dark:text-orange-200'
+                              : hasStock
+                                ? 'text-gray-900 dark:text-white'
+                                : 'text-red-600 dark:text-red-400'
+                          ].join(' ')
+
+                          const detailsClasses = [
+                            'text-sm',
+                            isHighlighted
+                              ? 'text-orange-600 dark:text-orange-300'
+                              : 'text-gray-600 dark:text-gray-300'
+                          ].join(' ')
                           
                           return (
                         <div
                           key={product.id}
-                          onClick={() => hasStock ? addProduct(product) : null}
-                          className={`p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 cursor-pointer ${
-                            hasStock 
-                              ? 'hover:bg-gray-50 dark:hover:bg-gray-600 bg-white dark:bg-gray-700' 
-                              : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
-                          }`}
+                          ref={(el) => {
+                            productRefs.current[index] = el
+                          }}
+                          onClick={() => hasStock ? addProduct(product) : undefined}
+                          onMouseEnter={() => setHighlightedProductIndex(index)}
+                          className={containerClasses}
                         >
-                          <div className={`font-medium ${hasStock ? 'text-gray-900 dark:text-white' : 'text-red-600 dark:text-red-400'}`}>
+                          <div className={nameClasses}>
                             {product.name}
                           </div>
-                          <div className="text-sm text-gray-600 dark:text-gray-300">
+                          <div className={detailsClasses}>
                             Ref: {product.reference || 'N/A'} | 
                             Stock: {(product.stock?.warehouse || 0) + (product.stock?.store || 0)} | 
                             Precio: ${(product.price || 0).toLocaleString('es-CO')}
@@ -529,13 +630,12 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                 </div>
                 
                 {selectedProducts.length > 0 && (
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
+                  <div className="space-y-2 max-h-96 overflow-y-auto">
                     {selectedProducts.map((item) => {
                       const product = products.find(p => p.id === item.productId)
                       const warehouseStock = product?.stock?.warehouse || 0
                       const localStock = product?.stock?.store || 0
                       const reference = product?.reference || 'N/A'
-                      const baseCost = product?.cost || 0
                       
                       return (
                       <div key={item.productId} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
@@ -568,11 +668,6 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                               className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
                               placeholder="0"
                             />
-                            {baseCost > 0 && (
-                              <div className="text-xs text-gray-500 dark:text-gray-500 mt-0.5">
-                                Costo base: ${baseCost.toLocaleString('es-CO')}
-                              </div>
-                            )}
                           </div>
                           
                           <div>
@@ -581,7 +676,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                             </label>
                             <div className="flex items-center gap-1">
                               <Button
-                                onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                                onClick={() => updateQuantity(item.productId, item.quantity - 1, true)}
                                 size="sm"
                                 variant="outline"
                                 className="h-7 w-7 p-0"
@@ -591,12 +686,16 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                               <input
                                 type="number"
                                 value={item.quantity}
-                                onChange={(e) => updateQuantity(item.productId, parseInt(e.target.value) || 0)}
+                                onChange={(e) => {
+                                  const value = e.target.value === '' ? 0 : parseInt(e.target.value) || 0
+                                  updateQuantity(item.productId, value, false)
+                                }}
+                                onBlur={() => handleQuantityBlur(item.productId)}
                                 className="w-12 h-7 text-center text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
-                                min="1"
+                                min="0"
                               />
                               <Button
-                                onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                                onClick={() => updateQuantity(item.productId, item.quantity + 1, true)}
                                 size="sm"
                                 variant="outline"
                                 className="h-7 w-7 p-0"
@@ -645,44 +744,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
               </CardContent>
             </Card>
 
-            {/* Configuración del Crédito */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Calendar className="h-5 w-5 text-orange-600" />
-                  Configuración del Crédito
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Fecha de Vencimiento *
-                  </label>
-                  <DatePicker
-                    selectedDate={selectedDate}
-                    onDateSelect={setSelectedDate}
-                    placeholder="Seleccionar fecha de vencimiento"
-                    className="w-full"
-                    minDate={new Date()}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Observaciones (Opcional)
-                  </label>
-                  <textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                    placeholder="Agregar observaciones sobre la venta a crédito..."
-                    rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Resumen de la Venta */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              {/* Resumen de la Venta */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                   <DollarSign className="h-5 w-5 text-orange-600" />
@@ -759,6 +822,87 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                 )}
               </CardContent>
             </Card>
+            </div>
+
+            {/* Columna derecha - Secciones pequeñas */}
+            <div className="xl:col-span-1 space-y-4 md:space-y-6">
+              {/* Cliente */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <CardHeader>
+                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                  <User className="h-5 w-5 text-orange-600" />
+                  Cliente
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Seleccionar Cliente *
+                  </label>
+                  <select
+                    value={formData.clientId}
+                    onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                  >
+                    <option value="">Selecciona un cliente...</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.name}{client.email ? ` - ${client.email}` : ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                {selectedClient && (
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="text-sm text-gray-600 dark:text-gray-300">
+                      <div className="font-medium text-gray-900 dark:text-white">
+                        {selectedClient.name}
+                      </div>
+                      <div>{selectedClient.email}</div>
+                      <div>{selectedClient.phone}</div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+              {/* Configuración del Crédito */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <CardHeader>
+                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                    <Calendar className="h-5 w-5 text-orange-600" />
+                    Configuración del Crédito
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Fecha de Vencimiento *
+                    </label>
+                    <DatePicker
+                      selectedDate={selectedDate}
+                      onDateSelect={setSelectedDate}
+                      placeholder="Seleccionar fecha de vencimiento"
+                      className="w-full"
+                      minDate={new Date()}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Observaciones (Opcional)
+                    </label>
+                    <textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Agregar observaciones sobre la venta a crédito..."
+                      rows={3}
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
 

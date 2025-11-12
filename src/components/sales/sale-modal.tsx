@@ -364,6 +364,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       return bTime - aTime
     })
   }, [selectedProducts])
+
+  const orderedValidProducts = useMemo(
+    () => orderedSelectedProducts.filter(item => item.quantity > 0),
+    [orderedSelectedProducts]
+  )
   
   // Calcular subtotal (suma de precios sin descuentos por producto)
   const subtotal = validProducts.reduce((sum, item) => {
@@ -1235,88 +1240,114 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-2">
-                  <div className="space-y-1.5">
-                    {/* Subtotal */}
-                    <div className="flex justify-between">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        ${subtotal.toLocaleString()}
-                      </span>
-                    </div>
-
-                    {/* Descuento por total */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="number"
-                            value={totalDiscount || ''}
-                            onChange={(e) => setTotalDiscount(Number(e.target.value) || 0)}
-                            className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
-                            min="0"
-                            step={totalDiscountType === 'percentage' ? '0.1' : '1'}
-                            placeholder="0"
-                          />
-                          <select
-                            value={totalDiscountType}
-                            onChange={(e) => setTotalDiscountType(e.target.value as 'percentage' | 'amount')}
-                            className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
-                          >
-                            <option value="percentage" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">%</option>
-                            <option value="amount" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">$</option>
-                          </select>
+                  <div className="space-y-3">
+                    {orderedValidProducts.length === 0 ? (
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                        Agrega productos para ver el resumen de la venta.
+                      </p>
+                    ) : (
+                      <>
+                        <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
+                          {orderedValidProducts.map((item) => (
+                            <div
+                              key={item.id}
+                              className="flex items-center justify-between rounded-lg bg-gray-100 dark:bg-gray-700/40 border border-gray-200 dark:border-gray-600 px-3 py-2"
+                            >
+                              <div className="flex-1">
+                                <div className="font-medium text-gray-900 dark:text-white text-sm">
+                                  {item.productName}
+                                </div>
+                                <div className="text-xs text-gray-600 dark:text-gray-300">
+                                  {item.quantity} x ${item.unitPrice.toLocaleString('es-CO')}
+                                </div>
+                              </div>
+                              <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                                ${item.total.toLocaleString('es-CO')}
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                      </div>
-                      {totalDiscountAmount > 0 && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Descuento aplicado:</span>
-                          <span className="font-medium text-red-500 dark:text-red-400">-${totalDiscountAmount.toLocaleString()}</span>
-                        </div>
-                      )}
-                    </div>
 
-                    {/* Subtotal después del descuento */}
-                    {totalDiscountAmount > 0 && (
-                      <div className="flex justify-between border-t border-gray-600 pt-2">
-                        <span className="text-gray-300 font-medium">Subtotal con descuento:</span>
-                        <span className="font-semibold text-white">${subtotalAfterTotalDiscount.toLocaleString()}</span>
-                      </div>
+                        <div className="space-y-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                          <div className="flex justify-between">
+                            <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal:</span>
+                            <span className="font-semibold text-gray-900 dark:text-white">
+                              ${subtotal.toLocaleString()}
+                            </span>
+                          </div>
+
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="number"
+                                  value={totalDiscount || ''}
+                                  onChange={(e) => setTotalDiscount(Number(e.target.value) || 0)}
+                                  className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
+                                  min="0"
+                                  step={totalDiscountType === 'percentage' ? '0.1' : '1'}
+                                  placeholder="0"
+                                />
+                                <select
+                                  value={totalDiscountType}
+                                  onChange={(e) => setTotalDiscountType(e.target.value as 'percentage' | 'amount')}
+                                  className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
+                                >
+                                  <option value="percentage" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">%</option>
+                                  <option value="amount" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">$</option>
+                                </select>
+                              </div>
+                            </div>
+                            {totalDiscountAmount > 0 && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600 dark:text-gray-400">Descuento aplicado:</span>
+                                <span className="font-medium text-red-500 dark:text-red-400">-${totalDiscountAmount.toLocaleString()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {totalDiscountAmount > 0 && (
+                            <div className="flex justify-between border-t border-gray-600 pt-2">
+                              <span className="text-gray-300 font-medium">Subtotal con descuento:</span>
+                              <span className="font-semibold text-white">${subtotalAfterTotalDiscount.toLocaleString()}</span>
+                            </div>
+                          )}
+
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
+                              <div className="flex items-center space-x-2">
+                                <input
+                                  type="checkbox"
+                                  checked={includeTax}
+                                  onChange={(e) => setIncludeTax(e.target.checked)}
+                                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
+                                />
+                                <span className="text-sm text-gray-700 dark:text-gray-300">
+                                  Incluir IVA
+                                </span>
+                              </div>
+                            </div>
+                            {includeTax && (
+                              <div className="flex justify-between text-sm">
+                                <span className="text-gray-600 dark:text-gray-400">IVA calculado:</span>
+                                <span className="font-medium text-gray-900 dark:text-white">${tax.toLocaleString()}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
+                            <div className="flex justify-between text-base font-semibold">
+                              <span className="text-gray-900 dark:text-white">Total:</span>
+                              <span className="font-bold text-gray-900 dark:text-white">
+                                ${total.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </>
                     )}
-
-                    {/* IVA */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
-                        <div className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={includeTax}
-                            onChange={(e) => setIncludeTax(e.target.checked)}
-                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
-                          />
-                          <span className="text-sm text-gray-700 dark:text-gray-300">
-                            Incluir IVA
-                          </span>
-                        </div>
-                      </div>
-                      {includeTax && (
-                        <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">IVA calculado:</span>
-                          <span className="font-medium text-gray-900 dark:text-white">${tax.toLocaleString()}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Total */}
-                    <div className="border-t border-gray-200 dark:border-gray-600 pt-2">
-                      <div className="flex justify-between text-base font-semibold">
-                        <span className="text-gray-900 dark:text-white">Total:</span>
-                        <span className="font-bold text-gray-900 dark:text-white">
-                          ${total.toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
                   </div>
                 </CardContent>
               </Card>
