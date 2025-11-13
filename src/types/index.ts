@@ -124,8 +124,8 @@ export interface SalePayment {
 
 export interface Warranty {
   id: string
-  originalSaleId: string
-  clientId: string
+  originalSaleId: string | null
+  clientId: string | null
   clientName: string
   productReceivedId: string
   productReceivedName: string

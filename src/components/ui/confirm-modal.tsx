@@ -69,7 +69,7 @@ export function ConfirmModal({
   const styles = getTypeStyles()
 
   return (
-    <div className="fixed inset-0 xl:left-64 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:px-6">
       <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
         {/* Header */}
         <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 ${styles.headerBg} flex-shrink-0`}>

@@ -124,7 +124,7 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-0 xl:p-8">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:p-8">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">

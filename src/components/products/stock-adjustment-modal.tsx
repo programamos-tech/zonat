@@ -109,7 +109,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-[60] flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-4xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">

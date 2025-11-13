@@ -104,7 +104,7 @@ export function WarrantyDetailModal({
   return (
     <>
       {/* Modal Principal */}
-      <div className="fixed inset-0 xl:left-64 bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 pt-10 xl:pt-0">
+      <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
         <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
           {/* Header */}
           <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
@@ -114,9 +114,6 @@ export function WarrantyDetailModal({
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   Garantía #{warranty.id.slice(-6)}
                 </h2>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                  Factura: {warranty.originalSale?.invoiceNumber || 'N/A'}
-                </p>
               </div>
             </div>
             <Button

@@ -237,17 +237,9 @@ export function WarrantyTable({
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                        <div className="text-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Factura</div>
-                          <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={warranty.originalSale?.invoiceNumber || 'N/A'}>
-                            {warranty.originalSale?.invoiceNumber || 'N/A'}
-                          </div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Fecha</div>
-                          <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatDate(warranty.createdAt)}</div>
-                        </div>
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 text-center">Fecha</div>
+                        <div className="text-xs font-semibold text-gray-900 dark:text-white text-center">{formatDate(warranty.createdAt)}</div>
                       </div>
                       
                       <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -306,9 +298,6 @@ export function WarrantyTable({
                       <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-5">
                         <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                           #{warranty.id.slice(-6)}
-                        </div>
-                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                          Factura: {warranty.originalSale?.invoiceNumber || 'N/A'}
                         </div>
                       </td>
                       <td className="px-2 md:px-3 py-3 md:py-5">
