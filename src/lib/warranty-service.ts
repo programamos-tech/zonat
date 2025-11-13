@@ -85,9 +85,9 @@ export class WarrantyService {
       // Mapear datos a la interfaz TypeScript
       const mappedWarranties: Warranty[] = warranties.map(warranty => ({
         id: warranty.id,
-        originalSaleId: warranty.original_sale_id,
-        clientId: warranty.client_id,
-        clientName: warranty.client_name,
+        originalSaleId: warranty.original_sale_id ?? null,
+        clientId: warranty.client_id ?? null,
+        clientName: warranty.client_name ?? 'Cliente sin factura',
         productReceivedId: warranty.product_received_id,
         productReceivedName: warranty.product_received_name,
         productReceivedSerial: warranty.product_received_serial,
@@ -212,9 +212,9 @@ export class WarrantyService {
       // Mapear datos (similar al método anterior)
       return {
         id: data.id,
-        originalSaleId: data.original_sale_id,
-        clientId: data.client_id,
-        clientName: data.client_name,
+        originalSaleId: data.original_sale_id ?? null,
+        clientId: data.client_id ?? null,
+        clientName: data.client_name ?? 'Cliente sin factura',
         productReceivedId: data.product_received_id,
         productReceivedName: data.product_received_name,
         productReceivedSerial: data.product_received_serial,
@@ -246,9 +246,9 @@ export class WarrantyService {
       const { data, error } = await supabase
         .from('warranties')
         .insert([{
-          original_sale_id: warrantyData.originalSaleId,
-          client_id: warrantyData.clientId,
-          client_name: warrantyData.clientName,
+          original_sale_id: warrantyData.originalSaleId ?? null,
+          client_id: warrantyData.clientId ?? null,
+          client_name: warrantyData.clientName ?? 'Cliente sin factura',
           product_received_id: warrantyData.productReceivedId,
           product_received_name: warrantyData.productReceivedName,
           product_received_serial: warrantyData.productReceivedSerial,
@@ -499,9 +499,9 @@ export class WarrantyService {
       // Mapear datos (similar a getAllWarranties)
       return data.map(warranty => ({
         id: warranty.id,
-        originalSaleId: warranty.original_sale_id,
-        clientId: warranty.client_id,
-        clientName: warranty.client_name,
+        originalSaleId: warranty.original_sale_id ?? null,
+        clientId: warranty.client_id ?? null,
+        clientName: warranty.client_name ?? 'Cliente sin factura',
         productReceivedId: warranty.product_received_id,
         productReceivedName: warranty.product_received_name,
         productReceivedSerial: warranty.product_received_serial,

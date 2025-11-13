@@ -158,8 +158,8 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md z-50 flex items-center justify-center xl:pl-6 xl:pr-4 py-8 xl:py-12 px-4 xl:px-8">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:w-full xl:max-w-[95vw] xl:h-auto xl:max-h-[92vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:flex-row xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-[calc(100vw-18rem)] xl:max-w-5xl overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">

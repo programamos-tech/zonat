@@ -332,13 +332,45 @@ export default function DashboardPage() {
     const warrantyRate = activeSales.length > 0 ? ((completedWarranties / activeSales.length) * 100).toFixed(1) : '0.0'
     
     // Calcular valor total de productos reemplazados en garantías
-    const totalWarrantyValue = warranties
+    const completedWarrantyDetails = warranties
       .filter(w => w.status === 'completed')
-      .reduce((sum, warranty) => {
-        // Buscar el producto de reemplazo para obtener su precio
+      .sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt).getTime()
+        const dateB = new Date(b.updatedAt || b.createdAt).getTime()
+        return dateB - dateA
+      })
+
+    const totalWarrantyValue = completedWarrantyDetails.reduce((sum, warranty) => {
+      const replacementProduct = allProducts.find(p => p.id === warranty.productDeliveredId)
+      return sum + (replacementProduct?.price || 0)
+    }, 0)
+
+    const recentWarrantyReplacements = completedWarrantyDetails
+      .slice(0, 3)
+      .map(warranty => {
         const replacementProduct = allProducts.find(p => p.id === warranty.productDeliveredId)
-        return sum + (replacementProduct?.price || 0)
-      }, 0)
+        const deliveredName = warranty.productDeliveredName || replacementProduct?.name || 'Producto entregado'
+        const reference = replacementProduct?.reference
+        const value = replacementProduct?.price || 0
+        const warrantyDate = new Date(warranty.updatedAt || warranty.createdAt)
+        const dateLabel = warrantyDate.toLocaleDateString('es-CO', {
+          day: '2-digit',
+          month: 'short'
+        }).replace('.', '')
+        const timeLabel = warrantyDate.toLocaleTimeString('es-CO', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+
+        return {
+          id: warranty.id,
+          deliveredName,
+          reference,
+          value,
+          dateLabel,
+          timeLabel
+        }
+      })
     
     // Calcular días desde la última garantía completada (usar todas las garantías, no solo las filtradas)
     const lastWarranty = allWarranties
@@ -361,6 +393,34 @@ export default function DashboardPage() {
       !(c.totalAmount === 0 && c.pendingAmount === 0)
     )
     const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
+    const recentPendingCredits = pendingCredits
+      .slice()
+      .sort((a, b) => {
+        const dateA = new Date(a.updatedAt || a.createdAt || '').getTime()
+        const dateB = new Date(b.updatedAt || b.createdAt || '').getTime()
+        return dateB - dateA
+      })
+      .slice(0, 5)
+      .map((credit) => {
+        const creditDate = new Date(credit.updatedAt || credit.createdAt || '')
+        const dateLabel = creditDate.toLocaleDateString('es-CO', {
+          day: '2-digit',
+          month: 'short'
+        }).replace('.', '')
+        const timeLabel = creditDate.toLocaleTimeString('es-CO', {
+          hour: '2-digit',
+          minute: '2-digit'
+        })
+        return {
+          id: credit.id,
+          clientName: credit.clientName || 'Cliente',
+          reference: credit.invoiceNumber,
+          status: credit.status,
+          pendingAmount: credit.pendingAmount || credit.totalAmount || 0,
+          dateLabel,
+          timeLabel
+        }
+      })
     
     // Créditos del día actual (para usuarios no-superadmin)
     const dailyCredits = credits.filter(c => 
@@ -666,6 +726,8 @@ export default function DashboardPage() {
       pendingWarranties,
       warrantyRate,
       totalWarrantyValue,
+      recentWarrantyReplacements,
+      recentPendingCredits,
       daysSinceLastWarranty,
       totalDebt,
       pendingCreditsCount: pendingCredits.length,
@@ -887,10 +949,10 @@ export default function DashboardPage() {
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   variant="outline"
-                  className="text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                  className="w-full sm:w-auto justify-center sm:justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
                 >
                   <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="hidden md:inline ml-2">Actualizar</span>
+                  <span className="hidden md:inline">Actualizar</span>
                 </Button>
               </div>
             </div>
@@ -1097,27 +1159,41 @@ export default function DashboardPage() {
               }
             </p>
 
-            {/* Información adicional para vendedores */}
-            {!isSuperAdmin && (
+            {!isSuperAdmin && metrics.recentPendingCredits.length > 0 ? (
               <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="flex items-center justify-between text-xs md:text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Créditos vencidos:</span>
-                  <span className="font-semibold text-red-600 dark:text-red-400">
-                    {metrics.overdueCreditsCount || 0}
-                  </span>
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Últimos créditos pendientes
                 </div>
-                <div className="flex items-center justify-between text-xs md:text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Deuda vencida:</span>
-                  <span className="font-semibold text-red-600 dark:text-red-400">
-                    ${(metrics.overdueCreditsDebt || 0).toLocaleString('es-CO')}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs md:text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Créditos pendientes:</span>
-                  <span className="font-semibold text-orange-600 dark:text-orange-400">
-                    {metrics.pendingCreditsCount || 0}
-                  </span>
-                </div>
+                {metrics.recentPendingCredits.slice(0, 3).map((credit) => (
+                  <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                        • {credit.clientName}
+                      </span>
+                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        {credit.dateLabel} · {credit.timeLabel}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end text-right flex-shrink-0">
+                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                        ${(credit.pendingAmount || 0).toLocaleString('es-CO')}
+                      </span>
+                      {credit.reference && (
+                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                          Factura {credit.reference}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 mt-auto">
+                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                  {metrics.recentPendingCredits.length === 0
+                    ? 'Sin créditos pendientes en el período seleccionado.'
+                    : 'Datos disponibles solo para créditos pendientes.'}
+                </span>
               </div>
             )}
           </div>
@@ -1141,30 +1217,41 @@ export default function DashboardPage() {
             {metrics.pendingWarranties} pendientes
           </p>
 
-          {/* Resumen adicional */}
-          <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-            <div className="flex items-center justify-between text-xs md:text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
-              <span className="font-semibold text-purple-600 dark:text-purple-400">
-                {metrics.warrantyRate}% de ventas
+          {metrics.recentWarrantyReplacements.length > 0 ? (
+            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
+              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                Últimas garantías entregadas
+              </div>
+              {metrics.recentWarrantyReplacements.map((item) => (
+                <div key={item.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
+                  <div className="flex flex-col overflow-hidden">
+                    <span className="text-gray-600 dark:text-gray-400 truncate">
+                      • {item.deliveredName}{item.reference ? ` (${item.reference})` : ''}
+                    </span>
+                    <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                      {item.dateLabel} · {item.timeLabel}
+                    </span>
+                  </div>
+                  <div className="flex flex-col items-end flex-shrink-0 text-right">
+                    <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                      -1 und
+                    </span>
+                    {item.value > 0 && (
+                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        ${item.value.toLocaleString('es-CO')}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 mt-auto">
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                Sin garantías completadas en el período seleccionado.
               </span>
             </div>
-            <div className="flex items-center justify-between text-xs md:text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Valor:</span>
-              <span className="font-semibold text-orange-600 dark:text-orange-400">
-                ${metrics.totalWarrantyValue.toLocaleString('es-CO')}
-              </span>
-            </div>
-            <div className="flex items-center justify-between text-xs md:text-sm">
-              <span className="text-gray-600 dark:text-gray-400">Última:</span>
-              <span className="font-semibold text-blue-600 dark:text-blue-400">
-                {metrics.daysSinceLastWarranty !== null 
-                  ? `hace ${metrics.daysSinceLastWarranty} días`
-                  : 'N/A'
-                }
-              </span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Ganancia Bruta */}
@@ -1282,7 +1369,7 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 flex flex-col h-full"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1297,36 +1384,47 @@ export default function DashboardPage() {
               créditos pendientes/parciales
             </p>
             
-            {/* Resumen adicional */}
-            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-              <div className="flex items-center justify-between text-xs md:text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Total pendiente:</span>
-                <span className="font-semibold text-orange-600 dark:text-orange-400">
-                  {new Intl.NumberFormat('es-CO', { 
-                    style: 'currency', 
-                    currency: 'COP',
-                    minimumFractionDigits: 0 
-                  }).format(metrics.totalDebt || 0)}
+            {metrics.recentPendingCredits.length > 0 ? (
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Créditos más recientes
+                </div>
+                {metrics.recentPendingCredits.slice(0, 3).map((credit) => (
+                  <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                        • {credit.clientName}
+                      </span>
+                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        {credit.dateLabel} · {credit.timeLabel}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end text-right flex-shrink-0">
+                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                        ${(credit.pendingAmount || 0).toLocaleString('es-CO')}
+                      </span>
+                      {credit.reference && (
+                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                          Factura {credit.reference}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div className="flex items-center justify-between text-xs md:text-sm pt-1 border-t border-dashed border-gray-200 dark:border-gray-600">
+                  <span className="text-gray-600 dark:text-gray-400">Total pendiente:</span>
+                  <span className="font-semibold text-orange-600 dark:text-orange-400">
+                    ${(metrics.totalDebt || 0).toLocaleString('es-CO')}
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 mt-auto">
+                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
+                  Sin créditos pendientes en el período seleccionado.
                 </span>
               </div>
-              <div className="flex items-center justify-between text-xs md:text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Total créditos:</span>
-                <span className="font-semibold text-blue-600 dark:text-blue-400">
-                  {filteredData.credits.length}
-                </span>
-              </div>
-              <div className="text-center pt-1 md:pt-2">
-                <button
-                  type="button"
-                  onClick={goToCredits}
-                  className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-                >
-                  <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                  <span className="hidden sm:inline">Haz clic para ver créditos</span>
-                  <span className="sm:hidden">Ver créditos</span>
-                </button>
-              </div>
-            </div>
+            )}
           </div>
         ) : (
           // Facturas Anuladas para otros usuarios
