@@ -87,7 +87,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
       case 'minorista':
         return 'Minorista'
       case 'consumidor_final':
-        return 'C. Final'
+        return 'Cliente Final'
       default:
         return type
     }

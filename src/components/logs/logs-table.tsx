@@ -16,7 +16,16 @@ import {
   Edit,
   Plus,
   RefreshCw,
-  Shield
+  Shield,
+  Eye,
+  ChevronRight,
+  CreditCard,
+  CheckCircle,
+  DollarSign,
+  X,
+  Receipt,
+  Wallet,
+  TrendingUp
 } from 'lucide-react'
 import { LogEntry } from '@/types/logs'
 
@@ -26,14 +35,13 @@ interface LogsTableProps {
   onSearchChange?: (term: string) => void
   moduleFilter?: string
   onModuleFilterChange?: (module: string) => void
-  actionFilter?: string
-  onActionFilterChange?: (action: string) => void
   onRefresh?: () => void
   loading?: boolean
   currentPage?: number
   totalLogs?: number
   hasMore?: boolean
   onPageChange?: (page: number) => void
+  onLogClick?: (log: LogEntry) => void
 }
 
 export function LogsTable({ 
@@ -42,18 +50,16 @@ export function LogsTable({
   onSearchChange,
   moduleFilter = 'all',
   onModuleFilterChange,
-  actionFilter = 'all',
-  onActionFilterChange,
   onRefresh,
   loading = false,
   currentPage = 1,
   totalLogs = 0,
   hasMore = true,
-  onPageChange
+  onPageChange,
+  onLogClick
 }: LogsTableProps) {
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm)
-  const [localFilterType, setLocalFilterType] = useState(moduleFilter)
-  const [localFilterAction, setLocalFilterAction] = useState(actionFilter)
+  const [localFilterModule, setLocalFilterModule] = useState(moduleFilter)
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -63,23 +69,28 @@ export function LogsTable({
       case 'sale_create':
         return ShoppingCart
       case 'credit_sale_create':
-        return ShoppingCart
+        return CreditCard
       case 'sale_cancel':
-        return Trash2
+        return X
+      case 'credit_sale_cancel':
+        return X
       case 'sale_stock_deduction':
         return Package
       case 'sale_cancellation_stock_return':
-        return Package
+        return TrendingUp
       case 'product_create':
         return Plus
       case 'product_update':
-        return Edit
       case 'product_edit':
         return Edit
       case 'product_delete':
         return Trash2
       case 'adjustment':
+      case 'stock_adjustment':
         return Package
+      case 'transfer':
+      case 'stock_transfer':
+        return ArrowRightLeft
       case 'category_create':
         return Tag
       case 'category_update':
@@ -87,8 +98,9 @@ export function LogsTable({
       case 'category_delete':
         return Trash2
       case 'client_create':
-        return Users
+        return Plus
       case 'client_edit':
+      case 'client_update':
         return Edit
       case 'client_delete':
         return Trash2
@@ -99,43 +111,68 @@ export function LogsTable({
       case 'category_delete':
         return Trash2
       case 'warranty_create':
+        return Plus
       case 'warranty_status_update':
+        return RefreshCw
       case 'warranty_update':
-        return Shield
+        return Edit
+      case 'credit_create':
+        return Receipt
+      case 'credit_payment':
+        return DollarSign
+      case 'credit_completed':
+        return CheckCircle
+      case 'credit_cancelled':
+        return X
       case 'roles':
+      case 'user_create':
+        return Plus
+      case 'user_edit':
+      case 'user_update':
+        return Edit
+      case 'user_delete':
+        return Trash2
+      case 'permissions_assigned':
+        return Shield
+      case 'permissions_revoked':
+        return Shield
+      case 'role_changed':
         return Users
+      case 'user_deactivated':
+        return X
+      case 'user_reactivated':
+        return CheckCircle
       case 'login':
         return Users
        default:
-         return Users
+        return Users
     }
   }
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'transfer':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
+      case 'credit_sale_create':
+      case 'credit_sale_cancel':
+      case 'credit_create':
+      case 'credit_payment':
+      case 'credit_completed':
+      case 'credit_cancelled':
+        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       case 'sale':
       case 'sale_create':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      case 'credit_sale_create':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'sale_cancel':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'sale_stock_deduction':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       case 'sale_cancellation_stock_return':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400'
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       case 'product_create':
-        return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400'
       case 'product_update':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
       case 'product_edit':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
       case 'product_delete':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'adjustment':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+      case 'stock_adjustment':
+      case 'transfer':
+      case 'stock_transfer':
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
       case 'category_create':
         return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400'
       case 'category_update':
@@ -143,9 +180,8 @@ export function LogsTable({
       case 'category_delete':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'client_create':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
       case 'client_edit':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+      case 'client_update':
       case 'client_delete':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'category_create':
@@ -155,13 +191,20 @@ export function LogsTable({
       case 'category_delete':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'warranty_create':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       case 'warranty_status_update':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
       case 'warranty_update':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
       case 'roles':
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400'
+      case 'user_create':
+      case 'user_edit':
+      case 'user_update':
+      case 'user_delete':
+      case 'permissions_assigned':
+      case 'permissions_revoked':
+      case 'role_changed':
+      case 'user_deactivated':
+      case 'user_reactivated':
+        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
       case 'login':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       default:
@@ -180,6 +223,8 @@ export function LogsTable({
         return 'Venta a Crédito'
       case 'sale_cancel':
         return 'Venta Cancelada'
+      case 'credit_sale_cancel':
+        return 'Venta tipo crédito cancelada'
       case 'sale_stock_deduction':
         return 'Descuento de Stock'
       case 'sale_cancellation_stock_return':
@@ -205,6 +250,7 @@ export function LogsTable({
       case 'client_create':
         return 'Cliente Creado'
       case 'client_edit':
+      case 'client_update':
         return 'Cliente Editado'
       case 'client_delete':
         return 'Cliente Eliminado'
@@ -220,8 +266,33 @@ export function LogsTable({
         return 'Estado de Garantía Actualizado'
       case 'warranty_update':
         return 'Garantía Actualizada'
+      case 'credit_create':
+        return 'Crédito Creado'
+      case 'credit_payment':
+        return 'Abono Registrado'
+      case 'credit_completed':
+        return 'Pago Completado'
+      case 'credit_cancelled':
+        return 'Crédito Cancelado'
       case 'roles':
         return 'Gestión de Usuarios'
+      case 'user_create':
+        return 'Usuario Creado'
+      case 'user_edit':
+      case 'user_update':
+        return 'Usuario Editado'
+      case 'user_delete':
+        return 'Usuario Eliminado'
+      case 'permissions_assigned':
+        return 'Permisos Asignados'
+      case 'permissions_revoked':
+        return 'Permisos Revocados'
+      case 'role_changed':
+        return 'Rol Cambiado'
+      case 'user_deactivated':
+        return 'Usuario Desactivado'
+      case 'user_reactivated':
+        return 'Usuario Reactivado'
       case 'login':
         return 'Inicio de Sesión'
       default:
@@ -246,22 +317,30 @@ export function LogsTable({
       log.action.toLowerCase().includes((onSearchChange ? searchTerm : localSearchTerm).toLowerCase()) ||
       log.user_name?.toLowerCase().includes((onSearchChange ? searchTerm : localSearchTerm).toLowerCase())
 
-    const matchesType = (onModuleFilterChange ? moduleFilter : localFilterType) === 'all' || log.module === (onModuleFilterChange ? moduleFilter : localFilterType)
-    const matchesAction = (onActionFilterChange ? actionFilter : localFilterAction) === 'all' || log.action === (onActionFilterChange ? actionFilter : localFilterAction)
+    const currentModuleFilter = onModuleFilterChange ? moduleFilter : localFilterModule
+    let matchesModule = false
+    if (currentModuleFilter === 'all') {
+      matchesModule = true
+    } else if (currentModuleFilter === 'credits') {
+      // Para créditos, incluir logs con módulo 'credits' y también ventas a crédito
+      matchesModule = log.module === 'credits' || 
+        (log.module === 'sales' && (log.action === 'credit_sale_create' || 
+          (log.action === 'sale_cancel' && (log.details as any)?.isCreditSale === true)))
+    } else {
+      matchesModule = log.module === currentModuleFilter
+    }
 
-    return matchesSearch && matchesType && matchesAction
+    return matchesSearch && matchesModule
   })
 
-  const types = ['all', 'transfer', 'sale', 'product_create', 'product_edit', 'product_delete', 'client_create', 'client_edit', 'client_delete', 'category_create', 'category_edit', 'category_delete', 'roles', 'login']
-  const actions = [
-    'all', 
-    'Transferencia de Stock', 'Nueva Venta', 'Venta Cancelada', 
-    'Producto Creado', 'Producto Editado', 'Producto Eliminado', 
-    'Cliente Creado', 'Cliente Editado', 'Cliente Eliminado', 
-    'Categoría Creada', 'Categoría Editada', 'Categoría Eliminada', 
-    'Usuario Creado', 'Usuario Editado', 'Usuario Eliminado', 
-    'Permisos Asignados', 'Permisos Revocados', 'Rol Cambiado', 
-    'Usuario Desactivado', 'Usuario Reactivado', 'Acceso al Sistema'
+  const modules = [
+    { value: 'all', label: 'Todos los módulos' },
+    { value: 'products', label: 'Productos' },
+    { value: 'clients', label: 'Clientes' },
+    { value: 'sales', label: 'Ventas' },
+    { value: 'credits', label: 'Créditos' },
+    { value: 'warranties', label: 'Garantías' },
+    { value: 'roles', label: 'Roles' }
   ]
 
   return (
@@ -319,42 +398,22 @@ export function LogsTable({
                 className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2 md:gap-4">
+            <div>
               <select
-                value={onModuleFilterChange ? moduleFilter : localFilterType}
+                value={onModuleFilterChange ? moduleFilter : localFilterModule}
                 onChange={(e) => {
                   const value = e.target.value
                   if (onModuleFilterChange) {
                     onModuleFilterChange(value)
                   } else {
-                    setLocalFilterType(value)
+                    setLocalFilterModule(value)
                   }
                 }}
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
-                <option value="all">Todos los tipos</option>
-                {types.slice(1).map(type => (
-                  <option key={type} value={type}>
-                    {getTypeLabel(type)}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={onActionFilterChange ? actionFilter : localFilterAction}
-                onChange={(e) => {
-                  const value = e.target.value
-                  if (onActionFilterChange) {
-                    onActionFilterChange(value)
-                  } else {
-                    setLocalFilterAction(value)
-                  }
-                }}
-                className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-              >
-                <option value="all">Todas las acciones</option>
-                {actions.slice(1).map(action => (
-                  <option key={action} value={action}>
-                    {action}
+                {modules.map(module => (
+                  <option key={module.value} value={module.value}>
+                    {module.label}
                   </option>
                 ))}
               </select>
@@ -388,12 +447,25 @@ export function LogsTable({
                     if (log.module === 'sales') {
                       if (log.action === 'sale_create') return 'sale'
                       if (log.action === 'credit_sale_create') return 'credit_sale_create'
-                      if (log.action === 'sale_cancel') return 'sale_cancel'
+                      if (log.action === 'sale_cancel') {
+                        // Si es una factura de crédito, usar el tipo 'credit_sale_cancel'
+                        return (log.details as any)?.isCreditSale ? 'credit_sale_cancel' : 'sale_cancel'
+                      }
                       if (log.action === 'sale_stock_deduction') return 'sale_stock_deduction'
                       if (log.action === 'sale_cancellation_stock_return') return 'sale_cancellation_stock_return'
                       return 'sale'
                     }
-                    if (log.module === 'roles') return 'roles'
+                    if (log.module === 'roles') {
+                      if (log.action === 'Usuario Creado') return 'user_create'
+                      if (log.action === 'Usuario Editado') return 'user_edit'
+                      if (log.action === 'Usuario Eliminado') return 'user_delete'
+                      if (log.action === 'Permisos Asignados') return 'permissions_assigned'
+                      if (log.action === 'Permisos Revocados') return 'permissions_revoked'
+                      if (log.action === 'Rol Cambiado') return 'role_changed'
+                      if (log.action === 'Usuario Desactivado') return 'user_deactivated'
+                      if (log.action === 'Usuario Reactivado') return 'user_reactivated'
+                      return 'roles'
+                    }
                     if (log.module === 'products') {
                       if (log.action === 'product_create') return 'product_create'
                       if (log.action === 'product_update') return 'product_update'
@@ -410,7 +482,7 @@ export function LogsTable({
                     }
                     if (log.module === 'clients') {
                       if (log.action === 'client_create') return 'client_create'
-                      if (log.action === 'client_update') return 'client_edit'
+                      if (log.action === 'client_update') return 'client_update'
                       if (log.action === 'client_delete') return 'client_delete'
                       return 'client_create'
                     }
@@ -419,6 +491,16 @@ export function LogsTable({
                       if (log.action === 'warranty_status_update') return 'warranty_status_update'
                       if (log.action === 'warranty_update') return 'warranty_update'
                       return 'warranty_create'
+                    }
+                    if (log.module === 'credits') {
+                      if (log.action === 'credit_create') return 'credit_create'
+                      if (log.action === 'credit_payment') {
+                        // Si el crédito se completó con este abono, usar el tipo 'credit_completed'
+                        return (log.details as any)?.isCompleted ? 'credit_completed' : 'credit_payment'
+                      }
+                      if (log.action === 'credit_completed') return 'credit_completed'
+                      if (log.action === 'credit_cancelled') return 'credit_cancelled'
+                      return 'credit_create'
                     }
                     if (log.module === 'auth') return 'login'
                     return 'roles'
@@ -441,7 +523,9 @@ export function LogsTable({
                     if (log.module === 'sales') {
                       if (log.action === 'sale_create') return 'Crear Venta'
                       if (log.action === 'credit_sale_create') return 'Crear Venta a Crédito'
-                      if (log.action === 'sale_cancel') return 'Cancelar Venta'
+                      if (log.action === 'sale_cancel') {
+                        return (log.details as any)?.isCreditSale ? 'Cancelar Factura de Crédito' : 'Cancelar Venta'
+                      }
                       if (log.action === 'sale_stock_deduction') return 'Descontar Stock'
                       if (log.action === 'sale_cancellation_stock_return') return 'Devolver Stock'
                       return log.action
@@ -472,13 +556,23 @@ export function LogsTable({
                       if (log.action === 'warranty_update') return 'Actualizar Garantía'
                       return log.action
                     }
+                    if (log.module === 'credits') {
+                      if (log.action === 'credit_create') return 'Crear Crédito'
+                      if (log.action === 'credit_payment') {
+                        return (log.details as any)?.isCompleted ? 'Pago Completado' : 'Registrar Abono'
+                      }
+                      if (log.action === 'credit_completed') return 'Completar Crédito'
+                      if (log.action === 'credit_cancelled') return 'Cancelar Crédito'
+                      return log.action
+                    }
                     return log.action
                   }
                   
                   return (
                     <div
                       key={log.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      onClick={() => onLogClick && onLogClick(log)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -496,6 +590,10 @@ export function LogsTable({
                               {getActionLabel()}
                             </p>
                           </div>
+                        </div>
+                        <div className="flex items-center gap-1 text-gray-400">
+                          <Eye className="h-4 w-4" />
+                          <ChevronRight className="h-3.5 w-3.5" />
                         </div>
                       </div>
                       
@@ -519,6 +617,10 @@ export function LogsTable({
                           <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatDate(log.created_at)}</div>
                         </div>
                       </div>
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                        <Eye className="h-3 w-3" />
+                        <span>Ver detalle</span>
+                      </div>
                     </div>
                   )
                 })}
@@ -526,26 +628,29 @@ export function LogsTable({
 
               {/* Vista de Tabla para Desktop */}
               <div className="hidden md:block overflow-x-auto logs-table-tablet-container">
-                <table className="w-full table-fixed md:table-auto lg:table-fixed logs-table-tablet">
+                <table className="w-full table-fixed logs-table-tablet">
                 <thead className="bg-gray-50 dark:bg-gray-700">
                   <tr>
-                    <th className="w-10 md:w-16 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-12 md:w-16 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       #
                     </th>
-                    <th className="w-28 md:w-40 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-36 md:w-48 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Tipo
                     </th>
-                    <th className="w-20 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-28 md:w-36 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Acción
                     </th>
-                    <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="w-64 md:w-80 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                       Descripción
                     </th>
-                    <th className="w-20 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
+                    <th className="w-24 md:w-32 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
                       Usuario
                     </th>
-                    <th className="w-24 md:w-32 pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                    <th className="w-28 md:w-36 pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Fecha
+                    </th>
+                    <th className="w-12 md:w-16 pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-3 text-center text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                      <Eye className="h-4 w-4 mx-auto" />
                     </th>
                   </tr>
                 </thead>
@@ -560,20 +665,23 @@ export function LogsTable({
                       if (log.module === 'sales') {
                         if (log.action === 'sale_create') return 'sale'
                         if (log.action === 'credit_sale_create') return 'credit_sale_create'
-                        if (log.action === 'sale_cancel') return 'sale_cancel'
+                        if (log.action === 'sale_cancel') {
+                          // Si es una factura de crédito, usar el tipo 'credit_sale_cancel'
+                          return (log.details as any)?.isCreditSale ? 'credit_sale_cancel' : 'sale_cancel'
+                        }
                         if (log.action === 'sale_stock_deduction') return 'sale_stock_deduction'
                         if (log.action === 'sale_cancellation_stock_return') return 'sale_cancellation_stock_return'
                         return 'sale'
                       }
                       if (log.module === 'roles') {
-                        if (log.action === 'Usuario Creado') return 'client_create'
-                        if (log.action === 'Usuario Editado') return 'client_edit'
-                        if (log.action === 'Usuario Eliminado') return 'client_delete'
-                        if (log.action === 'Permisos Asignados') return 'client_edit'
-                        if (log.action === 'Permisos Revocados') return 'client_edit'
-                        if (log.action === 'Rol Cambiado') return 'client_edit'
-                        if (log.action === 'Usuario Desactivado') return 'client_edit'
-                        if (log.action === 'Usuario Reactivado') return 'client_edit'
+                        if (log.action === 'Usuario Creado') return 'user_create'
+                        if (log.action === 'Usuario Editado') return 'user_edit'
+                        if (log.action === 'Usuario Eliminado') return 'user_delete'
+                        if (log.action === 'Permisos Asignados') return 'permissions_assigned'
+                        if (log.action === 'Permisos Revocados') return 'permissions_revoked'
+                        if (log.action === 'Rol Cambiado') return 'role_changed'
+                        if (log.action === 'Usuario Desactivado') return 'user_deactivated'
+                        if (log.action === 'Usuario Reactivado') return 'user_reactivated'
                         return 'roles'
                       }
                       if (log.module === 'products') {
@@ -593,7 +701,7 @@ export function LogsTable({
                       }
                       if (log.module === 'clients') {
                         if (log.action === 'client_create') return 'client_create'
-                        if (log.action === 'client_update') return 'client_edit'
+                        if (log.action === 'client_update') return 'client_update'
                         if (log.action === 'client_delete') return 'client_delete'
                         return 'client_create'
                       }
@@ -611,6 +719,16 @@ export function LogsTable({
                         if (log.action.includes('Transferencia')) return 'transfer'
                         return 'transfer'
                       }
+                      if (log.module === 'credits') {
+                        if (log.action === 'credit_create') return 'credit_create'
+                        if (log.action === 'credit_payment') {
+                          // Si el crédito se completó con este abono, usar el tipo 'credit_completed'
+                          return (log.details as any)?.isCompleted ? 'credit_completed' : 'credit_payment'
+                        }
+                        if (log.action === 'credit_completed') return 'credit_completed'
+                        if (log.action === 'credit_cancelled') return 'credit_cancelled'
+                        return 'credit_create'
+                      }
                       if (log.module === 'auth') {
                         return 'login' // Tipo específico para login
                       }
@@ -620,7 +738,11 @@ export function LogsTable({
                     const logType = getLogType(log)
                     const TypeIcon = getTypeIcon(logType)
                     return (
-                      <tr key={log.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <tr 
+                        key={log.id} 
+                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        onClick={() => onLogClick && onLogClick(log)}
+                      >
                         <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 whitespace-nowrap">
                           <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                             {totalLogs - ((currentPage - 1) * 20) - index}
@@ -639,6 +761,7 @@ export function LogsTable({
                                 {log.module === 'roles' ? 'Usuarios' : 
                                  log.module === 'products' ? 'Productos' :
                                  log.module === 'clients' ? 'Clientes' :
+                                 log.module === 'credits' ? 'Créditos' :
                                  log.module === 'warranties' ? 'Garantías' :
                                  log.module === 'sales' ? 'Ventas' :
                                  log.module === 'payments' ? 'Abonos' :
@@ -657,7 +780,7 @@ export function LogsTable({
                               log.module === 'sales' ?
                                 (log.action === 'sale_create' ? 'Crear Venta' :
                                  log.action === 'credit_sale_create' ? 'Crear Venta a Crédito' :
-                                 log.action === 'sale_cancel' ? 'Cancelar Venta' :
+                                 log.action === 'sale_cancel' ? ((log.details as any)?.isCreditSale ? 'Cancelar Factura de Crédito' : 'Cancelar Venta') :
                                  log.action === 'sale_stock_deduction' ? 'Descontar Stock' :
                                  log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
                                  log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
@@ -686,10 +809,16 @@ export function LogsTable({
                                  log.action === 'warranty_status_update' ? 'Actualizar Estado' :
                                  log.action === 'warranty_update' ? 'Actualizar Garantía' :
                                  log.action) :
+                             log.module === 'credits' ?
+                               (log.action === 'credit_create' ? 'Crear Crédito' :
+                                log.action === 'credit_payment' ? ((log.details as any)?.isCompleted ? 'Pago Completado' : 'Registrar Abono') :
+                                log.action === 'credit_completed' ? 'Completar Crédito' :
+                                log.action === 'credit_cancelled' ? 'Cancelar Crédito' :
+                                log.action) :
                               log.action
                             }
                           >
-                            {log.module === 'auth' ? 'Acceso' : 
+                            {log.module === 'auth' ? 'Acceso' :
                              log.module === 'sales' ?
                                (log.action === 'sale_create' ? 'Crear Venta' :
                                 log.action === 'credit_sale_create' ? 'Crear Venta a Crédito' :
@@ -722,6 +851,12 @@ export function LogsTable({
                                 log.action === 'warranty_status_update' ? 'Actualizar Estado' :
                                 log.action === 'warranty_update' ? 'Actualizar Garantía' :
                                 log.action) :
+                             log.module === 'credits' ?
+                               (log.action === 'credit_create' ? 'Crear Crédito' :
+                                log.action === 'credit_payment' ? ((log.details as any)?.isCompleted ? 'Pago Completado' : 'Registrar Abono') :
+                                log.action === 'credit_completed' ? 'Completar Crédito' :
+                                log.action === 'credit_cancelled' ? 'Cancelar Crédito' :
+                                log.action) :
                              log.action}
                           </div>
                         </td>
@@ -733,7 +868,9 @@ export function LogsTable({
                                 (log.module === 'sales' ?
                                   (log.action === 'sale_create' ? `Nueva venta: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
                                    log.action === 'credit_sale_create' ? `Venta a crédito: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
-                                   log.action === 'sale_cancel' ? `Venta cancelada: ${log.details.reason || 'Sin motivo'}` :
+                                   log.action === 'sale_cancel' ? ((log.details as any)?.isCreditSale 
+                                     ? `Factura perteneciente a un crédito cancelada: ${log.details.invoiceNumber || 'N/A'} - ${log.details.reason || 'Sin motivo'}`
+                                     : `Venta cancelada: ${log.details.reason || 'Sin motivo'}`) :
                                    log.action === 'sale_stock_deduction' ? log.details.description || 'Stock descontado por venta' :
                                    log.action === 'sale_cancellation_stock_return' ? log.details.description || 'Stock devuelto por cancelación' :
                                    log.details.description || log.action) :
@@ -760,6 +897,14 @@ export function LogsTable({
                                      log.action === 'warranty_status_update' ? `Estado actualizado: ${log.details.previousStatus || 'N/A'} → ${log.details.newStatus || 'N/A'}` :
                                      log.action === 'warranty_update' ? `Garantía actualizada: "${log.details.clientName || 'Cliente'}"` :
                                      log.details.description || log.action) :
+                                  log.module === 'credits' ?
+                                    (log.action === 'credit_create' ? `Crédito creado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'} - Monto: $${(log.details.totalAmount || 0).toLocaleString('es-CO')}` :
+                                     log.action === 'credit_payment' ? ((log.details as any)?.isCompleted 
+                                       ? `Pago completado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'} - Monto: $${(log.details.paymentAmount || 0).toLocaleString('es-CO')}`
+                                       : `Abono registrado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'} - Monto: $${(log.details.paymentAmount || 0).toLocaleString('es-CO')}`) :
+                                     log.action === 'credit_completed' ? `Crédito completado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'}` :
+                                     log.action === 'credit_cancelled' ? `Crédito cancelado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'}` :
+                                     log.details.description || log.action) :
                                   log.module === 'auth' ? 
                                     `Ingresó al sistema` :
                                   log.action) :
@@ -772,7 +917,9 @@ export function LogsTable({
                               (log.module === 'sales' ?
                                 (log.action === 'sale_create' ? `Nueva venta: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
                                  log.action === 'credit_sale_create' ? `Venta a crédito: ${log.details.clientName || 'Cliente'} - $${(log.details.total || 0).toLocaleString('es-CO')}` :
-                                 log.action === 'sale_cancel' ? `Venta cancelada: ${log.details.reason || 'Sin motivo'}` :
+                                 log.action === 'sale_cancel' ? ((log.details as any)?.isCreditSale 
+                                   ? `Factura perteneciente a un crédito cancelada: ${log.details.invoiceNumber || 'N/A'} - ${log.details.reason || 'Sin motivo'}`
+                                   : `Venta cancelada: ${log.details.reason || 'Sin motivo'}`) :
                                  log.action === 'sale_stock_deduction' ? log.details.description || 'Stock descontado por venta' :
                                  log.action === 'sale_cancellation_stock_return' ? log.details.description || 'Stock devuelto por cancelación' :
                                  log.details.description || log.action) :
@@ -791,13 +938,24 @@ export function LogsTable({
                                    log.details.description || log.action) :
                                 log.module === 'clients' ?
                                   (log.action === 'client_create' ? `Nuevo cliente: "${log.details.clientName || 'Cliente'}"` :
-                                   log.action === 'client_update' ? `Cliente actualizado: "${log.details.clientName || 'Cliente'}"` :
+                                   log.action === 'client_update' ? 
+                                     (log.details.changes && Object.keys(log.details.changes).length > 0
+                                       ? `Cliente actualizado: "${log.details.clientName || 'Cliente'}" - Campos: ${Object.keys(log.details.changes).join(', ')}`
+                                       : `Cliente actualizado: "${log.details.clientName || 'Cliente'}"`) :
                                    log.action === 'client_delete' ? `Cliente eliminado: "${log.details.clientName || 'Cliente'}"` :
                                    log.details.description || log.action) :
                                 log.module === 'warranties' ?
                                   (log.action === 'warranty_create' ? `Nueva garantía: "${log.details.clientName || 'Cliente'}" - ${log.details.productReceivedName || 'Producto'}` :
                                    log.action === 'warranty_status_update' ? `Estado actualizado: ${log.details.previousStatus || 'N/A'} → ${log.details.newStatus || 'N/A'}` :
                                    log.action === 'warranty_update' ? `Garantía actualizada: "${log.details.clientName || 'Cliente'}"` :
+                                   log.details.description || log.action) :
+                                log.module === 'credits' ?
+                                  (log.action === 'credit_create' ? `Crédito creado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'} - Monto: $${(log.details.totalAmount || 0).toLocaleString('es-CO')}` :
+                                   log.action === 'credit_payment' ? ((log.details as any)?.isCompleted 
+                                     ? `Pago completado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'} - Monto: $${(log.details.paymentAmount || 0).toLocaleString('es-CO')}`
+                                     : `Abono registrado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'} - Monto: $${(log.details.paymentAmount || 0).toLocaleString('es-CO')}`) :
+                                   log.action === 'credit_completed' ? `Crédito completado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'}` :
+                                   log.action === 'credit_cancelled' ? `Crédito cancelado: ${log.details.clientName || 'Cliente'} - Factura: ${log.details.invoiceNumber || 'N/A'}` :
                                    log.details.description || log.action) :
                                 log.module === 'auth' ? 
                                   `Ingresó al sistema` :
@@ -820,6 +978,11 @@ export function LogsTable({
                               hour: '2-digit',
                               minute: '2-digit'
                             })}
+                          </div>
+                        </td>
+                        <td className="pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-4 text-center">
+                          <div className="flex items-center justify-center">
+                            <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
                           </div>
                         </td>
                       </tr>

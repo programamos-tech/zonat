@@ -312,7 +312,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
         <CardContent className="p-0">
           {isLoading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-pink-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Cargando créditos...
               </h3>
@@ -344,6 +344,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                            <CreditCard className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                             <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
                               {credit.invoiceNumber}
                             </span>
@@ -462,8 +463,11 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                   {filteredCredits.map((credit) => (
                     <tr key={credit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                       <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-5">
-                        <div className="text-xs md:text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
-                          {credit.invoiceNumber}
+                        <div className="flex items-center gap-2">
+                          <CreditCard className="h-4 w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                          <div className="text-xs md:text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
+                            {credit.invoiceNumber}
+                          </div>
                         </div>
                       </td>
                       <td className="px-2 md:px-3 py-3 md:py-5">

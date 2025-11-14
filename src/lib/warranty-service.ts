@@ -241,7 +241,7 @@ export class WarrantyService {
   }
 
   // Crear nueva garantía
-  static async createWarranty(warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number }): Promise<Warranty> {
+  static async createWarranty(warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number, productReceivedReference?: string, productReceivedPrice?: number, productDeliveredReference?: string, productDeliveredPrice?: number }): Promise<Warranty> {
     try {
       const { data, error } = await supabase
         .from('warranties')
@@ -269,6 +269,114 @@ export class WarrantyService {
       // Crear entrada en el historial de estados
       await this.addStatusHistory(data.id, null, warrantyData.status, 'Garantía creada', warrantyData.createdBy)
 
+      // Obtener referencias, precios y información de stock para el log
+      // Usar las referencias y precios pasados directamente desde el modal si están disponibles
+      let productReceivedReference = warrantyData.productReceivedReference
+      let productReceivedPrice = warrantyData.productReceivedPrice
+      let productDeliveredReference = warrantyData.productDeliveredReference
+      let productDeliveredPrice = warrantyData.productDeliveredPrice
+      let stockInfo: any = null
+      const quantityReceived = 1 // Las garantías son siempre 1 a 1
+      const quantityDelivered = warrantyData.replacementQuantity || 1
+
+      // Siempre obtener información del producto defectuoso desde la BD para asegurar datos actualizados
+      if (warrantyData.productReceivedId) {
+        try {
+          const { data: receivedProduct } = await supabase
+            .from('products')
+            .select('reference, price')
+            .eq('id', warrantyData.productReceivedId)
+            .single()
+          if (receivedProduct) {
+            // Usar la referencia de la BD si está disponible, sino usar la pasada desde el modal
+            const dbReference = receivedProduct.reference
+            productReceivedReference = (dbReference && dbReference.trim() !== '') ? dbReference : (productReceivedReference || 'N/A')
+            // Usar el precio de la BD si no se pasó desde el modal o es 0
+            if (!productReceivedPrice || productReceivedPrice === 0) {
+              productReceivedPrice = Number(receivedProduct.price) || 0
+            }
+          }
+        } catch (error) {
+          // Error silencioso - usar valores pasados desde el modal
+        }
+      }
+      
+      // Asegurar valores por defecto (convertir null/undefined a string)
+      if (!productReceivedReference || productReceivedReference === null || productReceivedReference === undefined) {
+        productReceivedReference = 'N/A'
+      }
+      if (!productReceivedPrice || productReceivedPrice === null || productReceivedPrice === undefined) {
+        productReceivedPrice = 0
+      }
+
+      // Obtener información del producto de reemplazo y stock ANTES del descuento
+      if (warrantyData.productDeliveredId && warrantyData.status === 'completed') {
+        try {
+          // Leer stock ANTES de descontarlo (esto se hace antes del descuento en el código siguiente)
+          const { data: deliveredProductBefore } = await supabase
+            .from('products')
+            .select('reference, price, stock_store, stock_warehouse')
+            .eq('id', warrantyData.productDeliveredId)
+            .single()
+          
+          if (deliveredProductBefore) {
+            // Usar la referencia de la BD si está disponible, sino usar la pasada desde el modal
+            const dbReference = deliveredProductBefore.reference
+            productDeliveredReference = (dbReference && dbReference.trim() !== '') ? dbReference : (productDeliveredReference || 'N/A')
+            // Usar el precio de la BD si no se pasó desde el modal o es 0
+            if (!productDeliveredPrice || productDeliveredPrice === 0) {
+              productDeliveredPrice = Number(deliveredProductBefore.price) || 0
+            }
+            
+            const previousStoreStock = Number(deliveredProductBefore.stock_store) || 0
+            const previousWarehouseStock = Number(deliveredProductBefore.stock_warehouse) || 0
+            
+            // Determinar de dónde se descontará (local primero, luego warehouse)
+            const storeDeduction = previousStoreStock > 0 ? quantityDelivered : 0
+            const warehouseDeduction = previousStoreStock > 0 ? 0 : quantityDelivered
+            
+            stockInfo = {
+              storeDeduction,
+              warehouseDeduction,
+              previousStoreStock,
+              previousWarehouseStock,
+              newStoreStock: previousStoreStock - storeDeduction,
+              newWarehouseStock: previousWarehouseStock - warehouseDeduction
+            }
+          }
+        } catch (error) {
+          // Error silencioso
+        }
+      } else if (warrantyData.productDeliveredId) {
+        // Si no está completada, obtener referencia y precio desde la BD
+        try {
+          const { data: deliveredProduct } = await supabase
+            .from('products')
+            .select('reference, price')
+            .eq('id', warrantyData.productDeliveredId)
+            .single()
+          if (deliveredProduct) {
+            // Usar la referencia de la BD si está disponible, sino usar la pasada desde el modal
+            const dbReference = deliveredProduct.reference
+            productDeliveredReference = (dbReference && dbReference.trim() !== '') ? dbReference : (productDeliveredReference || 'N/A')
+            // Usar el precio de la BD si no se pasó desde el modal o es 0
+            if (!productDeliveredPrice || productDeliveredPrice === 0) {
+              productDeliveredPrice = Number(deliveredProduct.price) || 0
+            }
+          }
+        } catch (error) {
+          // Error silencioso - usar valores pasados desde el modal
+        }
+      }
+      
+      // Asegurar valores por defecto para producto entregado (convertir null/undefined a string)
+      if (!productDeliveredReference || productDeliveredReference === null || productDeliveredReference === undefined) {
+        productDeliveredReference = 'N/A'
+      }
+      if (!productDeliveredPrice || productDeliveredPrice === null || productDeliveredPrice === undefined) {
+        productDeliveredPrice = 0
+      }
+
       // Log de actividad
       if (warrantyData.createdBy) {
         await AuthService.logActivity(
@@ -276,13 +384,24 @@ export class WarrantyService {
           'warranty_create',
           'warranties',
           {
-            description: `Nueva garantía creada: ${warrantyData.clientName} - Producto: ${warrantyData.productReceivedName}`,
+            description: `Nueva garantía creada: ${warrantyData.clientName} - Producto defectuoso: ${warrantyData.productReceivedName} (Ref: ${productReceivedReference})${warrantyData.productDeliveredName ? ` - Producto entregado: ${warrantyData.productDeliveredName} (Ref: ${productDeliveredReference})` : ''}`,
             warrantyId: data.id,
             clientName: warrantyData.clientName,
+            clientId: warrantyData.clientId || null,
+            productReceivedId: warrantyData.productReceivedId,
             productReceivedName: warrantyData.productReceivedName,
-            productDeliveredName: warrantyData.productDeliveredName || 'Sin producto de reemplazo',
+            productReceivedReference: productReceivedReference,
+            productReceivedPrice: productReceivedPrice,
+            quantityReceived: quantityReceived,
+            productDeliveredId: warrantyData.productDeliveredId || null,
+            productDeliveredName: warrantyData.productDeliveredName || null,
+            productDeliveredReference: productDeliveredReference,
+            productDeliveredPrice: productDeliveredPrice,
+            quantityDelivered: quantityDelivered,
             status: warrantyData.status,
-            reason: warrantyData.reason
+            reason: warrantyData.reason,
+            notes: warrantyData.notes || null,
+            stockInfo: stockInfo
           }
         )
       }

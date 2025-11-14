@@ -50,13 +50,13 @@ export default function ProductsPage() {
 
   const confirmDelete = async () => {
     if (productToDelete) {
-      const success = await deleteProduct(productToDelete.id)
-      if (success) {
+      const result = await deleteProduct(productToDelete.id)
+      if (result.success) {
         toast.success('Producto eliminado exitosamente')
         setIsDeleteModalOpen(false)
         setProductToDelete(null)
       } else {
-        toast.error('Error eliminando producto')
+        toast.error(result.error || 'Error eliminando producto')
       }
     }
   }

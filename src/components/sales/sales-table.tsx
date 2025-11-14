@@ -13,7 +13,8 @@ import {
   Receipt,
   Download,
   Printer,
-  RefreshCcw
+  RefreshCcw,
+  CreditCard
 } from 'lucide-react'
 import { Sale } from '@/types'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -325,6 +326,9 @@ export function SalesTable({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                            {sale.paymentMethod === 'credit' && (
+                              <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                            )}
                             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">{generateInvoiceNumber(sale)}</span>
                           </div>
                           <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={sale.clientName}>
@@ -422,8 +426,13 @@ export function SalesTable({
                       return (
                         <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
                           <td className="px-3 md:px-4 py-4 whitespace-nowrap">
-                            <div className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
-                              {generateInvoiceNumber(sale)}
+                            <div className="flex items-center gap-2">
+                              {sale.paymentMethod === 'credit' && (
+                                <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                              )}
+                              <div className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
+                                {generateInvoiceNumber(sale)}
+                              </div>
                             </div>
                           </td>
                           <td className="px-3 md:px-4 py-4">

@@ -30,11 +30,12 @@ export class LogsService {
 
       // Obtener logs de la página (usar supabaseAdmin para evitar problemas de RLS)
       // Intentar primero con el JOIN, si falla se hará consulta separada
+      // Especificar explícitamente la relación para evitar ambigüedad (PGRST201)
       const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
-          users (
+          users!logs_user_id_fkey (
             id,
             name
           )
@@ -43,7 +44,20 @@ export class LogsService {
         .range(offset, offset + limit - 1)
 
       if (error) {
-        console.error('[LogsService] Error fetching logs:', error)
+        // Solo loguear si es un error crítico con información útil
+        // Ignorar warnings de PostgREST y errores vacíos
+        const hasUsefulInfo = (
+          (error.message && typeof error.message === 'string' && error.message.trim().length > 0) ||
+          (error.code && typeof error.code === 'string' && error.code !== 'PGRST116' && error.code.trim().length > 0) ||
+          (error.details && typeof error.details === 'object' && Object.keys(error.details).length > 0)
+        )
+        
+        if (!hasUsefulInfo) {
+          // Error vacío o sin información útil, no loguear
+        } else if (error.code !== 'PGRST116') {
+          // Solo loguear si no es un warning de PostgREST
+          console.error('[LogsService] Error fetching logs:', error)
+        }
         // Si hay error con el join, intentar sin el join y luego obtener usuarios por separado
         const { data: logsWithoutJoin, error: errorWithoutJoin } = await supabaseAdmin
           .from('logs')
@@ -52,7 +66,10 @@ export class LogsService {
           .range(offset, offset + limit - 1)
         
         if (errorWithoutJoin) {
-          console.error('[LogsService] Error fetching logs without join:', errorWithoutJoin)
+          // Solo loguear si es un error crítico
+          if (errorWithoutJoin.code && Object.keys(errorWithoutJoin).length > 0) {
+            console.error('[LogsService] Error fetching logs without join:', errorWithoutJoin)
+          }
           return { logs: [], total: 0, hasMore: false }
         }
         
@@ -176,6 +193,10 @@ export class LogsService {
 
       return { logs: mappedLogs, total, hasMore }
     } catch (error) {
+      // Solo loguear errores críticos que tengan información útil
+      if (error && typeof error === 'object' && Object.keys(error).length > 0) {
+        console.error('[LogsService] Exception in getLogsByPage:', error)
+      }
       return { logs: [], total: 0, hasMore: false }
     }
   }

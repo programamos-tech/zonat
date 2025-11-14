@@ -46,8 +46,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
   const [includeTax, setIncludeTax] = useState(false)
-  const [totalDiscount, setTotalDiscount] = useState(0)
-  const [totalDiscountType, setTotalDiscountType] = useState<'percentage' | 'amount'>('percentage')
   const [invoiceNumber, setInvoiceNumber] = useState<string>('Pendiente') // Número de factura
   const [isClientModalOpen, setIsClientModalOpen] = useState(false)
   const [stockAlert, setStockAlert] = useState<{show: boolean, message: string, productId?: string}>({show: false, message: ''})
@@ -229,11 +227,11 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
   const getClientTypeColor = (type: string) => {
     switch (type) {
       case 'mayorista':
-        return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
+        return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
       case 'minorista':
         return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
       case 'consumidor_final':
-        return 'bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
+        return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600'
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
     }
@@ -370,25 +368,14 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     [orderedSelectedProducts]
   )
   
-  // Calcular subtotal (suma de precios sin descuentos por producto)
+  // Calcular subtotal (suma de precios)
   const subtotal = validProducts.reduce((sum, item) => {
-    const baseTotal = item.quantity * item.unitPrice
-    const itemDiscountAmount = item.discountType === 'percentage' 
-      ? (baseTotal * (item.discount || 0)) / 100 
-      : (item.discount || 0)
-    return sum + Math.max(0, baseTotal - itemDiscountAmount)
+    return sum + (item.quantity * item.unitPrice)
   }, 0)
   
-  // Calcular descuento por total de venta
-  const totalDiscountAmount = totalDiscountType === 'percentage' 
-    ? (subtotal * totalDiscount) / 100 
-    : totalDiscount
-  
-  const subtotalAfterTotalDiscount = Math.max(0, subtotal - totalDiscountAmount)
-  
   // IVA automático sobre el total (19% en Colombia)
-  const tax = includeTax ? subtotalAfterTotalDiscount * 0.19 : 0
-  const total = subtotalAfterTotalDiscount + tax
+  const tax = includeTax ? subtotal * 0.19 : 0
+  const total = subtotal + tax
 
   const getRemainingAmount = () => {
     // Si no hay productos seleccionados, no hay pago que completar
@@ -423,12 +410,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         prev.map(item => {
           if (item.productId === product.id) {
             const updatedItem = { ...item, quantity: item.quantity + 1, addedAt: updatedTimestamp }
-            // Recalcular total con descuento (sin IVA por producto)
-            const baseTotal = updatedItem.quantity * updatedItem.unitPrice
-            const discountAmount = updatedItem.discountType === 'percentage' 
-              ? (baseTotal * (updatedItem.discount || 0)) / 100 
-              : (updatedItem.discount || 0)
-            updatedItem.total = Math.max(0, baseTotal - discountAmount)
+            // Recalcular total
+            updatedItem.total = updatedItem.quantity * updatedItem.unitPrice
             return updatedItem
           }
           return item
@@ -463,12 +446,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       prev.map(item => {
         if (item.id === itemId) {
           const updatedItem = { ...item, unitPrice: newPrice }
-          // Recalcular total con descuento
-          const baseTotal = updatedItem.quantity * newPrice
-          const discountAmount = updatedItem.discountType === 'percentage' 
-            ? (baseTotal * (updatedItem.discount || 0)) / 100 
-            : (updatedItem.discount || 0)
-          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          // Recalcular total
+          updatedItem.total = updatedItem.quantity * newPrice
           return updatedItem
         }
         return item
@@ -519,12 +498,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       prev.map(item => {
         if (item.id === itemId) {
           const updatedItem = { ...item, quantity: newQuantity }
-          // Recalcular total con descuento (sin IVA por producto)
-          const baseTotal = newQuantity * updatedItem.unitPrice
-          const discountAmount = updatedItem.discountType === 'percentage' 
-            ? (baseTotal * (updatedItem.discount || 0)) / 100 
-            : (updatedItem.discount || 0)
-          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          // Recalcular total
+          updatedItem.total = newQuantity * updatedItem.unitPrice
           return updatedItem
         }
         return item
@@ -559,12 +534,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       prev.map(item => {
         if (item.id === itemId) {
           const updatedItem = { ...item, quantity: quantity }
-          // Recalcular total con descuento (sin IVA por producto)
-          const baseTotal = quantity * updatedItem.unitPrice
-          const discountAmount = updatedItem.discountType === 'percentage' 
-            ? (baseTotal * (updatedItem.discount || 0)) / 100 
-            : (updatedItem.discount || 0)
-          updatedItem.total = Math.max(0, baseTotal - discountAmount)
+          // Recalcular total
+          updatedItem.total = quantity * updatedItem.unitPrice
           return updatedItem
         }
         return item
@@ -572,23 +543,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     )
   }
 
-  const handleUpdateDiscount = (itemId: string, discount: number, discountType: 'percentage' | 'amount') => {
-    setSelectedProducts(prev => 
-      prev.map(item => {
-        if (item.id === itemId) {
-          const updatedItem = { ...item, discount, discountType }
-          // Recalcular total con descuento (sin IVA por producto)
-          const baseTotal = updatedItem.quantity * updatedItem.unitPrice
-          const discountAmount = discountType === 'percentage' 
-            ? (baseTotal * discount) / 100 
-            : discount
-          updatedItem.total = Math.max(0, baseTotal - discountAmount)
-          return updatedItem
-        }
-        return item
-      })
-    )
-  }
 
   const handleSave = (isDraft: boolean = false) => {
     // Validar que hay cliente, productos, método de pago y que todos tengan cantidad > 0
@@ -628,10 +582,10 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       clientId: selectedClient.id,
       clientName: selectedClient.name,
       total: total,
-      subtotal: subtotalAfterTotalDiscount,
+      subtotal: subtotal,
       tax: tax,
-      discount: totalDiscount,
-      discountType: totalDiscountType,
+      discount: 0,
+      discountType: 'amount',
       status: isDraft ? 'draft' : 'completed',
       paymentMethod,
       payments: paymentMethod === 'mixed' ? mixedPayments : undefined,
@@ -661,8 +615,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     setShowClientDropdown(false)
     setShowProductDropdown(false)
     setIncludeTax(false)
-    setTotalDiscount(0)
-    setTotalDiscountType('percentage')
     setInvoiceNumber('Pendiente')
     setMixedPayments([])
     setShowMixedPayments(false)
@@ -1063,32 +1015,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                                 Quitar
                               </Button>
                             </div>
-
-                            {/* Discount Control */}
-                            <div>
-                              <label className="block text-xs font-medium text-gray-400 dark:text-gray-500 mb-1">
-                                Descuento por producto
-                              </label>
-                              <div className="flex space-x-1">
-                                <input
-                                  type="number"
-                                  value={item.discount || ''}
-                                  onChange={(e) => handleUpdateDiscount(item.id, parseFloat(e.target.value) || 0, item.discountType || 'amount')}
-                                  className="flex-1 h-8 text-sm text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2"
-                                  min="0"
-                                  step="0.01"
-                                  placeholder="0"
-                                />
-                                <select
-                                  value={item.discountType || 'amount'}
-                                  onChange={(e) => handleUpdateDiscount(item.id, item.discount || 0, e.target.value as 'percentage' | 'amount')}
-                                  className="h-8 text-xs border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white px-2"
-                                >
-                                  <option value="amount">$</option>
-                                  <option value="percentage">%</option>
-                                </select>
-                              </div>
-                            </div>
                             
                             {/* Stock Alert */}
                             {stockAlert.show && stockAlert.productId === item.productId && (
@@ -1275,44 +1201,6 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                               ${subtotal.toLocaleString()}
                             </span>
                           </div>
-
-                          <div className="space-y-1">
-                            <div className="flex items-center justify-between">
-                              <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
-                              <div className="flex items-center space-x-2">
-                                <input
-                                  type="number"
-                                  value={totalDiscount || ''}
-                                  onChange={(e) => setTotalDiscount(Number(e.target.value) || 0)}
-                                  className="w-20 px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
-                                  min="0"
-                                  step={totalDiscountType === 'percentage' ? '0.1' : '1'}
-                                  placeholder="0"
-                                />
-                                <select
-                                  value={totalDiscountType}
-                                  onChange={(e) => setTotalDiscountType(e.target.value as 'percentage' | 'amount')}
-                                  className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white font-medium bg-white dark:bg-gray-600"
-                                >
-                                  <option value="percentage" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">%</option>
-                                  <option value="amount" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">$</option>
-                                </select>
-                              </div>
-                            </div>
-                            {totalDiscountAmount > 0 && (
-                              <div className="flex justify-between text-sm">
-                                <span className="text-gray-600 dark:text-gray-400">Descuento aplicado:</span>
-                                <span className="font-medium text-red-500 dark:text-red-400">-${totalDiscountAmount.toLocaleString()}</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {totalDiscountAmount > 0 && (
-                            <div className="flex justify-between border-t border-gray-600 pt-2">
-                              <span className="text-gray-300 font-medium">Subtotal con descuento:</span>
-                              <span className="font-semibold text-white">${subtotalAfterTotalDiscount.toLocaleString()}</span>
-                            </div>
-                          )}
 
                           <div className="space-y-1">
                             <div className="flex items-center justify-between">
