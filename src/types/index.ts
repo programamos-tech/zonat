@@ -139,6 +139,8 @@ export interface Warranty {
   updatedAt: string
   completedAt?: string
   createdBy?: string
+  quantityReceived?: number
+  quantityDelivered?: number
   // Relaciones
   originalSale?: Sale
   client?: Client

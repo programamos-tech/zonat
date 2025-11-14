@@ -100,6 +100,8 @@ export class WarrantyService {
         updatedAt: warranty.updated_at,
         completedAt: warranty.completed_at,
         createdBy: warranty.created_by,
+        quantityReceived: warranty.quantity_received ?? 1,
+        quantityDelivered: warranty.quantity_delivered ?? 1,
         // Relaciones
         originalSale: warranty.original_sale ? {
           id: warranty.original_sale.id,
@@ -227,6 +229,8 @@ export class WarrantyService {
         updatedAt: data.updated_at,
         completedAt: data.completed_at,
         createdBy: data.created_by,
+        quantityReceived: data.quantity_received ?? 1,
+        quantityDelivered: data.quantity_delivered ?? 1,
         originalSale: data.original_sale,
         client: data.client,
         productReceived: data.product_received,
@@ -241,8 +245,11 @@ export class WarrantyService {
   }
 
   // Crear nueva garantía
-  static async createWarranty(warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number, productReceivedReference?: string, productReceivedPrice?: number, productDeliveredReference?: string, productDeliveredPrice?: number }): Promise<Warranty> {
+  static async createWarranty(warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number, quantityReceived?: number, productReceivedReference?: string, productReceivedPrice?: number, productDeliveredReference?: string, productDeliveredPrice?: number }): Promise<Warranty> {
     try {
+      const quantityReceived = warrantyData.quantityReceived || 1
+      const quantityDelivered = warrantyData.replacementQuantity || 1
+
       const { data, error } = await supabase
         .from('warranties')
         .insert([{
@@ -257,7 +264,9 @@ export class WarrantyService {
           reason: warrantyData.reason,
           status: warrantyData.status,
           notes: warrantyData.notes,
-          created_by: warrantyData.createdBy
+          created_by: warrantyData.createdBy,
+          quantity_received: quantityReceived,
+          quantity_delivered: quantityDelivered
         }])
         .select()
         .single()
@@ -276,8 +285,6 @@ export class WarrantyService {
       let productDeliveredReference = warrantyData.productDeliveredReference
       let productDeliveredPrice = warrantyData.productDeliveredPrice
       let stockInfo: any = null
-      const quantityReceived = 1 // Las garantías son siempre 1 a 1
-      const quantityDelivered = warrantyData.replacementQuantity || 1
 
       // Siempre obtener información del producto defectuoso desde la BD para asegurar datos actualizados
       if (warrantyData.productReceivedId) {
@@ -332,8 +339,19 @@ export class WarrantyService {
             const previousWarehouseStock = Number(deliveredProductBefore.stock_warehouse) || 0
             
             // Determinar de dónde se descontará (local primero, luego warehouse)
-            const storeDeduction = previousStoreStock > 0 ? quantityDelivered : 0
-            const warehouseDeduction = previousStoreStock > 0 ? 0 : quantityDelivered
+            let storeDeduction = 0
+            let warehouseDeduction = 0
+            let remainingToDeduct = quantityDelivered
+            
+            if (previousStoreStock > 0 && remainingToDeduct > 0) {
+              storeDeduction = Math.min(previousStoreStock, remainingToDeduct)
+              remainingToDeduct -= storeDeduction
+            }
+            
+            if (remainingToDeduct > 0 && previousWarehouseStock > 0) {
+              warehouseDeduction = Math.min(previousWarehouseStock, remainingToDeduct)
+              remainingToDeduct -= warehouseDeduction
+            }
             
             stockInfo = {
               storeDeduction,
@@ -420,8 +438,8 @@ export class WarrantyService {
       // Si la garantía está completada y tiene producto de reemplazo, descontar del inventario
       if (warrantyData.status === 'completed' && warrantyData.productDeliveredId) {
         try {
-          // Para garantías, siempre es uno a uno, así que siempre descontar EXACTAMENTE 1 unidad
-          const quantityToDeduct = 1
+          // Descontar la cantidad especificada
+          const quantityToDeduct = quantityDelivered
           
           // Leer directamente desde la base de datos para obtener el stock más reciente
           const { data: productData, error: productError } = await supabase
@@ -436,21 +454,24 @@ export class WarrantyService {
             const currentStock = storeStock + warehouseStock
             
             if (currentStock >= quantityToDeduct) {
-              // Calcular los nuevos valores de stock descontando EXACTAMENTE 1 unidad
+              // Calcular los nuevos valores de stock descontando la cantidad especificada
               // Inicializar con los valores actuales
               let newStoreStock = storeStock
               let newWarehouseStock = warehouseStock
+              let remainingToDeduct = quantityToDeduct
               
-              // Descontar EXACTAMENTE 1 unidad: primero del local, luego del warehouse
-              if (storeStock > 0) {
-                // Si hay stock en local (aunque sea 1), descontar 1 del local
-                newStoreStock = storeStock - 1
-                // NO tocar el warehouse si hay stock en local
-                newWarehouseStock = warehouseStock
-              } else {
-                // Si NO hay stock en local, descontar 1 del warehouse
-                newStoreStock = 0
-                newWarehouseStock = warehouseStock - 1
+              // Descontar primero del local, luego del warehouse
+              if (storeStock > 0 && remainingToDeduct > 0) {
+                const storeDeduction = Math.min(storeStock, remainingToDeduct)
+                newStoreStock = storeStock - storeDeduction
+                remainingToDeduct -= storeDeduction
+              }
+              
+              // Si aún falta, descontar del warehouse
+              if (remainingToDeduct > 0 && warehouseStock > 0) {
+                const warehouseDeduction = Math.min(warehouseStock, remainingToDeduct)
+                newWarehouseStock = warehouseStock - warehouseDeduction
+                remainingToDeduct -= warehouseDeduction
               }
               
               // Actualizar directamente en la base de datos
