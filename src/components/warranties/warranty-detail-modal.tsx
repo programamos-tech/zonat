@@ -233,6 +233,10 @@ export function WarrantyDetailModal({
                       <p className="text-sm text-gray-900 dark:text-white">{warranty.productReceived.reference}</p>
                     </div>
                   )}
+                  <div>
+                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cantidad recibida:</span>
+                    <p className="text-sm text-gray-900 dark:text-white font-medium">{warranty.quantityReceived ?? 1} unidad{warranty.quantityReceived !== 1 ? 'es' : ''}</p>
+                  </div>
                   {warranty.productReceivedSerial && (
                     <div>
                       <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Número de Serie:</span>
@@ -269,6 +273,10 @@ export function WarrantyDetailModal({
                           <p className="text-sm text-gray-900 dark:text-white">{warranty.productDelivered.reference}</p>
                         </div>
                       )}
+                      <div>
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Cantidad entregada:</span>
+                        <p className="text-sm text-gray-900 dark:text-white font-medium">{warranty.quantityDelivered ?? 1} unidad{warranty.quantityDelivered !== 1 ? 'es' : ''}</p>
+                      </div>
                     </>
                   ) : (
                     <div className="text-center py-4">

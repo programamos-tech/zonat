@@ -57,7 +57,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   const [selectedClientId, setSelectedClientId] = useState('')
   
   const [formData, setFormData] = useState({
-    notes: ''
+    notes: '',
+    quantityReceived: 1,
+    quantityDelivered: 1
   })
 
   const selectedClient = selectedClientId ? clients.find(client => client.id === selectedClientId) || null : null
@@ -82,7 +84,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       setSelectedReplacementProduct(warranty.productDelivered || null)
       setSelectedClientId(warranty.clientId || '')
       setFormData({
-        notes: warranty.notes || ''
+        notes: warranty.notes || '',
+        quantityReceived: 1,
+        quantityDelivered: 1
       })
     } else {
       resetForm()
@@ -155,7 +159,9 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     setSelectedReplacementProduct(null)
     setSelectedClientId('')
     setFormData({
-      notes: ''
+      notes: '',
+      quantityReceived: 1,
+      quantityDelivered: 1
     })
   }
  
@@ -261,7 +267,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         reason: 'Garantía por producto',
         notes: formData.notes,
         status: 'completed',
-        replacementQuantity: 1,
+        replacementQuantity: formData.quantityDelivered,
+        quantityReceived: formData.quantityReceived,
         // Pasar referencias y precios directamente desde los productos seleccionados
         productReceivedReference: selectedDefectiveProduct.reference || undefined,
         productReceivedPrice: selectedDefectiveProduct.price || undefined,
@@ -288,7 +295,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   return (
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 md:h-6 md:w-6 text-purple-600 dark:text-purple-400" />
             <div>
@@ -310,27 +317,27 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            <div className="space-y-4">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto flex-1">
+            <div className="space-y-3">
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="h-5 w-5 text-red-600" />
                     Producto defectuoso
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 p-3 pt-2">
                 {!selectedDefectiveProduct ? (
                   <>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                       <input
                         type="text"
                         placeholder="Buscar producto defectuoso..."
                         value={defectiveSearch}
                         onChange={(e) => setDefectiveSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -368,7 +375,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     )}
                   </>
                 ) : (
-                  <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-semibold text-red-700 dark:text-red-200">
@@ -394,37 +401,58 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       <CheckCircle className="h-3 w-3" />
                       Producto defectuoso seleccionado
                     </p>
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Cantidad recibida
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        value={formData.quantityReceived}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1
+                          setFormData(prev => ({ ...prev, quantityReceived: Math.max(1, value) }))
+                        }}
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      {errors.quantityReceived && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {errors.quantityReceived}
+                        </p>
+                      )}
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
 
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     Producto de reemplazo
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3 p-3 pt-2">
                 {!selectedDefectiveProduct ? (
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-300">
+                  <div className="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-300">
                     Primero selecciona el producto defectuoso para elegir un reemplazo.
                   </div>
                 ) : !selectedReplacementProduct ? (
                   <>
                         <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                          <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
                           <input
                             type="text"
                             placeholder="Buscar producto de reemplazo..."
                         value={replacementSearch}
                         onChange={(e) => setReplacementSearch(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                           />
                         </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
-                      Selecciona el producto que entregarás al cliente. Se descontará 1 unidad del stock.
+                      Selecciona el producto que entregarás al cliente.
                     </p>
                     {replacementLoading && (
                       <div className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2">
@@ -476,7 +504,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             )}
                   </>
                 ) : (
-                  <div className="p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="font-semibold text-purple-700 dark:text-purple-200">
@@ -499,23 +527,49 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <X className="h-4 w-4" />
                         </Button>
                     </div>
+                    <div className="mt-3">
+                      <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                        Cantidad a entregar
+                      </label>
+                      <input
+                        type="number"
+                        min="1"
+                        max={getProductStock(selectedReplacementProduct)}
+                        value={formData.quantityDelivered}
+                        onChange={(e) => {
+                          const value = parseInt(e.target.value) || 1
+                          const maxStock = getProductStock(selectedReplacementProduct)
+                          setFormData(prev => ({ ...prev, quantityDelivered: Math.max(1, Math.min(maxStock, value)) }))
+                        }}
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      />
+                      {errors.quantityDelivered && (
+                        <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" />
+                          {errors.quantityDelivered}
+                        </p>
+                      )}
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                        Se descontarán {formData.quantityDelivered} unidad{formData.quantityDelivered !== 1 ? 'es' : ''} del stock.
+                      </p>
+                    </div>
                   </div>
                 )}
               </CardContent>
             </Card>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-3">
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+              <CardHeader className="p-3 pb-2">
+                <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     Información del Cliente
                 </CardTitle>
               </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3 p-3 pt-2">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     Seleccionar cliente (opcional)
                   </label>
                   {clientsLoading ? (
@@ -528,7 +582,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleSelectClient(e.target.value)}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                       >
                         <option value="">Selecciona un cliente...</option>
                         {clients.map((client) => (
@@ -567,22 +621,22 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                </Card>
 
               <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader>
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                <CardHeader className="p-3 pb-2">
+                  <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
                     Notas adicionales
                   </CardTitle>
                 </CardHeader>
-                <CardContent>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <CardContent className="p-3 pt-2">
+                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
                     Notas (opcional)
                   </label>
                   <textarea
                     value={formData.notes}
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Notas adicionales sobre la garantía..."
-                    rows={6}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus-border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                    rows={3}
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
                   />
               </CardContent>
             </Card>
@@ -590,7 +644,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 flex-shrink-0">
           <Button
             onClick={handleClose}
             variant="outline"
