@@ -12,20 +12,50 @@ export default function LogsPage() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [moduleFilter, setModuleFilter] = useState('all')
-  const [actionFilter, setActionFilter] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const [totalLogs, setTotalLogs] = useState(0)
   const [hasMore, setHasMore] = useState(true)
 
-  // Cargar logs iniciales al montar el componente
+  // Cargar logs iniciales al montar el componente y cuando cambie el filtro
   useEffect(() => {
-    loadLogs()
-  }, [])
+    loadLogs(1)
+  }, [moduleFilter])
 
   const loadLogs = async (page: number = 1) => {
     setLoading(true)
     try {
-      const { logs: logsData, total, hasMore: hasMoreData } = await LogsService.getLogsByPage(page, 20)
+      let logsData: LogEntry[] = []
+      let total = 0
+      let hasMoreData = false
+
+      if (moduleFilter === 'all') {
+        // Cargar todos los logs con paginación
+        const result = await LogsService.getLogsByPage(page, 20)
+        logsData = result.logs
+        total = result.total
+        hasMoreData = result.hasMore
+      } else if (moduleFilter === 'credits') {
+        // Para créditos, cargar todos los logs y filtrar en el cliente
+        // porque necesitamos incluir logs de módulo 'sales' con acciones de crédito
+        const allLogs = await LogsService.getAllLogs()
+        const filtered = allLogs.filter(log => 
+          log.module === 'credits' || 
+          (log.module === 'sales' && (log.action === 'credit_sale_create' || 
+            (log.action === 'sale_cancel' && (log.details as any)?.isCreditSale === true)))
+        )
+        total = filtered.length
+        const offset = (page - 1) * 20
+        logsData = filtered.slice(offset, offset + 20)
+        hasMoreData = offset + 20 < total
+      } else {
+        // Para otros módulos, cargar por módulo
+        const allLogs = await LogsService.getLogsByModule(moduleFilter)
+        total = allLogs.length
+        const offset = (page - 1) * 20
+        logsData = allLogs.slice(offset, offset + 20)
+        hasMoreData = offset + 20 < total
+      }
+
       setLogs(logsData)
       setTotalLogs(total)
       setHasMore(hasMoreData)
@@ -46,18 +76,19 @@ export default function LogsPage() {
     setSelectedLog(null)
   }
 
-  // Filtrar logs
+  const handleLogClick = (log: LogEntry) => {
+    setSelectedLog(log)
+    setIsDetailModalOpen(true)
+  }
+
+  // Filtrar logs por búsqueda (el filtro de módulo ya se aplica al cargar)
   const filteredLogs = logs.filter(log => {
-    const matchesSearch = searchTerm === '' || 
-      log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    if (searchTerm === '') return true
+    
+    return log.action.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.module.toLowerCase().includes(searchTerm.toLowerCase()) ||
       log.user_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       JSON.stringify(log.details).toLowerCase().includes(searchTerm.toLowerCase())
-    
-    const matchesModule = moduleFilter === 'all' || log.module === moduleFilter
-    const matchesAction = actionFilter === 'all' || log.action === actionFilter
-
-    return matchesSearch && matchesModule && matchesAction
   })
 
   if (loading) {
@@ -78,14 +109,13 @@ export default function LogsPage() {
         onSearchChange={setSearchTerm}
         moduleFilter={moduleFilter}
         onModuleFilterChange={setModuleFilter}
-        actionFilter={actionFilter}
-        onActionFilterChange={setActionFilter}
         onRefresh={() => loadLogs(currentPage)}
         loading={loading}
         currentPage={currentPage}
         totalLogs={totalLogs}
         hasMore={hasMore}
         onPageChange={handlePageChange}
+        onLogClick={handleLogClick}
       />
 
       {/* Mensaje cuando no hay más logs */}

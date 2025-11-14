@@ -275,23 +275,43 @@ export class SalesService {
       }
 
       // Crear los items de la venta y descontar stock (solo si no es borrador)
+      const itemsWithStockInfo: Array<any> = []
       if (saleData.items && saleData.items.length > 0) {
         // Si NO es borrador, descontar stock de todos los productos
         if (saleData.status !== 'draft') {
           // Primero descontar stock de todos los productos
           for (const item of saleData.items) {
-            const stockDeducted = await ProductsService.deductStockForSale(
+            const stockResult = await ProductsService.deductStockForSale(
               item.productId, 
               item.quantity, 
               currentUserId
             )
             
-            if (!stockDeducted) {
+            if (!stockResult.success || !stockResult.stockInfo) {
               // Si no se pudo descontar stock, revertir la venta
               await supabase.from('sales').delete().eq('id', sale.id)
               throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
             }
+
+            // Guardar información del item con su descuento de stock
+            itemsWithStockInfo.push({
+              productName: item.productName,
+              productReference: item.productReferenceCode,
+              quantity: item.quantity,
+              unitPrice: item.unitPrice,
+              totalPrice: item.totalPrice,
+              stockInfo: stockResult.stockInfo
+            })
           }
+        } else {
+          // Si es borrador, solo guardar información básica sin descuento de stock
+          itemsWithStockInfo.push(...saleData.items.map(item => ({
+            productName: item.productName,
+            productReference: item.productReferenceCode,
+            quantity: item.quantity,
+            unitPrice: item.unitPrice,
+            totalPrice: item.totalPrice
+          })))
         }
 
         // Si todo el stock se descontó correctamente, crear los items de la venta
@@ -393,6 +413,27 @@ export class SalesService {
         ? `Borrador de ${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`
         : `${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`
       
+      // Obtener la fecha de vencimiento del crédito si existe
+      let creditDueDate = null
+      if (saleData.paymentMethod === 'credit') {
+        // Intentar obtener la fecha de saleData (puede no estar en el tipo pero se pasa desde el modal)
+        const saleDataWithDueDate = saleData as any
+        if (saleDataWithDueDate.dueDate) {
+          creditDueDate = saleDataWithDueDate.dueDate
+        } else {
+          // Si no, obtenerla del crédito recién creado
+          try {
+            const { CreditsService } = await import('./credits-service')
+            const credit = await CreditsService.getCreditByInvoiceNumber(invoiceNumber)
+            if (credit && credit.dueDate) {
+              creditDueDate = credit.dueDate
+            }
+          } catch (error) {
+            // Error silencioso
+          }
+        }
+      }
+
       await AuthService.logActivity(
         currentUserId,
         logAction,
@@ -400,18 +441,15 @@ export class SalesService {
         {
           description: logDescription,
           saleId: sale.id,
+          invoiceNumber: invoiceNumber,
           clientName: saleData.clientName,
           total: saleData.total,
           paymentMethod: saleData.paymentMethod,
           status: saleData.status,
-          itemsCount: saleData.items?.length || 0,
-          items: saleData.items?.map(item => ({
-            productName: item.productName,
-            productReference: item.productReferenceCode,
-            quantity: item.quantity,
-            unitPrice: item.unitPrice,
-            totalPrice: item.totalPrice
-          })) || []
+          itemsCount: itemsWithStockInfo.length,
+          items: itemsWithStockInfo,
+          // Incluir fecha de vencimiento si es una venta a crédito
+          dueDate: creditDueDate
         }
       )
 
@@ -503,13 +541,13 @@ export class SalesService {
       // Descontar stock de todos los productos
       if (draftSale.items && draftSale.items.length > 0) {
         for (const item of draftSale.items) {
-          const stockDeducted = await ProductsService.deductStockForSale(
+          const stockResult = await ProductsService.deductStockForSale(
             item.productId, 
             item.quantity, 
             currentUserId
           )
           
-          if (!stockDeducted) {
+          if (!stockResult.success) {
             throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
           }
         }
@@ -613,54 +651,41 @@ export class SalesService {
         }
       }
       
-      // Si es una venta a crédito, manejar cancelación parcial
-      if (sale.paymentMethod === 'credit') {
+      // Preparar items para devolución de stock
+      const stockReturnItems = sale.items.map(item => ({
+        productId: item.productId,
+        quantity: item.quantity,
+        productName: item.productName
+      }))
 
-        // Devolver stock al local (siempre hacer esto para ventas a crédito canceladas)
-
-        // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote en lugar de loop secuencial
-        const stockReturnItems = sale.items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          productName: item.productName
-        }))
-
-        const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
-        
-        if (stockReturnResult.success) {
-
-        } else {
-          const failedReturns = stockReturnResult.results.filter(r => !r.success)
-
-          // Continuar con la anulación aunque algunos productos no se pudieron devolver
+      // Devolver stock al local (siempre hacer esto para ventas canceladas)
+      // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote en lugar de loop secuencial
+      const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
+      
+      // Capturar información del stock devuelto para el log
+      let stockReturnInfo = null
+      if (stockReturnResult.success && stockReturnResult.results.length > 0) {
+        stockReturnInfo = {
+          successfulUpdates: stockReturnResult.results.filter(r => r.success).map(r => ({
+            productId: r.productId,
+            productName: r.productName || sale.items.find(i => i.productId === r.productId)?.productName || 'N/A',
+            productReference: r.productReference || sale.items.find(i => i.productId === r.productId)?.productReferenceCode || 'N/A',
+            quantityReturned: r.quantity || 0,
+            previousStoreStock: r.previousStock || 0,
+            newStoreStock: r.newStock || 0
+          }))
         }
+      }
+      
+      if (!stockReturnResult.success) {
+        const failedReturns = stockReturnResult.results.filter(r => !r.success)
+        // Continuar con la anulación aunque algunos productos no se pudieron devolver
+      }
 
-        // Actualizar el crédito para reflejar la cancelación parcial
-        if (credit) {
-
-          // Recalcular el estado del crédito basado en las ventas activas
-          // Esto se moverá después de actualizar la venta
-        } else {
-
-        }
-      } else {
-
-        // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote para ventas normales también
-        const stockReturnItems = sale.items.map(item => ({
-          productId: item.productId,
-          quantity: item.quantity,
-          productName: item.productName
-        }))
-
-        const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
-        
-        if (stockReturnResult.success) {
-
-        } else {
-          const failedReturns = stockReturnResult.results.filter(r => !r.success)
-
-          // Continuar con la anulación aunque algunos productos no se pudieron devolver
-        }
+      // Si es una venta a crédito, actualizar el crédito para reflejar la cancelación parcial
+      if (sale.paymentMethod === 'credit' && credit) {
+        // Recalcular el estado del crédito basado en las ventas activas
+        // Esto se moverá después de actualizar la venta
       }
 
       // Anular la venta
@@ -693,7 +718,7 @@ export class SalesService {
 
           // Usar el crédito que ya obtuvimos anteriormente en lugar de hacer otra query
           if (credit) {
-            await this.updateCreditStatusAfterSaleCancellation(credit.id, sale.id)
+            await this.updateCreditStatusAfterSaleCancellation(credit.id, sale.id, currentUserId)
           } else {
 
           }
@@ -706,10 +731,17 @@ export class SalesService {
         'sale_cancel',
         'sales',
         {
-          description: `Venta cancelada: ID ${id} - Motivo: ${reason}${totalRefund > 0 ? ` - Reembolso: $${totalRefund.toLocaleString()}` : ''}`,
+          description: sale.paymentMethod === 'credit' 
+            ? `Factura perteneciente a un crédito cancelada: ${sale.invoiceNumber} - Motivo: ${reason}${totalRefund > 0 ? ` - Reembolso: $${totalRefund.toLocaleString()}` : ''}`
+            : `Venta cancelada: ID ${id} - Motivo: ${reason}${totalRefund > 0 ? ` - Reembolso: $${totalRefund.toLocaleString()}` : ''}`,
           saleId: id,
+          invoiceNumber: sale.invoiceNumber,
           reason: reason,
-          totalRefund: totalRefund
+          totalRefund: totalRefund,
+          isCreditSale: sale.paymentMethod === 'credit',
+          creditId: credit?.id || null,
+          clientName: sale.clientName || null,
+          stockReturnInfo: stockReturnInfo
         }
       )
 
@@ -721,7 +753,7 @@ export class SalesService {
   }
 
   // Actualizar el estado del crédito después de cancelar una venta
-  static async updateCreditStatusAfterSaleCancellation(creditId: string, cancelledSaleId: string): Promise<void> {
+  static async updateCreditStatusAfterSaleCancellation(creditId: string, cancelledSaleId: string, cancellingUserId: string): Promise<void> {
     try {
 
       // Obtener la venta cancelada para obtener el cliente
@@ -795,6 +827,13 @@ export class SalesService {
         newStatus = 'partial'
       }
 
+      // Obtener información del crédito antes de actualizarlo para el log
+      const { data: creditBeforeUpdate, error: creditBeforeError } = await supabase
+        .from('credits')
+        .select('*')
+        .eq('id', creditId)
+        .single()
+
       // Actualizar el crédito
       const { error: updateError } = await supabase
         .from('credits')
@@ -809,6 +848,35 @@ export class SalesService {
       if (updateError) {
       // Error silencioso en producción
         throw updateError
+      }
+
+      // Si no hay ventas activas, el crédito fue cancelado completamente
+      if (activeSales.length === 0 && creditBeforeUpdate) {
+        // Obtener historial de pagos para calcular el total a devolver
+        const { CreditsService } = await import('./credits-service')
+        const paymentHistory = await CreditsService.getPaymentHistory(creditId)
+        const totalRefund = paymentHistory.reduce((sum, payment) => sum + payment.amount, 0)
+
+        // Log de cancelación de crédito
+        if (cancellingUserId) {
+          const { AuthService } = await import('./auth-service')
+          await AuthService.logActivity(
+            cancellingUserId,
+            'credit_cancelled',
+            'credits',
+            {
+              description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
+              creditId: creditId,
+              invoiceNumber: creditBeforeUpdate.invoice_number,
+              clientName: creditBeforeUpdate.client_name,
+              totalAmount: creditBeforeUpdate.total_amount,
+              paidAmount: creditBeforeUpdate.paid_amount || 0,
+              totalRefund: totalRefund,
+              reason: 'Cancelación de factura asociada',
+              cancelledSaleId: cancelledSaleId
+            }
+          )
+        }
       }
 
     } catch (error) {

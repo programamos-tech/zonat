@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { Credit, PaymentRecord } from '@/types'
+import { AuthService } from './auth-service'
 
 export class CreditsService {
   // Crear un nuevo crédito
@@ -27,7 +28,7 @@ export class CreditsService {
 
     if (error) throw error
 
-    return {
+    const newCredit = {
       id: data.id,
       saleId: data.sale_id,
       clientId: data.client_id,
@@ -46,6 +47,28 @@ export class CreditsService {
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
+
+    // Log de actividad solo si el crédito se crea directamente (no desde venta)
+    // Si saleId es null o no existe, significa que es un crédito directo
+    if (creditData.createdBy && (!creditData.saleId || creditData.saleId === null)) {
+      await AuthService.logActivity(
+        creditData.createdBy,
+        'credit_create',
+        'credits',
+        {
+          description: `Crédito creado: ${creditData.clientName} - Factura: ${creditData.invoiceNumber} - Monto: $${creditData.totalAmount.toLocaleString('es-CO')}`,
+          creditId: newCredit.id,
+          invoiceNumber: creditData.invoiceNumber,
+          clientName: creditData.clientName,
+          clientId: creditData.clientId,
+          totalAmount: creditData.totalAmount,
+          pendingAmount: creditData.pendingAmount,
+          dueDate: creditData.dueDate || null
+        }
+      )
+    }
+
+    return newCredit
   }
 
   // Obtener todos los créditos
@@ -370,6 +393,8 @@ export class CreditsService {
     }
 
     // Actualizar el crédito con el nuevo monto pendiente
+    const previousPendingAmount = credit.pendingAmount
+    const previousPaidAmount = credit.paidAmount
     const newPendingAmount = credit.pendingAmount - paymentData.amount!
     const newPaidAmount = credit.paidAmount + paymentData.amount!
     const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
@@ -383,6 +408,40 @@ export class CreditsService {
       lastPaymentDate: paymentData.paymentDate,
       lastPaymentUser: paymentData.userId
     })
+
+    // Log de actividad para el pago
+    // Si el crédito se completa con este abono, el log incluirá esa información
+    const isCompleted = newPendingAmount <= 0
+    
+    if (paymentData.userId) {
+      await AuthService.logActivity(
+        paymentData.userId,
+        'credit_payment',
+        'credits',
+        {
+          description: isCompleted 
+            ? `Pago completado: ${credit.clientName} - Factura: ${credit.invoiceNumber} - Monto: $${paymentData.amount!.toLocaleString('es-CO')} - Método: ${paymentData.paymentMethod === 'cash' ? 'Efectivo' : paymentData.paymentMethod === 'transfer' ? 'Transferencia' : 'Mixto'}`
+            : `Abono registrado: ${credit.clientName} - Factura: ${credit.invoiceNumber} - Monto: $${paymentData.amount!.toLocaleString('es-CO')} - Método: ${paymentData.paymentMethod === 'cash' ? 'Efectivo' : paymentData.paymentMethod === 'transfer' ? 'Transferencia' : 'Mixto'}`,
+          creditId: credit.id,
+          invoiceNumber: credit.invoiceNumber,
+          clientName: credit.clientName,
+          paymentAmount: paymentData.amount!,
+          paymentMethod: paymentData.paymentMethod,
+          cashAmount: paymentData.cashAmount || null,
+          transferAmount: paymentData.transferAmount || null,
+          previousPendingAmount: previousPendingAmount,
+          newPendingAmount: newPendingAmount,
+          previousPaidAmount: previousPaidAmount,
+          newPaidAmount: newPaidAmount,
+          paymentDescription: paymentData.description || null,
+          // Información adicional si el crédito se completó
+          isCompleted: isCompleted,
+          totalAmount: isCompleted ? credit.totalAmount : null,
+          totalPaid: isCompleted ? newPaidAmount : null,
+          completedAt: isCompleted ? paymentData.paymentDate : null
+        }
+      )
+    }
 
     // Actualizar el estado de la venta si el crédito se completó
     if (newPendingAmount <= 0) {
