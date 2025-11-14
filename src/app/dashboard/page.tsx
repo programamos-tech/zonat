@@ -324,6 +324,55 @@ export default function DashboardPage() {
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5)
 
+    // Productos más vendidos recientemente con facturas asociadas
+    const recentProductSales: { [key: string]: { productId: string; productName: string; saleId: string; invoiceNumber: string | null; createdAt: string; quantity: number } } = {}
+    activeSales.forEach(sale => {
+      if (sale.items) {
+        sale.items.forEach(item => {
+          const key = item.productId
+          if (!recentProductSales[key] || new Date(sale.createdAt) > new Date(recentProductSales[key].createdAt)) {
+            recentProductSales[key] = {
+              productId: item.productId,
+              productName: item.productName,
+              saleId: sale.id,
+              invoiceNumber: sale.invoiceNumber || null,
+              createdAt: sale.createdAt,
+              quantity: item.quantity
+            }
+          }
+        })
+      }
+    })
+
+    const recentTopProducts = Object.values(recentProductSales)
+      .sort((a, b) => {
+        // Ordenar por fecha más reciente primero
+        const dateA = new Date(a.createdAt).getTime()
+        const dateB = new Date(b.createdAt).getTime()
+        return dateB - dateA
+      })
+      .slice(0, 3)
+      .map((item) => {
+        const saleDate = new Date(item.createdAt)
+        const dateLabel = saleDate.toLocaleDateString('es-CO', {
+          day: 'numeric',
+          month: 'short'
+        }).replace('.', '')
+        const timeLabel = saleDate.toLocaleTimeString('es-CO', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        })
+        return {
+          id: item.productId,
+          productName: item.productName,
+          invoiceNumber: item.invoiceNumber,
+          dateLabel,
+          timeLabel,
+          quantity: item.quantity
+        }
+      })
+
     // Garantías
     const completedWarranties = warranties.filter(w => w.status === 'completed').length
     const pendingWarranties = warranties.filter(w => w.status === 'pending').length
@@ -346,7 +395,7 @@ export default function DashboardPage() {
     }, 0)
 
     const recentWarrantyReplacements = completedWarrantyDetails
-      .slice(0, 3)
+      .slice(0, 5)
       .map(warranty => {
         const replacementProduct = allProducts.find(p => p.id === warranty.productDeliveredId)
         const deliveredName = warranty.productDeliveredName || replacementProduct?.name || 'Producto entregado'
@@ -400,7 +449,7 @@ export default function DashboardPage() {
         const dateB = new Date(b.updatedAt || b.createdAt || '').getTime()
         return dateB - dateA
       })
-      .slice(0, 5)
+      .slice(0, 4)
       .map((credit) => {
         const creditDate = new Date(credit.updatedAt || credit.createdAt || '')
         const dateLabel = creditDate.toLocaleDateString('es-CO', {
@@ -532,15 +581,15 @@ export default function DashboardPage() {
     })
     .filter(sale => sale.profit > 0) // Solo ventas con ganancia positiva
     .sort((a, b) => {
-      // Ordenar por fecha más reciente primero, luego por ganancia descendente
+      // Ordenar por ganancia descendente primero, luego por fecha más reciente
+      if (b.profit !== a.profit) {
+        return b.profit - a.profit // Mayor ganancia primero
+      }
       const dateA = new Date(a.createdAt).getTime()
       const dateB = new Date(b.createdAt).getTime()
-      if (dateB !== dateA) {
-        return dateB - dateA // Más reciente primero
-      }
-      return b.profit - a.profit // Si misma fecha, por ganancia descendente
+      return dateB - dateA // Si misma ganancia, más reciente primero
     })
-    .slice(0, 5) // Tomar las 5 más recientes con ganancia
+    .slice(0, 5) // Tomar las 5 con mayor ganancia
 
     // Facturas anuladas en el período seleccionado
     const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
@@ -738,6 +787,7 @@ export default function DashboardPage() {
       uniqueClients,
       grossProfit,
       topProfitableSales,
+      recentTopProducts,
       cancelledSales,
       lostValue,
       lowStockProducts,
@@ -1164,7 +1214,7 @@ export default function DashboardPage() {
                 <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
                   Últimos créditos pendientes
                 </div>
-                {metrics.recentPendingCredits.slice(0, 3).map((credit) => (
+                {metrics.recentPendingCredits.map((credit) => (
                   <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-gray-600 dark:text-gray-400 truncate">
@@ -1214,7 +1264,7 @@ export default function DashboardPage() {
             {metrics.completedWarranties}
           </p>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
-            {metrics.pendingWarranties} pendientes
+            Garantías completadas
           </p>
 
           {metrics.recentWarrantyReplacements.length > 0 ? (
@@ -1291,21 +1341,39 @@ export default function DashboardPage() {
                   Top ventas más rentables
                 </div>
                 {metrics.topProfitableSales.map((sale, index) => {
-                  const saleTime = new Date(sale.createdAt).toLocaleTimeString('es-CO', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
+                  const saleDate = new Date(sale.createdAt)
+                  const dateLabel = saleDate.toLocaleDateString('es-CO', {
+                    day: 'numeric',
+                    month: 'short'
+                  })
+                  const timeLabel = saleDate.toLocaleTimeString('es-CO', {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    hour12: true
                   })
                   const clientName = sale.clientName || 'Cliente'
-                  const shortName = clientName.length > 15 ? clientName.substring(0, 15) + '...' : clientName
+                  const invoiceNumber = sale.invoiceNumber || null
                   
                   return (
-                    <div key={sale.id} className="flex justify-between items-center text-xs md:text-sm">
-                      <span className="text-gray-600 dark:text-gray-400 truncate mr-2">
-                        • {shortName} ({saleTime})
-                      </span>
-                      <span className="text-green-600 dark:text-green-400 font-medium flex-shrink-0">
-                        +${sale.profit.toLocaleString('es-CO')}
-                      </span>
+                    <div key={sale.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
+                      <div className="flex flex-col overflow-hidden">
+                        <span className="text-gray-600 dark:text-gray-400 truncate">
+                          • {clientName}
+                        </span>
+                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                          {dateLabel} · {timeLabel}
+                        </span>
+                      </div>
+                      <div className="flex flex-col items-end text-right flex-shrink-0">
+                        <span className="text-green-600 dark:text-green-400 font-semibold">
+                          +${sale.profit.toLocaleString('es-CO')}
+                        </span>
+                        {invoiceNumber && (
+                          <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                            Factura {invoiceNumber}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
@@ -1332,27 +1400,50 @@ export default function DashboardPage() {
             <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
               {metrics.totalProductsCount}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2">
-              {metrics.totalProducts} unidades en stock • {metrics.lowStockProducts} con stock bajo
+            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+              {metrics.totalProducts.toLocaleString('es-CO')} unidades en stock • {metrics.lowStockProducts} con stock bajo
             </p>
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-              <div>
-                <p className="text-base md:text-lg font-semibold text-orange-600 dark:text-orange-400">
-                  ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
-                </p>
-                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                  {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
-                </p>
+            
+            {/* Lista de productos más vendidos recientemente */}
+            {metrics.recentTopProducts && metrics.recentTopProducts.length > 0 && (
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
+                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+                  Productos más vendidos recientemente
+                </div>
+                {metrics.recentTopProducts.map((item) => (
+                  <div key={item.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
+                    <div className="flex flex-col overflow-hidden">
+                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                        • {item.productName}
+                      </span>
+                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                        {item.dateLabel} · {item.timeLabel}
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-end text-right flex-shrink-0">
+                      <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
+                        {item.quantity} und
+                      </span>
+                      {item.invoiceNumber && (
+                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                          Factura {item.invoiceNumber}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                <div className="pt-1 border-t border-dashed border-gray-200 dark:border-gray-600 mt-2">
+                  <div>
+                    <p className="text-base md:text-lg font-semibold text-cyan-600 dark:text-cyan-400">
+                      ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
+                    </p>
+                    <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
+                      {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <p className="text-base md:text-lg font-semibold text-blue-600 dark:text-blue-400">
-                  ${metrics.estimatedSalesValue.toLocaleString('es-CO')}
-                </p>
-                <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                  Valor Estimado de Ventas
-                </p>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -1389,7 +1480,7 @@ export default function DashboardPage() {
                 <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
                   Créditos más recientes
                 </div>
-                {metrics.recentPendingCredits.slice(0, 3).map((credit) => (
+                {metrics.recentPendingCredits.map((credit) => (
                   <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                     <div className="flex flex-col overflow-hidden">
                       <span className="text-gray-600 dark:text-gray-400 truncate">
@@ -1411,9 +1502,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center justify-between text-xs md:text-sm pt-1 border-t border-dashed border-gray-200 dark:border-gray-600">
-                  <span className="text-gray-600 dark:text-gray-400">Total pendiente:</span>
-                  <span className="font-semibold text-orange-600 dark:text-orange-400">
+                <div className="flex items-center justify-between pt-1 border-t border-dashed border-gray-200 dark:border-gray-600">
+                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total a hoy:</span>
+                  <span className="text-base md:text-lg font-bold text-orange-600 dark:text-orange-400">
                     ${(metrics.totalDebt || 0).toLocaleString('es-CO')}
                   </span>
                 </div>

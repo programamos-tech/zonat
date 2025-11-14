@@ -397,8 +397,23 @@ export class ProductsService {
   }
 
   // Eliminar producto
-  static async deleteProduct(id: string, currentUserId?: string): Promise<boolean> {
+  static async deleteProduct(id: string, currentUserId?: string): Promise<{ success: boolean, error?: string }> {
     try {
+      // Obtener información del producto antes de eliminarlo para el log
+      const productToDelete = await this.getProductById(id)
+      if (!productToDelete) {
+        return { success: false, error: 'Producto no encontrado' }
+      }
+
+      // Validar que el producto no tenga stock
+      const totalStock = (productToDelete.stock?.store || 0) + (productToDelete.stock?.warehouse || 0)
+      if (totalStock > 0) {
+        return { 
+          success: false, 
+          error: `No se puede eliminar el producto "${productToDelete.name}" porque tiene ${totalStock} unidad(es) en stock. Debe tener stock en 0 para poder eliminarlo.` 
+        }
+      }
+
       const { error } = await supabase
         .from('products')
         .delete()
@@ -406,7 +421,7 @@ export class ProductsService {
 
       if (error) {
       // Error silencioso en producción
-        return false
+        return { success: false, error: 'Error al eliminar el producto' }
       }
 
       // Registrar la actividad
@@ -416,16 +431,24 @@ export class ProductsService {
           'product_delete',
           'products',
           {
-            description: `Se eliminó el producto con ID: ${id}`,
-            productId: id
+            description: `Producto eliminado: ${productToDelete.name}`,
+            productId: id,
+            productName: productToDelete.name,
+            productReference: productToDelete.reference,
+            brand: productToDelete.brand,
+            category: productToDelete.categoryId,
+            price: productToDelete.price,
+            cost: productToDelete.cost,
+            stockStore: productToDelete.stock?.store || 0,
+            stockWarehouse: productToDelete.stock?.warehouse || 0
           }
         )
       }
 
-      return true
+      return { success: true }
     } catch (error) {
       // Error silencioso en producción
-      return false
+      return { success: false, error: 'Error inesperado al eliminar el producto' }
     }
   }
 
@@ -557,17 +580,17 @@ export class ProductsService {
   }
 
   // Descontar stock para venta (primero del local, luego de bodega)
-  static async deductStockForSale(productId: string, quantity: number, currentUserId?: string): Promise<boolean> {
+  static async deductStockForSale(productId: string, quantity: number, currentUserId?: string): Promise<{ success: boolean, stockInfo?: { storeDeduction: number, warehouseDeduction: number, previousStoreStock: number, previousWarehouseStock: number, newStoreStock: number, newWarehouseStock: number } }> {
     try {
       const product = await this.getProductById(productId)
-      if (!product) return false
+      if (!product) return { success: false }
 
       const { warehouse, store } = product.stock
       const totalAvailable = warehouse + store
 
       if (totalAvailable < quantity) {
       // Error silencioso en producción
-        return false
+        return { success: false }
       }
 
       let remainingToDeduct = quantity
@@ -597,37 +620,24 @@ export class ProductsService {
 
       if (error) {
       // Error silencioso en producción
-        return false
+        return { success: false }
       }
 
-      // Registrar la actividad
-      if (currentUserId) {
-        const description = `Venta: Se descontaron ${quantity} unidades del producto "${product.name}". Local: -${storeDeduction}, Bodega: -${warehouseDeduction}`
-        
-        await AuthService.logActivity(
-          currentUserId,
-          'sale_stock_deduction',
-          'sales',
-          {
-            description,
-            productId: productId,
-            productName: product.name,
-            productReference: product.reference,
-            quantityDeducted: quantity,
-            storeDeduction: storeDeduction,
-            warehouseDeduction: warehouseDeduction,
-            previousStoreStock: store,
-            previousWarehouseStock: warehouse,
-            newStoreStock: store - storeDeduction,
-            newWarehouseStock: warehouse - warehouseDeduction
-          }
-        )
+      // Retornar información del descuento (NO crear log aquí, se hará en el log de la venta)
+      return {
+        success: true,
+        stockInfo: {
+          storeDeduction,
+          warehouseDeduction,
+          previousStoreStock: store,
+          previousWarehouseStock: warehouse,
+          newStoreStock: store - storeDeduction,
+          newWarehouseStock: warehouse - warehouseDeduction
+        }
       }
-
-      return true
     } catch (error) {
       // Error silencioso en producción
-      return false
+      return { success: false }
     }
   }
 
@@ -771,44 +781,10 @@ export class ProductsService {
 
       const results = await Promise.all(updatePromises)
 
-      // 4. Log consolidado (una sola vez)
-      if (currentUserId) {
-        const successfulUpdates = results.filter(r => r.success)
-        const failedUpdates = results.filter(r => !r.success)
-        
-        const description = `Cancelación de venta masiva: Se devolvieron ${successfulUpdates.length} productos al stock${failedUpdates.length > 0 ? ` (${failedUpdates.length} fallaron)` : ''}`
-
-        try {
-          await AuthService.logActivity(
-            currentUserId,
-            'sale_cancellation_stock_return_batch',
-            'products',
-            {
-              description,
-              successfulUpdates: successfulUpdates.map(r => ({
-                productId: r.productId,
-                productName: r.productName,
-                productReference: r.productReference,
-                quantityReturned: r.quantity,
-                previousStoreStock: r.previousStock,
-                newStoreStock: r.newStock,
-                location: 'store',
-                reason: 'Venta cancelada'
-              })),
-              failedUpdates: failedUpdates.map(r => ({
-                productId: r.productId,
-                error: r.error
-              })),
-              totalItems: items.length,
-              batchProcessing: true
-            }
-          )
-
-        } catch (logError) {
-      // Error silencioso en producción
-          // No fallar la operación principal por un error de log
-        }
-      }
+      // NOTA: No creamos log aquí porque cuando se cancela una venta, 
+      // el log de 'sale_cancel' ya incluye toda la información del stock devuelto.
+      // Este log solo se crearía si se devuelve stock fuera del contexto de cancelación de venta,
+      // pero actualmente no hay ese caso de uso.
 
       const allSuccessful = results.every(r => r.success)
 

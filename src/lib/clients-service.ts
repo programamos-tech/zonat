@@ -156,6 +156,12 @@ export class ClientsService {
   // Actualizar cliente
   static async updateClient(id: string, updates: Partial<Client>, currentUserId?: string): Promise<boolean> {
     try {
+      // Obtener el cliente actual antes de actualizarlo para el log
+      const currentClient = await this.getClientById(id)
+      if (!currentClient) {
+        return false
+      }
+
       const updateData: any = {}
       
       if (updates.name) updateData.name = updates.name
@@ -186,6 +192,22 @@ export class ClientsService {
         return false
       }
 
+      // Preparar información de cambios para el log
+      const changes: Record<string, { from: any; to: any }> = {}
+      Object.keys(updates).forEach(key => {
+        const oldValue = (currentClient as any)[key]
+        const newValue = (updates as any)[key]
+        if (oldValue !== newValue) {
+          changes[key] = { from: oldValue, to: newValue }
+        }
+      })
+
+      // Obtener el nombre final del cliente (puede haber cambiado)
+      const finalClientName = updates.name || currentClient.name
+
+      // Obtener el tipo final del cliente (puede haber cambiado)
+      const finalClientType = updates.type || currentClient.type
+
       // Registrar la actividad
       if (currentUserId) {
         await AuthService.logActivity(
@@ -193,11 +215,15 @@ export class ClientsService {
           'client_update',
           'clients',
           {
-            description: `Cliente actualizado: ${updates.name || 'Cliente'}`,
+            description: `Cliente actualizado: ${finalClientName}`,
             clientId: id,
-            clientName: updates.name,
+            clientName: finalClientName,
+            clientEmail: updates.email !== undefined ? (updates.email || null) : currentClient.email,
+            clientPhone: updates.phone || currentClient.phone,
+            clientDocument: updates.document || currentClient.document,
+            clientType: finalClientType,
             updatedFields: Object.keys(updates),
-            changes: updates
+            changes: changes
           }
         )
       }

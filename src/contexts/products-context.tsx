@@ -15,7 +15,7 @@ interface ProductsContextType {
   productsLastUpdated: number
   createProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>
   updateProduct: (id: string, updates: Partial<Product>) => Promise<boolean>
-  deleteProduct: (id: string) => Promise<boolean>
+  deleteProduct: (id: string) => Promise<{ success: boolean, error?: string }>
   searchProducts: (searchTerm: string) => Promise<Product[]>
   clearSearch: () => Promise<void>
   refreshProducts: () => Promise<void>
@@ -90,15 +90,14 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     return false
   }
 
-  const deleteProduct = async (id: string): Promise<boolean> => {
-    const success = await ProductsService.deleteProduct(id, currentUser?.id)
-    if (success) {
+  const deleteProduct = async (id: string): Promise<{ success: boolean, error?: string }> => {
+    const result = await ProductsService.deleteProduct(id, currentUser?.id)
+    if (result.success) {
       setProducts(prev => prev.filter(product => product.id !== id))
       // Actualizar el total de productos para que el dashboard se actualice
       setTotalProducts(prev => Math.max(0, prev - 1))
-      return true
     }
-    return false
+    return result
   }
 
   const searchProducts = async (searchTerm: string): Promise<Product[]> => {
@@ -207,12 +206,12 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   }
 
   const deductStockForSale = async (productId: string, quantity: number): Promise<boolean> => {
-    const success = await ProductsService.deductStockForSale(productId, quantity, currentUser?.id)
-    if (success) {
+    const result = await ProductsService.deductStockForSale(productId, quantity, currentUser?.id)
+    if (result.success) {
       // Actualizar el estado local - necesitamos refrescar para obtener los valores exactos
       await refreshProducts()
     }
-    return success
+    return result.success
   }
 
   const returnStockFromSale = async (productId: string, quantity: number): Promise<boolean> => {

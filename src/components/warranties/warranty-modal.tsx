@@ -55,7 +55,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   const [clients, setClients] = useState<Client[]>([])
   const [clientsLoading, setClientsLoading] = useState(false)
   const [selectedClientId, setSelectedClientId] = useState('')
-   
+  
   const [formData, setFormData] = useState({
     notes: ''
   })
@@ -249,7 +249,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
 
       const resolvedClientName = selectedClient?.name || warranty?.clientName || DEFAULT_CLIENT_NAME
 
-      const warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number } = {
+      const warrantyData: Omit<Warranty, 'id' | 'createdAt' | 'updatedAt'> & { replacementQuantity?: number, productReceivedReference?: string, productReceivedPrice?: number, productDeliveredReference?: string, productDeliveredPrice?: number } = {
         originalSaleId: null,
         clientId: selectedClientId || null,
         clientName: resolvedClientName,
@@ -261,7 +261,12 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         reason: 'Garantía por producto',
         notes: formData.notes,
         status: 'completed',
-        replacementQuantity: 1
+        replacementQuantity: 1,
+        // Pasar referencias y precios directamente desde los productos seleccionados
+        productReceivedReference: selectedDefectiveProduct.reference || undefined,
+        productReceivedPrice: selectedDefectiveProduct.price || undefined,
+        productDeliveredReference: replacementProductSnapshot?.reference || undefined,
+        productDeliveredPrice: replacementProductSnapshot?.price || undefined
       }
 
       await onSave(warrantyData)
@@ -543,7 +548,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <X className="h-4 w-4" />
                         </Button>
                       )}
-                    </div>
+                </div>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
                     Puedes seleccionar un cliente existente o escribir un nombre personalizado.

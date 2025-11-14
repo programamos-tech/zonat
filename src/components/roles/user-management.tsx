@@ -390,7 +390,7 @@ export function UserManagement() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     )
   }
@@ -432,9 +432,9 @@ export function UserManagement() {
         <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-emerald-600" />
+                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     Crear Nuevo Usuario
@@ -462,7 +462,7 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <UserCheck className="h-5 w-5 mr-2 text-emerald-400" />
+                        <UserCheck className="h-5 w-5 mr-2 text-blue-400" />
                         Información Básica
                       </CardTitle>
                     </CardHeader>
@@ -476,7 +476,7 @@ export function UserManagement() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                                 placeholder="Ej: Juan Pérez"
                               />
                             </div>
@@ -488,7 +488,7 @@ export function UserManagement() {
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                                 placeholder="juan@zonat.com"
                               />
                             </div>
@@ -502,7 +502,7 @@ export function UserManagement() {
                                 type="password"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
                                 placeholder="Mínimo 6 caracteres"
                               />
                             </div>
@@ -511,7 +511,7 @@ export function UserManagement() {
                                 Rol *
                               </label>
                               <Select value={formData.role} onValueChange={applyRolePermissions}>
-                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -531,13 +531,13 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <Shield className="h-5 w-5 mr-2 text-emerald-400" />
+                        <Shield className="h-5 w-5 mr-2 text-blue-400" />
                         Descripción del Rol
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                          <div className="p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
-                            <p className="text-sm text-emerald-700 dark:text-emerald-300">
+                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                            <p className="text-sm text-blue-700 dark:text-blue-300">
                               <span className="font-semibold">
                                 {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
                               </span>
@@ -550,19 +550,19 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <User className="h-5 w-5 mr-2 text-emerald-400" />
+                        <User className="h-5 w-5 mr-2 text-blue-400" />
                         Estado del Usuario
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                          <div className="flex items-center space-x-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 rounded-xl border border-emerald-200 dark:border-emerald-800">
+                          <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
                             <Switch
                               id="isActive"
                               checked={formData.isActive}
                               onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                              className="data-[state=checked]:bg-emerald-600"
+                              className="data-[state=checked]:bg-blue-600"
                             />
-                            <Label htmlFor="isActive" className="text-base font-medium text-emerald-700 dark:text-emerald-300">
+                            <Label htmlFor="isActive" className="text-base font-medium text-blue-700 dark:text-blue-300">
                               Usuario Activo
                             </Label>
                           </div>
@@ -575,11 +575,11 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <Shield className="h-5 w-5 mr-2 text-emerald-400" />
+                        <Shield className="h-5 w-5 mr-2 text-blue-400" />
                         Permisos del Sistema
                       </CardTitle>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-emerald-100 dark:bg-emerald-900/30 px-3 py-1 rounded-lg border border-emerald-200 dark:border-emerald-800 mt-2">
-                        Rol: <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
+                        Rol: <span className="font-semibold text-blue-600 dark:text-blue-400">
                           {roleOptions.find(r => r.value === formData.role)?.label}
                         </span>
                       </div>
@@ -592,7 +592,7 @@ export function UserManagement() {
                                   type="checkbox"
                                   checked={hasPermission(module.value, 'view')}
                                   onChange={() => togglePermission(module.value, 'view')}
-                                  className="w-4 h-4 text-emerald-600 bg-gray-100 border-gray-300 rounded focus:ring-emerald-500 focus:ring-2"
+                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                 />
                                 <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                               </label>
@@ -620,7 +620,7 @@ export function UserManagement() {
               </Button>
               <Button 
                 onClick={handleCreateUser}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <UserCheck className="h-4 w-4 mr-2" />
                 Crear Usuario
@@ -694,7 +694,7 @@ export function UserManagement() {
               </p>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo Usuario
@@ -825,7 +825,7 @@ export function UserManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => openEditModal(user)}
-                          className="text-emerald-600 hover:text-emerald-900 dark:text-emerald-400 dark:hover:text-emerald-100"
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -855,9 +855,9 @@ export function UserManagement() {
         <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-indigo-50 to-indigo-100 dark:from-indigo-900/20 dark:to-indigo-800/20 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
               <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-indigo-600" />
+                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     Editar Usuario
@@ -886,7 +886,7 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <User className="h-5 w-5 text-indigo-600" />
+                        <User className="h-5 w-5 text-blue-600" />
                         Información Personal
                       </CardTitle>
                     </CardHeader>
@@ -928,7 +928,7 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-indigo-600" />
+                        <Shield className="h-5 w-5 text-blue-600" />
                         Rol y Estado
                       </CardTitle>
                     </CardHeader>
@@ -955,14 +955,14 @@ export function UserManagement() {
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3 p-4 bg-indigo-50 dark:bg-indigo-900/20 rounded-xl border border-indigo-200 dark:border-indigo-800">
+                      <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
                         <Switch
                           id="editIsActive"
                           checked={formData.isActive}
                           onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                          className="data-[state=checked]:bg-indigo-600"
+                          className="data-[state=checked]:bg-blue-600"
                         />
-                        <Label htmlFor="editIsActive" className="text-base font-medium text-indigo-700 dark:text-indigo-300">
+                        <Label htmlFor="editIsActive" className="text-base font-medium text-blue-700 dark:text-blue-300">
                           Usuario Activo
                         </Label>
                       </div>
@@ -975,7 +975,7 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-indigo-600" />
+                        <Shield className="h-5 w-5 text-blue-600" />
                         Permisos del Sistema
                       </CardTitle>
                     </CardHeader>
@@ -987,7 +987,7 @@ export function UserManagement() {
                               type="checkbox"
                               checked={hasPermission(module.value, 'view')}
                               onChange={() => togglePermission(module.value, 'view')}
-                              className="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 focus:ring-2"
+                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                             />
                             <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                           </label>
@@ -1009,7 +1009,7 @@ export function UserManagement() {
               </Button>
               <Button 
                 onClick={handleUpdateUser}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 Actualizar Usuario
               </Button>
