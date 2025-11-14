@@ -401,6 +401,7 @@ export default function DashboardPage() {
         const deliveredName = warranty.productDeliveredName || replacementProduct?.name || 'Producto entregado'
         const reference = replacementProduct?.reference
         const value = replacementProduct?.price || 0
+        const quantityDelivered = warranty.quantityDelivered || 1
         const warrantyDate = new Date(warranty.updatedAt || warranty.createdAt)
         const dateLabel = warrantyDate.toLocaleDateString('es-CO', {
           day: '2-digit',
@@ -416,6 +417,7 @@ export default function DashboardPage() {
           deliveredName,
           reference,
           value,
+          quantityDelivered,
           dateLabel,
           timeLabel
         }
@@ -1284,7 +1286,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="flex flex-col items-end flex-shrink-0 text-right">
                     <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                      -1 und
+                      -{item.quantityDelivered} und
                     </span>
                     {item.value > 0 && (
                       <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
