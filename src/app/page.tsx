@@ -22,10 +22,27 @@ export default function Home() {
   }, [router, user, isLoading])
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900">
-      <div className="text-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
-        <p className="text-gray-600 dark:text-gray-300">Cargando...</p>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-[var(--swatch--gray-950)]" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="flex flex-col items-center gap-4">
+        {/* Spinner elegante */}
+        <div className="relative">
+          <div 
+            className="w-12 h-12 rounded-full border-4 border-transparent animate-spin"
+            style={{ 
+              borderTopColor: 'var(--sidebar-orange)',
+              borderRightColor: 'var(--sidebar-orange)',
+              borderBottomColor: 'rgba(92, 156, 124, 0.2)',
+              borderLeftColor: 'rgba(92, 156, 124, 0.2)'
+            }}
+          ></div>
+        </div>
+        {/* Texto minimalista */}
+        <p 
+          className="text-sm font-medium"
+          style={{ color: 'var(--sidebar-orange)' }}
+        >
+          Cargando
+        </p>
       </div>
     </div>
   )

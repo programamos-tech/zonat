@@ -35,7 +35,7 @@ export function CategoryModal({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
+        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       case 'inactive':
         return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400'
       default:
@@ -105,12 +105,12 @@ export function CategoryModal({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <Tag className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
+            <Tag className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Gestión de Categorías
@@ -134,10 +134,10 @@ export function CategoryModal({
         <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="flex-1 overflow-y-auto p-4 md:p-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
             {/* Información de la Categoría */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-cyan-600" />
+                  <FileText className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Información de la Categoría
                 </CardTitle>
               </CardHeader>
@@ -150,9 +150,21 @@ export function CategoryModal({
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
-                      errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                      errors.name ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                     }`}
+                    onFocus={(e) => {
+                      if (!errors.name) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.name) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                     placeholder="Nombre de la categoría"
                   />
                   {errors.name && (
@@ -167,9 +179,21 @@ export function CategoryModal({
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
-                      errors.description ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                      errors.description ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                     }`}
+                    onFocus={(e) => {
+                      if (!errors.description) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.description) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                     placeholder="Descripción de la categoría"
                     rows={3}
                   />
@@ -188,14 +212,15 @@ export function CategoryModal({
                       onClick={() => handleInputChange('status', 'active')}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         formData.status === 'active'
-                          ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                          : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                          ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                          : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)]'
                       }`}
+                      style={formData.status === 'active' ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${formData.status === 'active' ? 'bg-cyan-500' : 'bg-gray-400'}`}></div>
+                        <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: formData.status === 'active' ? 'var(--sidebar-orange)' : '#9CA3AF' }}></div>
                         <div className="text-left">
-                          <div className={`font-medium ${formData.status === 'active' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <div className={`font-medium`} style={{ color: formData.status === 'active' ? 'var(--sidebar-orange)' : undefined }}>
                             Activa
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -231,10 +256,10 @@ export function CategoryModal({
             </Card>
 
             {/* Categorías Existentes */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Tag className="h-5 w-5 text-cyan-600" />
+                  <Tag className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Categorías Existentes
                 </CardTitle>
               </CardHeader>
@@ -243,7 +268,7 @@ export function CategoryModal({
                   {categories
                     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
                     .map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-gray-50 dark:bg-[#1A1A1A] hover:bg-gray-100 dark:hover:bg-[#1F1F1F] transition-colors">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
                           <h4 className="font-medium text-gray-900 dark:text-white">{cat.name}</h4>
@@ -257,11 +282,18 @@ export function CategoryModal({
                         {/* Toggle estilo iOS */}
                         <button
                           onClick={() => onToggleStatus(cat.id, cat.status === 'active' ? 'inactive' : 'active')}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${
                             cat.status === 'active' 
-                              ? 'bg-cyan-600' 
+                              ? '' 
                               : 'bg-gray-200 dark:bg-gray-600'
                           }`}
+                          style={cat.status === 'active' ? { backgroundColor: 'var(--sidebar-orange)' } : undefined}
+                          onFocus={(e) => {
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.boxShadow = ''
+                          }}
                           title={cat.status === 'active' ? 'Desactivar categoría' : 'Activar categoría'}
                         >
                           <span
@@ -297,19 +329,30 @@ export function CategoryModal({
         </form>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-gray-50 dark:bg-[#1A1A1A] flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             type="button"
             onClick={handleClose}
             variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+              e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = ''
+              e.currentTarget.style.backgroundColor = ''
+            }}
           >
             Cancelar
           </Button>
           <Button
             type="submit"
             onClick={handleSave}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            className="text-white"
+            style={{ backgroundColor: 'var(--sidebar-orange)' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             <Plus className="h-4 w-4 mr-2" />
             Crear Categoría

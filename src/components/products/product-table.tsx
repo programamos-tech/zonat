@@ -198,7 +198,7 @@ export function ProductTable({
     }
     
     if (warehouse > 0) {
-      return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400 hover:bg-cyan-100 hover:text-cyan-800 dark:hover:bg-cyan-900/20 dark:hover:text-cyan-400'
+      return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 hover:text-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400'
     }
     
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
@@ -223,18 +223,18 @@ export function ProductTable({
 
   return (
     <TooltipProvider>
-      <div className="space-y-4 md:space-y-6">
+      <div className="space-y-4 md:space-y-6" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
           <CardHeader className="p-3 md:p-6">
             <div className="flex flex-col gap-3 md:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
                 <div className="flex-1 min-w-0">
                   <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                    <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 flex-shrink-0" />
+                    <Package className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
                     <span className="flex-shrink-0">Gestión de Productos</span>
                   {isSearching && (
-                      <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200 text-xs flex-shrink-0">
+                      <Badge className="text-xs flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' }}>
                       Búsqueda activa
                     </Badge>
                   )}
@@ -255,14 +255,17 @@ export function ProductTable({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                  <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
+                  <Button onClick={onCreate} className="text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none" style={{ backgroundColor: 'var(--sidebar-orange)' }} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
                     <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
                   <span className="hidden sm:inline">Nuevo Producto</span>
                   <span className="sm:hidden">Nuevo</span>
                 </Button>
                 <Button 
                   onClick={onManageCategories} 
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                    className="text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                    style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
                     <Tag className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                     <span className="hidden md:inline">Categorías</span>
@@ -272,7 +275,20 @@ export function ProductTable({
                     onClick={onRefresh}
                     disabled={loading}
                     variant="outline"
-                      className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-400 dark:hover:bg-cyan-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                      className="disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                      style={{ color: 'var(--sidebar-orange)' }}
+                      onMouseEnter={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!loading) {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.backgroundColor = ''
+                        }
+                      }}
                   >
                       <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${loading ? 'animate-spin' : ''}`} />
                       <span className="hidden md:inline ml-2">Actualizar</span>
@@ -291,7 +307,7 @@ export function ProductTable({
         </Card>
 
         {/* Search and Filters */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
           <CardContent className="p-3 md:p-4">
             <div className="flex flex-col gap-2 md:gap-4">
               <div className="relative flex-1">
@@ -307,7 +323,18 @@ export function ProductTable({
               handleSearch(searchTerm)
             }
           }}
-                  className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  style={{
+                    fontFamily: 'var(--font-inter)'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = ''
+                    e.currentTarget.style.boxShadow = ''
+                  }}
         />
                 {searchTerm && (
                   <button
@@ -327,7 +354,12 @@ export function ProductTable({
                     e.preventDefault()
                     handleSearch(searchTerm)
                   }}
-                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 transition-colors"
+                  style={{
+                    '--hover-color': 'var(--sidebar-orange)'
+                  } as React.CSSProperties}
+                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--sidebar-orange)'}
+                  onMouseLeave={(e) => e.currentTarget.style.color = ''}
                   title="Buscar"
                 >
                   <Search className="h-4 w-4" />
@@ -337,7 +369,18 @@ export function ProductTable({
               <select
                 value={filterCategory}
                 onChange={(e) => setFilterCategory(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+                  style={{
+                    fontFamily: 'var(--font-inter)'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = ''
+                    e.currentTarget.style.boxShadow = ''
+                  }}
               >
                 <option value="all">Todas las categorías</option>
                 {categories.map(category => (
@@ -349,7 +392,18 @@ export function ProductTable({
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+                  style={{
+                    fontFamily: 'var(--font-inter)'
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                    e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = ''
+                    e.currentTarget.style.boxShadow = ''
+                  }}
               >
                 {statuses.map(status => (
                   <option key={status.value} value={status.value}>
@@ -363,11 +417,11 @@ export function ProductTable({
         </Card>
 
         {/* Table */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 relative overflow-hidden">
+        <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] relative overflow-hidden">
           {/* Overlay de carga para búsquedas/refresh sin perder el contenido */}
           {loading && (
-            <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+            <div className="absolute inset-0 bg-white/60 dark:bg-[var(--swatch--gray-950)]/50 backdrop-blur-sm flex items-center justify-center z-10">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
             </div>
           )}
           <CardContent className="p-0 m-0">
@@ -382,7 +436,10 @@ export function ProductTable({
                 </p>
                 <Button 
                   onClick={onCreate}
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                  className="text-white"
+                  style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
                   Nuevo Producto
                 </Button>
@@ -390,13 +447,13 @@ export function ProductTable({
             ) : (
               <>
                 {/* Vista de Tarjetas para Mobile */}
-                <div className="md:hidden space-y-3 p-3">
+                <div className="md:hidden space-y-3 p-3" style={{ fontFamily: 'var(--font-inter)' }}>
                   {filteredProducts.map((product, index) => {
                     const StatusIcon = getStatusIcon(product.status)
                     return (
                       <div
                         key={product.id}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                        className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg p-3 space-y-2"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
@@ -419,7 +476,7 @@ export function ProductTable({
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                           <div className="text-center">
                             <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Bodega</div>
                             <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.warehouse}</div>
@@ -434,7 +491,7 @@ export function ProductTable({
                           </div>
                         </div>
                         
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                           <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
                             {getStockStatusLabel(product)}
                           </Badge>
@@ -443,7 +500,10 @@ export function ProductTable({
                               size="sm"
                               variant="ghost"
                               onClick={() => onEdit(product)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                              className="h-8 w-8 p-0 active:scale-95"
+                              style={{ color: 'var(--sidebar-orange)' }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -452,7 +512,10 @@ export function ProductTable({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onStockAdjustment(product)}
-                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
+                                className="h-8 w-8 p-0 active:scale-95"
+                                style={{ color: 'var(--sidebar-orange)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                               >
                                 <Package className="h-4 w-4" />
                               </Button>
@@ -462,7 +525,10 @@ export function ProductTable({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onStockTransfer(product)}
-                                className="h-8 w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95"
+                                className="h-8 w-8 p-0 active:scale-95"
+                                style={{ color: 'var(--sidebar-orange)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                               >
                                 <ArrowRightLeft className="h-4 w-4" />
                               </Button>
@@ -471,7 +537,10 @@ export function ProductTable({
                               size="sm"
                               variant="ghost"
                               onClick={() => onDelete(product)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                              className="h-8 w-8 p-0 active:scale-95"
+                              style={{ color: '#EF4444' }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -484,8 +553,8 @@ export function ProductTable({
 
                 {/* Vista de Tabla para Desktop */}
                 <div className="hidden md:block overflow-x-auto products-table-tablet-container lg:overflow-x-visible">
-                <table className="w-full table-auto lg:table-auto products-table-tablet">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                <table className="w-full table-auto lg:table-auto products-table-tablet" style={{ fontFamily: 'var(--font-inter)' }}>
+                  <thead className="bg-gray-50 dark:bg-[#1A1A1A]">
                     <tr>
                       <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10 md:w-12">
                         #
@@ -517,11 +586,11 @@ export function ProductTable({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-[#1A1A1A] divide-y divide-gray-200 dark:divide-[rgba(255,255,255,0.06)]">
                     {filteredProducts.map((product, index) => {
                       const StatusIcon = getStatusIcon(product.status)
                       return (
-                        <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-[#1F1F1F]">
                           <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 whitespace-nowrap w-10 md:w-12">
                             <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
                               {index + 1}
@@ -578,15 +647,18 @@ export function ProductTable({
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => onEdit(product)}
-                                    className="h-7 w-7 md:h-8 md:w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95 touch-manipulation"
+                                    className="h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
+                                    style={{ color: 'var(--sidebar-orange)' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                                   >
                                     <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
+                                <TooltipContent className="z-50 text-white shadow-lg" style={{ backgroundColor: 'var(--sidebar-orange)', borderColor: 'var(--sidebar-orange)' }}>
                                   <div className="text-center">
                                     <p className="font-medium text-white">Editar Producto</p>
-                                    <p className="text-xs text-cyan-100">Modificar datos del producto</p>
+                                    <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Modificar datos del producto</p>
                                   </div>
                                 </TooltipContent>
                               </Tooltip>
@@ -598,15 +670,18 @@ export function ProductTable({
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => onStockAdjustment(product)}
-                                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95 touch-manipulation"
+                                      className="h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
+                                      style={{ color: 'var(--sidebar-orange)' }}
+                                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                                     >
                                       <Package className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
+                                  <TooltipContent className="z-50 text-white shadow-lg" style={{ backgroundColor: 'var(--sidebar-orange)', borderColor: 'var(--sidebar-orange)' }}>
                                     <div className="text-center">
                                       <p className="font-medium text-white">Ajustar Stock</p>
-                                      <p className="text-xs text-cyan-100">Modificar cantidad de inventario</p>
+                                      <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Modificar cantidad de inventario</p>
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -619,15 +694,18 @@ export function ProductTable({
                                       size="sm"
                                       variant="ghost"
                                       onClick={() => onStockTransfer(product)}
-                                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95 touch-manipulation"
+                                      className="h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
+                                      style={{ color: 'var(--sidebar-orange)' }}
+                                      onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                      onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                                     >
                                       <ArrowRightLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                     </Button>
                                   </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
+                                  <TooltipContent className="z-50 text-white shadow-lg" style={{ backgroundColor: 'var(--sidebar-orange)', borderColor: 'var(--sidebar-orange)' }}>
                                     <div className="text-center">
                                       <p className="font-medium text-white">Transferir Stock</p>
-                                      <p className="text-xs text-cyan-100">Mover entre Bodega y Local</p>
+                                      <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Mover entre Bodega y Local</p>
                                     </div>
                                   </TooltipContent>
                                 </Tooltip>
@@ -639,15 +717,18 @@ export function ProductTable({
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => onDelete(product)}
-                                    className="h-7 w-7 md:h-8 md:w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95 touch-manipulation"
+                                    className="h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
+                                    style={{ color: '#EF4444' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                                   >
                                     <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
                                   </Button>
                                 </TooltipTrigger>
-                                <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
+                                <TooltipContent className="z-50 text-white shadow-lg" style={{ backgroundColor: 'var(--sidebar-orange)', borderColor: 'var(--sidebar-orange)' }}>
                                   <div className="text-center">
                                     <p className="font-medium text-white">Eliminar Producto</p>
-                                    <p className="text-xs text-cyan-100">Borrar producto permanentemente</p>
+                                    <p className="text-xs" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>Borrar producto permanentemente</p>
                                   </div>
                                 </TooltipContent>
                               </Tooltip>
@@ -710,9 +791,10 @@ export function ProductTable({
                               disabled={loading}
                               className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                                 page === currentPage 
-                                  ? "bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 font-medium" 
+                                  ? "font-medium"
                                   : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                               }`}
+                              style={page === currentPage ? { backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' } : undefined}
                             >
                               {page}
                             </button>

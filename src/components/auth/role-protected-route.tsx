@@ -20,10 +20,13 @@ export function RoleProtectedRoute({
   const { hasPermission } = usePermissions()
   const router = useRouter()
 
+        // Los módulos nuevos (suppliers, purchase_orders, profitability) son accesibles para todos los usuarios autenticados
+        const isNewModule = module === 'suppliers' || module === 'purchase_orders' || module === 'profitability'
+
   useEffect(() => {
     if (!isLoading && user) {
-      // Verificar si el usuario tiene permisos para este módulo
-      if (!hasPermission(module, requiredAction)) {
+      // Verificar si el usuario tiene permisos para este módulo (excepto módulos nuevos)
+      if (!isNewModule && !hasPermission(module, requiredAction)) {
         // Redirigir según el rol del usuario
         const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
         if (isSuperAdmin) {
@@ -33,7 +36,7 @@ export function RoleProtectedRoute({
         }
       }
     }
-  }, [user, isLoading, module, requiredAction, hasPermission, router])
+  }, [user, isLoading, module, requiredAction, hasPermission, router, isNewModule])
 
   if (isLoading) {
     return (
@@ -50,10 +53,10 @@ export function RoleProtectedRoute({
     return null
   }
 
-  // Si no tiene permisos, mostrar mensaje de acceso denegado
-  if (!hasPermission(module, requiredAction)) {
+  // Si no tiene permisos, mostrar mensaje de acceso denegado (excepto módulos nuevos)
+  if (!isNewModule && !hasPermission(module, requiredAction)) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center bg-white dark:bg-gray-900">
         <div className="text-center p-8">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
             Acceso Denegado

@@ -147,23 +147,47 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   const getPaymentMethodColor = (method: string) => {
     switch (method) {
       case 'cash':
-        return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100 hover:text-green-800'
+        return 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800'
       case 'transfer':
-        return 'bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-100 hover:text-orange-800'
+        return 'text-white dark:text-white'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-100 hover:text-gray-800'
+        return 'bg-gray-100 text-gray-800 border-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
     }
+  }
+
+  const getPaymentMethodStyle = (method: string) => {
+    if (method === 'transfer') {
+      return {
+        backgroundColor: 'rgba(92, 156, 124, 0.2)',
+        color: 'var(--sidebar-orange)',
+        borderColor: 'rgba(92, 156, 124, 0.3)'
+      }
+    }
+    return undefined
+  }
+
+  const getStatusStyle = (status: string, credit?: any) => {
+    if (isCreditCancelled(credit)) {
+      return undefined
+    }
+    if (status === 'completed') {
+      return {
+        backgroundColor: 'rgba(92, 156, 124, 0.2)',
+        color: 'var(--sidebar-orange)'
+      }
+    }
+    return undefined
   }
 
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:flex-row xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-[calc(100vw-18rem)] xl:max-w-5xl overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-orange-600" />
+            <CreditCard className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Detalles del Crédito
@@ -177,20 +201,20 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-4">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-white dark:bg-[#1A1A1A]">
           <div className="space-y-3 md:space-y-4">
             {clientCredits.length > 1 && (
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <CardHeader className="p-3 md:p-4">
                   <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                    <User className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                     Todos los Créditos de {credit.clientName}
                   </CardTitle>
                 </CardHeader>
@@ -198,23 +222,24 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                   <div className="space-y-2 max-h-48 overflow-y-auto">
                     {clientCredits.map((c) => {
                       const isSelected = selectedCreditId === c.id
-                      // Usar colores neutros y uniformes
-      const bgColor = isSelected 
-        ? 'bg-gray-100 dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500' 
-        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600'
-      
+                      const bgColor = isSelected 
+                        ? 'bg-gray-100 dark:bg-[#1F1F1F] border-2' 
+                        : 'bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)]'
+                      const borderStyle = isSelected ? { borderColor: 'var(--sidebar-orange)' } : undefined
+                      
                       return (
                         <div 
                           key={c.id} 
                           onClick={() => setSelectedCreditId(c.id)}
                           className={`border rounded-lg p-3 cursor-pointer transition-all relative hover:shadow-md ${bgColor}`}
+                          style={borderStyle}
                         >
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <div className="font-semibold text-gray-900 dark:text-white">
                                 Factura: {c.invoiceNumber}
                               </div>
-                              <Badge className={`${getStatusColor(c.status, c)} flex items-center gap-1 w-fit mt-1`}>
+                              <Badge className={`${getStatusColor(c.status, c)} flex items-center gap-1 w-fit mt-1`} style={getStatusStyle(c.status, c)}>
                                 {getStatusIcon(c.status, c)}
                                 {isCreditCancelled(c) ? 'Anulado' :
                                  c.status === 'completed' ? 'Completado' :
@@ -229,7 +254,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                                 Total: ${c.totalAmount.toLocaleString('es-CO')}
                               </div>
                               <div className={`text-sm font-semibold ${
-                                c.pendingAmount === 0 ? 'text-green-600' : 'text-red-600'
+                                c.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                               }`}>
                                 Pendiente: ${c.pendingAmount.toLocaleString('es-CO')}
                               </div>
@@ -247,10 +272,10 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
             {currentCredit && (
               <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
                 {/* Información del Crédito */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 md:p-4">
                 <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-orange-600" />
+                  <Receipt className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                   Información del Crédito
                 </CardTitle>
               </CardHeader>
@@ -287,7 +312,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Estado:
                     </label>
-                    <Badge className={`${getStatusColor(currentCredit?.status || 'pending', currentCredit)} flex items-center gap-1 w-fit`}>
+                    <Badge className={`${getStatusColor(currentCredit?.status || 'pending', currentCredit)} flex items-center gap-1 w-fit`} style={getStatusStyle(currentCredit?.status || 'pending', currentCredit)}>
                       {getStatusIcon(currentCredit?.status || 'pending', currentCredit)}
                       {isCreditCancelled(currentCredit) ? 'Anulado' :
                        currentCredit?.status === 'completed' ? 'Completado' :
@@ -302,7 +327,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       $ Pagado:
                     </label>
-                    <p className="text-lg font-semibold text-green-600">
+                    <p className="text-lg font-semibold text-green-600 dark:text-green-400">
                       ${currentCredit?.paidAmount?.toLocaleString('es-CO')}
                     </p>
                   </div>
@@ -312,7 +337,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                       $ Pendiente:
                     </label>
                     <p className={`text-lg font-semibold ${
-                      currentCredit?.pendingAmount === 0 ? 'text-green-600' : 'text-red-600'
+                      currentCredit?.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                     }`}>
                       ${currentCredit?.pendingAmount?.toLocaleString('es-CO')}
                     </p>
@@ -345,30 +370,33 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
             </Card>
 
             {/* Historial de Abonos */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 md:p-4">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                   <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-orange-600" />
+                    <CreditCard className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                     Historial de Abonos
                   </CardTitle>
                   <Button 
                     onClick={() => {
-
                       if (currentCredit) {
-
                         onAddPayment(currentCredit)
-                      } else {
-      // Error silencioso en producción
                       }
                     }}
                     disabled={!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)}
                     size="sm"
-                    className={`w-full sm:w-auto ${
-                      !currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)
-                        ? 'bg-gray-400 hover:bg-gray-400 text-gray-200 cursor-not-allowed' 
-                        : 'bg-orange-600 hover:bg-orange-700 text-white'
-                    }`}
+                    className={`w-full sm:w-auto text-white disabled:opacity-50 disabled:cursor-not-allowed`}
+                    style={!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit) ? undefined : { backgroundColor: 'var(--sidebar-orange)' }}
+                    onMouseEnter={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        e.currentTarget.style.opacity = '0.9'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!e.currentTarget.disabled) {
+                        e.currentTarget.style.opacity = '1'
+                      }
+                    }}
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     {!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit) ? 'Crédito Anulado' : 'Nuevo Abono'}
@@ -378,11 +406,11 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
               <CardContent className="p-3 md:p-4 pt-0">
                 {isLoading ? (
                   <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
+                    <div className="animate-spin rounded-full h-6 w-6 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
                   </div>
                 ) : paymentHistory.length === 0 ? (
                   <div className="text-center py-4">
-                    <CreditCard className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                    <CreditCard className="h-8 w-8 text-gray-400 dark:text-gray-500 mx-auto mb-2" />
                     <p className="text-sm text-gray-500 dark:text-gray-400">No hay abonos registrados</p>
                   </div>
                 ) : (
@@ -391,7 +419,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                       <div key={payment.id} className={`border rounded-lg p-3 ${
                         currentCredit?.status === 'cancelled' 
                           ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                          : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
+                          : 'bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)]'
                       }`}>
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
@@ -400,7 +428,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                             }`}>
                               ${payment.amount.toLocaleString('es-CO')}
                             </span>
-                            <Badge className={`${getPaymentMethodColor(payment.paymentMethod)} flex items-center gap-1`}>
+                            <Badge className={`${getPaymentMethodColor(payment.paymentMethod)} flex items-center gap-1`} style={getPaymentMethodStyle(payment.paymentMethod)}>
                               {getPaymentMethodIcon(payment.paymentMethod)}
                               {payment.paymentMethod === 'cash' ? 'Efectivo' :
                                payment.paymentMethod === 'transfer' ? 'Transferencia' : payment.paymentMethod}
@@ -436,10 +464,13 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={onClose}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
+            className="text-white"
+            style={{ backgroundColor: 'var(--sidebar-orange)' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             Cerrar
           </Button>

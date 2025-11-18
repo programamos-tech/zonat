@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* CSS Variables */
+:root {
+  --swatch--gray-050: #FAFAFA;
+  --swatch--gray-950: #141413;
+  --sidebar-orange: #5CA9F5;
+  --brand-primary: #5CA9F5;
+  --brand-primary-dark: #3C7DC2;
+  --brand-gradient-start: #DDEBFF;
+  --brand-gradient-end: #F4F8FF;
+}
+
 /* Force light mode styles */
 html.light {
   background-color: #ffffff !important;
@@ -10,22 +21,63 @@ html.light body {
   color: #171717 !important;
 }
 
-html.light * {
-  background-color: inherit !important;
-}
-
 /* Force dark mode styles */
 html.dark {
-  background-color: #0a0a0a !important;
+  background-color: var(--swatch--gray-950) !important;
 }
 
 html.dark body {
-  background-color: #0a0a0a !important;
+  background-color: var(--swatch--gray-950) !important;
   color: #ededed !important;
 }
 
-html.dark * {
-  background-color: inherit !important;
+/* Animaciones para loading */
+@keyframes loading-bounce {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.05);
+  }
+}
+
+@keyframes loading-dots {
+  0%, 20% {
+    opacity: 0;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.animate-loading-bounce {
+  animation: loading-bounce 2s ease-in-out infinite;
+}
+
+.animate-loading-dots::after {
+  content: '...';
+  animation: loading-dots 1.5s steps(4, end) infinite;
+}
+
+/* Animación sutil para el logo Oviler */
+@keyframes logo-entrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-logo-entrance {
+  animation: logo-entrance 0.8s ease-out forwards;
+  animation-delay: 0.5s;
+  opacity: 0;
 }
 
 /* Default styles */

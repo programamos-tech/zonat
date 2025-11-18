@@ -344,15 +344,15 @@ export function LogsTable({
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <RefreshCw className="h-5 w-5 md:h-6 md:w-6 text-gray-600 flex-shrink-0" />
+                  <RefreshCw className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
                   <span className="flex-shrink-0">Registro de Actividades</span>
                 </CardTitle>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
@@ -366,7 +366,8 @@ export function LogsTable({
                 <Button
                   onClick={onRefresh}
                   variant="outline"
-                  className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                  className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 rounded-xl border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-all duration-200 cursor-pointer"
+                  style={{ color: 'var(--sidebar-orange)' }}
                 >
                   <RefreshCw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                   <span className="hidden md:inline">Actualizar</span>
@@ -378,7 +379,7 @@ export function LogsTable({
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -395,7 +396,16 @@ export function LogsTable({
                     setLocalSearchTerm(value)
                   }
                 }}
-                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                style={{ fontFamily: 'var(--font-inter)' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.boxShadow = ''
+                }}
               />
             </div>
             <div>
@@ -409,7 +419,16 @@ export function LogsTable({
                     setLocalFilterModule(value)
                   }
                 }}
-                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+                style={{ fontFamily: 'var(--font-inter)' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.boxShadow = ''
+                }}
               >
                 {modules.map(module => (
                   <option key={module.value} value={module.value}>
@@ -423,7 +442,7 @@ export function LogsTable({
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-0">
           {filteredLogs.length === 0 ? (
             <div className="text-center py-12">
@@ -571,7 +590,7 @@ export function LogsTable({
                   return (
                     <div
                       key={log.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg p-3 space-y-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-colors shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                       onClick={() => onLogClick && onLogClick(log)}
                     >
                       <div className="flex items-start justify-between">
@@ -598,7 +617,7 @@ export function LogsTable({
                       </div>
                       
                       {log.description && (
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                           <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2" title={log.description}>
                             {log.description}
                           </p>
@@ -629,7 +648,7 @@ export function LogsTable({
               {/* Vista de Tabla para Desktop */}
               <div className="hidden md:block overflow-x-auto logs-table-tablet-container">
                 <table className="w-full table-fixed logs-table-tablet">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-[#1A1A1A]">
                   <tr>
                     <th className="w-12 md:w-16 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       #
@@ -654,7 +673,7 @@ export function LogsTable({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-[#1A1A1A] divide-y divide-gray-200 dark:divide-[rgba(255,255,255,0.06)]">
                   {filteredLogs.map((log, index) => {
                     // Mapear el tipo basado en el módulo y acción
                     const getLogType = (log: any) => {
@@ -740,7 +759,7 @@ export function LogsTable({
                     return (
                       <tr 
                         key={log.id} 
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        className="hover:bg-gray-50 dark:hover:bg-[#1F1F1F] cursor-pointer transition-colors"
                         onClick={() => onLogClick && onLogClick(log)}
                       >
                         <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 whitespace-nowrap">
@@ -982,7 +1001,7 @@ export function LogsTable({
                         </td>
                         <td className="pl-3 md:pl-4 pr-3 md:pr-4 py-2 md:py-4 text-center">
                           <div className="flex items-center justify-center">
-                            <Eye className="h-4 w-4 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors" />
+                            <Eye className="h-4 w-4 transition-colors" style={{ color: 'var(--sidebar-orange)' }} />
                           </div>
                         </td>
                       </tr>
@@ -998,7 +1017,7 @@ export function LogsTable({
 
       {/* Paginación */}
       {totalLogs > 20 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
           {/* Información de página */}
           <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
             <span className="hidden sm:inline">Mostrando </span>
@@ -1018,7 +1037,7 @@ export function LogsTable({
             <button
               onClick={() => onPageChange && onPageChange(currentPage - 1)}
               disabled={currentPage === 1 || loading}
-              className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95"
+              className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1F1F1F] active:scale-95 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
             >
               <span className="hidden sm:inline">Anterior</span>
               <span className="sm:hidden">‹</span>
@@ -1047,9 +1066,13 @@ export function LogsTable({
                         disabled={loading}
                         className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                           page === currentPage 
-                            ? "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-medium" 
-                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                            ? "font-medium" 
+                            : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
                         }`}
+                        style={page === currentPage ? {
+                          backgroundColor: 'rgba(92, 156, 124, 0.2)',
+                          color: 'var(--sidebar-orange)'
+                        } : undefined}
                       >
                         {page}
                       </button>
@@ -1062,7 +1085,7 @@ export function LogsTable({
             <button
               onClick={() => onPageChange && onPageChange(currentPage + 1)}
               disabled={currentPage >= Math.ceil(totalLogs / 20) || loading}
-              className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 active:scale-95"
+              className="px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1F1F1F] active:scale-95 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
             >
               <span className="hidden sm:inline">Siguiente</span>
               <span className="sm:hidden">›</span>

@@ -184,12 +184,12 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const isEdit = !!client
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-red-50 dark:bg-red-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center space-x-3">
-            <Users className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
+            <Users className="h-5 w-5 md:h-6 md:w-6" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
@@ -203,19 +203,19 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-[#1F1F1F]"
           >
             <X className="h-5 w-5 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white" />
           </Button>
         </div>
 
-        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-gray-900 min-h-0">
+        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-[#1A1A1A] min-h-0">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información Básica */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <User className="h-5 w-5 mr-2 text-red-600" />
+                  <User className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Información Básica
                 </CardTitle>
               </CardHeader>
@@ -228,10 +228,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.name ? 'border-red-400' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                      errors.name ? 'border-red-400' : ''
                     }`}
+                    style={{ fontFamily: 'var(--font-inter)' }}
                     placeholder="Ingresa el nombre del cliente"
+                    onFocus={(e) => {
+                      if (!errors.name) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.name) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                   />
                   {errors.name && (
                     <p className="mt-1 text-sm text-red-400">{errors.name}</p>
@@ -255,9 +268,10 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                                   onClick={() => handleInputChange('type', type.value)}
                                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                                     formData.type === type.value
-                                      ? 'border-red-500 bg-red-600 text-white'
-                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600'
+                                      ? 'text-white'
+                                      : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)] text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-[#1A1A1A] hover:bg-gray-100 dark:hover:bg-[#1F1F1F]'
                                   }`}
+                                  style={formData.type === type.value ? { backgroundColor: 'var(--sidebar-orange)', borderColor: 'var(--sidebar-orange)' } : undefined}
                                 >
                                   <Icon className={`h-4 w-4 ${
                                     formData.type === type.value ? 'text-white' : 'text-gray-500 dark:text-gray-400'
@@ -272,10 +286,10 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             </Card>
 
             {/* Información de Contacto */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Mail className="h-5 w-5 mr-2 text-red-600" />
+                  <Mail className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Información de Contacto
                 </CardTitle>
               </CardHeader>
@@ -288,10 +302,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.document}
                     onChange={(e) => handleInputChange('document', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.document ? 'border-red-400' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                      errors.document ? 'border-red-400' : ''
                     }`}
+                    style={{ fontFamily: 'var(--font-inter)' }}
                     placeholder="12345678-9 o 900123456-7"
+                    onFocus={(e) => {
+                      if (!errors.document) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.document) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                   />
                   {errors.document && (
                     <p className="mt-1 text-sm text-red-400">{errors.document}</p>
@@ -306,10 +333,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.phone ? 'border-red-400' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                      errors.phone ? 'border-red-400' : ''
                     }`}
+                    style={{ fontFamily: 'var(--font-inter)' }}
                     placeholder="+52 55 1234 5678"
+                    onFocus={(e) => {
+                      if (!errors.phone) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.phone) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                   />
                   {errors.phone && (
                     <p className="mt-1 text-sm text-red-400">{errors.phone}</p>
@@ -324,10 +364,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.email ? 'border-red-400' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                      errors.email ? 'border-red-400' : ''
                     }`}
+                    style={{ fontFamily: 'var(--font-inter)' }}
                     placeholder="cliente@ejemplo.com o déjalo vacío"
+                    onFocus={(e) => {
+                      if (!errors.email) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.email) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                   />
                   {errors.email && (
                     <p className="mt-1 text-sm text-red-400">{errors.email}</p>
@@ -340,10 +393,10 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             </Card>
 
             {/* Información de Ubicación */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-red-600" />
+                  <MapPin className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Información de Ubicación
                 </CardTitle>
               </CardHeader>
@@ -356,10 +409,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.address ? 'border-red-400' : 'border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                      errors.address ? 'border-red-400' : ''
                     }`}
+                    style={{ fontFamily: 'var(--font-inter)' }}
                     placeholder="Calle 30 #25-15, Barrio La Palma"
+                    onFocus={(e) => {
+                      if (!errors.address) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.address) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                   />
                   {errors.address && (
                     <p className="mt-1 text-sm text-red-400">{errors.address}</p>
@@ -375,10 +441,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       type="text"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                        errors.city ? 'border-red-400' : 'border-gray-600'
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                        errors.city ? 'border-red-400' : ''
                       }`}
+                      style={{ fontFamily: 'var(--font-inter)' }}
                       placeholder="Sincelejo"
+                      onFocus={(e) => {
+                        if (!errors.city) {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.city) {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }
+                      }}
                     />
                     {errors.city && (
                       <p className="mt-1 text-sm text-red-400">{errors.city}</p>
@@ -393,10 +472,23 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       type="text"
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                        errors.state ? 'border-red-400' : 'border-gray-600'
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] border-gray-300 dark:border-[rgba(255,255,255,0.06)] placeholder-gray-500 dark:placeholder-gray-400 ${
+                        errors.state ? 'border-red-400' : ''
                       }`}
+                      style={{ fontFamily: 'var(--font-inter)' }}
                       placeholder="Sucre"
+                      onFocus={(e) => {
+                        if (!errors.state) {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }
+                      }}
+                      onBlur={(e) => {
+                        if (!errors.state) {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }
+                      }}
                     />
                     {errors.state && (
                       <p className="mt-1 text-sm text-red-400">{errors.state}</p>
@@ -407,10 +499,10 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
             </Card>
 
             {/* Estado */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Phone className="h-5 w-5 mr-2 text-red-600" />
+                  <Phone className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Estado del Cliente
                 </CardTitle>
               </CardHeader>
@@ -423,7 +515,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       value="active"
                       checked={formData.status === 'active'}
                       onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      className="h-4 w-4 border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                      style={{ accentColor: 'var(--sidebar-orange)' }}
                     />
                     <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
                   </label>
@@ -434,7 +527,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       value="inactive"
                       checked={formData.status === 'inactive'}
                       onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700"
+                      className="h-4 w-4 border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                      style={{ accentColor: 'var(--sidebar-orange)' }}
                     />
                     <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Inactivo</span>
                   </label>
@@ -445,17 +539,28 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-end space-x-4 p-4 md:p-6 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={handleClose}
             variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+            className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+              e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = ''
+              e.currentTarget.style.backgroundColor = ''
+            }}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
-            className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 shadow-md"
+            className="text-white font-medium px-6 py-2 shadow-md"
+            style={{ backgroundColor: 'var(--sidebar-orange)' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             {isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
           </Button>

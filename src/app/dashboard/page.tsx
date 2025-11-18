@@ -752,9 +752,9 @@ export default function DashboardPage() {
       .filter(day => day.amount > 0) // Solo mostrar días con ventas
 
     const paymentMethodData = [
-      { name: 'Efectivo', value: cashRevenue, color: '#10B981' },
-      { name: 'Transferencia', value: transferRevenue, color: '#3B82F6' },
-      { name: 'Crédito', value: creditRevenue, color: '#F59E0B' }
+      { name: 'Efectivo', value: cashRevenue, color: '#84C4FF' },
+      { name: 'Transferencia', value: transferRevenue, color: '#5CA9F5' },
+      { name: 'Crédito', value: creditRevenue, color: '#3C7DC2' }
     ].filter(item => item.value > 0)
 
     const topProductsChart = topProducts.slice(0, 5).map(product => ({
@@ -857,7 +857,7 @@ export default function DashboardPage() {
   if (isInitialLoading && allSales.length === 0 && allProducts.length === 0) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
+        <div className="p-4 md:p-6 min-h-screen bg-[var(--swatch--gray-050)] dark:bg-[var(--swatch--gray-950)]" style={{ fontFamily: 'var(--font-inter)' }}>
           {/* Header Skeleton */}
           <div className="mb-4 md:mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -874,7 +874,7 @@ export default function DashboardPage() {
           {/* Cards Skeleton */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm">
+              <div key={i} className="bg-white dark:bg-[#1A1A1A] rounded-xl p-4 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]">
                 <div className="flex items-center justify-between mb-4">
                   <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
                   <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
@@ -890,9 +890,12 @@ export default function DashboardPage() {
             <div className="text-center">
               {/* Spinner minimalista */}
               <div className="w-16 h-16 mx-auto mb-6">
-                <div className="w-full h-full border-2 border-green-200 dark:border-green-900/30 rounded-full border-t-green-600 dark:border-t-green-400 animate-spin"></div>
+                <div className="w-full h-full border-2 rounded-full animate-spin" style={{ 
+                  borderColor: 'rgba(204, 120, 92, 0.2)',
+                  borderTopColor: 'var(--sidebar-orange)'
+                }}></div>
               </div>
-              <p className="text-lg font-medium text-green-600 dark:text-green-400 mb-1">
+              <p className="text-lg font-medium mb-1" style={{ color: 'var(--sidebar-orange)' }}>
                 Cargando datos del dashboard...
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -907,16 +910,19 @@ export default function DashboardPage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen relative">
+      <div className="p-4 md:p-6 min-h-screen relative bg-[var(--swatch--gray-050)] dark:bg-[var(--swatch--gray-950)]" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Overlay de carga para actualizaciones */}
       {(isRefreshing || isFiltering) && (
-        <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div className="absolute inset-0 backdrop-blur-sm z-50 flex items-center justify-center dark:bg-[var(--swatch--gray-950)]/80" style={{ backgroundColor: 'rgba(250, 250, 250, 0.8)' }}>
           <div className="flex flex-col items-center justify-center -mt-[200px]">
             {/* Spinner minimalista */}
             <div className="w-12 h-12 mb-4">
-              <div className="w-full h-full border-2 border-green-200 dark:border-green-900/30 rounded-full border-t-green-600 dark:border-t-green-400 animate-spin"></div>
+              <div className="w-full h-full border-2 rounded-full animate-spin" style={{ 
+                borderColor: 'rgba(204, 120, 92, 0.2)',
+                borderTopColor: 'var(--sidebar-orange)'
+              }}></div>
             </div>
-            <p className="text-base font-medium text-green-600 dark:text-green-400">
+            <p className="text-base font-medium" style={{ color: 'var(--sidebar-orange)' }}>
               {isFiltering ? 'Cargando datos del día...' : 'Actualizando dashboard...'}
             </p>
           </div>
@@ -924,21 +930,24 @@ export default function DashboardPage() {
       )}
 
       {/* Header con estilo de las otras páginas */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-4 md:mb-6">
+      <Card className="bg-white dark:bg-[#1A1A1A] rounded-xl border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] mb-4 md:mb-6">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 flex-shrink-0" />
+                <CardTitle className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white flex items-center gap-2 flex-wrap">
+                  <BarChart3 className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0 text-[#5CA9F5]" />
                   <span className="flex-shrink-0">Dashboard</span>
                   {(isRefreshing || isFiltering) && (
-                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs flex-shrink-0">
+                    <Badge className="text-xs flex-shrink-0" style={{ 
+                      backgroundColor: 'rgba(204, 120, 92, 0.1)',
+                      color: 'var(--sidebar-orange)'
+                    }}>
                       Actualizando...
                     </Badge>
                   )}
                 </CardTitle>
-                <div className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 mt-1">
+                <div className="text-xs md:text-base font-normal text-gray-500 dark:text-gray-400 mt-1">
                   <span className="hidden md:inline">Total Ingresos: </span>
                   <span className="font-semibold">
                     {new Intl.NumberFormat('es-CO', { 
@@ -949,7 +958,7 @@ export default function DashboardPage() {
                   </span>
                   <span className="md:hidden"> hoy</span>
                 </div>
-                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
+                <p className="text-xs md:text-base text-gray-500 dark:text-gray-300 mt-1 hidden md:block">
                   Resumen ejecutivo y métricas de rendimiento
                 </p>
               </div>
@@ -961,7 +970,16 @@ export default function DashboardPage() {
                       <select
                         value={dateFilter}
                         onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
-                        className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 md:px-3 py-1.5 md:py-2 pr-7 md:pr-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full appearance-none bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg px-2.5 md:px-3 py-1.5 md:py-2 pr-7 md:pr-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 focus:outline-none"
+                        style={{
+                          '--tw-ring-color': 'var(--sidebar-orange)'
+                        } as React.CSSProperties}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = ''
+                        }}
                       >
                         {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
                           <option key={filter} value={filter}>
@@ -987,12 +1005,15 @@ export default function DashboardPage() {
                     )}
                   </>
                 ) : (
-                  <div className="flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                    <Calendar className="h-3 w-3 md:h-4 md:w-4 text-emerald-600" />
-                    <span className="text-xs md:text-sm font-medium text-emerald-700 dark:text-emerald-300 hidden sm:inline">
+                  <div className="flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 rounded-lg border" style={{ 
+                    backgroundColor: 'rgba(204, 120, 92, 0.1)',
+                    borderColor: 'rgba(204, 120, 92, 0.3)'
+                  }}>
+                    <Calendar className="h-3 w-3 md:h-4 md:w-4" style={{ color: 'var(--sidebar-orange)' }} />
+                    <span className="text-xs md:text-sm font-medium hidden sm:inline" style={{ color: 'var(--sidebar-orange)' }}>
                       Vista del día actual
                     </span>
-                    <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 sm:hidden">
+                    <span className="text-xs font-medium sm:hidden" style={{ color: 'var(--sidebar-orange)' }}>
                       Hoy
                     </span>
                   </div>
@@ -1001,14 +1022,17 @@ export default function DashboardPage() {
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   variant="outline"
-                  className="w-full sm:w-auto justify-center sm:justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                  className="w-full sm:w-auto justify-center sm:justify-center gap-2 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 rounded-xl border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-all duration-200 cursor-pointer"
+                  style={{ 
+                    color: 'var(--sidebar-orange)'
+                  }}
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="hidden md:inline">Actualizar</span>
+                  <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} style={{ color: 'var(--sidebar-orange)' }} />
+                  <span className="hidden md:inline" style={{ color: 'var(--sidebar-orange)' }}>Actualizar</span>
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
+            <p className="text-xs text-gray-500 dark:text-gray-300 md:hidden">
               Resumen ejecutivo y métricas
             </p>
           </div>
@@ -1020,14 +1044,14 @@ export default function DashboardPage() {
         {/* Total Ingresos */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-1.5 md:p-2 rounded-lg">
+              <BarChart3 className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
             </div>
             <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
+              <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Total Ingresos</span>
               <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1035,14 +1059,14 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+          <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
                     minimumFractionDigits: 0 
             }).format(metrics.totalRevenue)}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
             {metrics.totalSales} ventas realizadas
                 </p>
               </div>
@@ -1050,14 +1074,14 @@ export default function DashboardPage() {
         {/* Efectivo */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+            <div className="p-1.5 md:p-2 rounded-lg">
+              <DollarSign className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
             </div>
             <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
+              <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Efectivo</span>
               <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1065,14 +1089,14 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+          <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
               minimumFractionDigits: 0 
             }).format(metrics.cashRevenue)}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
@@ -1080,14 +1104,14 @@ export default function DashboardPage() {
         {/* Transferencia */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
+            <div className="p-1.5 md:p-2 rounded-lg">
+              <TrendingUp className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
             </div>
             <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
+              <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Transferencia</span>
               <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1095,14 +1119,14 @@ export default function DashboardPage() {
               </p>
             </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+          <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
                   {new Intl.NumberFormat('es-CO', { 
                     style: 'currency', 
                     currency: 'COP',
                     minimumFractionDigits: 0 
             }).format(metrics.transferRevenue)}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
                 </p>
               </div>
@@ -1113,14 +1137,14 @@ export default function DashboardPage() {
             // Facturas Anuladas para Super Admin
             <div 
               onClick={() => setShowCancelledModal(true)}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+              className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
             >
               <div className="flex items-center justify-between mb-2 md:mb-4">
-                <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                  <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
+                <div className="p-1.5 md:p-2 rounded-lg">
+                  <XCircle className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+                  <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Facturas Anuladas</span>
                   <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                     {effectiveDateFilter === 'today' ? 'Hoy' : 
                      effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1128,10 +1152,10 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+              <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
                 {metrics.cancelledSales}
               </p>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
                 de {metrics.totalSales} ventas totales
               </p>
             </div>
@@ -1139,14 +1163,14 @@ export default function DashboardPage() {
             // Crédito para Admin (no Super Admin)
             <div 
               onClick={() => router.push('/payments')}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+              className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
             >
               <div className="flex items-center justify-between mb-2 md:mb-4">
-                <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+                <div className="p-1.5 md:p-2 rounded-lg">
+                  <CreditCard className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+                  <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Crédito</span>
                   <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                     {effectiveDateFilter === 'today' ? 'Hoy' : 
                      effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1154,14 +1178,14 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+              <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
                 {new Intl.NumberFormat('es-CO', { 
                   style: 'currency', 
                   currency: 'COP',
                   minimumFractionDigits: 0 
                 }).format(metrics.creditRevenue)}
               </p>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
                 {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
               </p>
             </div>
@@ -1184,27 +1208,27 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer flex flex-col h-full border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
               </div>
               <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
+                <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Dinero Afuera</span>
                 <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                   {isSuperAdmin ? 'Total' : 'Hoy'}
                 </p>
               </div>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
               {new Intl.NumberFormat('es-CO', { 
                 style: 'currency', 
                 currency: 'COP',
                 minimumFractionDigits: 0 
               }).format(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">
               {isSuperAdmin 
                 ? `${metrics.pendingCreditsCount} créditos pendientes/parciales`
                 : `${metrics.dailyCreditsCount || 0} créditos del día`
@@ -1212,14 +1236,14 @@ export default function DashboardPage() {
             </p>
 
             {!isSuperAdmin && metrics.recentPendingCredits.length > 0 ? (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-800 space-y-1.5 md:space-y-2 mt-auto">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
                   Últimos créditos pendientes
                 </div>
                 {metrics.recentPendingCredits.map((credit) => (
                   <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                     <div className="flex flex-col overflow-hidden">
-                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                      <span className="text-gray-500 dark:text-gray-400 truncate">
                         • {credit.clientName}
                       </span>
                       <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
@@ -1227,7 +1251,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex flex-col items-end text-right flex-shrink-0">
-                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                      <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                         ${(credit.pendingAmount || 0).toLocaleString('es-CO')}
                       </span>
                       {credit.reference && (
@@ -1254,15 +1278,15 @@ export default function DashboardPage() {
         {/* Garantías Completadas */}
         <div 
           onClick={() => router.push('/warranties')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+          className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer flex flex-col h-full border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
         >
           <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Shield className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
+            <div className="p-1.5 md:p-2 rounded-lg">
+              <Shield className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
             </div>
             <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+          <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
             {metrics.completedWarranties}
           </p>
           <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
@@ -1271,13 +1295,13 @@ export default function DashboardPage() {
 
           {metrics.recentWarrantyReplacements.length > 0 ? (
             <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+              <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
                 Últimas garantías entregadas
               </div>
               {metrics.recentWarrantyReplacements.map((item) => (
                 <div key={item.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                   <div className="flex flex-col overflow-hidden">
-                    <span className="text-gray-600 dark:text-gray-400 truncate">
+                    <span className="text-gray-500 dark:text-gray-400 truncate">
                       • {item.deliveredName}{item.reference ? ` (${item.reference})` : ''}
                     </span>
                     <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
@@ -1285,7 +1309,7 @@ export default function DashboardPage() {
                     </span>
                   </div>
                   <div className="flex flex-col items-end flex-shrink-0 text-right">
-                    <span className="text-purple-600 dark:text-purple-400 font-semibold">
+                    <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                       -{item.quantityDelivered} und
                     </span>
                     {item.value > 0 && (
@@ -1310,14 +1334,14 @@ export default function DashboardPage() {
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer flex flex-col h-full border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-[#5CA9F5]" />
               </div>
               <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
+                <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Ganancia Bruta</span>
                 <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                   {effectiveDateFilter === 'today' ? 'Hoy' : 
                    effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1325,21 +1349,21 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
               {new Intl.NumberFormat('es-CO', { 
                 style: 'currency', 
                 currency: 'COP',
                 minimumFractionDigits: 0 
               }).format(metrics.grossProfit)}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">
               Beneficio por ventas realizadas
             </p>
             
             {/* Lista de ventas más rentables */}
             {metrics.topProfitableSales.length > 0 && (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-800 space-y-1.5 md:space-y-2 mt-auto">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
                   Top ventas más rentables
                 </div>
                 {metrics.topProfitableSales.map((sale, index) => {
@@ -1359,7 +1383,7 @@ export default function DashboardPage() {
                   return (
                     <div key={sale.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                       <div className="flex flex-col overflow-hidden">
-                        <span className="text-gray-600 dark:text-gray-400 truncate">
+                        <span className="text-gray-500 dark:text-gray-400 truncate">
                           • {clientName}
                         </span>
                         <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
@@ -1367,7 +1391,7 @@ export default function DashboardPage() {
                         </span>
                       </div>
                       <div className="flex flex-col items-end text-right flex-shrink-0">
-                        <span className="text-green-600 dark:text-green-400 font-semibold">
+                        <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                           +${sale.profit.toLocaleString('es-CO')}
                         </span>
                         {invoiceNumber && (
@@ -1388,34 +1412,34 @@ export default function DashboardPage() {
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/products')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer flex flex-col h-full border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-                <Package className="h-4 w-4 md:h-5 md:w-5 text-cyan-600 dark:text-cyan-400" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <Package className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
               </div>
               <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
+                <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Productos en Stock</span>
                 <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">Stock Total</p>
               </div>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
               {metrics.totalProductsCount}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">
               {metrics.totalProducts.toLocaleString('es-CO')} unidades en stock • {metrics.lowStockProducts} con stock bajo
             </p>
             
             {/* Lista de productos más vendidos recientemente */}
             {metrics.recentTopProducts && metrics.recentTopProducts.length > 0 && (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-800 space-y-1.5 md:space-y-2 mt-auto">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
                   Productos más vendidos recientemente
                 </div>
                 {metrics.recentTopProducts.map((item) => (
                   <div key={item.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                     <div className="flex flex-col overflow-hidden">
-                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                      <span className="text-gray-500 dark:text-gray-400 truncate">
                         • {item.productName}
                       </span>
                       <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
@@ -1423,7 +1447,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex flex-col items-end text-right flex-shrink-0">
-                      <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
+                      <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                         {item.quantity} und
                       </span>
                       {item.invoiceNumber && (
@@ -1436,7 +1460,7 @@ export default function DashboardPage() {
                 ))}
                 <div className="pt-1 border-t border-dashed border-gray-200 dark:border-gray-600 mt-2">
                   <div>
-                    <p className="text-base md:text-lg font-semibold text-cyan-600 dark:text-cyan-400">
+                    <p className="text-base md:text-lg font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                       ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
                     </p>
                     <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
@@ -1462,30 +1486,30 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer flex flex-col h-full border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
               </div>
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Créditos</span>
+              <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Créditos</span>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
               {metrics.pendingCreditsCount || 0}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">
               créditos pendientes/parciales
             </p>
             
             {metrics.recentPendingCredits.length > 0 ? (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-800 space-y-1.5 md:space-y-2 mt-auto">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">
                   Créditos más recientes
                 </div>
                 {metrics.recentPendingCredits.map((credit) => (
                   <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
                     <div className="flex flex-col overflow-hidden">
-                      <span className="text-gray-600 dark:text-gray-400 truncate">
+                      <span className="text-gray-500 dark:text-gray-400 truncate">
                         • {credit.clientName}
                       </span>
                       <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
@@ -1493,7 +1517,7 @@ export default function DashboardPage() {
                       </span>
                     </div>
                     <div className="flex flex-col items-end text-right flex-shrink-0">
-                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
+                      <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                         ${(credit.pendingAmount || 0).toLocaleString('es-CO')}
                       </span>
                       {credit.reference && (
@@ -1504,9 +1528,9 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-1 border-t border-dashed border-gray-200 dark:border-gray-600">
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total a hoy:</span>
-                  <span className="text-base md:text-lg font-bold text-orange-600 dark:text-orange-400">
+                <div className="flex items-center justify-between pt-1 border-t border-dashed border-gray-200 dark:border-gray-800">
+                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">Total a hoy:</span>
+                  <span className="text-base md:text-lg font-bold" style={{ color: 'var(--sidebar-orange)' }}>
                     ${(metrics.totalDebt || 0).toLocaleString('es-CO')}
                   </span>
                 </div>
@@ -1522,33 +1546,33 @@ export default function DashboardPage() {
         ) : (
           // Facturas Anuladas para otros usuarios
           <div 
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-[#1A1A1A] rounded-xl p-3 md:p-6 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-md dark:hover:shadow-[0_2px_6px_rgba(0,0,0,0.6)] transition-all duration-200 cursor-pointer border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]"
             onClick={() => setShowCancelledModal(true)}
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <XCircle className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#2D2D2D' }} />
               </div>
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+              <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Facturas Anuladas</span>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-lg md:text-2xl font-semibold text-gray-600 dark:text-white mb-0.5 md:mb-1">
               {metrics.cancelledSales}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-2 md:mb-3">
               de {metrics.totalSales} ventas totales
             </p>
             
             {/* Resumen adicional */}
             <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
               <div className="flex items-center justify-between text-xs md:text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
+                <span className="text-gray-500 dark:text-gray-400">Tasa:</span>
                 <span className="font-semibold text-red-600 dark:text-red-400">
                   {metrics.totalSales > 0 ? ((metrics.cancelledSales / metrics.totalSales) * 100).toFixed(1) : 0}%
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs md:text-sm">
-                <span className="text-gray-600 dark:text-gray-400">Valor perdido:</span>
-                <span className="font-semibold text-orange-600 dark:text-orange-400">
+                <span className="text-gray-500 dark:text-gray-400">Valor perdido:</span>
+                <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                   ${metrics.lostValue.toLocaleString('es-CO')}
                 </span>
               </div>
@@ -1556,7 +1580,7 @@ export default function DashboardPage() {
                 <button
                   type="button"
                   onClick={() => setShowCancelledModal(true)}
-                  className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
+                  className="text-[10px] md:text-xs font-medium flex items-center justify-center gap-1 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" style={{ color: 'var(--sidebar-orange)' }}
                 >
                   <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
                   <span className="hidden sm:inline">Haz clic para ver análisis detallado</span>
@@ -1571,14 +1595,14 @@ export default function DashboardPage() {
       {/* Gráficos y estadísticas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
         {/* Gráfico de ventas por día */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="p-3 md:p-6 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]">
+          <div className="p-3 md:p-6 border-b border-gray-100/50 dark:border-gray-800/30">
             <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <TrendingUp className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
               </div>
               <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ventas por Día</span>
+                <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 uppercase tracking-wide font-normal">Ventas por Día</span>
                 <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
                   {effectiveDateFilter === 'today' ? 'Hoy' : 
                    effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
@@ -1586,7 +1610,7 @@ export default function DashboardPage() {
                 </p>
               </div>
             </div>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-xs md:text-sm text-gray-400 dark:text-gray-500">
               {metrics.salesChartData.length > 0 
                 ? `${metrics.salesChartData.length} días con ventas en el período seleccionado`
                 : 'No hay ventas en el período seleccionado'
@@ -1599,8 +1623,8 @@ export default function DashboardPage() {
                 <BarChart data={metrics.salesChartData} margin={{ top: 10, right: 10, left: 5, bottom: 5 }}>
                   <defs>
                     <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                      <stop offset="5%" stopColor="#5CA9F5" stopOpacity={0.8}/>
+                      <stop offset="95%" stopColor="#5CA9F5" stopOpacity={0.2}/>
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
@@ -1652,14 +1676,14 @@ export default function DashboardPage() {
                     dataKey="amount" 
                     fill="url(#colorAmount)" 
                     radius={[4, 4, 0, 0]}
-                    stroke="#3B82F6"
+                    stroke="#3C7DC2"
                     strokeWidth={1}
                   />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
               <div className="text-center py-12">
-                <TrendingUp className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                <TrendingUp className="h-12 w-12 mx-auto mb-4 text-[#5CA9F5]" />
                 <p className="text-gray-500">No hay ventas en este período</p>
               </div>
             )}
@@ -1667,13 +1691,13 @@ export default function DashboardPage() {
         </div>
 
         {/* Gráfico de métodos de pago */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-[#1A1A1A] rounded-xl shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] border border-gray-100/50 dark:border-[rgba(255,255,255,0.06)]">
+          <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-100/50 dark:border-gray-800/30">
             <div className="flex items-center gap-2 md:gap-3">
-              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
-                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
+              <div className="p-1.5 md:p-2 rounded-lg">
+                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-[#5CA9F5]" />
               </div>
-              <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Métodos de Pago</h2>
+              <h2 className="text-base md:text-lg font-semibold text-gray-600 dark:text-white">Métodos de Pago</h2>
             </div>
           </div>
           <div className="p-3 md:p-6">
@@ -1720,9 +1744,9 @@ export default function DashboardPage() {
                       className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" 
                       style={{ backgroundColor: item.color }}
                     ></div>
-                    <span className="text-gray-600 dark:text-white">{item.name}</span>
+                    <span className="text-gray-500 dark:text-white">{item.name}</span>
                   </div>
-                  <span className="font-medium text-gray-900 dark:text-white text-xs md:text-sm">
+                  <span className="font-medium text-gray-600 dark:text-white text-xs md:text-sm">
                     {new Intl.NumberFormat('es-CO', { 
                       style: 'currency', 
                       currency: 'COP',
@@ -1737,13 +1761,13 @@ export default function DashboardPage() {
       </div>
 
       {/* Productos más vendidos con gráfico de barras */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-        <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700">
+      <div className="bg-white/60 dark:bg-[var(--swatch--gray-950)]/60 backdrop-blur-sm rounded-xl">
+        <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-1.5 md:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <Package className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 dark:text-emerald-400" />
+            <div className="p-1.5 md:p-2 rounded-lg">
+              <Package className="h-4 w-4 md:h-5 md:w-5" style={{ color: 'var(--sidebar-orange)' }} />
             </div>
-            <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Productos Más Vendidos</h2>
+            <h2 className="text-base md:text-lg font-semibold text-gray-600 dark:text-white">Productos Más Vendidos</h2>
           </div>
         </div>
         <div className="p-3 md:p-6">
@@ -1780,12 +1804,12 @@ export default function DashboardPage() {
                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
                   }}
                 />
-                <Bar dataKey="cantidad" fill="#10B981" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="cantidad" fill="#5CA9F5" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="text-center py-12">
-              <Package className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
+              <Package className="h-12 w-12 mx-auto mb-4" style={{ color: 'var(--sidebar-orange)' }} />
               <p className="text-gray-500 dark:text-gray-400">No hay productos vendidos en este período</p>
             </div>
           )}

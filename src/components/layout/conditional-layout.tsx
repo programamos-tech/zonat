@@ -3,6 +3,8 @@
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/ui/sidebar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
+import { UserNavbar } from '@/components/ui/user-navbar'
+import { SupportButton } from '@/components/ui/support-button'
 import { useState, useEffect } from 'react'
 
 interface ConditionalLayoutProps {
@@ -19,18 +21,20 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   }
   
   // Para todas las demás páginas, mostrar el layout completo con sidebar
-  return (
-    <ProtectedRoute>
-      <div className="flex h-screen bg-white dark:bg-gray-900">
-        <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
-        <main className={`flex-1 xl:ml-64 relative z-10 bg-white dark:bg-gray-900 transition-all duration-300 ${
-          isMobileMenuOpen ? 'blur-sm' : ''
-        }`}>
-          <div className="h-full overflow-auto bg-white dark:bg-gray-900">
-            {children}
-          </div>
-        </main>
-      </div>
-    </ProtectedRoute>
-  )
+        return (
+          <ProtectedRoute>
+            <div className="flex h-screen">
+              <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
+              <main className={`flex-1 xl:ml-64 relative z-10 transition-all duration-300 ${
+                isMobileMenuOpen ? 'blur-sm' : ''
+              }`}>
+                <UserNavbar />
+                <div className="h-full overflow-auto pt-20">
+                  {children}
+                </div>
+                <SupportButton />
+              </main>
+            </div>
+          </ProtectedRoute>
+        )
 }

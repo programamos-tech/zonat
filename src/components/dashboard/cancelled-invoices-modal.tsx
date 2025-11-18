@@ -242,7 +242,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
         <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
             <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg flex-shrink-0">
-              <XCircle className="h-5 w-5 md:h-8 md:w-8 text-red-500 dark:text-red-400" />
+              <XCircle className="h-5 w-5 md:h-8 md:w-8" style={{ color: '#CC785C' }} />
             </div>
             <div className="min-w-0 flex-1">
               <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
@@ -275,7 +275,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
-                      <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-500 dark:text-red-400" />
+                      <XCircle className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#CC785C' }} />
                     </div>
                     <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
                       Total Anuladas
@@ -294,7 +294,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                      <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+                      <DollarSign className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#CC785C' }} />
                     </div>
                     <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">
                       Valor Perdido
@@ -315,7 +315,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
           <div className="flex-1 overflow-y-auto p-3 md:p-6">
             <div className="mb-4">
               <h3 className="text-base md:text-lg font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <FileText className="h-4 w-4 md:h-5 md:w-5 text-red-500 dark:text-red-400" />
+                <FileText className="h-4 w-4 md:h-5 md:w-5" style={{ color: '#CC785C' }} />
                 Facturas Anuladas
               </h3>
             </div>
@@ -364,7 +364,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
                             
                             <div className="md:col-span-2 mt-2 pt-2 border-t border-red-100 dark:border-red-900/20">
                               <div className="flex items-start gap-2">
-                                <FileText className="h-3 w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0 text-red-500 dark:text-red-400" />
+                                <FileText className="h-3 w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0" style={{ color: '#CC785C' }} />
                                 <div className="flex-1 min-w-0">
                                   <span className="font-medium text-gray-700 dark:text-gray-300 block mb-1">Motivo:</span>
                                   <p className="text-gray-900 dark:text-white bg-white dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">

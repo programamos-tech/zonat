@@ -447,7 +447,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative my-4 xl:my-0">
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)] relative my-4 xl:my-0" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
         <div className="relative flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
@@ -465,7 +465,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="flex relative z-10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 h-10 w-10 p-0 items-center justify-center bg-white dark:bg-gray-800 rounded-full shadow-md border-2 border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="flex relative z-10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 h-10 w-10 p-0 items-center justify-center bg-white dark:bg-[#1A1A1A] rounded-full shadow-md border-2 border-gray-300 dark:border-[rgba(255,255,255,0.06)] hover:bg-gray-50 dark:hover:bg-[#1F1F1F]"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -475,7 +475,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         <div className="flex-1 p-4 md:p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             {/* Información General */}
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+            <div className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 border-b border-gray-200 dark:border-gray-700">
                 <FileText className="h-4 w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" />
                 <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Información General</h3>
@@ -503,7 +503,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
               
             {/* Información específica según el tipo de acción */}
             {log.details && (
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+              <div className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 border-b border-gray-200 dark:border-gray-700">
                   <TypeIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" />
                   <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Detalles de la Acción</h3>

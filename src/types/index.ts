@@ -261,3 +261,127 @@ export interface DashboardStats {
   pendingPayments: number
   lowStockProducts: number
 }
+
+export interface Supplier {
+  id: string
+  name: string
+  nit?: string
+  email?: string
+  phone: string
+  address?: string
+  city?: string
+  state?: string
+  contactPerson?: string
+  contactPhone?: string
+  paymentTerms: 'cash' | 'credit'
+  creditDays?: number
+  rating?: number
+  status: 'active' | 'inactive'
+  notes?: string
+  totalPurchased?: number
+  totalOrders?: number
+  averageDeliveryDays?: number
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PurchaseOrderItem {
+  id: string
+  purchaseOrderId: string
+  productId: string
+  productName: string
+  productReference?: string
+  quantity: number
+  unitPrice: number
+  receivedQuantity?: number
+  total: number
+}
+
+export interface PurchaseOrder {
+  id: string
+  orderNumber: string
+  supplierId: string
+  supplierName: string
+  status: 'pending' | 'in_transit' | 'received' | 'partial' | 'cancelled'
+  estimatedDeliveryDate?: string
+  receivedDate?: string
+  total: number
+  items: PurchaseOrderItem[]
+  notes?: string
+  invoiceNumber?: string
+  createdBy?: string
+  createdByName?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export type AdminClientStatus = 'active' | 'trial' | 'onboarding' | 'suspended'
+
+export interface AdminClientUsage {
+  totalUsers: number
+  activeUsers: number
+  totalReferences: number
+  activeReferences: number
+  warehouses: number
+  monthlyTransactions: number
+}
+
+export interface AdminClientBilling {
+  plan: 'starter' | 'growth' | 'enterprise'
+  baseFee: number
+  perUserFee: number
+  perReferenceFee: number
+  nextInvoiceDate: string
+  lastInvoiceAmount: number
+  lastInvoiceStatus: 'paid' | 'pending' | 'overdue'
+  currency: 'COP' | 'USD'
+}
+
+export interface AdminClientCredential {
+  portalUrl: string
+  adminEmail: string
+  tempPassword?: string
+  lastLogin?: string
+}
+
+export interface AdminClientContact {
+  name: string
+  role?: string
+  email: string
+  phone?: string
+  whatsapp?: string
+}
+
+export interface AdminClient {
+  id: string
+  businessName: string
+  brandName?: string
+  ownerName: string
+  nit: string
+  email: string
+  phone: string
+  address: string
+  city: string
+  department?: string
+  country: string
+  industry: string
+  status: AdminClientStatus
+  createdAt: string
+  goLiveDate?: string
+  tags?: string[]
+  usage: AdminClientUsage
+  billing: AdminClientBilling
+  credentials: AdminClientCredential
+  contacts: AdminClientContact[]
+  notes?: string
+}
+
+export interface AdminClientStats {
+  totalClients: number
+  activeClients: number
+  trialClients: number
+  suspendedClients: number
+  totalUsers: number
+  totalReferences: number
+  totalRevenuePotential: number
+}

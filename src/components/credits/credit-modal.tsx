@@ -495,12 +495,12 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-orange-600" />
+            <CreditCard className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Crear Venta a Crédito
@@ -514,22 +514,22 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-[#1A1A1A]">
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4 md:gap-6">
             {/* Columna izquierda - Secciones grandes */}
             <div className="xl:col-span-2 space-y-4 md:space-y-6">
               {/* Productos */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Package className="h-5 w-5 text-orange-600" />
+                  <Package className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Productos
                 </CardTitle>
               </CardHeader>
@@ -549,18 +549,27 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         setShowProductDropdown(e.target.value.length > 0)
                       }}
                       onKeyDown={handleProductSearchKeyDown}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                      style={{ fontFamily: 'var(--font-inter)' }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }}
                     />
                     
                     {showProductDropdown && productSearch && (
-                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
+                    <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-[#1A1A1A] border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-lg max-h-48 overflow-y-auto z-10">
                       {isSearchingProducts ? (
                         <div className="p-4 text-center">
-                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600 mx-auto mb-2"></div>
-                          <div className="text-sm text-gray-500">Buscando productos...</div>
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 mx-auto mb-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400">Buscando productos...</div>
                         </div>
                       ) : visibleProducts.length === 0 ? (
-                        <div className="p-4 text-center text-gray-500 text-sm">
+                        <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                           No se encontraron productos
                         </div>
                       ) : (
@@ -571,32 +580,45 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
                           const containerClasses = [
                             'p-3',
-                            'border-b border-gray-200 dark:border-gray-600 last:border-b-0',
+                            'border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] last:border-b-0',
                             'rounded-lg',
                             'transition-colors duration-150 ease-in-out',
                             hasStock ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
                             isHighlighted
-                              ? 'bg-orange-500/15 dark:bg-orange-500/25 border-orange-300 dark:border-orange-500'
+                              ? 'border-2'
                               : hasStock
-                                ? 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                                ? 'bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F]'
                                 : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                           ].join(' ')
+
+                          const containerStyle = isHighlighted ? {
+                            backgroundColor: 'rgba(92, 156, 124, 0.15)',
+                            borderColor: 'var(--sidebar-orange)'
+                          } : undefined
 
                           const nameClasses = [
                             'font-medium',
                             isHighlighted
-                              ? 'text-orange-700 dark:text-orange-200'
+                              ? ''
                               : hasStock
                                 ? 'text-gray-900 dark:text-white'
                                 : 'text-red-600 dark:text-red-400'
                           ].join(' ')
 
+                          const nameStyle = isHighlighted ? {
+                            color: 'var(--sidebar-orange)'
+                          } : undefined
+
                           const detailsClasses = [
                             'text-sm',
                             isHighlighted
-                              ? 'text-orange-600 dark:text-orange-300'
+                              ? ''
                               : 'text-gray-600 dark:text-gray-300'
                           ].join(' ')
+
+                          const detailsStyle = isHighlighted ? {
+                            color: 'var(--sidebar-orange)'
+                          } : undefined
                           
                           return (
                         <div
@@ -607,11 +629,12 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                           onClick={() => hasStock ? addProduct(product) : undefined}
                           onMouseEnter={() => setHighlightedProductIndex(index)}
                           className={containerClasses}
+                          style={containerStyle}
                         >
-                          <div className={nameClasses}>
+                          <div className={nameClasses} style={nameStyle}>
                             {product.name}
                           </div>
-                          <div className={detailsClasses}>
+                          <div className={detailsClasses} style={detailsStyle}>
                             Ref: {product.reference || 'N/A'} | 
                             Stock: {(product.stock?.warehouse || 0) + (product.stock?.store || 0)} | 
                             Precio: ${(product.price || 0).toLocaleString('es-CO')}
@@ -638,7 +661,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       const reference = product?.reference || 'N/A'
                       
                       return (
-                      <div key={item.productId} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
+                      <div key={item.productId} className="bg-gray-50 dark:bg-[#1A1A1A] rounded-lg p-3 space-y-2 border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                         <div className="flex items-center justify-between">
                           <div className="flex-1">
                             <div className="font-medium text-gray-900 dark:text-white">
@@ -665,8 +688,17 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                 updatePrice(item.productId, numericValue)
                               }}
                               onBlur={() => handlePriceBlur(item.productId)}
-                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                              className="w-full px-2 py-1 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
                               placeholder="0"
+                              style={{ fontFamily: 'var(--font-inter)' }}
+                              onFocus={(e) => {
+                                e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                              }}
+                              onBlur={(e) => {
+                                e.currentTarget.style.borderColor = ''
+                                e.currentTarget.style.boxShadow = ''
+                              }}
                             />
                           </div>
                           
@@ -679,7 +711,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                 onClick={() => updateQuantity(item.productId, item.quantity - 1, true)}
                                 size="sm"
                                 variant="outline"
-                                className="h-7 w-7 p-0"
+                                className="h-7 w-7 p-0 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                                style={{ color: 'var(--sidebar-orange)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                               >
                                 <Minus className="h-3 w-3" />
                               </Button>
@@ -691,14 +726,26 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                   updateQuantity(item.productId, value, false)
                                 }}
                                 onBlur={() => handleQuantityBlur(item.productId)}
-                                className="w-12 h-7 text-center text-sm border border-gray-300 dark:border-gray-600 rounded focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                                className="w-12 h-7 text-center text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
                                 min="0"
+                                style={{ fontFamily: 'var(--font-inter)' }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = ''
+                                  e.currentTarget.style.boxShadow = ''
+                                }}
                               />
                               <Button
                                 onClick={() => updateQuantity(item.productId, item.quantity + 1, true)}
                                 size="sm"
                                 variant="outline"
-                                className="h-7 w-7 p-0"
+                                className="h-7 w-7 p-0 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                                style={{ color: 'var(--sidebar-orange)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                               >
                                 <Plus className="h-3 w-3" />
                               </Button>
@@ -710,7 +757,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                               onClick={() => removeProduct(item.productId)}
                               size="sm"
                               variant="outline"
-                              className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              className="h-7 px-2 text-red-600 hover:text-red-700 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-800"
                             >
                               <X className="h-3 w-3" />
                             </Button>
@@ -719,9 +766,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         
                         {/* Total del producto */}
                         {item.totalPrice > 0 && (
-                          <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-gray-600">
+                          <div className="flex justify-between items-center pt-1 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                             <span className="text-xs text-gray-600 dark:text-gray-400">Total:</span>
-                            <span className="font-semibold text-orange-600">${item.totalPrice.toLocaleString('es-CO')}</span>
+                            <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>${item.totalPrice.toLocaleString('es-CO')}</span>
                           </div>
                         )}
                       </div>
@@ -745,10 +792,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             </Card>
 
               {/* Resumen de la Venta */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <DollarSign className="h-5 w-5 text-orange-600" />
+                  <DollarSign className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Resumen de la Venta
                 </CardTitle>
               </CardHeader>
@@ -776,7 +823,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                     ))}
                     
                     {/* Subtotal */}
-                    <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                    <div className="border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] pt-3">
                       <div className="flex justify-between items-center">
                         <span className="text-gray-600 dark:text-gray-300">
                           Subtotal:
@@ -794,26 +841,27 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                           type="checkbox"
                           checked={includeTax}
                           onChange={(e) => setIncludeTax(e.target.checked)}
-                          className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 dark:border-gray-600 rounded bg-white dark:bg-gray-600"
+                          className="h-4 w-4 border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded bg-white dark:bg-[#1A1A1A]"
+                          style={{ accentColor: 'var(--sidebar-orange)' }}
                         />
                         <span className="text-sm text-gray-700 dark:text-gray-300">
                           Incluir IVA (19%)
                         </span>
                       </div>
                       {includeTax && (
-                        <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
+                        <span className="text-sm font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                           ${calculateTax().toLocaleString('es-CO')}
                         </span>
                       )}
                     </div>
 
                     {/* Total */}
-                    <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                    <div className="border-t-2 pt-3" style={{ borderColor: 'var(--sidebar-orange)' }}>
                       <div className="flex justify-between items-center">
                         <span className="text-lg font-bold text-gray-900 dark:text-white">
                           Total:
                         </span>
-                        <span className="text-lg font-bold text-orange-600">
+                        <span className="text-lg font-bold" style={{ color: 'var(--sidebar-orange)' }}>
                           ${calculateTotal().toLocaleString('es-CO')}
                         </span>
                       </div>
@@ -827,10 +875,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             {/* Columna derecha - Secciones pequeñas */}
             <div className="xl:col-span-1 space-y-4 md:space-y-6">
               {/* Cliente */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <User className="h-5 w-5 text-orange-600" />
+                  <User className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Cliente
                 </CardTitle>
               </CardHeader>
@@ -842,7 +890,16 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                   <select
                     value={formData.clientId}
                     onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                    style={{ fontFamily: 'var(--font-inter)' }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = ''
+                      e.currentTarget.style.boxShadow = ''
+                    }}
                   >
                     <option value="">Selecciona un cliente...</option>
                     {clients.map((client) => (
@@ -854,7 +911,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                 </div>
                 
                 {selectedClient && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="p-3 bg-gray-50 dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                     <div className="text-sm text-gray-600 dark:text-gray-300">
                       <div className="font-medium text-gray-900 dark:text-white">
                         {selectedClient.name}
@@ -868,10 +925,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             </Card>
 
               {/* Configuración del Crédito */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-orange-600" />
+                    <Calendar className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                     Configuración del Crédito
                   </CardTitle>
                 </CardHeader>
@@ -897,7 +954,16 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                       placeholder="Agregar observaciones sobre la venta a crédito..."
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                      style={{ fontFamily: 'var(--font-inter)' }}
+                      onFocus={(e) => {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }}
+                      onBlur={(e) => {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }}
                     />
                   </div>
                 </CardContent>
@@ -908,7 +974,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
         {/* Footer */}
         <div 
-          className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0"
+          className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] flex-shrink-0 sticky bottom-0"
           style={{
             paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)`
           }}
@@ -916,14 +982,33 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           <Button
             onClick={handleClose}
             variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+              e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = ''
+              e.currentTarget.style.backgroundColor = ''
+            }}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
             disabled={loading || selectedProducts.length === 0 || !formData.clientId || !formData.dueDate}
-            className="bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400"
+            className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: 'var(--sidebar-orange)' }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled) {
+                e.currentTarget.style.opacity = '0.9'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!e.currentTarget.disabled) {
+                e.currentTarget.style.opacity = '1'
+              }
+            }}
           >
             {loading ? (
               <div className="flex items-center gap-2">

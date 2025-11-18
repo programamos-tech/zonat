@@ -109,12 +109,12 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-4xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-4xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <Package className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
+            <Package className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Ajustar Stock
@@ -139,10 +139,10 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
         <form onSubmit={handleSubmit} className="p-4 md:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información del Producto */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-cyan-600" />
+                  <FileText className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Información del Producto
                 </CardTitle>
               </CardHeader>
@@ -171,10 +171,10 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
             </Card>
 
             {/* Configuración del Ajuste */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-cyan-600" />
+                  <AlertTriangle className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                   Configuración del Ajuste
                 </CardTitle>
               </CardHeader>
@@ -190,14 +190,15 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       onClick={() => handleInputChange('location', 'store')}
                           className={`p-4 rounded-lg border-2 transition-all ${
                             formData.location === 'store'
-                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                              ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                              : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)]'
                           }`}
+                          style={formData.location === 'store' ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                     >
                       <div className="flex items-center space-x-3">
-                        <Store className={`h-5 w-5 ${formData.location === 'store' ? 'text-cyan-600' : 'text-gray-400'}`} />
+                        <Store className="h-5 w-5" style={{ color: formData.location === 'store' ? 'var(--sidebar-orange)' : '#9CA3AF' }} />
                         <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'store' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <div className="font-medium" style={{ color: formData.location === 'store' ? 'var(--sidebar-orange)' : undefined }}>
                             Local
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -212,14 +213,15 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       onClick={() => handleInputChange('location', 'warehouse')}
                           className={`p-4 rounded-lg border-2 transition-all ${
                             formData.location === 'warehouse'
-                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                              ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                              : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)]'
                           }`}
+                          style={formData.location === 'warehouse' ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                     >
                       <div className="flex items-center space-x-3">
-                        <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
+                        <Warehouse className="h-5 w-5" style={{ color: formData.location === 'warehouse' ? 'var(--sidebar-orange)' : '#9CA3AF' }} />
                         <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <div className="font-medium" style={{ color: formData.location === 'warehouse' ? 'var(--sidebar-orange)' : undefined }}>
                             Bodega
                           </div>
                           <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -243,9 +245,21 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       const numericValue = parseFormattedNumber(e.target.value)
                       handleInputChange('newQuantity', numericValue)
                     }}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
-                      errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                      errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                     }`}
+                    onFocus={(e) => {
+                      if (!errors.newQuantity) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.newQuantity) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                     placeholder="Ingrese la nueva cantidad"
                   />
                   {errors.newQuantity && (
@@ -261,9 +275,21 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <textarea
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
-                      errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                      errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                     }`}
+                    onFocus={(e) => {
+                      if (!errors.reason) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.reason) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                     placeholder="Ej: Inventario físico, producto dañado, corrección de error... (opcional)"
                     rows={3}
                   />
@@ -283,19 +309,17 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           {/* Stock Difference Preview */}
           {formData.newQuantity !== getCurrentStock() && (
             <div className="mt-6">
-              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Diferencia:</span>
                     <div className="flex items-center space-x-2">
                       {getStockDifference() > 0 ? (
-                        <TrendingUp className="h-4 w-4 text-cyan-600" />
+                        <TrendingUp className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                       ) : (
                         <TrendingDown className="h-4 w-4 text-red-600" />
                       )}
-                      <span className={`text-lg font-bold ${
-                        getStockDifference() > 0 ? 'text-cyan-600' : 'text-red-600'
-                      }`}>
+                      <span className="text-lg font-bold" style={{ color: getStockDifference() > 0 ? 'var(--sidebar-orange)' : '#EF4444' }}>
                         {getStockDifference() > 0 ? '+' : ''}{formatNumber(getStockDifference())} unidades
                       </span>
                     </div>
@@ -309,18 +333,29 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           )}
 
           {/* Botones dentro del form para que hagan scroll con el contenido */}
-          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = ''
+                e.currentTarget.style.backgroundColor = ''
+              }}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              className="text-white"
+              style={{ backgroundColor: 'var(--sidebar-orange)' }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               Ajustar Stock
             </Button>

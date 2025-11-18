@@ -124,12 +124,12 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:p-8">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:p-8" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <ArrowRightLeft className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
+            <ArrowRightLeft className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Transferir Stock
@@ -155,24 +155,24 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 md:gap-6">
             {/* Columna Izquierda - Stock Actual */}
             <div className="lg:col-span-1">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                    <FileText className="h-4 w-4 text-cyan-600" />
+                    <FileText className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                     Stock Actual
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0 space-y-2">
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                     <div className="flex items-center space-x-1.5">
-                      <Package className="h-4 w-4 text-cyan-600" />
+                      <Package className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                       <span className="text-sm text-gray-500 dark:text-gray-400">Bodega</span>
                     </div>
                     <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(product.stock.warehouse)}</div>
                   </div>
-                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                  <div className="flex items-center justify-between p-2 bg-gray-50 dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                     <div className="flex items-center space-x-1.5">
-                      <Store className="h-4 w-4 text-cyan-600" />
+                      <Store className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                       <span className="text-sm text-gray-500 dark:text-gray-400">Local</span>
                     </div>
                     <div className="text-lg font-bold text-gray-900 dark:text-white">{formatNumber(product.stock.store)}</div>
@@ -183,10 +183,10 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
 
             {/* Detalles de la Transferencia */}
             <div className="lg:col-span-4">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                    <ArrowRightLeft className="h-4 w-4 text-cyan-600" />
+                    <ArrowRightLeft className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                     Detalles de la Transferencia
                   </CardTitle>
                 </CardHeader>
@@ -211,14 +211,15 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                                   onClick={() => handleInputChange('fromLocation', location)}
                                   className={`w-full p-2 rounded-lg border-2 transition-all ${
                                     isSelected
-                                      ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                                      ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                                      : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)]'
                                   }`}
+                                  style={isSelected ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                                 >
                                   <div className="flex items-center space-x-1.5">
-                                    <Icon className={`h-4 w-4 ${isSelected ? 'text-cyan-600' : 'text-gray-400'}`} />
+                                    <Icon className="h-4 w-4" style={{ color: isSelected ? 'var(--sidebar-orange)' : '#9CA3AF' }} />
                                     <div className="text-left flex-1 min-w-0">
-                                      <div className={`text-xs font-medium ${isSelected ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                                      <div className="text-xs font-medium" style={{ color: isSelected ? 'var(--sidebar-orange)' : undefined }}>
                                         {getLocationLabel(location)}
                                       </div>
                                       <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -250,28 +251,17 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                                   disabled={isDisabled}
                                   className={`w-full p-2 rounded-lg border-2 transition-all ${
                                     isDisabled
-                                      ? 'border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500 cursor-not-allowed'
+                                      ? 'border-gray-200 dark:border-[rgba(255,255,255,0.06)] text-gray-400 dark:text-gray-500 cursor-not-allowed bg-white dark:bg-[#1A1A1A]'
                                       : isSelected
-                                      ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                                      : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                                      ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                                      : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)]'
                                   }`}
+                                  style={!isDisabled && isSelected ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                                 >
                                   <div className="flex items-center space-x-1.5">
-                                    <Icon className={`h-4 w-4 ${
-                                      isDisabled 
-                                        ? 'text-gray-400' 
-                                        : isSelected 
-                                        ? 'text-cyan-600' 
-                                        : 'text-gray-400'
-                                    }`} />
+                                    <Icon className="h-4 w-4" style={{ color: isDisabled ? '#9CA3AF' : isSelected ? 'var(--sidebar-orange)' : '#9CA3AF' }} />
                                     <div className="text-left flex-1 min-w-0">
-                                      <div className={`text-xs font-medium ${
-                                        isDisabled
-                                          ? 'text-gray-400 dark:text-gray-500'
-                                          : isSelected 
-                                          ? 'text-cyan-600' 
-                                          : 'text-gray-700 dark:text-gray-300'
-                                      }`}>
+                                      <div className="text-xs font-medium" style={{ color: isDisabled ? '#9CA3AF' : isSelected ? 'var(--sidebar-orange)' : undefined }}>
                                         {getLocationLabel(location)}
                                       </div>
                                       <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -302,9 +292,21 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                           max={getAvailableStock()}
                           value={formData.quantity || ''}
                           onChange={(e) => handleInputChange('quantity', parseInt(e.target.value) || 0)}
-                          className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
-                            errors.quantity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          className={`w-full px-3 py-2 text-sm border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                            errors.quantity ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                           }`}
+                          onFocus={(e) => {
+                            if (!errors.quantity) {
+                              e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                              e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                            }
+                          }}
+                          onBlur={(e) => {
+                            if (!errors.quantity) {
+                              e.currentTarget.style.borderColor = ''
+                              e.currentTarget.style.boxShadow = ''
+                            }
+                          }}
                           placeholder="Ingrese cantidad"
                         />
                         <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -324,9 +326,21 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                       <textarea
                         value={formData.reason}
                         onChange={(e) => handleInputChange('reason', e.target.value)}
-                        className={`w-full px-3 py-2 text-sm border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 resize-none ${
-                          errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        className={`w-full px-3 py-2 text-sm border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] resize-none ${
+                          errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                         }`}
+                        onFocus={(e) => {
+                          if (!errors.reason) {
+                            e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (!errors.reason) {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.boxShadow = ''
+                          }
+                        }}
                         placeholder="Ej: Reposición de tienda, devolución a bodega, etc. (opcional)"
                         rows={3}
                       />
@@ -348,26 +362,26 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
               </Card>
 
               {/* Resumen de la Transferencia - Siempre visible */}
-              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 mt-4">
+              <Card className="bg-gray-50 dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] mt-4">
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-sm text-gray-900 dark:text-white flex items-center gap-2">
-                    <AlertTriangle className="h-4 w-4 text-cyan-600" />
+                    <AlertTriangle className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                     Resumen de la Transferencia
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-3 pt-0">
                   <div className="grid grid-cols-4 gap-2">
-                    <div className="p-2 bg-white dark:bg-gray-700 rounded-lg">
+                    <div className="p-2 bg-white dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                       <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">Producto:</div>
                       <div className="text-sm text-gray-900 dark:text-white font-medium truncate">{product.name}</div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-gray-700 rounded-lg">
+                    <div className="p-2 bg-white dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                       <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">Transferir:</div>
                       <div className="text-sm text-gray-900 dark:text-white font-medium">
                         {formData.quantity > 0 ? `${formatNumber(formData.quantity)} unidades` : '0 unidades'}
                       </div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-gray-700 rounded-lg">
+                    <div className="p-2 bg-white dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                       <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">Stock después:</div>
                       <div className="text-xs text-gray-900 dark:text-white font-medium">
                         <div>Bodega: {formatNumber(formData.fromLocation === 'warehouse' 
@@ -380,7 +394,7 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
                         )}</div>
                       </div>
                     </div>
-                    <div className="p-2 bg-white dark:bg-gray-700 rounded-lg">
+                    <div className="p-2 bg-white dark:bg-[#1A1A1A] rounded-lg border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                       <div className="text-xs text-gray-600 dark:text-gray-300 mb-1">De → A:</div>
                       <div className="text-sm text-gray-900 dark:text-white font-medium">
                         {getLocationLabel(formData.fromLocation)} → {getLocationLabel(formData.toLocation)}
@@ -393,18 +407,29 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
           </div>
 
           {/* Botones dentro del form para que hagan scroll con el contenido */}
-          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
             <Button
               type="button"
               onClick={handleClose}
               variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = ''
+                e.currentTarget.style.backgroundColor = ''
+              }}
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
+              className="text-white"
+              style={{ backgroundColor: 'var(--sidebar-orange)' }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               <ArrowRightLeft className="h-4 w-4 mr-2" />
               Transferir Stock

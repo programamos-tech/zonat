@@ -153,12 +153,12 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:px-8">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:w-auto xl:max-w-2xl xl:h-auto xl:max-h-[85vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <DollarSign className="h-5 w-5 md:h-8 md:w-8 text-orange-600" />
+            <DollarSign className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                 Agregar Abono
@@ -172,20 +172,20 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-3 md:p-4">
-          <div className="space-y-3 md:space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-[#1A1A1A]">
+          <div className="space-y-4 md:space-y-6">
             {/* Información del Crédito */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 md:p-4">
                 <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+                  <Receipt className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                   Información del Crédito
                 </CardTitle>
               </CardHeader>
@@ -222,7 +222,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       Saldo Pendiente:
                     </label>
-                    <p className="text-lg font-semibold text-red-600">
+                    <p className="text-lg font-semibold text-red-600 dark:text-red-400">
                       ${credit.pendingAmount.toLocaleString('es-CO')}
                     </p>
                   </div>
@@ -231,10 +231,10 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
             </Card>
 
             {/* Detalles del Abono */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 md:p-4">
                 <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                  <CreditCard className="h-4 w-4 text-orange-600" />
+                  <CreditCard className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                   Detalles del Abono
                 </CardTitle>
               </CardHeader>
@@ -248,12 +248,25 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                     value={formData.amount}
                     onChange={(e) => handleNumberChange('amount', e.target.value)}
                     placeholder="0"
-                    className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                      errors.amount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white ${
+                      errors.amount ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                     }`}
+                    style={{ fontFamily: 'var(--font-inter)' }}
+                    onFocus={(e) => {
+                      if (!errors.amount) {
+                        e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                        e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                      }
+                    }}
+                    onBlur={(e) => {
+                      if (!errors.amount) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.boxShadow = ''
+                      }
+                    }}
                   />
                   {errors.amount && (
-                    <p className="text-sm text-red-500 mt-1">{errors.amount}</p>
+                    <p className="text-sm text-red-500 dark:text-red-400 mt-1">{errors.amount}</p>
                   )}
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                     Máximo: ${credit.pendingAmount.toLocaleString('es-CO')}
@@ -267,7 +280,16 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                   <select
                     value={formData.paymentMethod}
                     onChange={(e) => handlePaymentMethodChange(e.target.value as 'cash' | 'transfer' | 'mixed')}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                    style={{ fontFamily: 'var(--font-inter)' }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = ''
+                      e.currentTarget.style.boxShadow = ''
+                    }}
                   >
                     <option value="cash">Efectivo</option>
                     <option value="transfer">Transferencia</option>
@@ -286,12 +308,25 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                         value={formData.cashAmount}
                         onChange={(e) => handleNumberChange('cashAmount', e.target.value)}
                         placeholder="0"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                          errors.cashAmount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white ${
+                          errors.cashAmount ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                         }`}
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          if (!errors.cashAmount) {
+                            e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (!errors.cashAmount) {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.boxShadow = ''
+                          }
+                        }}
                       />
                       {errors.cashAmount && (
-                        <p className="text-sm text-red-500 mt-1">{errors.cashAmount}</p>
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">{errors.cashAmount}</p>
                       )}
                     </div>
                     <div>
@@ -303,16 +338,29 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                         value={formData.transferAmount}
                         onChange={(e) => handleNumberChange('transferAmount', e.target.value)}
                         placeholder="0"
-                        className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${
-                          errors.transferAmount ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                        className={`w-full px-3 py-2 border rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white ${
+                          errors.transferAmount ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                         }`}
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          if (!errors.transferAmount) {
+                            e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }
+                        }}
+                        onBlur={(e) => {
+                          if (!errors.transferAmount) {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.boxShadow = ''
+                          }
+                        }}
                       />
                       {errors.transferAmount && (
-                        <p className="text-sm text-red-500 mt-1">{errors.transferAmount}</p>
+                        <p className="text-sm text-red-500 dark:text-red-400 mt-1">{errors.transferAmount}</p>
                       )}
                     </div>
                     {errors.mixed && (
-                      <p className="text-sm text-red-500 col-span-2">{errors.mixed}</p>
+                      <p className="text-sm text-red-500 dark:text-red-400 col-span-2">{errors.mixed}</p>
                     )}
                   </div>
                 )}
@@ -326,7 +374,16 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                     onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
                     placeholder="Agregar observaciones sobre el abono..."
                     rows={3}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                    style={{ fontFamily: 'var(--font-inter)' }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = ''
+                      e.currentTarget.style.boxShadow = ''
+                    }}
                   />
                 </div>
               </CardContent>
@@ -335,17 +392,28 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={handleClose}
             variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+              e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = ''
+              e.currentTarget.style.backgroundColor = ''
+            }}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSubmit}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
+            className="text-white"
+            style={{ backgroundColor: 'var(--sidebar-orange)' }}
+            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
           >
             Registrar Abono
           </Button>

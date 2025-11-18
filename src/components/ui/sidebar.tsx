@@ -13,15 +13,17 @@ import {
   Activity,
   Menu,
   X,
-  LogOut,
   ShieldCheck,
-  UserCircle
+  UserCircle,
+  Building2,
+  ShoppingCart,
+  TrendingUp,
+  Briefcase
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
 // ThemeToggle removed
 import { usePermissions } from '@/hooks/usePermissions'
-import { useAuth } from '@/contexts/auth-context'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
@@ -30,6 +32,10 @@ const navigation = [
   { name: 'Ventas', href: '/sales', icon: Receipt, module: 'sales' },
   { name: 'Garantías', href: '/warranties', icon: ShieldCheck, module: 'warranties' },
   { name: 'Créditos', href: '/payments', icon: CreditCard, module: 'payments' },
+  { name: 'Proveedores', href: '/suppliers', icon: Building2, module: 'suppliers' },
+  { name: 'Órdenes de Compra', href: '/purchase-orders', icon: ShoppingCart, module: 'purchase_orders' },
+  { name: 'Rentabilidad', href: '/profitability', icon: TrendingUp, module: 'profitability' },
+  { name: 'Clientes Oviler', href: '/admin/clients', icon: Briefcase, module: 'admin_clients' },
   { name: 'Roles', href: '/roles', icon: Shield, module: 'roles' },
   { name: 'Registro de Actividades', href: '/logs', icon: Activity, module: 'logs' },
   { name: 'Perfil', href: '/profile', icon: UserCircle, module: 'dashboard' },
@@ -44,7 +50,6 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { canView } = usePermissions()
-  const { user, logout } = useAuth()
   const sidebarRef = useRef<HTMLDivElement>(null)
 
   // Notificar al layout cuando cambie el estado del menú móvil
@@ -77,31 +82,37 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
       {/* Mobile/Tablet overlay - removido para evitar pantalla negra */}
 
       {/* Sidebar */}
-      <div 
+      <div
         ref={sidebarRef}
         className={cn(
-          "fixed inset-y-0 left-0 z-40 bg-white dark:bg-gray-800 shadow-xl transform transition-all duration-300 ease-in-out xl:translate-x-0 w-64",
+          "fixed inset-y-0 left-0 z-40 shadow-xl transform transition-all duration-300 ease-in-out xl:translate-x-0 w-64 bg-gradient-to-b from-[#FFFFFF] via-[#F4F8FF] to-[#E1EEFF] dark:bg-[var(--swatch--gray-950)]",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           className
         )}
+        style={{
+          fontFamily: 'var(--font-inter)'
+        }}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-center h-20 px-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-            {(() => {
-              return (
-                <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
-                  <Logo size="lg" />
-                </Link>
-              )
-            })()}
-          </div>
+                 {/* Logo Oviler */}
+                 <div className="flex flex-col h-20 px-4 justify-center">
+                   <Link href="/dashboard" className="cursor-pointer hover:opacity-90 transition-opacity ml-2">
+                     <span className="text-3xl font-black tracking-tighter animate-logo-entrance text-[#2D2D2D] dark:text-white" style={{ fontFamily: 'var(--font-inter)' }}>
+                       Oviler
+                     </span>
+                   </Link>
+                   <p className="text-[10px] text-gray-600 dark:text-white/70 mt-0.5 ml-2.5 animate-logo-entrance" style={{ animationDelay: '0.7s', opacity: 0 }}>
+                     Gestión de tu Negocio
+                   </p>
+                 </div>
 
           {/* Navigation */}
           <nav className="flex-1 px-4 py-6 space-y-2">
             {navigation.map((item) => {
-              // Solo mostrar el item si el usuario tiene permisos para verlo
-              if (!canView(item.module)) return null
+              // Los módulos nuevos (suppliers, purchase_orders, profitability, admin_clients) son visibles para todos los usuarios autenticados
+              // Los demás módulos requieren permisos
+              const isNewModule = item.module === 'suppliers' || item.module === 'purchase_orders' || item.module === 'profitability' || item.module === 'admin_clients'
+              if (!isNewModule && !canView(item.module)) return null
               
               const isActive = pathname === item.href
               return (
@@ -110,13 +121,31 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                   href={item.href}
                   onClick={() => setIsMobileMenuOpen(false)}
                   className={cn(
-                    "flex items-center px-3 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                    isActive
-                      ? "bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 shadow-sm"
-                      : "text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white hover:shadow-sm"
-                  )}
+                  "flex items-center px-3 py-3 text-sm font-medium transition-all duration-200 rounded-xl border",
+                  isActive 
+                    ? 'text-[#0F172A] bg-white border-white shadow-lg'
+                    : 'text-gray-700 dark:text-gray-300 border-transparent hover:border-white/40 hover:bg-white/60'
+                )}
+                style={{
+                  boxShadow: isActive ? '0 12px 30px rgba(92, 169, 245, 0.25)' : 'none'
+                }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.classList.add('bg-gray-100', 'dark:bg-white/10')
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.classList.remove('bg-gray-100', 'dark:bg-white/10')
+                    }
+                  }}
                 >
-                  <item.icon className="h-5 w-5 mr-3" />
+                  <item.icon className={cn(
+                    "h-5 w-5 mr-3",
+                    isActive 
+                      ? 'text-[#0D1324]' 
+                      : 'text-[#6B7A8C]'
+                  )} />
                   {item.name}
                 </Link>
               )
@@ -124,40 +153,6 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             
             {/* Theme Toggle removed */}
           </nav>
-
-          {/* User info */}
-          <div className="p-4 bg-gray-50 dark:bg-gray-700">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <div className="flex-shrink-0">
-                  <div className="w-10 h-10 bg-gradient-to-r from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center shadow-md">
-                    <span className="text-sm font-bold text-white">
-                      {user?.name?.charAt(0) || 'D'}
-                    </span>
-                  </div>
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                    {user?.name || 'Diego Admin'}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {user?.role === 'superadmin' ? 'Super Admin' : 
-                     user?.role === 'admin' ? 'Admin' :
-                     user?.role === 'vendedor' ? 'Vendedor' :
-                     user?.role === 'inventario' ? 'Inventario' :
-                     user?.role === 'contador' ? 'Contador' : 'Usuario'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={logout}
-                className="p-2 text-gray-500 hover:text-red-600 dark:text-gray-400 dark:hover:text-red-400 transition-colors"
-                title="Cerrar sesión"
-              >
-                <LogOut className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </>

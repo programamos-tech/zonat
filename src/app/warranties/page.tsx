@@ -98,7 +98,7 @@ export default function WarrantiesPage() {
   }, [warranties])
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-6 space-y-6 bg-gray-50 dark:bg-[var(--swatch--gray-950)] min-h-screen">
       <WarrantyTable
         todayWarrantiesCount={todayWarrantiesCount}
           warranties={warrantiesToShow}

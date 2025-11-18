@@ -389,22 +389,22 @@ export function UserManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex items-center justify-center h-64" style={{ fontFamily: 'var(--font-inter)' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
       </div>
     )
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-indigo-600 flex-shrink-0" />
+                  <UserCheck className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
                   <span className="flex-shrink-0">Gestión de Usuarios</span>
                 </CardTitle>
                 <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
@@ -416,7 +416,10 @@ export function UserManagement() {
               </div>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                className="text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
                 <span className="hidden sm:inline">Nuevo Usuario</span>
@@ -459,10 +462,10 @@ export function UserManagement() {
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-6">
                   {/* Información Básica */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <UserCheck className="h-5 w-5 mr-2 text-blue-400" />
+                        <UserCheck className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                         Información Básica
                       </CardTitle>
                     </CardHeader>
@@ -476,7 +479,16 @@ export function UserManagement() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+                                style={{ fontFamily: 'var(--font-inter)' }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = ''
+                                  e.currentTarget.style.boxShadow = ''
+                                }}
                                 placeholder="Ej: Juan Pérez"
                               />
                             </div>
@@ -488,7 +500,16 @@ export function UserManagement() {
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+                                style={{ fontFamily: 'var(--font-inter)' }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = ''
+                                  e.currentTarget.style.boxShadow = ''
+                                }}
                                 placeholder="juan@zonat.com"
                               />
                             </div>
@@ -502,7 +523,16 @@ export function UserManagement() {
                                 type="password"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+                                style={{ fontFamily: 'var(--font-inter)' }}
+                                onFocus={(e) => {
+                                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                                }}
+                                onBlur={(e) => {
+                                  e.currentTarget.style.borderColor = ''
+                                  e.currentTarget.style.boxShadow = ''
+                                }}
                                 placeholder="Mínimo 6 caracteres"
                               />
                             </div>
@@ -511,7 +541,7 @@ export function UserManagement() {
                                 Rol *
                               </label>
                               <Select value={formData.role} onValueChange={applyRolePermissions}>
-                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -528,16 +558,16 @@ export function UserManagement() {
                   </Card>
 
                   {/* Descripción del Rol */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <Shield className="h-5 w-5 mr-2 text-blue-400" />
+                        <Shield className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                         Descripción del Rol
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                          <div className="p-4 rounded-xl border" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)', borderColor: 'rgba(92, 156, 124, 0.2)' }}>
+                            <p className="text-sm" style={{ color: 'var(--sidebar-orange)' }}>
                               <span className="font-semibold">
                                 {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
                               </span>
@@ -547,7 +577,7 @@ export function UserManagement() {
                   </Card>
 
                   {/* Estado del Usuario */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                         <User className="h-5 w-5 mr-2 text-blue-400" />
@@ -555,14 +585,16 @@ export function UserManagement() {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                          <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center space-x-3 p-4 rounded-xl border" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)', borderColor: 'rgba(92, 156, 124, 0.2)' }}>
                             <Switch
                               id="isActive"
                               checked={formData.isActive}
                               onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                              className="data-[state=checked]:bg-blue-600"
+                              style={{ 
+                                '--switch-checked-bg': 'var(--sidebar-orange)'
+                              } as React.CSSProperties}
                             />
-                            <Label htmlFor="isActive" className="text-base font-medium text-blue-700 dark:text-blue-300">
+                            <Label htmlFor="isActive" className="text-base font-medium" style={{ color: 'var(--sidebar-orange)' }}>
                               Usuario Activo
                             </Label>
                           </div>
@@ -572,27 +604,28 @@ export function UserManagement() {
 
                 {/* Columna Derecha - Permisos */}
                 <div className="space-y-6">
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <Shield className="h-5 w-5 mr-2 text-blue-400" />
+                        <Shield className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                         Permisos del Sistema
                       </CardTitle>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
-                        Rol: <span className="font-semibold text-blue-600 dark:text-blue-400">
+                      <div className="text-sm text-gray-600 dark:text-gray-400 px-3 py-1 rounded-lg border mt-2" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)', borderColor: 'rgba(92, 156, 124, 0.2)' }}>
+                        Rol: <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>
                           {roleOptions.find(r => r.value === formData.role)?.label}
                         </span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                           {moduleOptions.map(module => (
-                            <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                              <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                            <div key={module.value} className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-xl p-4 bg-gray-50 dark:bg-[#1A1A1A]">
+                              <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-[#1F1F1F] p-2 rounded-lg transition-colors">
                                 <input
                                   type="checkbox"
                                   checked={hasPermission(module.value, 'view')}
                                   onChange={() => togglePermission(module.value, 'view')}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                  className="w-4 h-4 bg-gray-100 border-gray-300 rounded focus:ring-2"
+                                  style={{ accentColor: 'var(--sidebar-orange)' }}
                                 />
                                 <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                               </label>
@@ -606,7 +639,7 @@ export function UserManagement() {
 
             {/* Footer */}
             <div 
-              className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0"
+              className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-gray-50 dark:bg-[#1A1A1A] flex-shrink-0 sticky bottom-0"
               style={{
                 paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)`
               }}
@@ -614,13 +647,24 @@ export function UserManagement() {
               <Button 
                 variant="outline" 
                 onClick={() => setIsCreateModalOpen(false)}
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.backgroundColor = ''
+                }}
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleCreateUser}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="text-white"
+                style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 <UserCheck className="h-4 w-4 mr-2" />
                 Crear Usuario
@@ -631,7 +675,7 @@ export function UserManagement() {
       )}
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -681,7 +725,7 @@ export function UserManagement() {
       </Card>
 
       {/* Users List */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-0">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
@@ -694,7 +738,10 @@ export function UserManagement() {
               </p>
               <Button 
                 onClick={() => setIsCreateModalOpen(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="text-white"
+                style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 <Plus className="h-4 w-4 mr-2" />
                 Nuevo Usuario
@@ -719,13 +766,13 @@ export function UserManagement() {
                   return (
                     <div
                       key={user.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg p-3 space-y-2 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 truncate" title={user.email}>
+                            <span className="text-xs font-semibold truncate" style={{ color: 'var(--sidebar-orange)' }} title={user.email}>
                               {user.email}
                             </span>
                           </div>
@@ -748,7 +795,7 @@ export function UserManagement() {
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                         <div className="text-center">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Rol</div>
                           <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={roleOptions.find(r => r.value === user.role)?.label || user.role}>
@@ -763,7 +810,7 @@ export function UserManagement() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={formatDateTime(user.lastLogin || '')}>
                             {user.lastLogin ? formatDateTime(user.lastLogin) : 'Nunca ha iniciado sesión'}
@@ -796,9 +843,9 @@ export function UserManagement() {
               </div>
 
               {/* Vista de Lista para Desktop */}
-              <div className="hidden md:block divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="hidden md:block divide-y divide-gray-200 dark:divide-[rgba(255,255,255,0.06)]">
                 {filteredUsers.map(user => (
-                  <div key={user.id} className="p-4 md:p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div key={user.id} className="p-4 md:p-6 hover:bg-gray-50 dark:hover:bg-[#1F1F1F]">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3">
@@ -825,7 +872,9 @@ export function UserManagement() {
                           variant="outline"
                           size="sm"
                           onClick={() => openEditModal(user)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                          style={{ color: 'var(--sidebar-orange)' }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                         >
                           <Edit className="h-4 w-4" />
                         </Button>
@@ -853,11 +902,11 @@ export function UserManagement() {
       {/* Modal de edición */}
       {isEditModalOpen && (
         <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+          <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
               <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
+                <UserCheck className="h-5 w-5 md:h-8 md:w-8" style={{ color: 'var(--sidebar-orange)' }} />
                 <div>
                   <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                     Editar Usuario
@@ -883,10 +932,10 @@ export function UserManagement() {
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-6">
                   {/* Información Personal */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <User className="h-5 w-5 text-blue-600" />
+                        <User className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                         Información Personal
                       </CardTitle>
                     </CardHeader>
@@ -897,7 +946,16 @@ export function UserManagement() {
                           id="editName"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="mt-1"
+                          className="mt-1 border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                          style={{ fontFamily: 'var(--font-inter)' }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.boxShadow = ''
+                          }}
                         />
                       </div>
                       <div>
@@ -907,7 +965,16 @@ export function UserManagement() {
                           type="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="mt-1"
+                          className="mt-1 border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                          style={{ fontFamily: 'var(--font-inter)' }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.boxShadow = ''
+                          }}
                         />
                       </div>
                       <div>
@@ -918,17 +985,26 @@ export function UserManagement() {
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           placeholder="Dejar vacío para mantener la actual"
-                          className="mt-1"
+                          className="mt-1 border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]"
+                          style={{ fontFamily: 'var(--font-inter)' }}
+                          onFocus={(e) => {
+                            e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                            e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                          }}
+                          onBlur={(e) => {
+                            e.currentTarget.style.borderColor = ''
+                            e.currentTarget.style.boxShadow = ''
+                          }}
                         />
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Rol y Estado */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-blue-600" />
+                        <Shield className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                         Rol y Estado
                       </CardTitle>
                     </CardHeader>
@@ -936,7 +1012,7 @@ export function UserManagement() {
                       <div>
                         <Label htmlFor="editRole">Rol</Label>
                         <Select value={formData.role} onValueChange={applyRolePermissions}>
-                          <SelectTrigger className="mt-1">
+                          <SelectTrigger className="mt-1 border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]">
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -947,22 +1023,24 @@ export function UserManagement() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
-                          <div className="text-sm text-blue-800 dark:text-blue-300">
+                        <div className="rounded-lg p-3 mt-2 border" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)', borderColor: 'rgba(92, 156, 124, 0.2)' }}>
+                          <div className="text-sm" style={{ color: 'var(--sidebar-orange)' }}>
                             <span className="font-semibold">
                               {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
                             </span>
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center space-x-3 p-4 rounded-xl border" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)', borderColor: 'rgba(92, 156, 124, 0.2)' }}>
                         <Switch
                           id="editIsActive"
                           checked={formData.isActive}
                           onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                          className="data-[state=checked]:bg-blue-600"
+                          style={{ 
+                            '--switch-checked-bg': 'var(--sidebar-orange)'
+                          } as React.CSSProperties}
                         />
-                        <Label htmlFor="editIsActive" className="text-base font-medium text-blue-700 dark:text-blue-300">
+                        <Label htmlFor="editIsActive" className="text-base font-medium" style={{ color: 'var(--sidebar-orange)' }}>
                           Usuario Activo
                         </Label>
                       </div>
@@ -972,22 +1050,23 @@ export function UserManagement() {
 
                 {/* Columna Derecha - Permisos */}
                 <div className="space-y-6">
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-blue-600" />
+                        <Shield className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                         Permisos del Sistema
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {moduleOptions.map(module => (
-                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                          <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                        <div key={module.value} className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-xl p-4 bg-gray-50 dark:bg-[#1A1A1A]">
+                          <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-[#1F1F1F] p-2 rounded-lg transition-colors">
                             <input
                               type="checkbox"
                               checked={hasPermission(module.value, 'view')}
                               onChange={() => togglePermission(module.value, 'view')}
-                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                              className="w-4 h-4 bg-gray-100 border-gray-300 rounded focus:ring-2"
+                              style={{ accentColor: 'var(--sidebar-orange)' }}
                             />
                             <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                           </label>
@@ -1000,16 +1079,28 @@ export function UserManagement() {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+            <div className="flex justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-gray-50 dark:bg-[#1A1A1A] sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
               <Button 
                 variant="outline" 
                 onClick={() => setIsEditModalOpen(false)}
+                className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.backgroundColor = ''
+                }}
               >
                 Cancelar
               </Button>
               <Button 
                 onClick={handleUpdateUser}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="text-white"
+                style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 Actualizar Usuario
               </Button>

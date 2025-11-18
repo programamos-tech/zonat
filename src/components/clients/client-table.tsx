@@ -93,15 +93,15 @@ export function ClientTable({
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <Users className="h-5 w-5 md:h-6 md:w-6 text-red-600 flex-shrink-0" />
+                  <Users className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
                   <span className="flex-shrink-0">Gestión de Clientes</span>
                 </CardTitle>
                 <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
@@ -116,7 +116,8 @@ export function ClientTable({
                   <Button 
                     onClick={onRefresh} 
                     variant="outline"
-                    className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                    className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 rounded-xl border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-all duration-200 cursor-pointer"
+                    style={{ color: 'var(--sidebar-orange)' }}
                   >
                     <RefreshCcw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                     <span className="hidden md:inline">Actualizar</span>
@@ -124,7 +125,10 @@ export function ClientTable({
                 )}
                 <Button 
                   onClick={onCreate}
-                  className="bg-red-600 hover:bg-red-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                  className="text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                  style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                  onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                 >
                   <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
                   <span className="hidden sm:inline">Nuevo Cliente</span>
@@ -137,7 +141,7 @@ export function ClientTable({
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -147,13 +151,31 @@ export function ClientTable({
                 placeholder="Buscar cliente..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                style={{ fontFamily: 'var(--font-inter)' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.boxShadow = ''
+                }}
               />
             </div>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+              style={{ fontFamily: 'var(--font-inter)' }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = ''
+                e.currentTarget.style.boxShadow = ''
+              }}
             >
               {types.map(type => (
                 <option key={type} value={type}>
@@ -166,7 +188,7 @@ export function ClientTable({
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-0">
           {filteredClients.length === 0 ? (
             <div className="text-center py-12">
@@ -181,13 +203,13 @@ export function ClientTable({
           ) : (
             <>
               {/* Vista de Tarjetas para Mobile */}
-              <div className="md:hidden space-y-3 p-3">
+              <div className="md:hidden space-y-3 p-3" style={{ fontFamily: 'var(--font-inter)' }}>
                 {filteredClients.map((client, index) => {
                   const TypeIcon = getTypeIcon(client.type)
                   return (
                     <div
                       key={client.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg p-3 space-y-2 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -238,7 +260,10 @@ export function ClientTable({
                             size="sm"
                             variant="ghost"
                             onClick={() => onEdit(client)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                            className="h-8 w-8 p-0 active:scale-95"
+                            style={{ color: 'var(--sidebar-orange)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -246,7 +271,10 @@ export function ClientTable({
                             size="sm"
                             variant="ghost"
                             onClick={() => onDelete(client)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                            className="h-8 w-8 p-0 active:scale-95"
+                            style={{ color: '#EF4444' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -259,8 +287,8 @@ export function ClientTable({
 
               {/* Vista de Tabla para Desktop */}
               <div className="hidden md:block overflow-x-auto">
-                <table className="w-full table-fixed">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <table className="w-full table-fixed" style={{ fontFamily: 'var(--font-inter)' }}>
+                <thead className="bg-gray-50 dark:bg-[#1A1A1A]">
                   <tr>
                     <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Cliente
@@ -282,11 +310,11 @@ export function ClientTable({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-[#1A1A1A] divide-y divide-gray-200 dark:divide-[rgba(255,255,255,0.06)]">
                   {filteredClients.map((client) => {
                     const TypeIcon = getTypeIcon(client.type)
                     return (
-                      <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                      <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-[#1F1F1F]">
                         <td className="px-3 py-3">
                           <div className="flex items-center min-w-0">
                             <div className="flex-shrink-0 mr-2">
@@ -344,8 +372,11 @@ export function ClientTable({
                               size="sm"
                               variant="ghost"
                               onClick={() => onEdit(client)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                              className="h-8 w-8 p-0"
                               title="Editar cliente"
+                              style={{ color: 'var(--sidebar-orange)' }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -353,8 +384,11 @@ export function ClientTable({
                               size="sm"
                               variant="ghost"
                               onClick={() => onDelete(client)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                              className="h-8 w-8 p-0"
                               title="Eliminar cliente"
+                              style={{ color: '#EF4444' }}
+                              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

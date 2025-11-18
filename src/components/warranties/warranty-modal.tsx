@@ -293,16 +293,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between p-3 md:p-4 border-b border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center gap-3">
-            <Shield className="h-5 w-5 md:h-6 md:w-6 text-purple-600 dark:text-purple-400" />
+            <Shield className="h-5 w-5 md:h-6 md:w-6" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
-              <h2 className="text-lg md:text-xl font-semibold text-purple-800 dark:text-purple-200">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
                 {warranty ? 'Editar Garantía' : 'Nueva Garantía'}
               </h2>
-              <p className="text-xs md:text-sm text-purple-700 dark:text-purple-300">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
                 Registra una garantía entregando un producto en reemplazo.
               </p>
             </div>
@@ -311,19 +311,19 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-purple-100 dark:hover:bg-purple-800/30"
+            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
           >
-            <X className="h-5 w-5 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200" />
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-3 md:p-4">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-white dark:bg-[#1A1A1A]">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto flex-1">
             <div className="space-y-3">
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <Package className="h-5 w-5 text-red-600" />
+                    <Package className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                     Producto defectuoso
                 </CardTitle>
               </CardHeader>
@@ -337,7 +337,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         placeholder="Buscar producto defectuoso..."
                         value={defectiveSearch}
                         onChange={(e) => setDefectiveSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }}
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -345,7 +354,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     </p>
                     {defectiveLoading && (
                       <div className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-500"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
                         Buscando productos...
                       </div>
                     )}
@@ -355,7 +364,8 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <button
                             key={product.id}
                             onClick={() => handleSelectDefective(product)}
-                            className="w-full text-left p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="w-full text-left p-3 border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-colors"
+                            style={{ fontFamily: 'var(--font-inter)' }}
                           >
                               <div className="font-medium text-gray-900 dark:text-white">
                               {product.name}
@@ -375,10 +385,10 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     )}
                   </>
                 ) : (
-                  <div className="p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                  <div className="p-3 bg-gray-50 dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold text-red-700 dark:text-red-200">
+                        <div className="font-semibold text-gray-900 dark:text-white">
                           {selectedDefectiveProduct.name}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-300">
@@ -392,12 +402,12 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         }}
                         variant="ghost"
                         size="sm"
-                        className="text-gray-500 hover:text-gray-700"
+                        className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
-                    <p className="text-xs text-red-600 dark:text-red-200 mt-2 flex items-center gap-1">
+                    <p className="text-xs mt-2 flex items-center gap-1" style={{ color: 'var(--sidebar-orange)' }}>
                       <CheckCircle className="h-3 w-3" />
                       Producto defectuoso seleccionado
                     </p>
@@ -413,7 +423,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           const value = parseInt(e.target.value) || 1
                           setFormData(prev => ({ ...prev, quantityReceived: Math.max(1, value) }))
                         }}
-                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }}
                       />
                       {errors.quantityReceived && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
@@ -427,16 +446,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <Package className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                     Producto de reemplazo
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 p-3 pt-2">
                 {!selectedDefectiveProduct ? (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-300">
+                  <div className="p-3 bg-gray-50 dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-sm text-gray-500 dark:text-gray-300">
                     Primero selecciona el producto defectuoso para elegir un reemplazo.
                   </div>
                 ) : !selectedReplacementProduct ? (
@@ -448,7 +467,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             placeholder="Buscar producto de reemplazo..."
                         value={replacementSearch}
                         onChange={(e) => setReplacementSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }}
                           />
                         </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -456,7 +484,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     </p>
                     {replacementLoading && (
                       <div className="text-sm text-gray-500 dark:text-gray-300 flex items-center gap-2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
                         Buscando productos...
                         </div>
                         )}
@@ -471,10 +499,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                               onClick={() => void handleSelectReplacement(product)}
                               className={`w-full text-left p-3 border rounded-lg transition-colors ${
                                 hasStock
-                                  ? 'border-gray-200 dark:border-gray-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                  ? 'border-gray-200 dark:border-[rgba(255,255,255,0.06)] hover:bg-gray-50 dark:hover:bg-[#1F1F1F]'
                                   : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 cursor-not-allowed opacity-70'
                               }`}
                               disabled={!hasStock}
+                              style={{ fontFamily: 'var(--font-inter)' }}
                               >
                                 <div className="font-medium text-gray-900 dark:text-white">
                                   {product.name}
@@ -504,16 +533,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             )}
                   </>
                 ) : (
-                  <div className="p-3 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-lg">
+                  <div className="p-3 bg-gray-50 dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="font-semibold text-purple-700 dark:text-purple-200">
+                        <div className="font-semibold text-gray-900 dark:text-white">
                           {selectedReplacementProduct.name}
                         </div>
                         <div className="text-sm text-gray-600 dark:text-gray-300">
                           Ref: {selectedReplacementProduct.reference || 'N/A'}
                         </div>
-                        <div className="text-xs text-purple-600 dark:text-purple-300 mt-1 flex items-center gap-1">
+                        <div className="text-xs mt-1 flex items-center gap-1" style={{ color: 'var(--sidebar-orange)' }}>
                           <CheckCircle className="h-3 w-3" />
                           Stock disponible: {getProductStock(selectedReplacementProduct)} unidades
                         </div>
@@ -522,7 +551,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           onClick={() => setSelectedReplacementProduct(null)}
                           variant="ghost"
                           size="sm"
-                          className="text-gray-500 hover:text-gray-700"
+                          className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -541,7 +570,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           const maxStock = getProductStock(selectedReplacementProduct)
                           setFormData(prev => ({ ...prev, quantityDelivered: Math.max(1, Math.min(maxStock, value)) }))
                         }}
-                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }}
                       />
                       {errors.quantityDelivered && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
@@ -560,10 +598,10 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             </div>
 
             <div className="space-y-3">
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <User className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                     Información del Cliente
                 </CardTitle>
               </CardHeader>
@@ -574,7 +612,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                   </label>
                   {clientsLoading ? (
                     <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-300">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-500"></div>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
                       Cargando clientes...
                     </div>
                   ) : (
@@ -582,7 +620,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleSelectClient(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white"
+                        style={{ fontFamily: 'var(--font-inter)' }}
+                        onFocus={(e) => {
+                          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                        }}
+                        onBlur={(e) => {
+                          e.currentTarget.style.borderColor = ''
+                          e.currentTarget.style.boxShadow = ''
+                        }}
                       >
                         <option value="">Selecciona un cliente...</option>
                         {clients.map((client) => (
@@ -610,7 +657,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                 </div>
 
                 {selectedClient && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300">
+                  <div className="p-3 bg-gray-50 dark:bg-[#1A1A1A] rounded-lg text-sm text-gray-600 dark:text-gray-300 border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                     <div className="font-medium text-gray-900 dark:text-white">{selectedClient.name}</div>
                     {selectedClient.email && <div>{selectedClient.email}</div>}
                     {selectedClient.phone && <div>{selectedClient.phone}</div>}
@@ -620,10 +667,10 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                  </CardContent>
                </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    <ClipboardList className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                     Notas adicionales
                   </CardTitle>
                 </CardHeader>
@@ -636,7 +683,16 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Notas adicionales sobre la garantía..."
                     rows={3}
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white resize-none"
+                    style={{ fontFamily: 'var(--font-inter)' }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = ''
+                      e.currentTarget.style.boxShadow = ''
+                    }}
                   />
               </CardContent>
             </Card>
@@ -644,18 +700,37 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] sticky bottom-0 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <Button
             onClick={handleClose}
             variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+              e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = ''
+              e.currentTarget.style.backgroundColor = ''
+            }}
           >
             Cancelar
           </Button>
           <Button
             onClick={handleSave}
             disabled={loading}
-            className="bg-purple-600 hover:bg-purple-700 text-white disabled:bg-gray-400"
+            className="text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ backgroundColor: 'var(--sidebar-orange)' }}
+            onMouseEnter={(e) => {
+              if (!e.currentTarget.disabled) {
+                e.currentTarget.style.opacity = '0.9'
+              }
+            }}
+            onMouseLeave={(e) => {
+              if (!e.currentTarget.disabled) {
+                e.currentTarget.style.opacity = '1'
+              }
+            }}
           >
             {loading ? (
               <div className="flex items-center gap-2">

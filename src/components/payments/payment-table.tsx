@@ -170,7 +170,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
       case 'partial':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+        return 'text-white dark:text-white'
       case 'overdue':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'cancelled':
@@ -178,6 +178,19 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
       default:
         return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
     }
+  }
+
+  const getStatusStyle = (status: string, credit?: any) => {
+    if (isCreditCancelled(credit)) {
+      return undefined
+    }
+    if (status === 'completed') {
+      return {
+        backgroundColor: 'rgba(92, 156, 124, 0.2)',
+        color: 'var(--sidebar-orange)'
+      }
+    }
+    return undefined
   }
 
   const getStatusLabel = (status: string, credit?: any) => {
@@ -214,15 +227,15 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
   })
 
   return (
-    <div className="space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-600 flex-shrink-0" />
+                  <CreditCard className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
                   <span className="flex-shrink-0">Gestión de Créditos</span>
                   {todayPaymentsTotal !== undefined && (
                     <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
@@ -238,19 +251,19 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                   Administra los créditos
                 </p>
                 <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1 md:hidden">
-                  <span className="font-semibold text-orange-600">Deuda: {formatCurrency(totalDebt)}</span>
+                  <span className="font-semibold" style={{ color: 'var(--sidebar-orange)' }}>Deuda: {formatCurrency(totalDebt)}</span>
                 </div>
               </div>
               <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 md:gap-4">
                 <div className="text-right hidden md:block lg:hidden">
                   <div className="text-xs text-gray-600 dark:text-gray-300">Total Deuda:</div>
-                  <div className="text-lg font-extrabold text-orange-600">
+                  <div className="text-lg font-extrabold" style={{ color: 'var(--sidebar-orange)' }}>
                     {formatCurrency(totalDebt)}
                   </div>
                 </div>
                 <div className="text-right hidden lg:block">
                   <div className="text-sm text-gray-600 dark:text-gray-300">Total Deuda:</div>
-                  <div className="text-2xl font-extrabold text-orange-600">
+                  <div className="text-2xl font-extrabold" style={{ color: 'var(--sidebar-orange)' }}>
                     {formatCurrency(totalDebt)}
                   </div>
                 </div>
@@ -259,13 +272,14 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                     <Button 
                       onClick={onRefresh} 
                       variant="outline"
-                      className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                      className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 rounded-xl border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-all duration-200 cursor-pointer"
+                      style={{ color: 'var(--sidebar-orange)' }}
                     >
                       <RefreshCcw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                       <span className="hidden md:inline">Actualizar</span>
                     </Button>
                   )}
-                  <Button onClick={onCreate} className="bg-orange-600 hover:bg-orange-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
+                  <Button onClick={onCreate} className="text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none" style={{ backgroundColor: 'var(--sidebar-orange)' }} onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'} onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}>
                     <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
                     <span className="hidden sm:inline">Nuevo Crédito</span>
                     <span className="sm:hidden">Nuevo</span>
@@ -278,7 +292,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -288,13 +302,31 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                 placeholder="Buscar crédito..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                style={{ fontFamily: 'var(--font-inter)' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.boxShadow = ''
+                }}
               />
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+              style={{ fontFamily: 'var(--font-inter)' }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = ''
+                e.currentTarget.style.boxShadow = ''
+              }}
             >
               <option value="all">Todos los estados</option>
               <option value="pending">Pendiente</option>
@@ -308,11 +340,11 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Cargando créditos...
               </h3>
@@ -333,19 +365,19 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
           ) : (
             <>
               {/* Vista de Tarjetas para Mobile */}
-              <div className="md:hidden space-y-3 p-3">
+              <div className="md:hidden space-y-3 p-3" style={{ fontFamily: 'var(--font-inter)' }}>
                 {filteredCredits.map((credit, index) => {
                   return (
                     <div
                       key={credit.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg p-3 space-y-2 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                            <CreditCard className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                            <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
+                            <CreditCard className="h-3.5 w-3.5 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                            <span className="text-xs font-mono font-semibold truncate" style={{ color: 'var(--sidebar-orange)' }} title={credit.invoiceNumber}>
                               {credit.invoiceNumber}
                             </span>
                           </div>
@@ -356,7 +388,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             {getStatusLabel(credit.status, credit)}
                           </p>
                         </div>
-                        <Badge className={`${getStatusColor(credit.status, credit)} text-xs shrink-0`}>
+                        <Badge className={`${getStatusColor(credit.status, credit)} text-xs shrink-0`} style={getStatusStyle(credit.status, credit)}>
                           <div className="flex items-center space-x-1">
                             {getStatusIcon(credit.status, credit)}
                             <span className="hidden sm:inline">{getStatusLabel(credit.status, credit)}</span>
@@ -364,7 +396,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                         <div className="text-center">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
                           <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatCurrency(credit.totalAmount)}</div>
@@ -378,7 +410,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                       </div>
                       
                       {credit.dueDate && credit.status !== 'completed' && (
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-500 dark:text-gray-400">Vencimiento:</span>
                             <span className={`font-semibold ${getDueDateColor(credit.dueDate)}`}>
@@ -388,7 +420,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                         </div>
                       )}
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                         <div className="flex-1 min-w-0">
                           {credit.lastPaymentAmount && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={`Último abono: ${formatCurrency(credit.lastPaymentAmount)}`}>
@@ -401,7 +433,10 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             size="sm"
                             variant="ghost"
                             onClick={() => onView(credit)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                            className="h-8 w-8 p-0 active:scale-95"
+                            style={{ color: 'var(--sidebar-orange)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -413,8 +448,19 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             className={`h-8 w-8 p-0 active:scale-95 ${
                               credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1
                                 ? 'text-gray-400 cursor-not-allowed opacity-50' 
-                                : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
+                                : ''
                             }`}
+                            style={credit.status !== 'cancelled' && !isCreditCancelled(credit) && getInvoiceCount(credit.invoiceNumber) <= 1 ? { color: 'var(--sidebar-orange)' } : undefined}
+                            onMouseEnter={(e) => {
+                              if (!e.currentTarget.disabled) {
+                                e.currentTarget.style.opacity = '0.8'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!e.currentTarget.disabled) {
+                                e.currentTarget.style.opacity = '1'
+                              }
+                            }}
                           >
                             <DollarSign className="h-4 w-4" />
                           </Button>
@@ -427,8 +473,8 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
 
               {/* Vista de Tabla para Desktop */}
               <div className="hidden md:block overflow-x-auto credits-table-tablet-container">
-                <table className="w-full table-fixed md:table-auto lg:table-fixed credits-table-tablet">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <table className="w-full table-fixed md:table-auto lg:table-fixed credits-table-tablet" style={{ fontFamily: 'var(--font-inter)' }}>
+                <thead className="bg-gray-50 dark:bg-[#1A1A1A]">
                   <tr>
                     <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       Factura
@@ -459,13 +505,13 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-[#1A1A1A] divide-y divide-gray-200 dark:divide-[rgba(255,255,255,0.06)]">
                   {filteredCredits.map((credit) => (
-                    <tr key={credit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                    <tr key={credit.id} className="hover:bg-gray-50 dark:hover:bg-[#1F1F1F]">
                       <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-5">
                         <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                          <div className="text-xs md:text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
+                          <CreditCard className="h-4 w-4 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                          <div className="text-xs md:text-sm font-mono font-semibold truncate" style={{ color: 'var(--sidebar-orange)' }} title={credit.invoiceNumber}>
                             {credit.invoiceNumber}
                           </div>
                         </div>
@@ -476,7 +522,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                         </div>
                       </td>
                       <td className="px-1 md:px-2 py-3 md:py-5">
-                        <Badge className={`${getStatusColor(credit.status, credit)} flex items-center gap-1 w-fit text-xs`}>
+                        <Badge className={`${getStatusColor(credit.status, credit)} flex items-center gap-1 w-fit text-xs`} style={getStatusStyle(credit.status, credit)}>
                           {getStatusIcon(credit.status, credit)}
                           <span className="hidden sm:inline">{getStatusLabel(credit.status, credit)}</span>
                         </Badge>
@@ -502,7 +548,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                         </div>
                       </td>
                       <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
-                        <div className={`text-xs md:text-sm ${credit.status === 'completed' ? 'text-green-600 dark:text-green-400 font-bold' : (credit.dueDate ? getDueDateColor(credit.dueDate) : 'text-gray-600 dark:text-gray-300')}`}>
+                        <div className={`text-xs md:text-sm ${credit.status === 'completed' ? 'font-bold' : (credit.dueDate ? getDueDateColor(credit.dueDate) : 'text-gray-600 dark:text-gray-300')}`} style={credit.status === 'completed' ? { color: 'var(--sidebar-orange)' } : undefined}>
                           {credit.status === 'completed' ? 'Completado' : (credit.dueDate ? formatDate(credit.dueDate) : '-')}
                         </div>
                       </td>
@@ -512,8 +558,11 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             size="sm"
                             variant="ghost"
                             onClick={() => onView(credit)}
-                            className="h-7 w-7 md:h-8 md:w-8 p-0 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100 active:scale-95 touch-manipulation"
+                            className="h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation"
                             title="Ver detalles"
+                            style={{ color: 'var(--sidebar-orange)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
                             <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
                           </Button>
@@ -525,8 +574,19 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                             className={`h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation ${
                               credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1
                                 ? 'text-gray-400 cursor-not-allowed opacity-50' 
-                                : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
+                                : ''
                             }`}
+                            style={credit.status !== 'cancelled' && !isCreditCancelled(credit) && getInvoiceCount(credit.invoiceNumber) <= 1 ? { color: 'var(--sidebar-orange)' } : undefined}
+                            onMouseEnter={(e) => {
+                              if (!e.currentTarget.disabled) {
+                                e.currentTarget.style.opacity = '0.8'
+                              }
+                            }}
+                            onMouseLeave={(e) => {
+                              if (!e.currentTarget.disabled) {
+                                e.currentTarget.style.opacity = '1'
+                              }
+                            }}
                             title={
                               credit.status === 'cancelled' || isCreditCancelled(credit)
                                 ? 'Crédito anulado' 

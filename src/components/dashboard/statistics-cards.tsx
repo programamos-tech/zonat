@@ -84,7 +84,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: DollarSign,
       color: 'emerald',
       bgColor: 'bg-emerald-100 dark:bg-emerald-900/20',
-      iconColor: 'text-emerald-600'
+      iconColor: 'dark:text-emerald-600'
     },
     {
       title: 'Ganancia Total',
@@ -94,7 +94,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: TrendingUp,
       color: 'purple',
       bgColor: 'bg-purple-100 dark:bg-purple-900/20',
-      iconColor: 'text-purple-600'
+      iconColor: 'dark:text-purple-600'
     },
     {
       title: 'Productos Activos',
@@ -104,7 +104,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: Package,
       color: 'blue',
       bgColor: 'bg-blue-100 dark:bg-blue-900/20',
-      iconColor: 'text-blue-600'
+      iconColor: 'dark:text-blue-600'
     },
     {
       title: 'Clientes Activos',
@@ -114,7 +114,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: Users,
       color: 'green',
       bgColor: 'bg-green-100 dark:bg-green-900/20',
-      iconColor: 'text-green-600'
+      iconColor: 'dark:text-green-600'
     },
     {
       title: 'Margen de Ganancia',
@@ -124,7 +124,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: Target,
       color: 'orange',
       bgColor: 'bg-orange-100 dark:bg-orange-900/20',
-      iconColor: 'text-orange-600'
+      iconColor: 'dark:text-orange-600'
     },
     {
       title: 'Pagos Pendientes',
@@ -134,7 +134,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: CreditCard,
       color: 'red',
       bgColor: 'bg-red-100 dark:bg-red-900/20',
-      iconColor: 'text-red-600'
+      iconColor: 'dark:text-red-600'
     },
     {
       title: 'Stock Bajo',
@@ -144,7 +144,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: AlertTriangle,
       color: 'yellow',
       bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
-      iconColor: 'text-yellow-600'
+      iconColor: 'dark:text-yellow-600'
     },
     {
       title: 'Ventas Este Mes',
@@ -154,7 +154,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       icon: ShoppingCart,
       color: 'emerald',
       bgColor: 'bg-emerald-100 dark:bg-emerald-900/20',
-      iconColor: 'text-emerald-600'
+      iconColor: 'dark:text-emerald-600'
     }
   ]
 
@@ -190,8 +190,8 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
                     {card.change}
                   </p>
                 </div>
-                <div className={`h-12 w-12 ${card.bgColor} rounded-full flex items-center justify-center`}>
-                  <Icon className={`h-6 w-6 ${card.iconColor}`} />
+                <div className="h-12 w-12 rounded-full flex items-center justify-center">
+                  <Icon className="h-6 w-6" style={{ color: 'var(--sidebar-orange)' }} />
                 </div>
               </div>
             </CardContent>

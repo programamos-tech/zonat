@@ -131,11 +131,34 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
       {/* Input trigger */}
       <div 
         onClick={handleOpenCalendar}
-        className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 cursor-pointer"
+        className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-[#1A1A1A] border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-sm text-gray-700 dark:text-gray-300 cursor-pointer"
+        style={{
+          borderColor: selectedDate ? 'var(--sidebar-orange)' : undefined
+        }}
+        onFocus={(e) => {
+          e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+          e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+        }}
+        onBlur={(e) => {
+          if (!selectedDate) {
+            e.currentTarget.style.borderColor = ''
+            e.currentTarget.style.boxShadow = ''
+          }
+        }}
+        onMouseEnter={(e) => {
+          if (!selectedDate) {
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
+          }
+        }}
+        onMouseLeave={(e) => {
+          if (!selectedDate) {
+            e.currentTarget.style.borderColor = ''
+          }
+        }}
       >
         <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-gray-400" />
-          <span className={selectedDate ? 'text-gray-900 dark:text-white' : 'text-gray-500'}>
+          <Calendar className="h-4 w-4" style={{ color: selectedDate ? 'var(--sidebar-orange)' : 'rgb(156, 163, 175)' }} />
+          <span className={selectedDate ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}>
             {formatSelectedDate()}
           </span>
         </div>
@@ -146,9 +169,9 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
                 e.stopPropagation()
                 handleClearDate()
               }}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-[#1F1F1F] rounded"
             >
-              <X className="h-3 w-3 text-gray-400" />
+              <X className="h-3 w-3 text-gray-400 dark:text-gray-500" />
             </button>
           )}
           <button
@@ -156,23 +179,24 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
               e.stopPropagation()
               handleOpenCalendar()
             }}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+            className="p-1 hover:bg-gray-100 dark:hover:bg-[#1F1F1F] rounded"
           >
-            <ChevronRight className={`h-4 w-4 text-gray-400 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
+            <ChevronRight className={`h-4 w-4 text-gray-400 dark:text-gray-500 transition-transform ${isOpen ? 'rotate-90' : ''}`} />
           </button>
         </div>
       </div>
 
       {/* Calendar dropdown */}
       {isOpen && (
-        <div className={`absolute ${showAbove ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[100] p-4 min-w-[280px] max-w-[280px]`}>
+        <div className={`absolute ${showAbove ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-lg z-[100] p-4 min-w-[280px] max-w-[280px]`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1))}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-[#1F1F1F] rounded"
+              style={{ color: 'var(--sidebar-orange)' }}
             >
-              <ChevronLeft className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronLeft className="h-4 w-4" />
             </button>
             
             <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -181,9 +205,10 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
             
             <button
               onClick={() => setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1))}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+              className="p-1 hover:bg-gray-100 dark:hover:bg-[#1F1F1F] rounded"
+              style={{ color: 'var(--sidebar-orange)' }}
             >
-              <ChevronRight className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <ChevronRight className="h-4 w-4" />
             </button>
           </div>
 
@@ -214,18 +239,31 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
                     ${isDisabled 
                       ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed bg-gray-100 dark:bg-gray-800' 
                       : isCurrentMonth 
-                        ? 'text-gray-900 dark:text-white hover:bg-emerald-100 dark:hover:bg-emerald-900/30' 
+                        ? 'text-gray-900 dark:text-white' 
                         : 'text-gray-400 dark:text-gray-600'
                     }
                     ${isCurrentDay && !isDisabled
-                      ? 'bg-emerald-100 dark:bg-emerald-900/30 font-semibold' 
+                      ? 'font-semibold' 
                       : ''
                     }
                     ${isSelectedDay && !isDisabled
-                      ? 'bg-emerald-600 text-white hover:bg-emerald-700' 
+                      ? 'text-white' 
                       : ''
                     }
                   `}
+                  style={!isDisabled ? {
+                    backgroundColor: isSelectedDay ? 'var(--sidebar-orange)' : isCurrentDay ? 'rgba(92, 156, 124, 0.1)' : undefined
+                  } : undefined}
+                  onMouseEnter={(e) => {
+                    if (!isDisabled && !isSelectedDay && isCurrentMonth) {
+                      e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDisabled && !isSelectedDay) {
+                      e.currentTarget.style.backgroundColor = isCurrentDay ? 'rgba(92, 156, 124, 0.1)' : ''
+                    }
+                  }}
                 >
                   {day}
                 </button>
@@ -234,7 +272,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
           </div>
 
           {/* Quick actions */}
-          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -247,14 +285,28 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
                 className={`flex-1 px-3 py-1 text-xs rounded transition-colors ${
                   isDateDisabled(new Date())
                     ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
-                    : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
+                    : ''
                 }`}
+                style={!isDateDisabled(new Date()) ? {
+                  backgroundColor: 'rgba(92, 156, 124, 0.1)',
+                  color: 'var(--sidebar-orange)'
+                } : undefined}
+                onMouseEnter={(e) => {
+                  if (!isDateDisabled(new Date())) {
+                    e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.2)'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isDateDisabled(new Date())) {
+                    e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+                  }
+                }}
               >
                 Hoy
               </button>
               <button
                 onClick={handleClearDate}
-                className="flex-1 px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="flex-1 px-3 py-1 text-xs bg-gray-100 dark:bg-[#1A1A1A] text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-[#1F1F1F] border border-gray-200 dark:border-[rgba(255,255,255,0.06)]"
               >
                 Limpiar
               </button>

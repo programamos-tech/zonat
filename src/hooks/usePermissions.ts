@@ -55,7 +55,7 @@ export function usePermissions() {
     
     // Super admin tiene acceso a todos los módulos
     if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
-      return ['dashboard', 'products', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs']
+      return ['dashboard', 'products', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs', 'admin_clients', 'suppliers', 'purchase_orders', 'profitability']
     }
     
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []

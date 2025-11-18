@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
-import { User, LogOut, Mail, Shield, Calendar, CheckCircle, XCircle, UserCircle, Clock, KeyRound } from 'lucide-react'
+import { User, LogOut, Mail, Shield, Calendar, CheckCircle, XCircle, UserCircle, Clock, KeyRound, Building2, Settings } from 'lucide-react'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 
 export default function ProfilePage() {
@@ -29,8 +29,8 @@ export default function ProfilePage() {
   }
 
   const getRoleColor = (role: string) => {
-    // Todos los avatares usan el verde esmeralda de la plataforma
-    return 'bg-emerald-500'
+    // Todos los avatares usan el color de Oviler
+    return ''
   }
 
   const formatDate = (dateString?: string) => {
@@ -47,9 +47,9 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="p-6 space-y-6 bg-white dark:bg-gray-900 min-h-screen flex items-center justify-center">
+        <div className="p-6 space-y-6 bg-white dark:bg-[var(--swatch--gray-950)] min-h-screen flex items-center justify-center" style={{ fontFamily: 'var(--font-inter)' }}>
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500 dark:border-emerald-500 mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
             <p className="text-gray-600 dark:text-gray-300">Cargando perfil...</p>
           </div>
         </div>
@@ -59,11 +59,11 @@ export default function ProfilePage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 bg-white dark:bg-[var(--swatch--gray-950)] min-h-screen" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
         <div className="mb-4 md:mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'var(--sidebar-orange)' }}>
               <UserCircle className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Mi Perfil</h1>
@@ -76,11 +76,11 @@ export default function ProfilePage() {
         {/* Profile Information */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Profile Card */}
-          <Card className="lg:col-span-1 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200">
+          <Card className="lg:col-span-1 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] hover:shadow-lg transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center space-y-4">
                 <div className="relative">
-                  <div className={`w-28 h-28 ${getRoleColor(user.role)} rounded-full flex items-center justify-center`}>
+                  <div className="w-28 h-28 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--sidebar-orange)' }}>
                     <User className="h-14 w-14 text-white" />
                   </div>
                 </div>
@@ -108,18 +108,18 @@ export default function ProfilePage() {
           </Card>
 
           {/* Details Card */}
-          <Card className="lg:col-span-2 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
+          <Card className="lg:col-span-2 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
             <CardHeader className="pb-4">
               <CardTitle className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                  <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+                <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
+                  <User className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                 </div>
                 Información Personal
               </CardTitle>
             </CardHeader>
             <CardContent className="p-4 md:p-6 space-y-4 md:space-y-5">
               {/* Email */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-[#1A1A1A] hover:bg-gray-100 dark:hover:bg-[#1F1F1F] transition-colors border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                 <div className="flex-shrink-0">
                   <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                     <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
@@ -136,7 +136,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Role */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-[#1A1A1A] hover:bg-gray-100 dark:hover:bg-[#1F1F1F] transition-colors border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                 <div className="flex-shrink-0">
                   <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                     <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
@@ -153,10 +153,10 @@ export default function ProfilePage() {
               </div>
 
               {/* Last Login */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-[#1A1A1A] hover:bg-gray-100 dark:hover:bg-[#1F1F1F] transition-colors border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                 <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                  <div className="w-12 h-12 rounded-lg flex items-center justify-center" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
+                    <Clock className="h-6 w-6" style={{ color: 'var(--sidebar-orange)' }} />
                   </div>
                 </div>
                 <div className="flex-1 min-w-0">
@@ -170,7 +170,7 @@ export default function ProfilePage() {
               </div>
 
               {/* Account Created */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-gray-700/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-[#1A1A1A] hover:bg-gray-100 dark:hover:bg-[#1F1F1F] transition-colors border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                 <div className="flex-shrink-0">
                   <div className="w-12 h-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
                     <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
@@ -201,7 +201,12 @@ export default function ProfilePage() {
                     {user.permissions.map((permission, index) => (
                       <Badge
                         key={index}
-                        className="px-3 py-1.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-medium hover:bg-emerald-200 hover:border-emerald-300 dark:hover:bg-emerald-900/40 dark:hover:border-emerald-700 transition-colors"
+                        className="px-3 py-1.5 text-xs font-medium transition-colors"
+                        style={{
+                          backgroundColor: 'rgba(92, 156, 124, 0.2)',
+                          color: 'var(--sidebar-orange)',
+                          borderColor: 'rgba(92, 156, 124, 0.3)'
+                        }}
                       >
                         {permission.module}
                       </Badge>
@@ -212,6 +217,73 @@ export default function ProfilePage() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Establecimiento de Comercio */}
+        <Card className="mt-4 md:mt-6 bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
+              <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(204, 120, 92, 0.1)' }}>
+                <Building2 className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
+              </div>
+              Establecimiento de Comercio
+            </CardTitle>
+            <CardDescription className="text-sm text-gray-600 dark:text-gray-400">
+              Configura la información de tu negocio o establecimiento
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="p-4 md:p-6">
+            <div className="space-y-4">
+              {/* Mock data - esto vendrá del backend después */}
+              <div className="flex items-center gap-4 p-4 rounded-lg border" style={{ 
+                backgroundColor: 'rgba(204, 120, 92, 0.05)',
+                borderColor: 'rgba(204, 120, 92, 0.2)'
+              }}>
+                <div 
+                  className="w-16 h-16 rounded-lg flex items-center justify-center text-lg font-semibold text-white flex-shrink-0"
+                  style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                >
+                  FG
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
+                    Nombre del Establecimiento
+                  </p>
+                  <p className="text-lg font-semibold text-gray-900 dark:text-white">
+                    Farmacia Genérica
+                  </p>
+                  <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                    Workspace activo
+                  </p>
+                </div>
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2"
+                  style={{ 
+                    borderColor: 'rgba(204, 120, 92, 0.3)',
+                    color: 'var(--sidebar-orange)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                    e.currentTarget.style.backgroundColor = 'rgba(204, 120, 92, 0.05)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(204, 120, 92, 0.3)'
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                  }}
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="hidden sm:inline">Configurar</span>
+                </Button>
+              </div>
+              
+              <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  Aquí podrás configurar la información de tu establecimiento, incluyendo nombre, dirección, teléfono y otros datos relevantes.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </RoleProtectedRoute>
   )

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Fira_Code } from "next/font/google";
+import { Geist, Geist_Mono, Fira_Code, Libre_Baskerville, Poppins, Plus_Jakarta_Sans, Inter } from "next/font/google";
 import "./globals.css";
+import Script from "next/script";
 // ThemeProvider removed
 import { Analytics } from "@vercel/analytics/next";
 import { AuthProvider } from "@/contexts/auth-context";
@@ -30,13 +31,40 @@ const firaCode = Fira_Code({
   subsets: ["latin"],
 });
 
+const libreBaskerville = Libre_Baskerville({
+  variable: "--font-libre-baskerville",
+  subsets: ["latin"],
+  weight: ["400", "700"],
+});
+
+const poppins = Poppins({
+  variable: "--font-poppins",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const plusJakartaSans = Plus_Jakarta_Sans({
+  variable: "--font-plus-jakarta-sans",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const inter = Inter({
+  variable: "--font-inter",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700", "800", "900"],
+});
+
 export const metadata: Metadata = {
-  title: "ZONA T - Panel de Control",
-  description: "Sistema de gestión de inventario y ventas para ZONA T",
+  title: "Oviler | Gestiona tu negocio",
+  description: "Sistema integral de gestión de tu negocio. Control de inventario, ventas, créditos y más. Hecho en Sincelejo.",
   icons: {
-    icon: '/zonat-logo.png',
-    shortcut: '/zonat-logo.png',
-    apple: '/zonat-logo.png'
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.png', type: 'image/png' }
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg'
   },
 };
 
@@ -47,8 +75,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" suppressHydrationWarning>
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Caprasimo&family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&icon_names=compost" />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${firaCode.variable} antialiased pb-16 lg:pb-0`}
+        className={`${geistSans.variable} ${geistMono.variable} ${firaCode.variable} ${libreBaskerville.variable} ${poppins.variable} ${plusJakartaSans.variable} ${inter.variable} antialiased pb-16 lg:pb-0`}
       >
         <AuthProvider>
           <ClientsProvider>

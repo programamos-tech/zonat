@@ -565,16 +565,16 @@ export default function SaleDetailModal({
   }
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col p-4 xl:px-6">
-      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)] overflow-hidden" style={{ fontFamily: 'var(--font-inter)' }}>
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-green-50 dark:bg-green-900/20">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center space-x-3">
-            <Receipt className="h-6 w-6 text-green-600" />
+            <Receipt className="h-6 w-6" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
               <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Detalle de Venta</h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">{getInvoiceNumber(sale)}</p>
+              <p className="text-xs md:text-sm" style={{ color: 'var(--sidebar-orange)' }}>{getInvoiceNumber(sale)}</p>
             </div>
           </div>
           <Button
@@ -582,7 +582,7 @@ export default function SaleDetailModal({
             variant="ghost"
             size="sm"
             disabled={isCancelling}
-            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
+            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-[#1F1F1F] text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </Button>
@@ -625,196 +625,172 @@ export default function SaleDetailModal({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
-            
-            {/* Left Column - Sale Information */}
-            <div className="space-y-3 md:space-y-4">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-            <CardHeader className="pb-2">
+        <div className="flex-1 overflow-y-auto p-3 md:p-4 bg-white dark:bg-[#1A1A1A]">
+          {/* Información de la Venta - Single Card */}
+          <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)] mb-3 md:mb-4">
+            <CardHeader className="pb-2 p-3 md:p-4">
               <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
-                <Receipt className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
+                <Receipt className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                 Información de la Venta
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3">
-                  <div className="grid grid-cols-2 gap-2 md:gap-3">
-                <div className="flex items-center space-x-3">
-                  <Receipt className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
-                        <div className="font-bold text-green-600 text-lg">{getInvoiceNumber(sale)}</div>
+            <CardContent className="p-3 md:p-4">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Columna 1: Información Básica */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <Receipt className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
+                      <div className="font-bold text-base truncate" style={{ color: 'var(--sidebar-orange)' }}>{getInvoiceNumber(sale)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <User className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Cliente</div>
+                      <div className="font-semibold text-base text-gray-900 dark:text-white truncate" title={sale.clientName}>{sale.clientName}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Fecha</div>
+                      <div className="font-semibold text-sm text-gray-900 dark:text-white">{formatDateTime(sale.createdAt)}</div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="h-5 w-5 flex items-center justify-center flex-shrink-0">
+                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: 'var(--sidebar-orange)' }}></div>
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Estado</div>
+                      <Badge className="mt-1 text-sm" style={{ backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' }}>
+                        {getStatusLabel(sale.status)}
+                      </Badge>
+                    </div>
                   </div>
                 </div>
-                
-                <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-green-600" />
+
+                {/* Columna 2: Información de Pago */}
+                <div className="space-y-4">
                   <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Cliente</div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{sale.clientName}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Fecha</div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{formatDateTime(sale.createdAt)}</div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <CreditCard className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Tipo de Pago</div>
-                        <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} mt-1`}>
+                    <div className="flex items-center space-x-3 mb-2">
+                      <CreditCard className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">Tipo de Pago</div>
+                    </div>
+                    <Badge className="text-sm" style={{ backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' }}>
                       {getPaymentMethodLabel(sale.paymentMethod)}
                     </Badge>
                   </div>
-                </div>
-              </div>
-              
-              {/* Sección de Pagos Mixtos */}
-              {sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                    Desglose de Pago Mixto
-                  </h4>
-                  <div className="space-y-2">
-                    {sale.payments.map((payment, index) => (
-                      <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500">
-                        <div className="flex items-center space-x-3">
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                            {getPaymentMethodLabel(payment.paymentType)}
-                          </Badge>
-                          {payment.notes && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {payment.notes}
-                            </span>
-                          )}
-                        </div>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          ${payment.amount.toLocaleString('es-CO')}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                      <div className="flex justify-between items-center font-medium">
-                        <span className="text-gray-900 dark:text-white">Total:</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">
-                          ${sale.payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString('es-CO')}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-                  <div className="mt-4 pt-4 border-t border-gray-600">
-                  <div className="flex items-center space-x-3">
-                    <div className="h-5 w-5 flex items-center justify-center">
-                      <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
-                    </div>
+                  
+                  {/* Sección de Pagos Mixtos */}
+                  {sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 && (
                     <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">Estado</div>
-                        <Badge className={`${getStatusColor(sale.status)} mt-1`}>
-                        {getStatusLabel(sale.status)}
-                      </Badge>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                        Desglose de Pago Mixto
+                      </div>
+                      <div className="space-y-1.5">
+                        {sale.payments.map((payment, index) => (
+                          <div key={index} className="flex justify-between items-center py-1.5 px-2 bg-gray-50 dark:bg-[#1A1A1A] rounded border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
+                            <Badge className="text-sm" style={{ backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' }}>
+                              {getPaymentMethodLabel(payment.paymentType)}
+                            </Badge>
+                            <span className="font-medium text-sm text-gray-900 dark:text-white ml-2 flex-shrink-0">
+                              ${payment.amount.toLocaleString('es-CO')}
+                            </span>
+                          </div>
+                        ))}
+                        <div className="pt-1.5 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
+                          <div className="flex justify-between items-center font-medium text-sm">
+                            <span className="text-gray-900 dark:text-white">Total:</span>
+                            <span style={{ color: 'var(--sidebar-orange)' }}>
+                              ${sale.payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString('es-CO')}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Columna 3: Resumen Financiero */}
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center space-x-3 mb-2">
+                      <DollarSign className="h-5 w-5 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">Resumen Financiero</div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-gray-700 dark:text-gray-300">Subtotal:</span>
+                        <span className="font-semibold text-sm text-gray-900 dark:text-white">
+                          {formatCurrency(sale.items.reduce((sum, item) => {
+                            const baseTotal = item.quantity * item.unitPrice
+                            const discountAmount = item.discountType === 'percentage' 
+                              ? (baseTotal * (item.discount || 0)) / 100 
+                              : (item.discount || 0)
+                            return sum + Math.max(0, baseTotal - discountAmount)
+                          }, 0))}
+                        </span>
+                      </div>
+
+                      {sale.discount && sale.discount > 0.001 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">Descuento:</span>
+                          <span className="font-semibold text-sm text-red-500">
+                            {sale.discountType === 'percentage' 
+                              ? `-${sale.discount}%` 
+                              : `-${formatCurrency(sale.discount)}`
+                            }
+                          </span>
+                        </div>
+                      )}
+
+                      {sale.tax && sale.tax > 0 && (
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-700 dark:text-gray-300">IVA (19%):</span>
+                          <span className="font-semibold text-sm" style={{ color: 'var(--sidebar-orange)' }}>
+                            {formatCurrency(sale.tax)}
+                          </span>
+                        </div>
+                      )}
+
+                      <div className="flex justify-between items-center pt-2 border-t-2" style={{ borderColor: 'var(--sidebar-orange)' }}>
+                        <span className="text-lg font-bold text-gray-900 dark:text-white">Total:</span>
+                        <span className="text-xl font-bold" style={{ color: 'var(--sidebar-orange)' }}>
+                          {formatCurrency(sale.total)}
+                        </span>
                       </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - Financial Summary */}
-            <div className="space-y-3 md:space-y-4">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
-                    Resumen Financiero
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {/* Subtotal de productos */}
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal de productos:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(sale.items.reduce((sum, item) => {
-                          const baseTotal = item.quantity * item.unitPrice
-                          const discountAmount = item.discountType === 'percentage' 
-                            ? (baseTotal * (item.discount || 0)) / 100 
-                            : (item.discount || 0)
-                          return sum + Math.max(0, baseTotal - discountAmount)
-                        }, 0))}
-                      </span>
-                    </div>
-
-                    {/* Descuento por total */}
-                    {sale.discount && sale.discount > 0.001 && (
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
-                        <span className="font-semibold text-red-500">
-                          {sale.discountType === 'percentage' 
-                            ? `-${sale.discount}%` 
-                            : `-${formatCurrency(sale.discount)}`
-                          }
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Subtotal después de descuentos */}
-                    <div className="flex justify-between items-center py-2 border-t border-gray-600 pt-3">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal después de descuentos:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(sale.subtotal)}
-                      </span>
-                    </div>
-
-                    {/* IVA */}
-                    {sale.tax && sale.tax > 0 && (
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
-                        <span className="font-semibold text-green-500">
-                          {formatCurrency(sale.tax)}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Total Final */}
-                    <div className="flex justify-between items-center py-3 border-t-2 border-emerald-500 pt-4">
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">Total Final:</span>
-                      <span className="text-2xl font-bold text-emerald-400">
-                        {formatCurrency(sale.total)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
                 </div>
               </div>
+            </CardContent>
+          </Card>
 
           {/* Products Table - Full Width */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm mt-3 md:mt-4">
-            <CardHeader className="pb-2">
+          <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
+            <CardHeader className="pb-2 p-3 md:p-4">
               <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
-                <Package className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
+                <Package className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                 Productos Vendidos
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-3">
-              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '500px' }}>
-                <table className="w-full">
-                  <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
-                    <tr className="border-b border-gray-200 dark:border-gray-600">
-                      <th className="text-left py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Producto</th>
-                      <th className="text-center py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Cantidad</th>
-                      <th className="text-right py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Precio Unit.</th>
-                      <th className="text-center py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Descuento</th>
-                      <th className="text-right py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Subtotal</th>
-                      <th className="text-left py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Vendedor</th>
+            <CardContent className="p-3 md:p-4">
+              <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: 'calc(92vh - 400px)' }}>
+                <table className="w-full table-auto">
+                  <thead className="sticky top-0 bg-white dark:bg-[#1A1A1A] z-10">
+                    <tr className="border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
+                      <th className="text-left py-3 px-3 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-sm w-[25%]">Producto</th>
+                      <th className="text-center py-3 px-3 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-sm w-[8%]">Cant.</th>
+                      <th className="text-right py-3 px-3 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-sm w-[12%]">Precio Unit.</th>
+                      <th className="text-center py-3 px-3 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-sm w-[10%]">Desc.</th>
+                      <th className="text-right py-3 px-3 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-sm w-[12%]">Subtotal</th>
+                      <th className="text-left py-3 px-3 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-sm w-[15%]">Vendedor</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -826,49 +802,39 @@ export default function SaleDetailModal({
                       const subtotalAfterDiscount = Math.max(0, baseTotal - discountAmount)
                       
                       return (
-                        <tr key={item.id} className={`border-b border-gray-600 ${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-600' : ''}`}>
-                          <td className="py-2 md:py-3 px-2 md:px-4">
-                          <div className="font-medium text-gray-900 dark:text-white">{item.productName}</div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400">Ref: {item.productReferenceCode || 'N/A'}</div>
+                        <tr key={item.id} className={`border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] ${index % 2 === 0 ? 'bg-gray-50 dark:bg-[#1F1F1F]' : ''}`}>
+                          <td className="py-3 px-3 md:px-4">
+                          <div className="font-medium text-sm text-gray-900 dark:text-white truncate" title={item.productName}>{item.productName}</div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">Ref: {item.productReferenceCode || 'N/A'}</div>
                           </td>
-                          <td className="py-2 md:py-3 px-2 md:px-4 text-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full text-sm font-medium">
+                          <td className="py-3 px-3 md:px-4 text-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full text-sm font-medium" style={{ backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' }}>
                               {item.quantity}
                             </span>
                           </td>
-                          <td className="py-2 md:py-3 px-2 md:px-4 text-right text-gray-600 dark:text-gray-300">
+                          <td className="py-3 px-3 md:px-4 text-right text-sm text-gray-600 dark:text-gray-300">
                             {formatCurrency(item.unitPrice)}
                           </td>
-                          <td className="py-2 md:py-3 px-2 md:px-4 text-center">
+                          <td className="py-3 px-3 md:px-4 text-center">
                             {item.discount && item.discount > 0 ? (
                               <div className="flex flex-col items-center">
-                                <span className="text-red-500 font-medium">
+                                <span className="text-red-500 font-medium text-sm">
                                   {item.discountType === 'percentage' ? `${item.discount}%` : formatCurrency(item.discount)}
                                 </span>
-                                {discountAmount > 0 && (
-                                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                                    ({formatCurrency(discountAmount)})
-                                  </span>
-                                )}
                               </div>
                             ) : (
-                              <span className="text-gray-400">-</span>
+                              <span className="text-gray-400 text-sm">-</span>
                             )}
                           </td>
-                          <td className="py-2 md:py-3 px-2 md:px-4 text-right">
-                            <div className="font-semibold text-gray-900 dark:text-white">
+                          <td className="py-3 px-3 md:px-4 text-right">
+                            <div className="font-semibold text-sm text-gray-900 dark:text-white">
                               {formatCurrency(subtotalAfterDiscount)}
                             </div>
                           </td>
-                          <td className="py-6 px-4">
-                            <div className="text-sm text-gray-600 dark:text-gray-300">
+                          <td className="py-3 px-3 md:px-4">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 truncate" title={sale.sellerName || 'No especificado'}>
                               {sale.sellerName || 'No especificado'}
                             </div>
-                            {sale.sellerEmail && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {sale.sellerEmail}
-                              </div>
-                            )}
                         </td>
                       </tr>
                       )
@@ -882,7 +848,7 @@ export default function SaleDetailModal({
           {/* Cancel Form */}
           {showCancelForm && (
             <div ref={cancelFormRef} className="mt-4">
-              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+              <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-red-500 dark:text-red-400 flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2 text-red-400" />
@@ -899,7 +865,16 @@ export default function SaleDetailModal({
                     onChange={(e) => setCancelReason(e.target.value)}
                     placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
                     disabled={isCancelling}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-md resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-[#1A1A1A] disabled:opacity-50 disabled:cursor-not-allowed"
+                    style={{ fontFamily: 'var(--font-inter)' }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = '#EF4444'
+                      e.currentTarget.style.boxShadow = '0 0 0 2px rgba(239, 68, 68, 0.2)'
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = ''
+                      e.currentTarget.style.boxShadow = ''
+                    }}
                     rows={4}
                   />
                   <div className="mt-1 text-right">
@@ -913,14 +888,37 @@ export default function SaleDetailModal({
                     onClick={() => setShowCancelForm(false)}
                     variant="outline"
                     disabled={isCancelling}
-                    className="border-red-500 text-red-400 hover:bg-red-900/20 hover:border-red-400 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onMouseEnter={(e) => {
+                      if (!isCancelling) {
+                        e.currentTarget.style.borderColor = '#EF4444'
+                        e.currentTarget.style.backgroundColor = 'rgba(239, 68, 68, 0.1)'
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isCancelling) {
+                        e.currentTarget.style.borderColor = ''
+                        e.currentTarget.style.backgroundColor = ''
+                      }
+                    }}
                   >
                     Cancelar
                   </Button>
                   <Button
                     onClick={handleCancel}
                       disabled={!cancelReason.trim() || cancelReason.trim().length < 10 || isCancelling}
-                      className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
+                      className="text-white border-0 font-medium px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ backgroundColor: '#EF4444' }}
+                      onMouseEnter={(e) => {
+                        if (!e.currentTarget.disabled) {
+                          e.currentTarget.style.opacity = '0.9'
+                        }
+                      }}
+                      onMouseLeave={(e) => {
+                        if (!e.currentTarget.disabled) {
+                          e.currentTarget.style.opacity = '1'
+                        }
+                      }}
                   >
                       <AlertTriangle className="h-4 w-4 mr-2" />
                       {isCancelling ? 'Anulando...' : 'Anular Factura'}
@@ -934,13 +932,24 @@ export default function SaleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-between p-2 md:p-3 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 0.5rem)` }}>
           <div className="flex space-x-3">
             {sale.status === 'draft' && onFinalizeDraft && (
               <Button
                 onClick={handleFinalizeDraft}
                 disabled={isFinalizing}
-                className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
+                className="text-white border-0 font-medium px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.opacity = '0.9'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.opacity = '1'
+                  }
+                }}
               >
                 <Receipt className="h-4 w-4 mr-2" />
                 {isFinalizing ? 'Facturando...' : 'Facturar'}
@@ -950,7 +959,18 @@ export default function SaleDetailModal({
               <Button
                 onClick={handleShowCancelForm}
                 disabled={isCancelling}
-                className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg disabled:from-gray-400 disabled:to-gray-500 disabled:transform-none disabled:shadow-none disabled:cursor-not-allowed"
+                className="text-white border-0 font-medium px-6 py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: '#EF4444' }}
+                onMouseEnter={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.opacity = '0.9'
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!e.currentTarget.disabled) {
+                    e.currentTarget.style.opacity = '1'
+                  }
+                }}
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Anular Factura
@@ -962,7 +982,18 @@ export default function SaleDetailModal({
             <Button
               onClick={onClose}
               disabled={isCancelling || isFinalizing}
-              className="bg-green-600 hover:bg-green-700 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ backgroundColor: 'var(--sidebar-orange)' }}
+              onMouseEnter={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.opacity = '0.9'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!e.currentTarget.disabled) {
+                  e.currentTarget.style.opacity = '1'
+                }
+              }}
             >
               Cerrar
             </Button>

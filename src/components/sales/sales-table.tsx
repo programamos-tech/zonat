@@ -204,15 +204,15 @@ export function SalesTable({
   })
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" style={{ fontFamily: 'var(--font-inter)' }}>
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <Receipt className="h-5 w-5 md:h-6 md:w-6 text-green-600 flex-shrink-0" />
+                  <Receipt className="h-5 w-5 md:h-6 md:w-6 flex-shrink-0" style={{ color: 'var(--sidebar-orange)' }} />
                   <span className="flex-shrink-0">Gestión de Ventas</span>
                   {todaySalesTotal !== undefined && (
                     <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
@@ -237,7 +237,8 @@ export function SalesTable({
                   <Button 
                     onClick={onRefresh} 
                     variant="outline"
-                    className="text-green-600 border-green-600 hover:bg-green-50 dark:text-green-400 dark:border-green-400 dark:hover:bg-green-900/20 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                    className="text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 rounded-xl border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] transition-all duration-200 cursor-pointer"
+                    style={{ color: 'var(--sidebar-orange)' }}
                   >
                     <RefreshCcw className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                     <span className="hidden md:inline">Actualizar</span>
@@ -246,7 +247,10 @@ export function SalesTable({
                 {(canCreateSales || currentUser?.role === 'vendedor' || currentUser?.role === 'Vendedor' || currentUser?.role === 'vendedora' || currentUser?.role === 'Vendedora') && (
                   <Button 
                     onClick={onCreate} 
-                    className="bg-green-600 hover:bg-green-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                    className="text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
+                    style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                   >
                     <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
                     <span className="hidden sm:inline">Nueva Venta</span>
@@ -260,7 +264,7 @@ export function SalesTable({
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -270,18 +274,36 @@ export function SalesTable({
                 placeholder={isSearching ? "Buscando..." : "Buscar factura..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 md:pl-10 pr-10 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-10 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg bg-white dark:bg-[#1A1A1A] text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                style={{ fontFamily: 'var(--font-inter)' }}
+                onFocus={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+                }}
+                onBlur={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.boxShadow = ''
+                }}
               />
               {isSearching && (
                 <div className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-green-500"></div>
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
                 </div>
               )}
             </div>
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-[rgba(255,255,255,0.06)] rounded-lg text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A]"
+              style={{ fontFamily: 'var(--font-inter)' }}
+              onFocus={(e) => {
+                e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                e.currentTarget.style.boxShadow = '0 0 0 2px rgba(92, 156, 124, 0.2)'
+              }}
+              onBlur={(e) => {
+                e.currentTarget.style.borderColor = ''
+                e.currentTarget.style.boxShadow = ''
+              }}
             >
               {statuses.map(status => (
                 <option key={status} value={status}>
@@ -294,11 +316,11 @@ export function SalesTable({
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
         <CardContent className="p-0">
           {isSearching ? (
             <div className="text-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-500 mx-auto mb-4"></div>
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 mx-auto mb-4" style={{ borderColor: 'var(--sidebar-orange)' }}></div>
               <p className="text-gray-500 dark:text-gray-400">Buscando ventas...</p>
             </div>
           ) : filteredSales.length === 0 ? (
@@ -314,13 +336,13 @@ export function SalesTable({
           ) : (
             <>
               {/* Vista de Tarjetas para Mobile */}
-              <div className="md:hidden space-y-3 p-3">
+              <div className="md:hidden space-y-3 p-3" style={{ fontFamily: 'var(--font-inter)' }}>
                 {filteredSales.map((sale, index) => {
                   const { date, time } = formatDateTime(sale.createdAt)
                   return (
                     <div
                       key={sale.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-[#1A1A1A] border border-gray-200 dark:border-[rgba(255,255,255,0.06)] rounded-lg p-3 space-y-2 shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -373,7 +395,10 @@ export function SalesTable({
                             size="sm"
                             variant="ghost"
                             onClick={() => onView(sale)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                            className="h-8 w-8 p-0 active:scale-95"
+                            style={{ color: 'var(--sidebar-orange)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -381,7 +406,10 @@ export function SalesTable({
                             size="sm"
                             variant="ghost"
                             onClick={() => onPrint(sale)}
-                            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
+                            className="h-8 w-8 p-0 active:scale-95"
+                            style={{ color: 'var(--sidebar-orange)' }}
+                            onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                            onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                           >
                             <Printer className="h-4 w-4" />
                           </Button>
@@ -394,8 +422,8 @@ export function SalesTable({
 
               {/* Desktop table */}
               <div className="overflow-x-auto hidden md:block">
-                <table className="w-full table-fixed">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
+                <table className="w-full table-fixed" style={{ fontFamily: 'var(--font-inter)' }}>
+                  <thead className="bg-gray-50 dark:bg-[#1A1A1A]">
                     <tr>
                       <th className="w-20 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                         # Factura
@@ -420,11 +448,11 @@ export function SalesTable({
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                  <tbody className="bg-white dark:bg-[#1A1A1A] divide-y divide-gray-200 dark:divide-[rgba(255,255,255,0.06)]">
                     {filteredSales.map((sale) => {
                       const { date, time } = formatDateTime(sale.createdAt)
                       return (
-                        <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                        <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-[#1F1F1F]">
                           <td className="px-3 md:px-4 py-4 whitespace-nowrap">
                             <div className="flex items-center gap-2">
                               {sale.paymentMethod === 'credit' && (
@@ -467,7 +495,10 @@ export function SalesTable({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onView(sale)}
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                                className="h-8 w-8 p-0"
+                                style={{ color: 'var(--sidebar-orange)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                               >
                                 <Eye className="h-4 w-4" />
                               </Button>
@@ -475,7 +506,10 @@ export function SalesTable({
                                 size="sm"
                                 variant="ghost"
                                 onClick={() => onPrint(sale)}
-                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100"
+                                className="h-8 w-8 p-0"
+                                style={{ color: 'var(--sidebar-orange)' }}
+                                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.8'}
+                                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
                               >
                                 <Printer className="h-4 w-4" />
                               </Button>
@@ -490,7 +524,7 @@ export function SalesTable({
 
               {/* Paginación - solo mostrar si no hay búsqueda activa */}
               {!searchTerm.trim() && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-[#1A1A1A] border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                   <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
                     <span className="hidden sm:inline">Mostrando </span>
                     <span className="font-semibold">{sales.length}</span>
@@ -533,9 +567,10 @@ export function SalesTable({
                                 disabled={loading}
                                 className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                                   page === currentPage 
-                                    ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-medium" 
-                                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                                    ? "font-medium" 
+                                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
                                 }`}
+                                style={page === currentPage ? { backgroundColor: 'rgba(92, 156, 124, 0.2)', color: 'var(--sidebar-orange)' } : undefined}
                               >
                                 {page}
                               </button>

@@ -227,17 +227,17 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:p-6">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:p-6" style={{ fontFamily: 'var(--font-inter)' }}>
+      <div className="bg-white dark:bg-[#1A1A1A] rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-[rgba(255,255,255,0.06)]" style={{ fontFamily: 'var(--font-inter)' }}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 bg-cyan-50 dark:bg-cyan-900/20 border-b border-cyan-200 dark:border-cyan-800 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex-shrink-0" style={{ backgroundColor: 'rgba(92, 156, 124, 0.1)' }}>
           <div className="flex items-center space-x-3">
-            <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 dark:text-cyan-400" />
+            <Package className="h-5 w-5 md:h-6 md:w-6" style={{ color: 'var(--sidebar-orange)' }} />
             <div>
-              <h2 className="text-lg md:text-xl font-semibold text-cyan-800 dark:text-cyan-200">
+              <h2 className="text-lg md:text-xl font-semibold text-gray-900 dark:text-white">
                 {product ? 'Editar Producto' : 'Nuevo Producto'}
               </h2>
-              <p className="text-xs md:text-sm text-cyan-700 dark:text-cyan-300">
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
                 {product ? `Editando ${product.name}` : 'Crea un nuevo producto en tu inventario'}
               </p>
             </div>
@@ -246,22 +246,22 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-cyan-100 dark:hover:bg-cyan-800/30"
+            className="h-8 w-8 p-0 hover:bg-gray-100 dark:hover:bg-[#1F1F1F]"
           >
-            <X className="h-5 w-5 text-cyan-600 dark:text-cyan-400 hover:text-cyan-800 dark:hover:text-cyan-200" />
+            <X className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-[#1A1A1A]" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
           <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="p-4 md:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Columna Izquierda */}
               <div className="space-y-6">
                 {/* Información Básica */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Package className="h-5 w-5 mr-2 text-cyan-400" />
+                  <Package className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Información Básica
                 </CardTitle>
               </CardHeader>
@@ -275,8 +275,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 ${
-                        errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] placeholder-gray-500 dark:placeholder-gray-400 ${
+                        errors.name ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                       }`}
                       placeholder="Nombre del producto"
                     />
@@ -293,8 +293,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       type="text"
                       value={formData.reference}
                       onChange={(e) => handleInputChange('reference', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                        errors.reference ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                        errors.reference ? 'border-red-500 ' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] '
                       }`}
                       placeholder="REF-001"
                     />
@@ -311,8 +311,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 resize-none ${
-                      errors.description ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                    className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] resize-none ${
+                      errors.description ? 'border-red-500 ' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] '
                     }`}
                     placeholder="Descripción detallada del producto (opcional)"
                     rows={3}
@@ -331,8 +331,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       type="text"
                       value={formData.brand}
                       onChange={(e) => handleInputChange('brand', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                        errors.brand ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                        errors.brand ? 'border-red-500 ' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] '
                       }`}
                       placeholder="Marca del producto (opcional)"
                     />
@@ -348,8 +348,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                     <select
                       value={formData.categoryId}
                       onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                        errors.categoryId ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                      className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                        errors.categoryId ? 'border-red-500 ' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] '
                       }`}
                     >
                       <option value="">Seleccionar categoría (opcional)</option>
@@ -368,10 +368,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </Card>
 
                 {/* Información Financiera */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <DollarSign className="h-5 w-5 mr-2 text-cyan-400" />
+                  <DollarSign className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Información Financiera
                 </CardTitle>
               </CardHeader>
@@ -391,7 +391,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         const numericValue = parseFormattedNumber(e.target.value)
                         handleInputChange('price', numericValue)
                       }}
-                      className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
+                      className={`w-full pl-8 pr-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
                         errors.price ? 'border-red-500 ' : 'border-gray-600 '
                       }`}
                       placeholder="0"
@@ -417,7 +417,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         const numericValue = parseFormattedNumber(e.target.value)
                         handleInputChange('cost', numericValue)
                       }}
-                      className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
+                      className={`w-full pl-8 pr-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
                         errors.cost ? 'border-red-500 ' : 'border-gray-600 '
                       }`}
                       placeholder="0"
@@ -434,16 +434,16 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
               {/* Columna Derecha */}
               <div className="space-y-6">
                 {/* Control de Stock */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <BarChart3 className="h-5 w-5 mr-2 text-cyan-400" />
+                  <BarChart3 className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Control de Stock
                 </CardTitle>
                 {product && (
                   <div className="flex items-start gap-3 mt-2">
-                    <div className="p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-                      <BarChart3 className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                    <div className="p-2 rounded-lg" style={{ backgroundColor: 'rgba(92, 156, 124, 0.2)' }}>
+                      <BarChart3 className="h-4 w-4" style={{ color: 'var(--sidebar-orange)' }} />
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       El stock se muestra solo como información. Para modificar el inventario, usa las opciones de "Ajustar Stock" o "Transferir Stock" desde la tabla de productos.
@@ -464,9 +464,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         onClick={() => handleInputChange('initialLocation', 'store')}
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                           formData.initialLocation === 'store'
-                            ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                            ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                            : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)] text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
+                        style={formData.initialLocation === 'store' ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                       >
                         <Store className="h-4 w-4" />
                         <span className="text-sm font-medium">Local</span>
@@ -476,9 +477,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         onClick={() => handleInputChange('initialLocation', 'warehouse')}
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                           formData.initialLocation === 'warehouse'
-                            ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                            ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                            : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)] text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
+                        style={formData.initialLocation === 'warehouse' ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                       >
                         <Package className="h-4 w-4" />
                         <span className="text-sm font-medium">Bodega</span>
@@ -492,7 +494,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   {/* Local */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
-                      <Store className="h-5 w-5 text-cyan-400" />
+                      <Store className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                       <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Local</h4>
                     </div>
                     
@@ -514,8 +516,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                             const numericValue = parseFormattedNumber(e.target.value)
                             handleInputChange('stock.store', numericValue)
                           }}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                            errors.stockStore ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                            errors.stockStore ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                           }`}
                           placeholder="0"
                         />
@@ -530,7 +532,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   {/* Bodega */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
-                      <Package className="h-5 w-5 text-cyan-400" />
+                      <Package className="h-5 w-5" style={{ color: 'var(--sidebar-orange)' }} />
                       <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Bodega</h4>
                     </div>
                     
@@ -552,8 +554,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                             const numericValue = parseFormattedNumber(e.target.value)
                             handleInputChange('stock.warehouse', numericValue)
                           }}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                            errors.stockWarehouse ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          className={`w-full px-3 py-2 border rounded-md text-gray-900 dark:text-white bg-white dark:bg-[#1A1A1A] ${
+                            errors.stockWarehouse ? 'border-red-500' : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)]'
                           }`}
                           placeholder="0"
                         />
@@ -567,10 +569,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 </div>
 
                 {/* Total del stock */}
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                <div className="bg-gray-100 dark:bg-[#1A1A1A] rounded-lg p-4 border border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Stock Total:</span>
-                    <span className="text-lg font-bold text-cyan-400">
+                    <span className="text-lg font-bold" style={{ color: 'var(--sidebar-orange)' }}>
                       {formatNumber(formData.stock.warehouse + formData.stock.store)} unidades
                     </span>
                   </div>
@@ -579,10 +581,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </Card>
 
                 {/* Estado del Producto */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-[#1A1A1A] border-gray-200 dark:border-[rgba(255,255,255,0.06)] shadow-sm dark:shadow-[0_1px_3px_rgba(0,0,0,0.5)]">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <AlertTriangle className="h-5 w-5 mr-2 text-cyan-400" />
+                  <AlertTriangle className="h-5 w-5 mr-2" style={{ color: 'var(--sidebar-orange)' }} />
                   Estado del Producto
                 </CardTitle>
               </CardHeader>
@@ -594,9 +596,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       onClick={() => handleInputChange('status', status)}
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                         formData.status === status
-                          ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300'
-                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                          ? 'font-medium border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A]'
+                          : 'border-gray-300 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] hover:border-gray-400 dark:hover:border-[rgba(255,255,255,0.1)] text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                       }`}
+                      style={formData.status === status ? { borderColor: 'var(--sidebar-orange)', backgroundColor: 'rgba(92, 156, 124, 0.1)', color: 'var(--sidebar-orange)' } : undefined}
                     >
                       <span className="text-sm font-medium">{getStatusLabel(status)}</span>
                     </button>
@@ -613,18 +616,29 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </div>
 
             {/* Botones dentro del form para que hagan scroll con el contenido */}
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)]">
               <Button
                 type="button"
                 onClick={handleClose}
                 variant="outline"
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                className="border border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] text-gray-600 dark:text-gray-300"
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.borderColor = 'var(--sidebar-orange)'
+                  e.currentTarget.style.backgroundColor = 'rgba(92, 156, 124, 0.1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.borderColor = ''
+                  e.currentTarget.style.backgroundColor = ''
+                }}
               >
                 Cancelar
               </Button>
               <Button
                 type="submit"
-                className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                className="text-white"
+                style={{ backgroundColor: 'var(--sidebar-orange)' }}
+                onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+                onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
               >
                 <Package className="h-4 w-4 mr-2" />
                 {product ? 'Guardar Cambios' : 'Crear Producto'}

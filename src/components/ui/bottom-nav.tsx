@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ChevronLeft, ChevronRight, Building2, ShoppingCart, TrendingUp } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 
@@ -14,6 +14,9 @@ const items = [
   { href: '/sales', label: 'Ventas', icon: Receipt, module: 'sales' },
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
   { href: '/payments', label: 'Créditos', icon: CreditCard, module: 'payments' },
+  { href: '/suppliers', label: 'Proveedores', icon: Building2, module: 'suppliers' },
+  { href: '/purchase-orders', label: 'Órdenes', icon: ShoppingCart, module: 'purchase_orders' },
+  { href: '/profitability', label: 'Rentabilidad', icon: TrendingUp, module: 'profitability' },
   { href: '/roles', label: 'Roles', icon: Shield, module: 'roles' },
   { href: '/logs', label: 'Registro de Actividades', icon: Activity, module: 'logs' },
   { href: '/profile', label: 'Perfil', icon: UserCircle, module: 'dashboard', alwaysVisible: true },
@@ -104,16 +107,16 @@ export function BottomNav() {
   }
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden border-t border-gray-200 dark:border-[rgba(255,255,255,0.06)] bg-white dark:bg-[#1A1A1A] shadow-lg supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))]" style={{ fontFamily: 'var(--font-inter)' }}>
       <div className="relative flex items-center">
         {/* Botón izquierdo */}
         {showLeftButton && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 z-10 h-14 md:h-16 px-2 md:px-3 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
+            className="absolute left-0 z-10 h-14 md:h-16 px-2 md:px-3 bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] border-r border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex items-center justify-center transition-colors touch-manipulation"
             aria-label="Scroll izquierda"
           >
-            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6 text-gray-600 dark:text-gray-400" />
+            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6" style={{ color: 'var(--sidebar-orange)' }} />
           </button>
         )}
 
@@ -133,18 +136,30 @@ export function BottomNav() {
               <li key={href} className="flex-shrink-0 flex-1 min-w-[65px] md:min-w-[75px] max-w-[85px] md:max-w-[95px]">
                 <Link
                   href={href}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1 md:px-1.5 text-[8px] md:text-[9px] lg:text-[10px] transition-all duration-200 rounded-t-lg touch-manipulation ${
+                  className={`flex h-full w-full flex-col items-center justify-center gap-0.5 md:gap-1 text-[8px] md:text-[9px] lg:text-[10px] transition-all duration-200 rounded-t-lg touch-manipulation ${
                     active 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm font-medium' 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
+                      ? 'shadow-sm font-medium' 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-[#1F1F1F] hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-[#1F1F1F] active:scale-95'
                   }`}
+                  style={{
+                    ...(active ? {
+                      backgroundColor: 'rgba(92, 156, 124, 0.15)',
+                      color: 'var(--sidebar-orange)'
+                    } : {}),
+                    textAlign: 'center'
+                  }}
                 >
-                  <Icon className={`h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 flex-shrink-0 transition-colors ${
-                    active 
-                      ? 'text-blue-600 dark:text-blue-400' 
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`} />
-                  <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
+                  <div style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+                    <Icon 
+                      className="h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 flex-shrink-0 transition-colors" 
+                      style={active ? {
+                        color: 'var(--sidebar-orange)'
+                      } : {
+                        color: 'inherit'
+                      }}
+                    />
+                  </div>
+                  <span className="leading-tight text-center truncate max-w-full whitespace-nowrap w-full block">{label}</span>
                 </Link>
               </li>
             )
@@ -155,10 +170,10 @@ export function BottomNav() {
         {showRightButton && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 z-10 h-14 md:h-16 px-2 md:px-3 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
+            className="absolute right-0 z-10 h-14 md:h-16 px-2 md:px-3 bg-white dark:bg-[#1A1A1A] hover:bg-gray-50 dark:hover:bg-[#1F1F1F] border-l border-gray-200 dark:border-[rgba(255,255,255,0.06)] flex items-center justify-center transition-colors touch-manipulation"
             aria-label="Scroll derecha"
           >
-            <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-gray-600 dark:text-gray-400" />
+            <ChevronRight className="h-5 w-5 md:h-6 md:w-6" style={{ color: 'var(--sidebar-orange)' }} />
           </button>
         )}
       </div>

@@ -13,12 +13,15 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "ZONA T - Iniciar Sesión",
-  description: "Sistema de gestión de inventario y ventas para ZONA T",
+  title: "Oviler | Gestiona tu negocio",
+  description: "Sistema integral de gestión de tu negocio. Control de inventario, ventas, créditos y más.",
   icons: {
-    icon: '/zonat-logo.png',
-    shortcut: '/zonat-logo.png',
-    apple: '/zonat-logo.png'
+    icon: [
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+      { url: '/favicon.png', type: 'image/png' }
+    ],
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg'
   },
 };
 
