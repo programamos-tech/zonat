@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Fondo circular con color Oviler -->
+  <circle cx="32" cy="32" r="30" fill="#5C9C7C"/>
+  
+  <!-- Tronco del árbol -->
+  <rect x="28" y="42" width="8" height="10" fill="#4A7C66" rx="1"/>
+  
+  <!-- Copa del árbol - diseño más simple y visible -->
+  <path d="M 32 18 Q 20 18 20 30 Q 20 38 32 38 Q 44 38 44 30 Q 44 18 32 18 Z" fill="#7FB3A3"/>
+  
+  <!-- Detalles de hojas para dar profundidad -->
+  <ellipse cx="26" cy="26" rx="5" ry="6" fill="#5C9C7C"/>
+  <ellipse cx="38" cy="26" rx="5" ry="6" fill="#5C9C7C"/>
+  <ellipse cx="32" cy="22" rx="6" ry="7" fill="#4A7C66"/>
+</svg>
