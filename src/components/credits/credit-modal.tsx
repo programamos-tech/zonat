@@ -219,7 +219,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       setSelectedProducts(prev => [{
         productId: product.id,
         productName: product.name,
-        productReference: product.reference || '',
+        productReferenceCode: product.reference || undefined,
         quantity: 1,
         unitPrice: product.price || 0,
         totalPrice: product.price || 0
@@ -412,6 +412,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       const saleItems = selectedProducts.map(item => ({
         productId: item.productId,
         productName: item.productName,
+        productReferenceCode: item.productReferenceCode || undefined,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.totalPrice,
@@ -635,7 +636,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       const product = products.find(p => p.id === item.productId)
                       const warehouseStock = product?.stock?.warehouse || 0
                       const localStock = product?.stock?.store || 0
-                      const reference = product?.reference || 'N/A'
+                      const reference = item.productReferenceCode || product?.reference || 'N/A'
                       
                       return (
                       <div key={item.productId} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
