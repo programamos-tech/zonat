@@ -636,7 +636,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       const product = products.find(p => p.id === item.productId)
                       const warehouseStock = product?.stock?.warehouse || 0
                       const localStock = product?.stock?.store || 0
-                      const reference = product?.reference || 'N/A'
+                      const reference = item.productReferenceCode || product?.reference || 'N/A'
                       
                       return (
                       <div key={item.productId} className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 space-y-2">
