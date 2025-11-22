@@ -1069,17 +1069,32 @@ export class SalesService {
 
       return await Promise.all(data?.map(async sale => {
         // Obtener items de la venta con referencia de productos
-        const items = (sale.sale_items || []).map((item: any) => ({
-          id: item.id,
-          productId: item.product_id,
-          productName: item.product_name,
-          productReferenceCode: item.product_reference_code || 'N/A',
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          discount: item.discount || 0,
-          discountType: item.discount_type || 'amount',
-          tax: item.tax || 0,
-          total: item.total
+        const items = await Promise.all((sale.sale_items || []).map(async (item: any) => {
+          let productReference = item.product_reference_code
+          
+          // Si no hay referencia guardada, obtenerla desde la tabla products (para ventas antiguas)
+          if (!productReference || productReference === 'N/A' || productReference === null) {
+            const { data: product } = await supabase
+              .from('products')
+              .select('reference')
+              .eq('id', item.product_id)
+              .single()
+            
+            productReference = product?.reference || 'N/A'
+          }
+          
+          return {
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: productReference,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
+          }
         }))
 
         // Obtener pagos mixtos si existe
