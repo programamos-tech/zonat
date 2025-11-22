@@ -219,7 +219,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       setSelectedProducts(prev => [{
         productId: product.id,
         productName: product.name,
-        productReference: product.reference || '',
+        productReferenceCode: product.reference || undefined,
         quantity: 1,
         unitPrice: product.price || 0,
         totalPrice: product.price || 0
@@ -412,6 +412,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       const saleItems = selectedProducts.map(item => ({
         productId: item.productId,
         productName: item.productName,
+        productReferenceCode: item.productReferenceCode || undefined,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
         total: item.totalPrice,
