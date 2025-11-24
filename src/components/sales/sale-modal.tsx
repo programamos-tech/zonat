@@ -31,15 +31,17 @@ interface SaleModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (sale: Omit<Sale, 'id' | 'createdAt'>) => void
+  sale?: Sale | null // Venta existente para editar (solo borradores)
+  onUpdate?: (id: string, sale: Omit<Sale, 'id' | 'createdAt'>) => void // Callback para actualizar
 }
 
-export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
+export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
   const { products, refreshProducts } = useProducts()
   
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
-  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mixed' | ''>('')
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'credit' | 'warranty' | 'mixed' | ''>('')
   const [clientSearch, setClientSearch] = useState('')
   const [productSearch, setProductSearch] = useState('')
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
@@ -60,9 +62,59 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
     if (isOpen) {
       getAllClients()
       refreshProducts()
+      
+      // Si hay una venta para editar (modo edición)
+      if (sale && sale.status === 'draft') {
+        // Cargar cliente
+        const client = clients.find(c => c.id === sale.clientId)
+        if (client) {
+          setSelectedClient(client)
+          setClientSearch(client.name)
+        }
+        
+        // Cargar productos
+        if (sale.items && sale.items.length > 0) {
+          const itemsWithAddedAt = sale.items.map((item, index) => ({
+            ...item,
+            id: item.id || `temp-${index}`,
+            addedAt: Date.now() + index
+          }))
+          setSelectedProducts(itemsWithAddedAt)
+        }
+        
+        // Cargar método de pago
+        setPaymentMethod(sale.paymentMethod)
+        
+        // Cargar pagos mixtos si aplica
+        if (sale.paymentMethod === 'mixed' && sale.payments) {
+          setMixedPayments(sale.payments)
+          setShowMixedPayments(true)
+        }
+        
+        // Cargar número de factura
+        if (sale.invoiceNumber) {
+          setInvoiceNumber(sale.invoiceNumber)
+        }
+        
+        // Cargar impuestos
+        if (sale.tax && sale.tax > 0) {
+          setIncludeTax(true)
+        }
+      } else {
+        // Resetear formulario si no hay venta para editar
+        setSelectedClient(null)
+        setSelectedProducts([])
+        setPaymentMethod('')
+        setClientSearch('')
+        setProductSearch('')
+        setInvoiceNumber('Pendiente')
+        setMixedPayments([])
+        setShowMixedPayments(false)
+        setIncludeTax(false)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]) // Solo ejecutar cuando se abre/cierra el modal
+  }, [isOpen, sale]) // Ejecutar cuando se abre/cierra el modal o cambia la venta
 
   // Manejar cambio de método de pago
   useEffect(() => {
@@ -578,7 +630,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
 
     const saleItems = validProducts.map(({ addedAt, ...item }) => item)
 
-    const newSale: Omit<Sale, 'id' | 'createdAt'> = {
+    const saleData: Omit<Sale, 'id' | 'createdAt'> = {
       clientId: selectedClient.id,
       clientName: selectedClient.name,
       total: total,
@@ -589,19 +641,29 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
       status: isDraft ? 'draft' : 'completed',
       paymentMethod,
       payments: paymentMethod === 'mixed' ? mixedPayments : undefined,
-      items: saleItems // Solo incluir productos con cantidad > 0
+      items: saleItems, // Solo incluir productos con cantidad > 0
+      invoiceNumber: sale?.invoiceNumber // Mantener número de factura si es edición
     }
 
-    // Actualizar el número de factura antes de guardar
-    setInvoiceNumber('Generando...')
+    // Si es modo edición y hay onUpdate, usar update en lugar de create
+    if (sale && sale.status === 'draft' && onUpdate) {
+      // Actualizar el número de factura antes de guardar
+      if (!sale.invoiceNumber) {
+        setInvoiceNumber('Generando...')
+      }
+      onUpdate(sale.id, saleData)
+    } else {
+      // Crear nueva venta
+      // Actualizar el número de factura antes de guardar
+      setInvoiceNumber('Generando...')
+      onSave(saleData)
+    }
     
-    onSave(newSale)
     handleClose()
   }
 
   const handleSaveAsDraft = () => {
-    // Solo permitir borrador si es crédito
-    if (paymentMethod !== 'credit') return
+    // Permitir borrador para cualquier tipo de venta
     handleSave(true)
   }
 
@@ -648,9 +710,21 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-green-50 dark:bg-green-900/20 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <Calculator className="h-6 w-6 text-green-600" />
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Nueva Venta</h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Factura {invoiceNumber}</p>
+            <div className="flex items-center gap-2">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                  {sale && sale.status === 'draft' ? 'Editar Borrador' : 'Nueva Venta'}
+                </h2>
+                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                  {sale && sale.status === 'draft' ? `Borrador ${invoiceNumber}` : `Factura ${invoiceNumber}`}
+                </p>
+              </div>
+              {(paymentMethod === 'credit' || sale?.paymentMethod === 'credit') && (
+                <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-md border border-orange-300 dark:border-orange-700">
+                  <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-400" />
+                  <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Crédito</span>
+                </div>
+              )}
             </div>
           </div>
           <Button
@@ -664,18 +738,18 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-6">
+          <div className={`grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-6 ${!selectedClient && selectedProducts.length === 0 ? 'xl:items-start xl:pt-8' : ''}`}>
             {/* Left Column - Client and Products (3/5 del ancho) */}
-            <div className="xl:col-span-3 space-y-6">
+            <div className={`xl:col-span-3 ${!selectedClient && selectedProducts.length === 0 ? 'space-y-8' : 'space-y-6'}`}>
               {/* Client Selection */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-3">
+              <Card className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${!selectedClient ? 'py-2' : ''}`}>
+                <CardHeader className={`${!selectedClient ? 'pb-4' : 'pb-3'}`}>
                   <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
                     <User className="h-5 w-5 mr-2 text-green-600" />
                     Cliente
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3">
+                <CardContent className={`${!selectedClient ? 'p-4' : 'p-3'}`}>
                   <div className="space-y-2">
                     <div className="relative">
                       <div className="relative">
@@ -765,8 +839,8 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               </Card>
 
               {/* Product Selection - Más prominente */}
-              <Card className="bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 shadow-lg">
-                <CardHeader className="pb-3">
+              <Card className={`bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 shadow-lg ${selectedProducts.length === 0 ? 'py-2' : ''}`}>
+                <CardHeader className={`${selectedProducts.length === 0 ? 'pb-4' : 'pb-3'}`}>
                   <CardTitle className="flex items-center justify-between text-base text-gray-900 dark:text-white">
                     <div className="flex items-center">
                       <Package className="h-4 w-4 mr-2 text-green-600" />
@@ -774,7 +848,7 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
                     </div>
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3">
+                <CardContent className={`${selectedProducts.length === 0 ? 'p-4' : 'p-3'}`}>
                   <div className="space-y-3">
                     {/* Search Input */}
                     <div className="relative">
@@ -1037,16 +1111,16 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             </div>
 
             {/* Right Column - Payment and Summary (2/5 del ancho) */}
-            <div className="xl:col-span-2 space-y-4">
+            <div className={`xl:col-span-2 ${!selectedClient && selectedProducts.length === 0 ? 'space-y-6' : 'space-y-4'}`}>
               {/* Payment Method - Más compacto */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-2">
+              <Card className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${!paymentMethod ? 'py-2' : ''}`}>
+                <CardHeader className={`${!paymentMethod ? 'pb-4' : 'pb-2'}`}>
                   <CardTitle className="flex items-center text-base text-gray-900 dark:text-white">
                     <CreditCard className="h-4 w-4 mr-2 text-green-600" />
                     Método de Pago
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-2">
+                <CardContent className={`${!paymentMethod ? 'p-4' : 'p-2'}`}>
                   <div className="space-y-2">
                     {/* Selector de Método de Pago */}
                     <div className="relative">
@@ -1158,17 +1232,17 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
               </Card>
 
               {/* Summary - Más compacto */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-2">
+              <Card className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${orderedValidProducts.length === 0 ? 'py-2' : ''}`}>
+                <CardHeader className={`${orderedValidProducts.length === 0 ? 'pb-4' : 'pb-2'}`}>
                   <CardTitle className="text-base text-gray-900 dark:text-white flex items-center">
                     <DollarSign className="h-4 w-4 mr-2 text-green-600" />
                     Resumen de Venta
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-2">
+                <CardContent className={`${orderedValidProducts.length === 0 ? 'p-4' : 'p-2'}`}>
                   <div className="space-y-3">
                     {orderedValidProducts.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
+                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-6">
                         Agrega productos para ver el resumen de la venta.
                       </p>
                     ) : (
@@ -1253,22 +1327,42 @@ export function SaleModal({ isOpen, onClose, onSave }: SaleModalProps) {
             >
               Cancelar
             </Button>
-            {paymentMethod === 'credit' && (
-              <Button
-                onClick={handleSaveAsDraft}
-                disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
-                className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-gray-600 hover:bg-gray-700 text-white"
-              >
-                Guardar como Borrador
-              </Button>
+            {!sale && (
+              <>
+                <Button
+                  onClick={handleSaveAsDraft}
+                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
+                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-gray-600 hover:bg-gray-700 text-white"
+                >
+                  Guardar como Borrador
+                </Button>
+                <Button
+                  onClick={() => handleSave(false)}
+                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
+                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Crear Venta
+                </Button>
+              </>
             )}
-            <Button
-              onClick={() => handleSave(false)}
-              disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-              className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
-            >
-              Crear Venta
-            </Button>
+            {sale && sale.status === 'draft' && (
+              <>
+                <Button
+                  onClick={handleSaveAsDraft}
+                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
+                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-gray-600 hover:bg-gray-700 text-white"
+                >
+                  Guardar Cambios (Borrador)
+                </Button>
+                <Button
+                  onClick={() => handleSave(false)}
+                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
+                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Finalizar y Crear Venta
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </div>

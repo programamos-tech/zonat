@@ -469,6 +469,17 @@ export class SalesService {
 
   static async updateSale(id: string, saleData: Partial<Sale>, currentUserId: string): Promise<Sale> {
     try {
+      // Validar que solo se puedan actualizar ventas en estado draft
+      const existingSale = await this.getSaleById(id)
+      if (!existingSale) {
+        throw new Error('Venta no encontrada')
+      }
+      
+      if (existingSale.status !== 'draft') {
+        throw new Error('Solo se pueden editar ventas en estado borrador')
+      }
+
+      // Actualizar la venta
       const { data, error } = await supabase
         .from('sales')
         .update({
@@ -491,31 +502,60 @@ export class SalesService {
         throw error
       }
 
+      // Si hay items en saleData, actualizar los items de la venta
+      if (saleData.items && saleData.items.length > 0) {
+        // Eliminar items antiguos
+        const { error: deleteError } = await supabase
+          .from('sale_items')
+          .delete()
+          .eq('sale_id', id)
+
+        if (deleteError) {
+          // Error silencioso en producción
+          throw deleteError
+        }
+
+        // Crear nuevos items
+        const saleItems = saleData.items.map(item => ({
+          sale_id: id,
+          product_id: item.productId,
+          product_name: item.productName,
+          product_reference_code: item.productReferenceCode || null,
+          quantity: item.quantity,
+          unit_price: item.unitPrice,
+          discount: item.discount || 0,
+          total: item.total
+        }))
+
+        const { error: itemsError } = await supabase
+          .from('sale_items')
+          .insert(saleItems)
+
+        if (itemsError) {
+      // Error silencioso en producción
+          throw itemsError
+        }
+      }
+
+      // Obtener la venta actualizada con los items
+      const updatedSale = await this.getSaleById(id)
+      if (!updatedSale) {
+        throw new Error('Error al obtener la venta actualizada')
+      }
+
       // Log de actividad
       await AuthService.logActivity(
         currentUserId,
         'sale_update',
         'sales',
         {
-          description: `Venta actualizada: ${saleData.clientName || 'Venta'} - Total: $${saleData.total?.toLocaleString() || 'N/A'}`,
+          description: `Borrador actualizado: ${saleData.clientName || 'Venta'} - Total: $${saleData.total?.toLocaleString() || 'N/A'}`,
           saleId: id,
           changes: Object.keys(saleData).join(', ')
         }
       )
 
-      return {
-        id: data.id,
-        clientId: data.client_id,
-        clientName: data.client_name,
-        total: data.total,
-        subtotal: data.subtotal,
-        tax: data.tax,
-        discount: data.discount,
-        status: data.status,
-        paymentMethod: data.payment_method,
-        createdAt: data.created_at,
-        items: saleData.items || []
-      }
+      return updatedSale
     } catch (error) {
       // Error silencioso en producción
       throw error
@@ -541,6 +581,17 @@ export class SalesService {
       // Descontar stock de todos los productos
       if (draftSale.items && draftSale.items.length > 0) {
         for (const item of draftSale.items) {
+          // Verificar stock disponible antes de descontar
+          const product = await ProductsService.getProductById(item.productId)
+          if (!product) {
+            throw new Error(`Producto no encontrado: ${item.productName}`)
+          }
+          
+          const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
+          if (totalStock < item.quantity) {
+            throw new Error(`No hay suficiente stock para el producto "${item.productName}". Stock disponible: ${totalStock}, Cantidad requerida: ${item.quantity}`)
+          }
+          
           const stockResult = await ProductsService.deductStockForSale(
             item.productId, 
             item.quantity, 
@@ -548,7 +599,7 @@ export class SalesService {
           )
           
           if (!stockResult.success) {
-            throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
+            throw new Error(`No hay suficiente stock para el producto "${item.productName}". Stock disponible: ${totalStock}, Cantidad requerida: ${item.quantity}`)
           }
         }
       }
@@ -556,6 +607,38 @@ export class SalesService {
       // Crear crédito si el método de pago es crédito
       if (draftSale.paymentMethod === 'credit') {
         const { CreditsService } = await import('./credits-service')
+        
+        // Intentar obtener la fecha de vencimiento del log de creación del borrador
+        let creditDueDate = null
+        try {
+          const { data: logs } = await supabase
+            .from('logs')
+            .select('details')
+            .eq('module', 'sales')
+            .eq('action', 'sale_draft_create')
+            .order('created_at', { ascending: false })
+            .limit(100)
+          
+          // Buscar el log que corresponde a este borrador
+          if (logs && logs.length > 0) {
+            for (const log of logs) {
+              let details = log.details
+              if (typeof details === 'string') {
+                try {
+                  details = JSON.parse(details)
+                } catch {
+                  continue
+                }
+              }
+              if (details && typeof details === 'object' && details.saleId === draftSale.id && details.dueDate) {
+                creditDueDate = details.dueDate
+                break
+              }
+            }
+          }
+        } catch (error) {
+          // Error silencioso - usar null si no se encuentra
+        }
         
         await CreditsService.createCredit({
           saleId: draftSale.id,
@@ -566,7 +649,7 @@ export class SalesService {
           paidAmount: 0,
           pendingAmount: draftSale.total,
           status: 'pending',
-          dueDate: null,
+          dueDate: creditDueDate,
           lastPaymentAmount: null,
           lastPaymentDate: null,
           lastPaymentUser: null,
