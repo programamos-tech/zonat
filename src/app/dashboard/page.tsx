@@ -242,8 +242,8 @@ export default function DashboardPage() {
   const metrics = useMemo(() => {
     const { sales, warranties, credits, paymentRecords } = filteredData
     
-    // Ingresos por ventas (nuevas ventas) - excluir canceladas
-    const activeSalesForRevenue = sales.filter(sale => sale.status !== 'cancelled')
+    // Ingresos por ventas (nuevas ventas) - excluir canceladas y borradores
+    const activeSalesForRevenue = sales.filter(sale => sale.status !== 'cancelled' && sale.status !== 'draft')
     const salesRevenue = activeSalesForRevenue.reduce((sum, sale) => sum + sale.total, 0)
     
     // Filtrar abonos cancelados (los abonos de facturas canceladas se marcan como 'cancelled' en payment_records)
@@ -256,8 +256,8 @@ export default function DashboardPage() {
     const creditPaymentsRevenue = validPaymentRecords.reduce((sum, payment) => sum + payment.amount, 0)
     
     // Ingresos por método de pago (ventas + abonos válidos)
-    // Excluir ventas canceladas del cálculo de ingresos
-    const activeSales = sales.filter(sale => sale.status !== 'cancelled')
+    // Excluir ventas canceladas y borradores del cálculo de ingresos
+    const activeSales = sales.filter(sale => sale.status !== 'cancelled' && sale.status !== 'draft')
     
     let cashRevenue = 0
     let transferRevenue = 0
@@ -651,7 +651,7 @@ export default function DashboardPage() {
     }, 0)
 
     // Datos para gráficos - Mejorado para mostrar todos los días del período
-    // Excluir ventas canceladas del gráfico
+    // Excluir ventas canceladas y borradores del gráfico
 
     const salesByDay = activeSales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
       const date = new Date(sale.createdAt).toLocaleDateString('es-CO', { 
@@ -771,7 +771,7 @@ export default function DashboardPage() {
       transferRevenue,
       creditRevenue,
       knownPaymentMethodsTotal,
-      totalSales: activeSales.length, // Solo contar ventas activas (no canceladas)
+      totalSales: activeSales.length, // Solo contar ventas activas (no canceladas ni borradores)
       topProducts,
       completedWarranties,
       pendingWarranties,

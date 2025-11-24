@@ -380,7 +380,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     return includeTax ? calculateSubtotal() * 0.19 : 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent, isDraft: boolean = false) => {
     e.preventDefault()
     
     if (!formData.clientId) {
@@ -388,7 +388,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       return
     }
     
-    if (!formData.dueDate) {
+    // Solo validar fecha de vencimiento si NO es borrador
+    if (!isDraft && !formData.dueDate) {
       alert('❌ Por favor selecciona una fecha de vencimiento')
       return
     }
@@ -430,32 +431,33 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
         subtotal: calculateSubtotal(),
         tax: calculateTax(),
         discount: 0,
-        status: 'completed',
+        status: isDraft ? 'draft' : 'completed',
         paymentMethod: 'credit',
         notes: formData.notes,
         dueDate: formData.dueDate
       }
       
-      // Crear la venta (el SalesService automáticamente creará el crédito cuando paymentMethod es 'credit')
+      // Crear la venta
       const newSale = await SalesService.createSale(saleData, user?.id || '')
       
-      // Obtener el crédito creado automáticamente por el SalesService
-      const newCredit = await CreditsService.getCreditByInvoiceNumber(newSale.invoiceNumber)
-      
-      if (!newCredit) {
-        throw new Error('No se pudo encontrar el crédito creado')
+      // Si NO es borrador, obtener el crédito creado automáticamente por el SalesService
+      if (!isDraft) {
+        const newCredit = await CreditsService.getCreditByInvoiceNumber(newSale.invoiceNumber)
+        
+        if (!newCredit) {
+          throw new Error('No se pudo encontrar el crédito creado')
+        }
+        
+        onCreateCredit(newCredit)
+        handleClose()
+      } else {
+        // Si es borrador, cerrar el modal y redirigir a ventas para ver el borrador
+        handleClose()
+        // Redirigir a la página de ventas después de un breve delay
+        setTimeout(() => {
+          window.location.href = '/sales'
+        }, 500)
       }
-      
-      // TODO: Implementar logActivity en CreditsService
-      // await CreditsService.logActivity({
-      //   creditId: newCredit.id,
-      //   action: 'credit_created',
-      //   details: `Crédito creado por ${user?.email} - Monto: $${calculateTotal().toLocaleString()}`,
-      //   userId: user?.id || ''
-      // })
-      
-      onCreateCredit(newCredit)
-      handleClose()
       
     } catch (error) {
       // Error silencioso en producción
@@ -922,7 +924,21 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             Cancelar
           </Button>
           <Button
-            onClick={handleSubmit}
+            onClick={(e) => handleSubmit(e, true)}
+            disabled={loading || selectedProducts.length === 0 || !formData.clientId}
+            className="bg-gray-600 hover:bg-gray-700 text-white disabled:bg-gray-400"
+          >
+            {loading ? (
+              <div className="flex items-center gap-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                Guardando...
+              </div>
+            ) : (
+              'Guardar como Borrador'
+            )}
+          </Button>
+          <Button
+            onClick={(e) => handleSubmit(e, false)}
             disabled={loading || selectedProducts.length === 0 || !formData.clientId || !formData.dueDate}
             className="bg-orange-600 hover:bg-orange-700 text-white disabled:bg-gray-400"
           >

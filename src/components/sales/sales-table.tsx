@@ -463,6 +463,17 @@ export function SalesTable({
                           </td>
                           <td className="px-3 md:px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
+                              {sale.status === 'draft' && (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  onClick={() => onEdit(sale)}
+                                  className="h-8 w-8 p-0 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-100"
+                                  title="Editar borrador"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              )}
                               <Button
                                 size="sm"
                                 variant="ghost"

@@ -18,6 +18,7 @@ export default function SalesPage() {
     totalSales, 
     hasMore, 
     createSale, 
+    updateSale,
     deleteSale, 
     cancelSale,
     finalizeDraftSale,
@@ -28,6 +29,7 @@ export default function SalesPage() {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [selectedSale, setSelectedSale] = useState<Sale | null>(null)
+  const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null)
   const [isMounted, setIsMounted] = useState(false)
 
   // Marcar como montado para evitar errores de hidratación
@@ -66,8 +68,11 @@ export default function SalesPage() {
   }, [sales, selectedSale])
 
   const handleEdit = (sale: Sale) => {
-
-    // TODO: Implement edit modal
+    // Solo permitir editar borradores
+    if (sale.status === 'draft') {
+      setSaleToEdit(sale)
+      setIsModalOpen(true)
+    }
   }
 
   const handleDelete = async (sale: Sale) => {
@@ -91,7 +96,21 @@ export default function SalesPage() {
   }
 
   const handleCreate = () => {
+    setSaleToEdit(null)
     setIsModalOpen(true)
+  }
+
+  const handleUpdateSale = async (id: string, saleData: Omit<Sale, 'id' | 'createdAt'>) => {
+    try {
+      // Convertir a Partial<Sale> para el contexto
+      await updateSale(id, saleData as Partial<Sale>)
+      setIsModalOpen(false)
+      setSaleToEdit(null)
+      await refreshSales()
+    } catch (error) {
+      // Error silencioso en producción
+      alert('Error al actualizar el borrador')
+    }
   }
 
   const handleSaveSale = async (saleData: Omit<Sale, 'id' | 'createdAt'>) => {
@@ -542,9 +561,14 @@ export default function SalesPage() {
           setSelectedSale(updatedSale)
         }
       }
-    } catch (error) {
-      // Error silencioso en producción
-      alert('Error al facturar el borrador')
+    } catch (error: any) {
+      // Mostrar mensaje específico del error
+      const errorMessage = error?.message || 'Error al facturar el borrador'
+      if (errorMessage.includes('No hay suficiente stock')) {
+        alert(`⚠️ ${errorMessage}\n\nPor favor, verifica el inventario antes de finalizar el borrador.`)
+      } else {
+        alert(`Error al facturar el borrador: ${errorMessage}`)
+      }
       throw error
     }
   }
@@ -559,7 +583,7 @@ export default function SalesPage() {
     return sales
       .filter(sale => {
         const saleDate = new Date(sale.createdAt)
-        return saleDate >= today && saleDate < tomorrow && sale.status !== 'cancelled'
+        return saleDate >= today && saleDate < tomorrow && sale.status !== 'cancelled' && sale.status !== 'draft'
       })
       .reduce((sum, sale) => {
         // Solo contar ventas con pago directo (efectivo o transferencia)
@@ -610,8 +634,13 @@ export default function SalesPage() {
 
       <SaleModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={() => {
+          setIsModalOpen(false)
+          setSaleToEdit(null)
+        }}
         onSave={handleSaveSale}
+        sale={saleToEdit}
+        onUpdate={handleUpdateSale}
       />
 
       <SaleDetailModal
@@ -624,6 +653,7 @@ export default function SalesPage() {
         onCancel={handleCancelSale}
         onPrint={handlePrint}
         onFinalizeDraft={handleFinalizeDraft}
+        onEdit={handleEdit}
       />
     </div>
     </RoleProtectedRoute>

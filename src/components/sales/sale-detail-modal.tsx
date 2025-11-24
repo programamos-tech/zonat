@@ -14,7 +14,8 @@ import {
   Download,
   DollarSign,
   Package,
-  Eye
+  Eye,
+  Edit
 } from 'lucide-react'
 import { Sale, CompanyConfig, Client } from '@/types'
 import { CompanyService } from '@/lib/company-service'
@@ -27,6 +28,7 @@ interface SaleDetailModalProps {
   onCancel?: (saleId: string, reason: string) => Promise<{ success: boolean, totalRefund?: number }>
   onPrint?: (sale: Sale) => void
   onFinalizeDraft?: (saleId: string) => Promise<void>
+  onEdit?: (sale: Sale) => void
 }
 
 export default function SaleDetailModal({ 
@@ -35,7 +37,8 @@ export default function SaleDetailModal({
   sale, 
   onCancel,
   onPrint,
-  onFinalizeDraft
+  onFinalizeDraft,
+  onEdit
 }: SaleDetailModalProps) {
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
@@ -228,9 +231,14 @@ export default function SaleDetailModal({
       await onFinalizeDraft(sale.id)
       // Cerrar el modal después de facturar
       onClose()
-    } catch (error) {
-      // Error silencioso en producción
-      alert('Error al facturar el borrador')
+    } catch (error: any) {
+      // Mostrar mensaje específico del error
+      const errorMessage = error?.message || 'Error al facturar el borrador'
+      if (errorMessage.includes('No hay suficiente stock')) {
+        alert(`⚠️ ${errorMessage}\n\nPor favor, verifica el inventario antes de finalizar el borrador.`)
+      } else {
+        alert(`Error al facturar el borrador: ${errorMessage}`)
+      }
     } finally {
       setIsFinalizing(false)
     }
@@ -936,6 +944,18 @@ export default function SaleDetailModal({
         {/* Footer */}
         <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <div className="flex space-x-3">
+            {sale.status === 'draft' && onEdit && (
+              <Button
+                onClick={() => {
+                  onEdit(sale)
+                  onClose()
+                }}
+                className="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white border-0 font-medium px-6 py-2 shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-200 rounded-lg"
+              >
+                <Edit className="h-4 w-4 mr-2" />
+                Editar Borrador
+              </Button>
+            )}
             {sale.status === 'draft' && onFinalizeDraft && (
               <Button
                 onClick={handleFinalizeDraft}
