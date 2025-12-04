@@ -176,6 +176,10 @@ export class SalesService {
 
       if (!data) return null
 
+      console.log('🔍 DEBUG getSaleById - data.sale_items:', data.sale_items)
+      console.log('🔍 DEBUG getSaleById - data.sale_items type:', typeof data.sale_items)
+      console.log('🔍 DEBUG getSaleById - data.sale_items length:', data.sale_items?.length)
+
       // Obtener referencias de productos si no están en sale_items (para ventas antiguas)
       const itemsWithReferences = await Promise.all(
         (data.sale_items || []).map(async (item: any) => {
@@ -207,6 +211,9 @@ export class SalesService {
         })
       )
 
+      console.log('🔍 DEBUG getSaleById - itemsWithReferences:', itemsWithReferences)
+      console.log('🔍 DEBUG getSaleById - itemsWithReferences length:', itemsWithReferences.length)
+
       const result = {
         id: data.id,
         clientId: data.client_id,
@@ -233,6 +240,9 @@ export class SalesService {
         createdAt: data.created_at,
         items: itemsWithReferences
       }
+
+      console.log('🔍 DEBUG getSaleById - result.items:', result.items)
+      console.log('🔍 DEBUG getSaleById - returning result')
 
       return result
     } catch (error) {
@@ -567,6 +577,11 @@ export class SalesService {
     try {
       // Obtener la venta borrador
       const draftSale = await this.getSaleById(id)
+      console.log('🔍 DEBUG finalizeDraftSale - draftSale received:', draftSale)
+      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items:', draftSale?.items)
+      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items type:', typeof draftSale?.items)
+      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items length:', draftSale?.items?.length)
+
       if (!draftSale) {
         throw new Error('Venta no encontrada')
       }
@@ -578,8 +593,13 @@ export class SalesService {
       // Obtener información del usuario actual
       const currentUser = await AuthService.getCurrentUser()
 
+      console.log('🔍 DEBUG finalizeDraftSale - About to check items condition')
+      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items:', draftSale.items)
+      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items?.length:', draftSale.items?.length)
+
       // Descontar stock de todos los productos
       if (draftSale.items && draftSale.items.length > 0) {
+        console.log('🟢 DEBUG finalizeDraftSale - ENTERING stock deduction loop')
         for (const item of draftSale.items) {
           // Verificar stock disponible antes de descontar
           const product = await ProductsService.getProductById(item.productId)
@@ -602,6 +622,9 @@ export class SalesService {
             throw new Error(`No hay suficiente stock para el producto "${item.productName}". Stock disponible: ${totalStock}, Cantidad requerida: ${item.quantity}`)
           }
         }
+      } else {
+        console.log('🔴 DEBUG finalizeDraftSale - NOT ENTERING stock deduction loop')
+        console.log('🔴 DEBUG finalizeDraftSale - Condition failed: draftSale.items && draftSale.items.length > 0')
       }
 
       // Crear crédito si el método de pago es crédito
