@@ -146,6 +146,150 @@ export class WarrantyService {
     }
   }
 
+  // Método optimizado para dashboard con filtrado por fecha
+  static async getWarrantiesByDateRange(startDate?: Date, endDate?: Date): Promise<Warranty[]> {
+    try {
+      let query = supabase
+        .from('warranties')
+        .select(`
+          *,
+          original_sale:sales!original_sale_id (
+            id,
+            invoice_number,
+            total,
+            created_at
+          ),
+          client:clients!client_id (
+            id,
+            name,
+            email,
+            phone
+          ),
+          product_received:products!product_received_id (
+            id,
+            name,
+            reference,
+            price
+          ),
+          product_delivered:products!product_delivered_id (
+            id,
+            name,
+            reference,
+            price
+          ),
+          warranty_products (
+            id,
+            product_id,
+            serial_number,
+            condition,
+            notes,
+            created_at,
+            product:products (
+              id,
+              name,
+              reference
+            )
+          ),
+          warranty_status_history (
+            id,
+            previous_status,
+            new_status,
+            notes,
+            changed_at,
+            changed_by_user:users (
+              id,
+              name
+            )
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      // Aplicar filtros de fecha si existen
+      if (startDate) {
+        const startUTC = new Date(Date.UTC(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0, 0, 0, 0
+        ))
+        query = query.gte('created_at', startUTC.toISOString())
+      }
+      if (endDate) {
+        const endUTC = new Date(Date.UTC(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23, 59, 59, 999
+        ))
+        query = query.lte('created_at', endUTC.toISOString())
+      }
+
+      const { data: warranties, error: warrantiesError } = await query.limit(10000)
+
+      if (warrantiesError) {
+        throw warrantiesError
+      }
+
+      // Mapear datos (mismo código que getAllWarranties)
+      const mappedWarranties: Warranty[] = warranties.map(warranty => ({
+        id: warranty.id,
+        originalSaleId: warranty.original_sale_id ?? null,
+        clientId: warranty.client_id ?? null,
+        clientName: warranty.client_name ?? 'Cliente sin factura',
+        productReceivedId: warranty.product_received_id,
+        productReceivedName: warranty.product_received_name,
+        productReceivedSerial: warranty.product_received_serial,
+        productDeliveredId: warranty.product_delivered_id,
+        productDeliveredName: warranty.product_delivered_name,
+        reason: warranty.reason,
+        status: warranty.status,
+        notes: warranty.notes,
+        createdAt: warranty.created_at,
+        updatedAt: warranty.updated_at,
+        completedAt: warranty.completed_at,
+        createdBy: warranty.created_by,
+        quantityReceived: warranty.quantity_received ?? 1,
+        quantityDelivered: warranty.quantity_delivered ?? 1,
+        originalSale: warranty.original_sale ? {
+          id: warranty.original_sale.id,
+          invoiceNumber: warranty.original_sale.invoice_number,
+          total: warranty.original_sale.total,
+          createdAt: warranty.original_sale.created_at
+        } as any : undefined,
+        client: warranty.client,
+        productReceived: warranty.product_received,
+        productDelivered: warranty.product_delivered,
+        warrantyProducts: warranty.warranty_products?.map(wp => ({
+          id: wp.id,
+          warrantyId: wp.warranty_id,
+          productId: wp.product_id,
+          serialNumber: wp.serial_number,
+          condition: wp.condition,
+          notes: wp.notes,
+          createdAt: wp.created_at,
+          product: wp.product
+        })) || [],
+        statusHistory: warranty.warranty_status_history?.map(sh => ({
+          id: sh.id,
+          warrantyId: sh.warranty_id,
+          previousStatus: sh.previous_status,
+          newStatus: sh.new_status,
+          notes: sh.notes,
+          changedAt: sh.changed_at,
+          changedBy: sh.changed_by_user ? {
+            id: sh.changed_by_user.id,
+            name: sh.changed_by_user.name
+          } : undefined
+        })) || []
+      }))
+
+      return mappedWarranties
+    } catch (error) {
+      // Error silencioso en producción
+      throw error
+    }
+  }
+
   // Obtener garantía por ID
   static async getWarrantyById(id: string): Promise<Warranty | null> {
     try {
