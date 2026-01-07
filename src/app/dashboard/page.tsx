@@ -55,6 +55,8 @@ export default function DashboardPage() {
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
   const [specificDate, setSpecificDate] = useState<Date | null>(null)
   const [isFiltering, setIsFiltering] = useState(false)
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear())
+  const [availableYears, setAvailableYears] = useState<number[]>([new Date().getFullYear()])
   
   // Verificar si el usuario es Super Admin (Diego)
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
@@ -90,8 +92,14 @@ export default function DashboardPage() {
   }
 
   // Función para cargar datos del dashboard
-  const loadDashboardData = async (showLoading = false) => {
+  const loadDashboardData = async (showLoading = false, overrideFilter?: DateFilter, overrideSpecificDate?: Date | null, overrideYear?: number) => {
     try {
+      // Prevenir ejecuciones duplicadas
+      if (isRefreshing || isFiltering) {
+        console.log('⚠️ [DASHBOARD] loadDashboardData ya está ejecutándose, saltando...')
+        return
+      }
+      
       if (showLoading) {
         setIsRefreshing(true)
       }
@@ -108,38 +116,142 @@ export default function DashboardPage() {
       const { ClientsService } = await import('@/lib/clients-service')
       const { ProductsService } = await import('@/lib/products-service')
       
-      // Cargar TODOS los datos para poder filtrar por cualquier fecha
-      // Usar un número muy grande para obtener todos los registros
-      const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
-        withTimeout(SalesService.getAllSales(1, 10000), 20000), // Aumentado para obtener más datos
-        withTimeout(WarrantyService.getAllWarranties(), 15000),
-        withTimeout(CreditsService.getAllCredits(), 15000),
-        withTimeout(ClientsService.getAllClients(), 15000),
-        withTimeout(ProductsService.getAllProductsLegacy(), 15000),
-        withTimeout(CreditsService.getAllPaymentRecords(), 15000)
-      ])
+      // Determinar si necesitamos filtrar por fecha
+      // IMPORTANTE: Usar los valores pasados como override, o los del estado si no se pasan
+      // Si no hay override, usar el estado actual, pero asegurar que si dateFilter es 'specific', también necesitamos specificDate
+      let currentFilter = overrideFilter !== undefined ? overrideFilter : (isSuperAdmin ? dateFilter : 'today')
       
-      // Procesar resultados, usando datos por defecto si fallan
-      const sales = salesResult.status === 'fulfilled' ? salesResult.value.sales : []
-      const warranties = warrantiesResult.status === 'fulfilled' ? (warrantiesResult.value.warranties || []) : []
-      const credits = creditsResult.status === 'fulfilled' ? (creditsResult.value || []) : []
-      const clients = clientsResult.status === 'fulfilled' ? (clientsResult.value.clients || []) : []
-      const products = productsResult.status === 'fulfilled' ? (productsResult.value || []) : []
-      const payments = paymentRecordsResult.status === 'fulfilled' ? (paymentRecordsResult.value || []) : []
+      // Si el filtro es 'specific' pero no hay fecha (ni override ni en estado), cambiar a 'today'
+      if (currentFilter === 'specific' && !overrideSpecificDate && !specificDate) {
+        console.warn('⚠️ [DASHBOARD] Filtro "specific" pero no hay fecha, cambiando a "today"')
+        currentFilter = 'today'
+      }
+      const dateToUse = overrideSpecificDate !== undefined ? overrideSpecificDate : specificDate
+      const yearToUse = overrideYear !== undefined ? overrideYear : selectedYear
+      const shouldFilterByDate = currentFilter !== 'all'
+      // Pasar specificDate explícitamente para asegurar que se use la fecha correcta
+      const { startDate, endDate } = shouldFilterByDate ? getDateRange(currentFilter, yearToUse, dateToUse) : { startDate: null, endDate: null }
       
-      // Log de errores si los hay
-      const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult]
-        .filter(result => result.status === 'rejected')
-        .map(result => (result as PromiseRejectedResult).reason)
+      console.log('🔍 [DASHBOARD DEBUG]', {
+        dateFilter, // Estado original
+        currentFilter, // Filtro que vamos a usar (puede ser override)
+        dateToUse: dateToUse?.toISOString(), // Fecha que vamos a usar (puede ser override)
+        yearToUse, // Año que vamos a usar (puede ser override)
+        isSuperAdmin,
+        shouldFilterByDate,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+      })
       
-      
-      setAllSales(sales)
-      setAllWarranties(warranties)
-      setAllCredits(credits)
-      setAllClients(clients)
-      setAllProducts(products)
-      setAllPaymentRecords(payments)
-      setLastUpdated(new Date())
+      // Si hay filtro de fecha (today o specific), usar métodos optimizados con filtrado en backend
+      if (shouldFilterByDate && startDate && endDate) {
+        console.log('🔍 [DASHBOARD] Cargando datos con filtro de fecha:', {
+          filtro: currentFilter,
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString()
+        })
+        
+        const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
+          withTimeout(SalesService.getDashboardSales(startDate, endDate), 20000),
+          withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 15000),
+          withTimeout(CreditsService.getCreditsByDateRange(startDate, endDate), 15000),
+          withTimeout(ClientsService.getAllClients(), 15000), // Clientes siempre todos
+          withTimeout(ProductsService.getAllProductsLegacy(), 15000), // Productos siempre todos
+          withTimeout(CreditsService.getPaymentRecordsByDateRange(startDate, endDate), 15000)
+        ])
+        
+        // Procesar resultados
+        const sales = salesResult.status === 'fulfilled' ? salesResult.value : []
+        const warranties = warrantiesResult.status === 'fulfilled' ? warrantiesResult.value : []
+        const credits = creditsResult.status === 'fulfilled' ? creditsResult.value : []
+        const clients = clientsResult.status === 'fulfilled' ? clientsResult.value : []
+        const products = productsResult.status === 'fulfilled' ? productsResult.value : []
+        const payments = paymentRecordsResult.status === 'fulfilled' ? paymentRecordsResult.value : []
+        
+        console.log('✅ [DASHBOARD] Datos cargados con filtro:', {
+          ventas: sales.length,
+          garantias: warranties.length,
+          creditos: credits.length,
+          abonos: payments.length
+        })
+        
+        setAllSales(sales)
+        setAllWarranties(warranties)
+        setAllCredits(credits)
+        setAllClients(clients)
+        setAllProducts(products)
+        setAllPaymentRecords(payments)
+        setLastUpdated(new Date())
+        
+        // Log de errores si los hay
+        const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult]
+          .filter(result => result.status === 'rejected')
+          .map(result => (result as PromiseRejectedResult).reason)
+        
+        if (errors.length > 0) {
+          console.error('⚠️ [DASHBOARD] Errores al cargar datos:', errors)
+        }
+        
+        // IMPORTANTE: Salir aquí para no ejecutar el bloque de "Todo el Tiempo"
+        return
+      } else {
+        // Para "Todo el Tiempo", cargar año seleccionado completo
+        // Desde 1 enero del año seleccionado hasta hoy (si es año actual) o 31 dic (si es año anterior)
+        const { startDate, endDate } = getDateRange('all', yearToUse)
+        
+        if (!startDate || !endDate) {
+          console.error('⚠️ [DASHBOARD] No se pudieron calcular las fechas para el año seleccionado')
+          return
+        }
+        
+        console.log('📊 [DASHBOARD] Cargando datos del año', yearToUse, {
+          desde: startDate.toLocaleDateString('es-CO'),
+          hasta: endDate.toLocaleDateString('es-CO'),
+          desdeISO: startDate.toISOString(),
+          hastaISO: endDate.toISOString()
+        })
+        
+        const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
+          withTimeout(SalesService.getDashboardSales(startDate, endDate), 30000), // Más tiempo para años completos
+          withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 20000),
+          withTimeout(CreditsService.getCreditsByDateRange(startDate, endDate), 20000),
+          withTimeout(ClientsService.getAllClients(), 15000),
+          withTimeout(ProductsService.getAllProductsLegacy(), 15000),
+          withTimeout(CreditsService.getPaymentRecordsByDateRange(startDate, endDate), 20000)
+        ])
+        
+        // Procesar resultados
+        const sales = salesResult.status === 'fulfilled' ? salesResult.value : []
+        const warranties = warrantiesResult.status === 'fulfilled' ? warrantiesResult.value : []
+        const credits = creditsResult.status === 'fulfilled' ? creditsResult.value : []
+        const clients = clientsResult.status === 'fulfilled' ? clientsResult.value : []
+        const products = productsResult.status === 'fulfilled' ? productsResult.value : []
+        const payments = paymentRecordsResult.status === 'fulfilled' ? paymentRecordsResult.value : []
+        
+        console.log('✅ [DASHBOARD] Datos cargados (año', yearToUse, '):', {
+          ventas: sales.length,
+          garantias: warranties.length,
+          creditos: credits.length,
+          abonos: payments.length
+        })
+        
+        setAllSales(sales)
+        setAllWarranties(warranties)
+        setAllCredits(credits)
+        setAllClients(clients)
+        setAllProducts(products)
+        setAllPaymentRecords(payments)
+        setLastUpdated(new Date())
+        
+        // Log de errores si los hay
+        const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult]
+          .filter(result => result.status === 'rejected')
+          .map(result => (result as PromiseRejectedResult).reason)
+        
+        if (errors.length > 0) {
+          console.error('⚠️ [DASHBOARD] Errores al cargar datos:', errors)
+        }
+      }
     } catch (error) {
       // Error silencioso para no exponer detalles en producción
       // No cambiar los datos en caso de error, mantener los existentes
@@ -155,32 +267,99 @@ export default function DashboardPage() {
   // Función para actualización manual del dashboard
   const handleRefresh = () => {
     // Forzar recarga completa de todos los datos, especialmente productos
+    // IMPORTANTE: Preservar el filtro actual (today, specific, all) y la fecha específica si existe
     setAllProducts([]) // Limpiar productos existentes para forzar recarga
-    loadDashboardData(true) // Mostrar loading
+    console.log('🔄 [DASHBOARD] Actualizando datos con filtro actual:', {
+      dateFilter,
+      specificDate: specificDate?.toISOString(),
+      selectedYear
+    })
+    // Pasar los parámetros explícitamente para evitar problemas de timing con el estado
+    loadDashboardData(true, dateFilter, specificDate, selectedYear)
   }
+
+  // Cargar años disponibles al montar
+  useEffect(() => {
+    const loadAvailableYears = async () => {
+      try {
+        // Obtener la primera venta para saber desde qué año empezar
+        const { supabase } = await import('@/lib/supabase')
+        const { data, error } = await supabase
+          .from('sales')
+          .select('created_at')
+          .order('created_at', { ascending: true })
+          .limit(1)
+        
+        if (error || !data || data.length === 0) {
+          // Si no hay ventas, retornar solo el año actual
+          setAvailableYears([new Date().getFullYear()])
+          setSelectedYear(new Date().getFullYear())
+          return
+        }
+        
+        const firstSaleDate = new Date(data[0].created_at)
+        const firstYear = firstSaleDate.getFullYear()
+        const currentYear = new Date().getFullYear()
+        
+        // Generar array de años desde la primera venta hasta el año actual
+        const years: number[] = []
+        for (let year = firstYear; year <= currentYear; year++) {
+          years.push(year)
+        }
+        
+        setAvailableYears(years.reverse()) // Más reciente primero
+        setSelectedYear(currentYear) // Año actual por defecto
+      } catch (error) {
+        // En caso de error, retornar solo el año actual
+        setAvailableYears([new Date().getFullYear()])
+        setSelectedYear(new Date().getFullYear())
+      }
+    }
+    
+    loadAvailableYears()
+  }, [])
 
   // Cargar datos solo una vez al montar el componente
   useEffect(() => {
-    loadDashboardData()
+    // Solo cargar si no hay datos aún (evitar doble carga)
+    // El filtro inicial es 'today', así que cargará datos de hoy
+    if (allSales.length === 0 && allProducts.length === 0) {
+      console.log('🚀 [DASHBOARD] Carga inicial - filtro:', effectiveDateFilter)
+      loadDashboardData()
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Solo ejecutar una vez al montar
 
   // Función para obtener fechas de filtro
-  const getDateRange = (filter: DateFilter) => {
+  const getDateRange = (filter: DateFilter, year?: number, overrideSpecificDate?: Date | null) => {
     const now = new Date()
+    const currentYear = now.getFullYear()
+    const targetYear = year || selectedYear
+    // Usar la fecha específica pasada como parámetro, o la del estado si no se pasa
+    const dateToUse = overrideSpecificDate !== undefined ? overrideSpecificDate : specificDate
+    
     let startDate: Date
-    let endDate: Date = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+    let endDate: Date
 
     switch (filter) {
       case 'today':
         startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
+        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
         break
       case 'specific':
-        if (!specificDate) {
+        if (!dateToUse) {
+          console.warn('⚠️ [DASHBOARD] Filtro "specific" pero no hay fecha seleccionada')
           return { startDate: null, endDate: null }
         }
-        startDate = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate(), 0, 0, 0, 0)
-        endDate = new Date(specificDate.getFullYear(), specificDate.getMonth(), specificDate.getDate(), 23, 59, 59, 999)
+        startDate = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), 0, 0, 0, 0)
+        endDate = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), 23, 59, 59, 999)
+        break
+      case 'all':
+        // "Todo el Tiempo" = Año seleccionado completo
+        // Siempre desde 1 enero hasta 31 diciembre del año seleccionado
+        // Sin importar si es el año actual o no
+        startDate = new Date(targetYear, 0, 1, 0, 0, 0, 0) // 1 enero del año
+        endDate = new Date(targetYear, 11, 31, 23, 59, 59, 999) // 31 diciembre del año
         break
       default:
         return { startDate: null, endDate: null }
@@ -190,7 +369,10 @@ export default function DashboardPage() {
   }
 
   // Filtrar datos por período
+  // NOTA: Ahora los datos ya vienen filtrados del backend cuando hay un filtro de fecha
+  // NO aplicar filtrado adicional para evitar problemas de zona horaria
   const filteredData = useMemo(() => {
+    // Si es "Todo el Tiempo", devolver todos los datos cargados (últimos 90 días)
     if (effectiveDateFilter === 'all') {
       return {
         sales: allSales,
@@ -200,43 +382,28 @@ export default function DashboardPage() {
       }
     }
 
-    const { startDate, endDate } = getDateRange(effectiveDateFilter)
-    if (!startDate || !endDate) {
-      // Si es 'specific' pero no hay fecha seleccionada, devolver datos vacíos
-      if (effectiveDateFilter === 'specific') {
-        return {
-          sales: [],
-          warranties: [],
-          credits: [],
-          paymentRecords: []
-        }
-      }
-      // Para otros casos, devolver todos los datos
+    // Para filtros específicos (today, specific), los datos YA vienen filtrados del backend
+    // NO aplicar filtrado adicional para evitar problemas de zona horaria que eliminen datos válidos
+    // El backend ya hizo el filtrado correctamente usando las fechas en UTC
+    if (effectiveDateFilter === 'specific' && !specificDate) {
+      // Si es 'specific' pero no hay fecha seleccionada, devolver vacío
       return {
-        sales: allSales,
-        warranties: allWarranties,
-        credits: allCredits,
-        paymentRecords: allPaymentRecords
+        sales: [],
+        warranties: [],
+        credits: [],
+        paymentRecords: []
       }
     }
 
-    const filterByDate = (item: any) => {
-      const itemDate = new Date(item.createdAt)
-      return itemDate >= startDate && itemDate <= endDate
-    }
-
-    const filterPaymentRecordsByDate = (payment: any) => {
-      const paymentDate = new Date(payment.paymentDate)
-      return paymentDate >= startDate && paymentDate <= endDate
-    }
-
+    // Para 'today' o 'specific' con fecha, los datos ya vienen filtrados del backend
+    // Devolverlos directamente sin filtrado adicional
     return {
-      sales: allSales.filter(filterByDate),
-      warranties: allWarranties.filter(filterByDate),
-      credits: allCredits.filter(filterByDate),
-      paymentRecords: allPaymentRecords.filter(filterPaymentRecordsByDate)
+      sales: allSales,
+      warranties: allWarranties,
+      credits: allCredits,
+      paymentRecords: allPaymentRecords
     }
-  }, [allSales, allWarranties, allCredits, allPaymentRecords, effectiveDateFilter])
+  }, [allSales, allWarranties, allCredits, allPaymentRecords, effectiveDateFilter, specificDate])
 
   // Calcular métricas del dashboard
   const metrics = useMemo(() => {
@@ -650,33 +817,51 @@ export default function DashboardPage() {
       return sum + (sellingPrice * totalStock);
     }, 0)
 
-    // Datos para gráficos - Mejorado para mostrar todos los días del período
+    // Datos para gráficos - Debe coincidir exactamente con totalRevenue (efectivo + transferencia + abonos)
     // Excluir ventas canceladas y borradores del gráfico
+    // IMPORTANTE: Usar la misma lógica que totalRevenue para que los números coincidan
 
-    const salesByDay = activeSales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
-      const date = new Date(sale.createdAt).toLocaleDateString('es-CO', { 
+    // Función helper para normalizar fecha y obtener formato consistente
+    const getDateKey = (dateInput: Date | string): string => {
+      const date = new Date(dateInput)
+      // Normalizar a medianoche en hora local para evitar problemas de zona horaria
+      const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+      return normalizedDate.toLocaleDateString('es-CO', { 
         weekday: 'short',
         day: '2-digit', 
         month: '2-digit' 
       })
+    }
+
+    // IMPORTANTE: Calcular salesByDay usando EXACTAMENTE la misma lógica que cashRevenue + transferRevenue
+    // Primero, calcular ventas por día (igual que arriba)
+    const salesByDay = activeSales.reduce((acc: { [key: string]: { amount: number, count: number } }, sale) => {
+      const date = getDateKey(sale.createdAt)
       if (!acc[date]) {
         acc[date] = { amount: 0, count: 0 }
       }
       
-      // Solo contar ingresos reales (efectivo + transferencia), no créditos
-      if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+      // Usar EXACTAMENTE la misma lógica que cashRevenue y transferRevenue arriba (líneas 425-440)
+      if (sale.paymentMethod === 'cash') {
+        acc[date].amount += sale.total
+        acc[date].count += 1
+      } else if (sale.paymentMethod === 'transfer') {
         acc[date].amount += sale.total
         acc[date].count += 1
       } else if (sale.paymentMethod === 'mixed' && sale.payments) {
-        // Para pagos mixtos, solo contar la parte en efectivo/transferencia
-        const realPaymentAmount = sale.payments.reduce((sum, payment) => {
-          if (payment.paymentType === 'cash' || payment.paymentType === 'transfer') {
-            return sum + (payment.amount || 0)
+        // Para pagos mixtos, desglosar igual que arriba (líneas 430-438)
+        sale.payments.forEach(payment => {
+          if (payment.paymentType === 'cash') {
+            acc[date].amount += payment.amount || 0
+          } else if (payment.paymentType === 'transfer') {
+            acc[date].amount += payment.amount || 0
           }
-          return sum
-        }, 0)
-        if (realPaymentAmount > 0) {
-          acc[date].amount += realPaymentAmount
+        })
+        // Solo incrementar count si hay al menos un pago en efectivo/transferencia
+        const hasRealPayment = sale.payments.some(p => 
+          p.paymentType === 'cash' || p.paymentType === 'transfer'
+        )
+        if (hasRealPayment) {
           acc[date].count += 1
         }
       }
@@ -685,40 +870,92 @@ export default function DashboardPage() {
       return acc
     }, {})
 
-    // Agregar abonos de créditos al gráfico (dinero real ingresado)
+    // Agregar abonos de créditos al gráfico (EXACTAMENTE igual que se suma arriba en líneas 442-449)
+    // IMPORTANTE: Usar los mismos validPaymentRecords que se usan para calcular totalRevenue
+    // Esto asegura que el gráfico muestre exactamente lo mismo que totalRevenue
     validPaymentRecords.forEach(payment => {
-      const date = new Date(payment.paymentDate).toLocaleDateString('es-CO', { 
-        weekday: 'short',
-        day: '2-digit', 
-        month: '2-digit' 
-      })
+      const date = getDateKey(payment.paymentDate)
       if (!salesByDay[date]) {
         salesByDay[date] = { amount: 0, count: 0 }
       }
-      salesByDay[date].amount += payment.amount
+      // Sumar abonos en efectivo y transferencia (EXACTAMENTE igual que líneas 443-449)
+      if (payment.paymentMethod === 'cash') {
+        salesByDay[date].amount += payment.amount
+      } else if (payment.paymentMethod === 'transfer') {
+        salesByDay[date].amount += payment.amount
+      }
       // No incrementar count para abonos, solo para ventas nuevas
     })
 
+    // Debug detallado para fecha específica
+    if (effectiveDateFilter === 'specific' && specificDate) {
+      const targetDate = getDateKey(specificDate)
+      const chartDataForDate = salesByDay[targetDate]
+      const abonosForDate = validPaymentRecords.filter(p => {
+        const paymentDate = getDateKey(p.paymentDate)
+        return paymentDate === targetDate
+      })
+      console.log('🔍 [DASHBOARD CHART DEBUG] Para fecha específica:', {
+        targetDate,
+        specificDate: specificDate.toISOString(),
+        chartDataForDate,
+        abonosForDate: abonosForDate.map(p => ({
+          paymentDate: p.paymentDate,
+          normalizedDate: getDateKey(p.paymentDate),
+          amount: p.amount,
+          method: p.paymentMethod
+        })),
+        totalAbonosForDate: abonosForDate.reduce((sum, p) => {
+          if (p.paymentMethod === 'cash' || p.paymentMethod === 'transfer') {
+            return sum + p.amount
+          }
+          return sum
+        }, 0),
+        totalRevenue,
+        cashRevenue,
+        transferRevenue
+      })
+    }
+
+    // Debug: Verificar que los totales coincidan
+    const totalFromChart = Object.values(salesByDay).reduce((sum, day) => sum + day.amount, 0)
+    if (Math.abs(totalFromChart - totalRevenue) > 1) {
+      console.error('❌ [DASHBOARD] Discrepancia entre gráfico y totalRevenue:', {
+        totalFromChart,
+        totalRevenue,
+        difference: totalFromChart - totalRevenue,
+        salesByDayKeys: Object.keys(salesByDay),
+        validPaymentRecordsCount: validPaymentRecords.length,
+        validPaymentRecordsTotal: validPaymentRecords.reduce((sum, p) => sum + p.amount, 0),
+        cashRevenue,
+        transferRevenue,
+        activeSalesCount: activeSales.length,
+        salesByDayDetails: Object.entries(salesByDay).map(([date, data]) => ({
+          date,
+          amount: data.amount,
+          count: data.count
+        }))
+      })
+    } else {
+      console.log('✅ [DASHBOARD] Gráfico y totalRevenue coinciden:', {
+        totalFromChart,
+        totalRevenue
+      })
+    }
+
     // Generar todos los días del período seleccionado
+    // IMPORTANTE: Usar getDateKey() para asegurar que las fechas coincidan con salesByDay
     const generateAllDays = () => {
       const days = []
       const today = new Date()
       
       if (effectiveDateFilter === 'specific' && specificDate) {
         // Para fecha específica, mostrar solo ese día
-        const dateStr = specificDate.toLocaleDateString('es-CO', { 
-          weekday: 'short',
-          day: '2-digit', 
-          month: '2-digit' 
-        })
+        const dateStr = getDateKey(specificDate)
         days.push(dateStr)
       } else if (effectiveDateFilter === 'today') {
         // Para hoy, mostrar solo el día actual
-        const dateStr = today.toLocaleDateString('es-CO', { 
-          weekday: 'short',
-          day: '2-digit', 
-          month: '2-digit' 
-        })
+        const dateStr = getDateKey(today)
         days.push(dateStr)
       } else {
         // Para "Todo el Tiempo", mostrar los últimos 30 días
@@ -726,11 +963,7 @@ export default function DashboardPage() {
         startDate.setDate(today.getDate() - 29)
         
         for (let d = new Date(startDate); d <= today; d.setDate(d.getDate() + 1)) {
-          const dateStr = d.toLocaleDateString('es-CO', { 
-            weekday: 'short',
-            day: '2-digit', 
-            month: '2-digit' 
-          })
+          const dateStr = getDateKey(d)
           days.push(dateStr)
         }
       }
@@ -742,6 +975,28 @@ export default function DashboardPage() {
     const salesChartData = allDays
       .map(date => {
         const data = salesByDay[date] || { amount: 0, count: 0 }
+        // Debug para fecha específica
+        if (effectiveDateFilter === 'specific' && specificDate) {
+          const expectedDate = getDateKey(specificDate)
+          if (date === expectedDate) {
+            console.log('📊 [DASHBOARD CHART] Datos para fecha específica:', {
+              date,
+              expectedDate,
+              amount: data.amount,
+              totalRevenue,
+              salesByDayKeys: Object.keys(salesByDay),
+              validPaymentRecordsForDate: validPaymentRecords.filter(p => {
+                const paymentDate = getDateKey(p.paymentDate)
+                return paymentDate === date
+              }).map(p => ({
+                date: p.paymentDate,
+                normalizedDate: getDateKey(p.paymentDate),
+                amount: p.amount,
+                method: p.paymentMethod
+              }))
+            })
+          }
+        }
         return { 
           date, 
           amount: data.amount,
@@ -809,7 +1064,7 @@ export default function DashboardPage() {
   const getDateFilterLabel = (filter: DateFilter) => {
     const labels: { [key: string]: string } = {
       today: 'Hoy',
-      all: 'Todo el Tiempo',
+      all: 'Seleccionar Año', // Label genérico para modo año
       specific: specificDate ? specificDate.toLocaleDateString('es-CO') : 'Fecha Específica'
     }
     return labels[filter] || filter
@@ -822,22 +1077,39 @@ export default function DashboardPage() {
       return
     }
     
-    if (newFilter === 'specific' && specificDate) {
-      setIsFiltering(true)
-      setDateFilter(newFilter)
-      // Recargar datos para la fecha específica
-      loadDashboardData().then(() => {
-        setIsFiltering(false)
-      })
-    } else {
-      setDateFilter(newFilter)
+    // Siempre recargar datos cuando cambia el filtro (ahora usa filtrado en backend)
+    setIsFiltering(true)
+    setDateFilter(newFilter)
+    
+    let dateToUse = specificDate
+    let yearToUse = selectedYear
+    
+    if (newFilter !== 'specific') {
       setSpecificDate(null)
-      setIsFiltering(false) // Asegurar que se desactive
-      // Si cambias a 'today' o 'all', también actualizar para asegurar datos frescos
-      if (newFilter !== 'specific') {
-        loadDashboardData()
-      }
+      dateToUse = null
     }
+    
+    // Si cambia a "Todo el Tiempo", asegurar que el año seleccionado sea el actual
+    if (newFilter === 'all') {
+      const currentYear = new Date().getFullYear()
+      setSelectedYear(currentYear)
+      yearToUse = currentYear
+    }
+    
+    // Recargar datos con el nuevo filtro, pasando los valores directamente para evitar problemas de timing
+    loadDashboardData(true, newFilter, dateToUse, yearToUse).then(() => {
+      setIsFiltering(false)
+    })
+  }
+
+  // Función para manejar cambio de año
+  const handleYearChange = (year: number) => {
+    setSelectedYear(year)
+    setIsFiltering(true)
+    // Recargar datos con el nuevo año, pasando el año directamente para evitar problemas de timing
+    loadDashboardData(true, dateFilter, specificDate, year).then(() => {
+      setIsFiltering(false)
+    })
   }
 
   // Función para manejar selección de fecha específica
@@ -846,10 +1118,13 @@ export default function DashboardPage() {
     if (date) {
       setIsFiltering(true)
       setDateFilter('specific')
-      // Recargar datos del dashboard para la fecha específica
-      loadDashboardData().then(() => {
+      // IMPORTANTE: Pasar la fecha directamente para evitar problemas de timing con el estado
+      // Recargar datos del dashboard para la fecha específica usando la fecha que acabamos de seleccionar
+      loadDashboardData(true, 'specific', date).then(() => {
         setIsFiltering(false)
       })
+    } else {
+      setIsFiltering(false)
     }
   }
 
@@ -975,6 +1250,28 @@ export default function DashboardPage() {
                         </svg>
                       </div>
                     </div>
+                    
+                    {/* Selector de año cuando "Todo el Tiempo" está seleccionado */}
+                    {dateFilter === 'all' && isSuperAdmin && (
+                      <div className="relative ml-2">
+                        <select
+                          value={selectedYear}
+                          onChange={(e) => handleYearChange(Number(e.target.value))}
+                          className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 md:px-3 py-1.5 md:py-2 pr-7 md:pr-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        >
+                          {availableYears.map((year) => (
+                            <option key={year} value={year}>
+                              {year}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                          </svg>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Calendario para fecha específica */}
                     {dateFilter === 'specific' && (

@@ -42,3 +42,8 @@ next-env.d.ts
 
 # database migrations (sensitive data)
 database/migrations/
+
+# database backups (production data - sensitive)
+*.sql
+!supabase/migrations/*.sql
+!supabase/seed.sql
