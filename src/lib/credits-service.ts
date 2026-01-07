@@ -100,6 +100,52 @@ export class CreditsService {
     }
   }
 
+  // Método optimizado para dashboard con filtrado por fecha
+  static async getCreditsByDateRange(startDate?: Date, endDate?: Date): Promise<Credit[]> {
+    try {
+      let query = supabase
+        .from('credits')
+        .select('*')
+        .order('created_at', { ascending: false })
+
+      // Aplicar filtros de fecha si existen
+      if (startDate) {
+        const startUTC = new Date(Date.UTC(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0, 0, 0, 0
+        ))
+        query = query.gte('created_at', startUTC.toISOString())
+      }
+      if (endDate) {
+        const endUTC = new Date(Date.UTC(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23, 59, 59, 999
+        ))
+        query = query.lte('created_at', endUTC.toISOString())
+      }
+
+      const { data: creditsData, error: creditsError } = await query.limit(10000)
+
+      if (creditsError) {
+        // Error silencioso en producción
+        throw creditsError
+      }
+
+      if (!creditsData || creditsData.length === 0) {
+        return []
+      }
+
+      return await this.mapCreditsData(creditsData)
+    } catch (error) {
+      // Error silencioso en producción
+      throw error
+    }
+  }
+
   // Función auxiliar para mapear datos de créditos
   private static async mapCreditsData(creditsData: any[]): Promise<Credit[]> {
     // Obtener emails de usuarios únicos
@@ -695,6 +741,62 @@ export class CreditsService {
         userId: payment.user_id,
         userName: payment.user_name,
         status: payment.status || 'active', // Incluir status, por defecto 'active'
+        cancelledAt: payment.cancelled_at,
+        cancelledBy: payment.cancelled_by,
+        cancelledByName: payment.cancelled_by_name,
+        cancellationReason: payment.cancellation_reason,
+        createdAt: payment.created_at
+      }))
+    } catch (error) {
+      // Error silencioso en producción
+      return []
+    }
+  }
+
+  // Método optimizado para dashboard con filtrado por fecha de pago
+  static async getPaymentRecordsByDateRange(startDate?: Date, endDate?: Date): Promise<PaymentRecord[]> {
+    try {
+      let query = supabase
+        .from('payment_records')
+        .select('*')
+        .order('payment_date', { ascending: false })
+
+      // Aplicar filtros de fecha si existen (usar payment_date, no created_at)
+      if (startDate) {
+        const startUTC = new Date(Date.UTC(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0, 0, 0, 0
+        ))
+        query = query.gte('payment_date', startUTC.toISOString())
+      }
+      if (endDate) {
+        const endUTC = new Date(Date.UTC(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23, 59, 59, 999
+        ))
+        query = query.lte('payment_date', endUTC.toISOString())
+      }
+
+      const { data, error } = await query.limit(10000)
+
+      if (error) throw error
+
+      return data.map(payment => ({
+        id: payment.id,
+        creditId: null,
+        amount: payment.amount,
+        paymentDate: payment.payment_date,
+        paymentMethod: payment.payment_method,
+        cashAmount: undefined,
+        transferAmount: undefined,
+        description: payment.description,
+        userId: payment.user_id,
+        userName: payment.user_name,
+        status: payment.status || 'active',
         cancelledAt: payment.cancelled_at,
         cancelledBy: payment.cancelled_by,
         cancelledByName: payment.cancelled_by_name,

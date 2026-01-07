@@ -142,6 +142,195 @@ export class SalesService {
     }
   }
 
+  // Método optimizado para dashboard con filtrado por fecha
+  static async getDashboardSales(startDate?: Date, endDate?: Date): Promise<Sale[]> {
+    try {
+      // Construir query base
+      let query = supabase
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            id,
+            product_id,
+            product_name,
+            product_reference_code,
+            quantity,
+            unit_price,
+            discount,
+            total
+          ),
+          sale_payments (
+            id,
+            sale_id,
+            payment_type,
+            amount,
+            created_at
+          )
+        `)
+        .order('created_at', { ascending: false })
+
+      // Aplicar filtros de fecha si existen
+      if (startDate) {
+        // Usar inicio del día en UTC para evitar problemas de zona horaria
+        const startUTC = new Date(Date.UTC(
+          startDate.getFullYear(),
+          startDate.getMonth(),
+          startDate.getDate(),
+          0, 0, 0, 0
+        ))
+        query = query.gte('created_at', startUTC.toISOString())
+      }
+      if (endDate) {
+        // Usar final del día en UTC para incluir todo el día
+        const endUTC = new Date(Date.UTC(
+          endDate.getFullYear(),
+          endDate.getMonth(),
+          endDate.getDate(),
+          23, 59, 59, 999
+        ))
+        query = query.lte('created_at', endUTC.toISOString())
+      }
+
+      // Ejecutar query - Supabase tiene límite de 1,000 registros por query
+      // Necesitamos hacer paginado para obtener todos los registros
+      let allSales: any[] = []
+      let offset = 0
+      const limit = 1000 // Límite real de Supabase
+      let hasMore = true
+      
+      while (hasMore) {
+        let paginatedQuery = supabase
+          .from('sales')
+          .select(`
+            *,
+            sale_items (
+              id,
+              product_id,
+              product_name,
+              product_reference_code,
+              quantity,
+              unit_price,
+              discount,
+              total
+            ),
+            sale_payments (
+              id,
+              sale_id,
+              payment_type,
+              amount,
+              created_at
+            )
+          `)
+          .order('created_at', { ascending: false })
+          .range(offset, offset + limit - 1) // Lotes de 1,000
+
+        // Aplicar filtros de fecha si existen
+        if (startDate) {
+          const startUTC = new Date(Date.UTC(
+            startDate.getFullYear(),
+            startDate.getMonth(),
+            startDate.getDate(),
+            0, 0, 0, 0
+          ))
+          paginatedQuery = paginatedQuery.gte('created_at', startUTC.toISOString())
+        }
+        if (endDate) {
+          const endUTC = new Date(Date.UTC(
+            endDate.getFullYear(),
+            endDate.getMonth(),
+            endDate.getDate(),
+            23, 59, 59, 999
+          ))
+          paginatedQuery = paginatedQuery.lte('created_at', endUTC.toISOString())
+        }
+
+        const { data, error } = await paginatedQuery
+
+        if (error) {
+          // Error silencioso en producción
+          console.error('Error en paginado de ventas:', error)
+          break
+        }
+
+        if (data && data.length > 0) {
+          allSales = [...allSales, ...data]
+          offset += data.length
+          // Si recibimos menos de 1,000, significa que no hay más datos
+          hasMore = data.length === limit
+        } else {
+          hasMore = false
+        }
+      }
+
+      // Procesar referencias de productos (mismo código que getAllSales)
+      const sales = await Promise.all(
+        allSales.map(async (sale) => {
+          const itemsWithReferences = await Promise.all(
+            (sale.sale_items || []).map(async (item: any) => {
+              let productReference = item.product_reference_code
+              
+              if (!productReference || productReference === 'N/A' || productReference === null) {
+                const { data: product } = await supabase
+                  .from('products')
+                  .select('reference')
+                  .eq('id', item.product_id)
+                  .single()
+                
+                productReference = product?.reference || 'N/A'
+              }
+              
+              return {
+                id: item.id,
+                productId: item.product_id,
+                productName: item.product_name,
+                productReferenceCode: productReference,
+                quantity: item.quantity,
+                unitPrice: item.unit_price,
+                discount: item.discount || 0,
+                discountType: item.discount_type || 'amount',
+                tax: item.tax || 0,
+                total: item.total
+              }
+            })
+          )
+
+          return {
+            id: sale.id,
+            clientId: sale.client_id,
+            clientName: sale.client_name,
+            total: sale.total,
+            subtotal: sale.subtotal,
+            tax: sale.tax,
+            discount: sale.discount,
+            discountType: sale.discount_type || 'amount',
+            status: sale.status,
+            paymentMethod: sale.payment_method,
+            payments: sale.sale_payments?.map((payment: any) => ({
+              id: payment.id,
+              saleId: payment.sale_id,
+              paymentType: payment.payment_type,
+              amount: payment.amount,
+              createdAt: payment.created_at,
+              updatedAt: payment.updated_at || payment.created_at
+            })) || [],
+            invoiceNumber: sale.invoice_number,
+            sellerId: sale.seller_id,
+            sellerName: sale.seller_name,
+            sellerEmail: sale.seller_email,
+            createdAt: sale.created_at,
+            items: itemsWithReferences
+          }
+        })
+      )
+
+      return sales
+    } catch (error) {
+      // Error silencioso en producción
+      throw error
+    }
+  }
+
   static async getSaleById(id: string): Promise<Sale | null> {
     try {
       const { data, error } = await supabase
@@ -1175,17 +1364,32 @@ export class SalesService {
 
       return await Promise.all(data?.map(async sale => {
         // Obtener items de la venta con referencia de productos
-        const items = (sale.sale_items || []).map((item: any) => ({
-          id: item.id,
-          productId: item.product_id,
-          productName: item.product_name,
-          productReferenceCode: item.product_reference_code || 'N/A',
-          quantity: item.quantity,
-          unitPrice: item.unit_price,
-          discount: item.discount || 0,
-          discountType: item.discount_type || 'amount',
-          tax: item.tax || 0,
-          total: item.total
+        const items = await Promise.all((sale.sale_items || []).map(async (item: any) => {
+          let productReference = item.product_reference_code
+          
+          // Si no hay referencia guardada, obtenerla desde la tabla products (para ventas antiguas)
+          if (!productReference || productReference === 'N/A' || productReference === null) {
+            const { data: product } = await supabase
+              .from('products')
+              .select('reference')
+              .eq('id', item.product_id)
+              .single()
+            
+            productReference = product?.reference || 'N/A'
+          }
+          
+          return {
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: productReference,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
+          }
         }))
 
         // Obtener pagos mixtos si existe
