@@ -56,6 +56,9 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
   const [mixedPayments, setMixedPayments] = useState<SalePayment[]>([])
   const [showMixedPayments, setShowMixedPayments] = useState(false)
   const [paymentError, setPaymentError] = useState('')
+  
+  // Estado para cálculo de vuelto (solo efectivo)
+  const [receivedAmount, setReceivedAmount] = useState<string>('')
 
   // Cargar clientes y productos cuando se abre el modal
   useEffect(() => {
@@ -681,6 +684,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     setMixedPayments([])
     setShowMixedPayments(false)
     setPaymentError('')
+    setReceivedAmount('')
     hideStockAlert()
     onClose()
   }
@@ -1126,7 +1130,14 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                     <div className="relative">
                       <select
                         value={paymentMethod}
-                        onChange={(e) => setPaymentMethod(e.target.value as any)}
+                        onChange={(e) => {
+                          const newMethod = e.target.value as any
+                          setPaymentMethod(newMethod)
+                          // Limpiar monto recibido si no es efectivo
+                          if (newMethod !== 'cash') {
+                            setReceivedAmount('')
+                          }
+                        }}
                         className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 appearance-none cursor-pointer text-gray-900 dark:text-white"
                       >
                         <option value="" className="bg-white dark:bg-gray-600 text-gray-500 dark:text-gray-400">Seleccionar método de pago</option>
@@ -1307,6 +1318,77 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                               </span>
                             </div>
                           </div>
+
+                          {/* Cálculo de vuelto - Solo para efectivo */}
+                          {paymentMethod === 'cash' && validProducts.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3 mt-3 space-y-3">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                                  Dinero recibido:
+                                </label>
+                                
+                                {/* Input para monto recibido */}
+                                <div className="relative">
+                                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 dark:text-gray-400 font-medium">$</span>
+                                  <input
+                                    type="text"
+                                    value={receivedAmount ? parseFloat(receivedAmount.replace(/[^\d]/g, '') || '0').toLocaleString('es-CO') : ''}
+                                    onChange={(e) => {
+                                      // Permitir solo números
+                                      const value = e.target.value.replace(/[^\d]/g, '')
+                                      setReceivedAmount(value)
+                                    }}
+                                    onFocus={(e) => {
+                                      // Seleccionar todo el texto al enfocar
+                                      e.target.select()
+                                    }}
+                                    placeholder="Ingresa el monto recibido"
+                                    className="w-full pl-8 pr-3 py-2.5 text-lg font-semibold border-2 border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                                  />
+                                </div>
+                              </div>
+                              
+                              {/* Mostrar vuelto si hay monto recibido */}
+                              {receivedAmount && parseFloat(receivedAmount.replace(/[^\d]/g, '')) > 0 && (
+                                <div className={`rounded-lg p-4 border-2 ${
+                                  parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total
+                                    ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-600'
+                                    : 'bg-red-50 dark:bg-red-900/20 border-red-300 dark:border-red-600'
+                                }`}>
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-base font-semibold text-gray-700 dark:text-gray-300">
+                                      Vuelto:
+                                    </span>
+                                    <span className={`text-2xl font-bold ${
+                                      parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-red-600 dark:text-red-400'
+                                    }`}>
+                                      ${(parseFloat(receivedAmount.replace(/[^\d]/g, '')) - total).toLocaleString('es-CO', { 
+                                        minimumFractionDigits: 0, 
+                                        maximumFractionDigits: 0 
+                                      })}
+                                    </span>
+                                  </div>
+                                  {parseFloat(receivedAmount.replace(/[^\d]/g, '')) < total && (
+                                    <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 mt-2 font-medium">
+                                      <AlertTriangle className="h-4 w-4" />
+                                      <span>Faltan ${(total - parseFloat(receivedAmount.replace(/[^\d]/g, ''))).toLocaleString('es-CO', { 
+                                        minimumFractionDigits: 0, 
+                                        maximumFractionDigits: 0 
+                                      })}</span>
+                                    </div>
+                                  )}
+                                  {parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total && (
+                                    <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 mt-2 font-medium">
+                                      <CheckCircle className="h-4 w-4" />
+                                      <span>Pago completo</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </>
                     )}
@@ -1329,6 +1411,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
             </Button>
             {!sale && (
               <>
+                {/* Botón de borrador comentado
                 <Button
                   onClick={handleSaveAsDraft}
                   disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
@@ -1336,6 +1419,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                 >
                   Guardar como Borrador
                 </Button>
+                */}
                 <Button
                   onClick={() => handleSave(false)}
                   disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
@@ -1347,6 +1431,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
             )}
             {sale && sale.status === 'draft' && (
               <>
+                {/* Botón de borrador comentado
                 <Button
                   onClick={handleSaveAsDraft}
                   disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
@@ -1354,6 +1439,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                 >
                   Guardar Cambios (Borrador)
                 </Button>
+                */}
                 <Button
                   onClick={() => handleSave(false)}
                   disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}

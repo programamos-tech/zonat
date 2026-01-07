@@ -923,6 +923,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           >
             Cancelar
           </Button>
+          {/* Botón de borrador comentado
           <Button
             onClick={(e) => handleSubmit(e, true)}
             disabled={loading || selectedProducts.length === 0 || !formData.clientId}
@@ -937,6 +938,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
               'Guardar como Borrador'
             )}
           </Button>
+          */}
           <Button
             onClick={(e) => handleSubmit(e, false)}
             disabled={loading || selectedProducts.length === 0 || !formData.clientId || !formData.dueDate}

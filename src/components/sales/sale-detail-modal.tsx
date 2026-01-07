@@ -944,6 +944,7 @@ export default function SaleDetailModal({
         {/* Footer */}
         <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <div className="flex space-x-3">
+            {/* Botones de borrador comentados
             {sale.status === 'draft' && onEdit && (
               <Button
                 onClick={() => {
@@ -966,6 +967,7 @@ export default function SaleDetailModal({
                 {isFinalizing ? 'Facturando...' : 'Facturar'}
               </Button>
             )}
+            */}
             {sale.status !== 'cancelled' && sale.status !== 'draft' && (
               <Button
                 onClick={handleShowCancelForm}

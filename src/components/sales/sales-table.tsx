@@ -463,6 +463,7 @@ export function SalesTable({
                           </td>
                           <td className="px-3 md:px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex items-center justify-end gap-1 md:gap-2">
+                              {/* Botón de editar borrador comentado
                               {sale.status === 'draft' && (
                                 <Button
                                   size="sm"
@@ -474,6 +475,7 @@ export function SalesTable({
                                   <Edit className="h-4 w-4" />
                                 </Button>
                               )}
+                              */}
                               <Button
                                 size="sm"
                                 variant="ghost"
