@@ -325,6 +325,7 @@ CREATE TABLE IF NOT EXISTS "public"."sales" (
     "seller_id" "text",
     "seller_name" "text",
     "seller_email" "text",
+    "cancellation_reason" "text",
     "created_at" timestamp with time zone DEFAULT "now"(),
     "updated_at" timestamp with time zone DEFAULT "now"(),
     CONSTRAINT "sales_payment_method_check" CHECK ((("payment_method")::"text" = ANY ((ARRAY['cash'::character varying, 'credit'::character varying, 'transfer'::character varying, 'warranty'::character varying, 'mixed'::character varying])::"text"[]))),

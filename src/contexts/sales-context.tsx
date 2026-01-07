@@ -114,15 +114,18 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       // Cancelar la venta (esto ya maneja el crédito y el stock)
       const result = await SalesService.cancelSale(id, reason, currentUser.id)
 
-      // Actualizar el estado local
+      // Actualizar el estado local con el motivo de cancelación
       setSales(prev => {
         const updated = prev.map(sale => 
           sale.id === id 
-            ? { ...sale, status: 'cancelled' as const }
+            ? { ...sale, status: 'cancelled' as const, cancellationReason: reason }
             : sale
         )
         return updated
       })
+      
+      // Refrescar las ventas para obtener los datos actualizados de la base de datos
+      await fetchSales(currentPage, false)
 
       // Si es una venta a crédito, notificar para actualizar la vista de créditos
       const cancelledSale = sales.find(sale => sale.id === id)

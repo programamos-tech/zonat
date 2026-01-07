@@ -193,6 +193,8 @@ export interface Sale {
   sellerEmail?: string
   createdAt: string
   items: SaleItem[]
+  creditStatus?: 'pending' | 'partial' | 'completed' | 'overdue' | 'cancelled' // Estado del crédito asociado (solo para ventas a crédito)
+  cancellationReason?: string // Motivo de cancelación si la venta fue anulada
 }
 
 export interface SaleItem {

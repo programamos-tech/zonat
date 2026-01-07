@@ -70,6 +70,7 @@ export class SalesService {
       }
 
       // Obtener referencias de productos para items que no las tienen
+      // Y obtener información de créditos para ventas a crédito
       const sales = await Promise.all(
         (data || []).map(async (sale) => {
           const itemsWithReferences = await Promise.all(
@@ -102,6 +103,20 @@ export class SalesService {
             })
           )
 
+          // Obtener información del crédito si es una venta a crédito
+          let creditStatus = null
+          if (sale.payment_method === 'credit' && sale.invoice_number) {
+            try {
+              const { CreditsService } = await import('./credits-service')
+              const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoice_number)
+              if (credit) {
+                creditStatus = credit.status
+              }
+            } catch (error) {
+              // Error silencioso - continuar sin información de crédito
+            }
+          }
+
           return {
             id: sale.id,
             clientId: sale.client_id,
@@ -126,7 +141,9 @@ export class SalesService {
             sellerName: sale.seller_name,
             sellerEmail: sale.seller_email,
             createdAt: sale.created_at,
-            items: itemsWithReferences
+            items: itemsWithReferences,
+            creditStatus: creditStatus, // Estado del crédito asociado
+            cancellationReason: sale.cancellation_reason || undefined
           }
         })
       )
@@ -315,12 +332,13 @@ export class SalesService {
               updatedAt: payment.updated_at || payment.created_at
             })) || [],
             invoiceNumber: sale.invoice_number,
-            sellerId: sale.seller_id,
-            sellerName: sale.seller_name,
-            sellerEmail: sale.seller_email,
-            createdAt: sale.created_at,
-            items: itemsWithReferences
-          }
+        sellerId: sale.seller_id,
+        sellerName: sale.seller_name,
+        sellerEmail: sale.seller_email,
+        createdAt: sale.created_at,
+        items: itemsWithReferences,
+        cancellationReason: sale.cancellation_reason || undefined
+      }
         })
       )
 
@@ -412,6 +430,7 @@ export class SalesService {
         tax: data.tax,
         discount: data.discount,
         discountType: data.discount_type || 'amount',
+        cancellationReason: data.cancellation_reason || undefined,
         status: data.status,
         paymentMethod: data.payment_method,
         payments: data.sale_payments?.map((payment: any) => ({
@@ -935,15 +954,72 @@ export class SalesService {
       // 🚀 OPTIMIZACIÓN: Obtener crédito una sola vez al inicio si es necesario
       let credit = null
       if (sale.paymentMethod === 'credit') {
-
         const { CreditsService } = await import('./credits-service')
         credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
         
-        if (!credit) {
+        if (credit) {
+          // Para ventas a crédito, obtener todos los abonos del crédito que no estén cancelados
+          // Primero buscar el payment relacionado al crédito
+          const { data: paymentData, error: paymentError } = await supabase
+            .from('payments')
+            .select('id')
+            .eq('invoice_number', sale.invoiceNumber)
+            .eq('client_id', sale.clientId)
+            .single()
+          
+          if (!paymentError && paymentData) {
+            // Obtener todos los payment_records relacionados a este payment que no estén cancelados
+            const { data: paymentRecords, error: recordsError } = await supabase
+              .from('payment_records')
+              .select('id, amount, status')
+              .eq('payment_id', paymentData.id)
+              .neq('status', 'cancelled')
+            
+            if (!recordsError && paymentRecords && paymentRecords.length > 0) {
+              // Calcular el reembolso total
+              totalRefund = paymentRecords.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+              
+              // Obtener el nombre del usuario que está cancelando
+              let userName = 'Usuario'
+              try {
+                const { AuthService } = await import('./auth-service')
+                const user = await AuthService.getCurrentUser()
+                if (user?.name) {
+                  userName = user.name
+                }
+              } catch (error) {
+                // Error silencioso - usar nombre por defecto
+              }
+              
+              // Cancelar todos los abonos del crédito
+              for (const paymentRecord of paymentRecords) {
+                const { error: cancelError } = await supabase
+                  .from('payment_records')
+                  .update({ 
+                    status: 'cancelled',
+                    cancelled_at: new Date().toISOString(),
+                    cancelled_by: currentUserId,
+                    cancelled_by_name: userName,
+                    cancellation_reason: `Cancelación de factura: ${sale.invoiceNumber} - ${reason}`
+                  })
+                  .eq('id', paymentRecord.id)
 
-        } else {
-
+                if (cancelError) {
+                  // Error silencioso en producción
+                  // Continuar con la anulación aunque algunos abonos no se pudieron cancelar
+                }
+              }
+            }
+          }
         }
+      } else if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+        // Para ventas en efectivo o transferencia, el reembolso es el total de la venta
+        totalRefund = sale.total
+      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+        // Para pagos mixtos, calcular el reembolso basado en los pagos directos (efectivo/transferencia)
+        totalRefund = sale.payments
+          .filter(payment => payment.paymentType === 'cash' || payment.paymentType === 'transfer')
+          .reduce((sum, payment) => sum + payment.amount, 0)
       }
       
       // Preparar items para devolución de stock
@@ -988,6 +1064,7 @@ export class SalesService {
         .from('sales')
         .update({
           status: 'cancelled',
+          cancellation_reason: reason,
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
@@ -1079,14 +1156,39 @@ export class SalesService {
       const activeSales = allSales.filter(sale => sale.status !== 'cancelled')
       const totalAmount = activeSales.reduce((sum, sale) => sum + sale.total, 0)
 
-      // Si no hay ventas activas, solo actualizar los montos a 0 (mantener status original)
+      // Si no hay ventas activas, el crédito debe cancelarse completamente
       if (activeSales.length === 0) {
+        // Obtener información del crédito antes de actualizarlo para el log
+        const { data: creditBeforeUpdate, error: creditBeforeError } = await supabase
+          .from('credits')
+          .select('*')
+          .eq('id', creditId)
+          .single()
 
+        // Obtener el nombre del usuario que está cancelando
+        let userName = 'Usuario'
+        try {
+          const { AuthService } = await import('./auth-service')
+          const user = await AuthService.getCurrentUser()
+          if (user?.name) {
+            userName = user.name
+          }
+        } catch (error) {
+          // Error silencioso - usar nombre por defecto
+        }
+
+        // Actualizar el crédito: poner montos en 0 y cambiar estado a cancelled
         const { error: updateError } = await supabase
           .from('credits')
           .update({
             total_amount: 0,
             pending_amount: 0,
+            paid_amount: 0,
+            status: 'cancelled',
+            cancelled_at: new Date().toISOString(),
+            cancelled_by: cancellingUserId,
+            cancelled_by_name: userName,
+            cancellation_reason: `Cancelación de factura: ${cancelledSale.invoiceNumber}`,
             updated_at: new Date().toISOString()
           })
           .eq('id', creditId)
@@ -1094,6 +1196,30 @@ export class SalesService {
         if (updateError) {
       // Error silencioso en producción
           throw updateError
+        }
+
+        // Log de cancelación de crédito
+        if (creditBeforeUpdate && cancellingUserId) {
+          try {
+            const { AuthService } = await import('./auth-service')
+            await AuthService.logActivity(
+              cancellingUserId,
+              'credit_cancelled',
+              'credits',
+              {
+                description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
+                creditId: creditId,
+                invoiceNumber: creditBeforeUpdate.invoice_number,
+                clientName: creditBeforeUpdate.client_name,
+                totalAmount: creditBeforeUpdate.total_amount,
+                paidAmount: creditBeforeUpdate.paid_amount || 0,
+                reason: 'Cancelación de factura asociada',
+                cancelledSaleId: cancelledSaleId
+              }
+            )
+          } catch (logError) {
+            // Error silencioso en producción
+          }
         }
 
         return
@@ -1328,18 +1454,11 @@ export class SalesService {
       const cleanTerm = searchTerm.trim()
       if (!cleanTerm) return []
 
-      // Solo buscar por número de factura (solo aceptar números)
-      const isNumber = !isNaN(Number(cleanTerm)) && cleanTerm.length > 0
-      
-      if (!isNumber) {
-        // Si no es un número, no buscar nada
-        return []
-      }
-
-      // Búsqueda por número de factura (sin el #)
+      // Detectar si es un número (para buscar por ID de factura)
       const numericValue = cleanTerm.replace('#', '')
+      const isNumber = !isNaN(Number(numericValue)) && numericValue.length > 0
       
-      const { data, error } = await supabase
+      let query = supabase
         .from('sales')
         .select(`
           *,
@@ -1354,8 +1473,17 @@ export class SalesService {
             total
           )
         `)
-        .or(`invoice_number.eq.#${numericValue.padStart(3, '0')},invoice_number.ilike.%${numericValue}%`)
-        .order('created_at', { ascending: false })
+
+      // Buscar en ambos campos: número de factura Y nombre del cliente
+      if (isNumber) {
+        // Si es un número, buscar por número de factura Y nombre del cliente
+        query = query.or(`invoice_number.eq.#${numericValue.padStart(3, '0')},invoice_number.ilike.%${numericValue}%,client_name.ilike.%${cleanTerm}%`)
+      } else {
+        // Si no es un número, buscar solo por nombre del cliente
+        query = query.ilike('client_name', `%${cleanTerm}%`)
+      }
+      
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         // Error silencioso en producción
@@ -1410,6 +1538,20 @@ export class SalesService {
           }))
         }
 
+        // Obtener información del crédito si es una venta a crédito
+        let creditStatus = null
+        if (sale.payment_method === 'credit' && sale.invoice_number) {
+          try {
+            const { CreditsService } = await import('./credits-service')
+            const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoice_number)
+            if (credit) {
+              creditStatus = credit.status
+            }
+          } catch (error) {
+            // Error silencioso - continuar sin información de crédito
+          }
+        }
+
         return {
           id: sale.id,
           clientId: sale.client_id,
@@ -1427,7 +1569,8 @@ export class SalesService {
           sellerEmail: sale.seller_email || '',
           createdAt: sale.created_at,
           items,
-          payments: payments.length > 0 ? payments : undefined
+          payments: payments.length > 0 ? payments : undefined,
+          creditStatus: creditStatus // Estado del crédito asociado
         }
       }) || [])
     } catch (error) {

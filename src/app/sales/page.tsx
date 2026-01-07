@@ -96,8 +96,7 @@ export default function SalesPage() {
   }
 
   const handleCreate = () => {
-    setSaleToEdit(null)
-    setIsModalOpen(true)
+    router.push('/sales/new')
   }
 
   const handleUpdateSale = async (id: string, saleData: Omit<Sale, 'id' | 'createdAt'>) => {
@@ -630,6 +629,7 @@ export default function SalesPage() {
         onPageChange={goToPage}
         onSearch={searchSales}
         onRefresh={handleRefresh}
+        onCancel={handleCancelSale}
       />
 
       <SaleModal

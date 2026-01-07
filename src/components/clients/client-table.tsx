@@ -139,7 +139,7 @@ export function ClientTable({
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col gap-2 md:gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -153,7 +153,7 @@ export function ClientTable({
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
             >
               {types.map(type => (
                 <option key={type} value={type}>
@@ -257,114 +257,94 @@ export function ClientTable({
                 })}
               </div>
 
-              {/* Vista de Tabla para Desktop */}
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full table-fixed">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Cédula/NIT
-                    </th>
-                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Tipo
-                    </th>
-                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Contacto
-                    </th>
-                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="w-1/6 px-3 py-3 text-left text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredClients.map((client) => {
-                    const TypeIcon = getTypeIcon(client.type)
-                    return (
-                      <tr key={client.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                        <td className="px-3 py-3">
-                          <div className="flex items-center min-w-0">
-                            <div className="flex-shrink-0 mr-2">
-                              <div className="w-6 h-6 bg-gray-100 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                                <TypeIcon className="h-3 w-3 text-gray-600 dark:text-gray-300" />
+              {/* Vista de Cards para Desktop */}
+              <div className="hidden md:block space-y-4 p-4 md:p-6">
+                {filteredClients.map((client, index) => {
+                  const TypeIcon = getTypeIcon(client.type)
+                  return (
+                    <Card
+                      key={client.id}
+                      className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
+                    >
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2">
+                              <TypeIcon className="h-5 w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                    {client.document}
+                                  </div>
+                                  {client.status === 'active' && (
+                                    <div className="h-4 w-4 rounded-full bg-green-500 flex-shrink-0" title="Activo" />
+                                  )}
+                                </div>
+                                <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                                  {client.name}
+                                </div>
                               </div>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div 
-                                className="text-sm font-medium text-gray-900 dark:text-white truncate" 
-                                title={client.name}
-                              >
-                                {client.name}
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Tipo</div>
+                                <Badge className={`${getTypeColor(client.type)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                  {getTypeLabel(client.type)}
+                                </Badge>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Email</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={client.email || 'Sin email'}>
+                                  {client.email || 'Sin email'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Teléfono</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={client.phone || 'Sin teléfono'}>
+                                  {client.phone || 'Sin teléfono'}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado</div>
+                                <Badge className={`${getStatusColor(client.status)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                  {client.status === 'active' ? 'Activo' : 'Inactivo'}
+                                </Badge>
                               </div>
                             </div>
                           </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div 
-                            className="text-sm font-mono text-gray-900 dark:text-white truncate cursor-help" 
-                            title={`Cédula/NIT: ${client.document}`}
-                          >
-                            {client.document}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <Badge className={`${getTypeColor(client.type)} text-sm px-2 py-1`}>
-                            {getTypeLabel(client.type)}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="text-sm min-w-0">
-                            <div 
-                              className="text-gray-900 dark:text-white truncate" 
-                              title={client.email || 'Sin email'}
-                            >
-                              {client.email || 'Sin email'}
-                            </div>
-                            <div 
-                              className="text-gray-500 dark:text-gray-400 truncate" 
-                              title={client.phone || 'Sin teléfono'}
-                            >
-                              {client.phone || 'Sin teléfono'}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <Badge className={`${getStatusColor(client.status)} text-sm px-2 py-1`}>
-                            {client.status === 'active' ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="flex items-center gap-2">
+                          
+                          <div className="flex items-center gap-2 ml-4">
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => onEdit(client)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onEdit(client)
+                              }}
+                              className="h-10 w-10 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
                               title="Editar cliente"
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className="h-5 w-5" />
                             </Button>
                             <Button
                               size="sm"
                               variant="ghost"
-                              onClick={() => onDelete(client)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onDelete(client)
+                              }}
+                              className="h-10 w-10 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 hover:bg-red-50 dark:hover:bg-red-900/20"
                               title="Eliminar cliente"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-5 w-5" />
                             </Button>
                           </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </>
           )}

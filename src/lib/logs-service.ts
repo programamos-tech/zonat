@@ -30,12 +30,12 @@ export class LogsService {
 
       // Obtener logs de la página (usar supabaseAdmin para evitar problemas de RLS)
       // Intentar primero con el JOIN, si falla se hará consulta separada
-      // Especificar explícitamente la relación para evitar ambigüedad (PGRST201)
+      // Usar el nombre correcto de la foreign key: fk_logs_user_id
       const { data: logs, error } = await supabaseAdmin
         .from('logs')
         .select(`
           *,
-          users!logs_user_id_fkey (
+          users!fk_logs_user_id (
             id,
             name
           )
@@ -208,7 +208,7 @@ export class LogsService {
         .from('logs')
         .select(`
           *,
-          users!logs_user_id_fkey (
+          users!fk_logs_user_id (
             name
           )
         `)
@@ -258,7 +258,7 @@ export class LogsService {
         .from('logs')
         .select(`
           *,
-          users!logs_user_id_fkey (
+          users!fk_logs_user_id (
             name
           )
         `)
@@ -307,7 +307,7 @@ export class LogsService {
         .from('logs')
         .select(`
           *,
-          users!logs_user_id_fkey (
+          users!fk_logs_user_id (
             name
           )
         `)
@@ -356,7 +356,7 @@ export class LogsService {
         .from('logs')
         .select(`
           *,
-          users!logs_user_id_fkey (
+          users!fk_logs_user_id (
             name
           )
         `)

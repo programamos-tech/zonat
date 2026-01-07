@@ -151,13 +151,32 @@ export default function DashboardPage() {
           endDate: endDate.toISOString()
         })
         
+        // Para la gráfica de tendencia, necesitamos 8 días hacia atrás desde la fecha seleccionada
+        // Calcular el rango extendido para ventas y pagos (solo para gráfica)
+        let chartStartDate = startDate
+        if (currentFilter === 'specific' && dateToUse) {
+          // Extender 8 días hacia atrás desde la fecha seleccionada
+          const extendedStart = new Date(dateToUse)
+          extendedStart.setDate(extendedStart.getDate() - 7) // 7 días antes + el día seleccionado = 8 días
+          extendedStart.setHours(0, 0, 0, 0)
+          chartStartDate = extendedStart
+        } else if (currentFilter === 'today') {
+          // Para hoy, también extender 8 días hacia atrás
+          const extendedStart = new Date()
+          extendedStart.setDate(extendedStart.getDate() - 7)
+          extendedStart.setHours(0, 0, 0, 0)
+          chartStartDate = extendedStart
+        }
+        
         const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
-          withTimeout(SalesService.getDashboardSales(startDate, endDate), 20000),
+          // Para ventas, usar el rango extendido para la gráfica
+          withTimeout(SalesService.getDashboardSales(chartStartDate, endDate), 20000),
           withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 15000),
           withTimeout(CreditsService.getCreditsByDateRange(startDate, endDate), 15000),
           withTimeout(ClientsService.getAllClients(), 15000), // Clientes siempre todos
           withTimeout(ProductsService.getAllProductsLegacy(), 15000), // Productos siempre todos
-          withTimeout(CreditsService.getPaymentRecordsByDateRange(startDate, endDate), 15000)
+          // Para pagos, usar el rango extendido para la gráfica
+          withTimeout(CreditsService.getPaymentRecordsByDateRange(chartStartDate, endDate), 15000)
         ])
         
         // Procesar resultados
@@ -383,8 +402,7 @@ export default function DashboardPage() {
     }
 
     // Para filtros específicos (today, specific), los datos YA vienen filtrados del backend
-    // NO aplicar filtrado adicional para evitar problemas de zona horaria que eliminen datos válidos
-    // El backend ya hizo el filtrado correctamente usando las fechas en UTC
+    // PERO ahora cargamos 8 días para la gráfica, así que necesitamos filtrar solo el día seleccionado para las métricas
     if (effectiveDateFilter === 'specific' && !specificDate) {
       // Si es 'specific' pero no hay fecha seleccionada, devolver vacío
       return {
@@ -395,8 +413,38 @@ export default function DashboardPage() {
       }
     }
 
-    // Para 'today' o 'specific' con fecha, los datos ya vienen filtrados del backend
-    // Devolverlos directamente sin filtrado adicional
+    // Para 'today' o 'specific' con fecha, necesitamos filtrar solo el día seleccionado para las métricas
+    // (aunque allSales tiene 8 días para la gráfica)
+    if (effectiveDateFilter === 'today' || (effectiveDateFilter === 'specific' && specificDate)) {
+      const targetDate = effectiveDateFilter === 'today' ? new Date() : new Date(specificDate!)
+      targetDate.setHours(0, 0, 0, 0)
+      const nextDay = new Date(targetDate)
+      nextDay.setDate(nextDay.getDate() + 1)
+      
+      // Filtrar ventas solo del día seleccionado
+      const filteredSales = allSales.filter(sale => {
+        const saleDate = new Date(sale.createdAt)
+        saleDate.setHours(0, 0, 0, 0)
+        return saleDate.getTime() === targetDate.getTime()
+      })
+      
+      // Filtrar pagos solo del día seleccionado
+      const filteredPayments = allPaymentRecords.filter(payment => {
+        const paymentDate = new Date(payment.paymentDate)
+        paymentDate.setHours(0, 0, 0, 0)
+        return paymentDate.getTime() === targetDate.getTime()
+      })
+      
+      // Warranties y credits ya vienen filtrados del backend (solo del día)
+      return {
+        sales: filteredSales,
+        warranties: allWarranties,
+        credits: allCredits,
+        paymentRecords: filteredPayments
+      }
+    }
+
+    // Para 'all', devolver todos los datos sin filtrar
     return {
       sales: allSales,
       warranties: allWarranties,
@@ -1213,18 +1261,7 @@ export default function DashboardPage() {
                     </Badge>
                   )}
                 </CardTitle>
-                <div className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 mt-1">
-                  <span className="hidden md:inline">Total Ingresos: </span>
-                  <span className="font-semibold">
-                    {new Intl.NumberFormat('es-CO', { 
-                      style: 'currency', 
-                      currency: 'COP',
-                      minimumFractionDigits: 0 
-                    }).format(metrics.totalRevenue)}
-                  </span>
-                  <span className="md:hidden"> hoy</span>
-                </div>
-                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1">
                   Resumen ejecutivo y métricas de rendimiento
                 </p>
               </div>
@@ -1317,92 +1354,92 @@ export default function DashboardPage() {
         {/* Total Ingresos */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 dark:text-emerald-400" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+              <BarChart3 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
             </div>
             <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
-              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
+              <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-                  {new Intl.NumberFormat('es-CO', { 
-                    style: 'currency', 
-                    currency: 'COP',
-                    minimumFractionDigits: 0 
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
             }).format(metrics.totalRevenue)}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             {metrics.totalSales} ventas realizadas
-                </p>
-              </div>
+          </p>
+        </div>
 
         {/* Efectivo */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-              <DollarSign className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+              <DollarSign className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
             </div>
             <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
-              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
+              <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {new Intl.NumberFormat('es-CO', { 
               style: 'currency', 
               currency: 'COP',
               minimumFractionDigits: 0 
             }).format(metrics.cashRevenue)}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
-                </p>
-              </div>
+          </p>
+        </div>
 
         {/* Transferencia */}
         <div 
           onClick={() => router.push('/sales')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
         >
-          <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-              <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+              <TrendingUp className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
             </div>
             <div className="text-right">
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
-              <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
+              <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                 {effectiveDateFilter === 'today' ? 'Hoy' : 
                  effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                  'Todos los Períodos'}
               </p>
             </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-                  {new Intl.NumberFormat('es-CO', { 
-                    style: 'currency', 
-                    currency: 'COP',
-                    minimumFractionDigits: 0 
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            {new Intl.NumberFormat('es-CO', { 
+              style: 'currency', 
+              currency: 'COP',
+              minimumFractionDigits: 0 
             }).format(metrics.transferRevenue)}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
-                </p>
-              </div>
+          </p>
+        </div>
 
         {/* Crédito o Facturas Anuladas - Depende del rol */}
         {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
@@ -1410,25 +1447,25 @@ export default function DashboardPage() {
             // Facturas Anuladas para Super Admin
             <div 
               onClick={() => setShowCancelledModal(true)}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-2 md:mb-4">
-                <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                  <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
+                  <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
-                  <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+                  <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                     {effectiveDateFilter === 'today' ? 'Hoy' : 
                      effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                      'Todos los Períodos'}
                   </p>
                 </div>
               </div>
-              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {metrics.cancelledSales}
               </p>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 de {metrics.totalSales} ventas totales
               </p>
             </div>
@@ -1436,29 +1473,29 @@ export default function DashboardPage() {
             // Crédito para Admin (no Super Admin)
             <div 
               onClick={() => router.push('/payments')}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
             >
-              <div className="flex items-center justify-between mb-2 md:mb-4">
-                <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                  <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-                  <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
+                  <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
                     {effectiveDateFilter === 'today' ? 'Hoy' : 
                      effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                      'Todos los Períodos'}
                   </p>
                 </div>
               </div>
-              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
                 {new Intl.NumberFormat('es-CO', { 
                   style: 'currency', 
                   currency: 'COP',
                   minimumFractionDigits: 0 
                 }).format(metrics.creditRevenue)}
               </p>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+              <p className="text-xs text-gray-600 dark:text-gray-400">
                 {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
               </p>
             </div>
@@ -1481,203 +1518,80 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
-            <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
               </div>
-              <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
-                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
-                  {isSuperAdmin ? 'Total' : 'Hoy'}
-                </p>
-              </div>
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               {new Intl.NumberFormat('es-CO', { 
                 style: 'currency', 
                 currency: 'COP',
                 minimumFractionDigits: 0 
               }).format(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               {isSuperAdmin 
-                ? `${metrics.pendingCreditsCount} créditos pendientes/parciales`
+                ? `${metrics.pendingCreditsCount} créditos pendientes`
                 : `${metrics.dailyCreditsCount || 0} créditos del día`
               }
             </p>
-
-            {!isSuperAdmin && metrics.recentPendingCredits.length > 0 ? (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  Últimos créditos pendientes
-                </div>
-                {metrics.recentPendingCredits.map((credit) => (
-                  <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="text-gray-600 dark:text-gray-400 truncate">
-                        • {credit.clientName}
-                      </span>
-                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                        {credit.dateLabel} · {credit.timeLabel}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-end text-right flex-shrink-0">
-                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
-                        ${(credit.pendingAmount || 0).toLocaleString('es-CO')}
-                      </span>
-                      {credit.reference && (
-                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                          Factura {credit.reference}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 mt-auto">
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                  {metrics.recentPendingCredits.length === 0
-                    ? 'Sin créditos pendientes en el período seleccionado.'
-                    : 'Datos disponibles solo para créditos pendientes.'}
-                </span>
-              </div>
-            )}
           </div>
         )}
 
         {/* Garantías Completadas */}
         <div 
           onClick={() => router.push('/warranties')}
-          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+          className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
         >
-          <div className="flex items-center justify-between mb-2 md:mb-4">
-            <div className="p-1.5 md:p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-              <Shield className="h-4 w-4 md:h-5 md:w-5 text-purple-600 dark:text-purple-400" />
+          <div className="flex items-center justify-between mb-3">
+            <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
+              <Shield className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
             </div>
-            <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
+            <div className="text-right">
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
+            </div>
           </div>
-          <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+          <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
             {metrics.completedWarranties}
           </p>
-          <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+          <p className="text-xs text-gray-600 dark:text-gray-400">
             Garantías completadas
           </p>
-
-          {metrics.recentWarrantyReplacements.length > 0 ? (
-            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-              <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                Últimas garantías entregadas
-              </div>
-              {metrics.recentWarrantyReplacements.map((item) => (
-                <div key={item.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
-                  <div className="flex flex-col overflow-hidden">
-                    <span className="text-gray-600 dark:text-gray-400 truncate">
-                      • {item.deliveredName}{item.reference ? ` (${item.reference})` : ''}
-                    </span>
-                    <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                      {item.dateLabel} · {item.timeLabel}
-                    </span>
-                  </div>
-                  <div className="flex flex-col items-end flex-shrink-0 text-right">
-                    <span className="text-purple-600 dark:text-purple-400 font-semibold">
-                      -{item.quantityDelivered} und
-                    </span>
-                    {item.value > 0 && (
-                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                        ${item.value.toLocaleString('es-CO')}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 mt-auto">
-              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                Sin garantías completadas en el período seleccionado.
-              </span>
-            </div>
-          )}
         </div>
 
         {/* Ganancia Bruta */}
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
-            <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
               </div>
               <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
-                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
+                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
+                <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                   {effectiveDateFilter === 'today' ? 'Hoy' : 
                    effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
                    'Todos los Períodos'}
                 </p>
               </div>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               {new Intl.NumberFormat('es-CO', { 
                 style: 'currency', 
                 currency: 'COP',
                 minimumFractionDigits: 0 
               }).format(metrics.grossProfit)}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               Beneficio por ventas realizadas
             </p>
-            
-            {/* Lista de ventas más rentables */}
-            {metrics.topProfitableSales.length > 0 && (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  Top ventas más rentables
-                </div>
-                {metrics.topProfitableSales.map((sale, index) => {
-                  const saleDate = new Date(sale.createdAt)
-                  const dateLabel = saleDate.toLocaleDateString('es-CO', {
-                    day: 'numeric',
-                    month: 'short'
-                  })
-                  const timeLabel = saleDate.toLocaleTimeString('es-CO', {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: true
-                  })
-                  const clientName = sale.clientName || 'Cliente'
-                  const invoiceNumber = sale.invoiceNumber || null
-                  
-                  return (
-                    <div key={sale.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
-                      <div className="flex flex-col overflow-hidden">
-                        <span className="text-gray-600 dark:text-gray-400 truncate">
-                          • {clientName}
-                        </span>
-                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                          {dateLabel} · {timeLabel}
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end text-right flex-shrink-0">
-                        <span className="text-green-600 dark:text-green-400 font-semibold">
-                          +${sale.profit.toLocaleString('es-CO')}
-                        </span>
-                        {invoiceNumber && (
-                          <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                            Factura {invoiceNumber}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
           </div>
         )}
 
@@ -1685,64 +1599,23 @@ export default function DashboardPage() {
         {isSuperAdmin && (
           <div 
             onClick={() => router.push('/products')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg transition-all duración-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
-            <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-                <Package className="h-4 w-4 md:h-5 md:w-5 text-cyan-600 dark:text-cyan-400" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-1.5 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
+                <Package className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
-                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">Stock Total</p>
+                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
+                <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">Stock Total</p>
               </div>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-              {metrics.totalProductsCount}
+            <p className="text-xl md:text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
+              ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
-              {metrics.totalProducts.toLocaleString('es-CO')} unidades en stock • {metrics.lowStockProducts} con stock bajo
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
             </p>
-            
-            {/* Lista de productos más vendidos recientemente */}
-            {metrics.recentTopProducts && metrics.recentTopProducts.length > 0 && (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  Productos más vendidos recientemente
-                </div>
-                {metrics.recentTopProducts.map((item) => (
-                  <div key={item.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="text-gray-600 dark:text-gray-400 truncate">
-                        • {item.productName}
-                      </span>
-                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                        {item.dateLabel} · {item.timeLabel}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-end text-right flex-shrink-0">
-                      <span className="text-cyan-600 dark:text-cyan-400 font-semibold">
-                        {item.quantity} und
-                      </span>
-                      {item.invoiceNumber && (
-                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                          Factura {item.invoiceNumber}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div className="pt-1 border-t border-dashed border-gray-200 dark:border-gray-600 mt-2">
-                  <div>
-                    <p className="text-base md:text-lg font-semibold text-cyan-600 dark:text-cyan-400">
-                      ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
-                    </p>
-                    <p className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                      {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
           </div>
         )}
 
@@ -1759,74 +1632,38 @@ export default function DashboardPage() {
                 goToCredits()
               }
             }}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
-            <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-orange-600 dark:text-orange-400" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
+                <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
               </div>
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Créditos</span>
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Créditos</span>
             </div>
-            <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
+            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               {metrics.pendingCreditsCount || 0}
             </p>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
               créditos pendientes/parciales
             </p>
-            
-            {metrics.recentPendingCredits.length > 0 ? (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">
-                  Créditos más recientes
-                </div>
-                {metrics.recentPendingCredits.map((credit) => (
-                  <div key={credit.id} className="flex items-start justify-between gap-2 text-xs md:text-sm">
-                    <div className="flex flex-col overflow-hidden">
-                      <span className="text-gray-600 dark:text-gray-400 truncate">
-                        • {credit.clientName}
-                      </span>
-                      <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                        {credit.dateLabel} · {credit.timeLabel}
-                      </span>
-                    </div>
-                    <div className="flex flex-col items-end text-right flex-shrink-0">
-                      <span className="text-orange-600 dark:text-orange-400 font-semibold">
-                        ${(credit.pendingAmount || 0).toLocaleString('es-CO')}
-                      </span>
-                      {credit.reference && (
-                        <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400">
-                          Factura {credit.reference}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                <div className="flex items-center justify-between pt-1 border-t border-dashed border-gray-200 dark:border-gray-600">
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Total a hoy:</span>
-                  <span className="text-base md:text-lg font-bold text-orange-600 dark:text-orange-400">
-                    ${(metrics.totalDebt || 0).toLocaleString('es-CO')}
-                  </span>
-                </div>
-              </div>
-            ) : (
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 mt-auto">
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                  Sin créditos pendientes en el período seleccionado.
-                </span>
-              </div>
-            )}
+            <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
+              ${(metrics.totalDebt || 0).toLocaleString('es-CO')}
+            </p>
+            <p className="text-xs text-gray-600 dark:text-gray-400">
+              Total a hoy
+            </p>
           </div>
         ) : (
           // Facturas Anuladas para otros usuarios
           <div 
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 md:p-6 shadow-sm hover:shadow-lg hover:scale-[1.02] transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
             onClick={() => setShowCancelledModal(true)}
           >
             <div className="flex items-center justify-between mb-2 md:mb-4">
               <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
                 <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
               </div>
-              <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
+              <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
             </div>
             <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
               {metrics.cancelledSales}
@@ -1865,225 +1702,552 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Gráficos y estadísticas */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-8">
-        {/* Gráfico de ventas por día */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="p-3 md:p-6 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center justify-between mb-2 md:mb-4">
-              <div className="p-1.5 md:p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <TrendingUp className="h-4 w-4 md:h-5 md:w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div className="text-right">
-                <span className="text-[10px] md:text-xs text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ventas por Día</span>
-                <p className="text-[9px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5 md:mt-1">
-                  {effectiveDateFilter === 'today' ? 'Hoy' : 
-                   effectiveDateFilter === 'specific' ? 'Fecha Específica' : 
-                   'Todos los Períodos'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
-              {metrics.salesChartData.length > 0 
-                ? `${metrics.salesChartData.length} días con ventas en el período seleccionado`
-                : 'No hay ventas en el período seleccionado'
-              }
-            </p>
-          </div>
-          <div className="p-3 md:p-6">
-            {metrics.salesChartData.length > 0 ? (
-              <ResponsiveContainer width="100%" height={200} className="md:!h-[300px]">
-                <BarChart data={metrics.salesChartData} margin={{ top: 10, right: 10, left: 5, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorAmount" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#3B82F6" stopOpacity={0.3}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                  <XAxis 
-                    dataKey="date" 
-                    stroke="#666"
-                    fontSize={9}
-                    tick={{ fontSize: 9 }}
-                    className="md:text-xs"
-                  />
-                  <YAxis 
-                    stroke="#666"
-                    fontSize={9}
-                    tick={{ fontSize: 9 }}
-                    className="md:text-xs"
-                    tickFormatter={(value) => {
-                      if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
-                      if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
-                      return `$${value}`
-                    }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number, name: string) => {
-                      if (name === 'amount') {
-                        return [
-                          new Intl.NumberFormat('es-CO', { 
-                            style: 'currency', 
-                            currency: 'COP',
-                            minimumFractionDigits: 0 
-                          }).format(value),
-                          'Total Ventas'
-                        ]
-                      }
-                      if (name === 'count') {
-                        return [value, 'Número de Ventas']
-                      }
-                      return [value, name]
-                    }}
-                    labelFormatter={(label) => `Día: ${label}`}
-                    labelStyle={{ color: '#374151', fontWeight: 'bold' }}
-                    contentStyle={{ 
-                      backgroundColor: 'white', 
-                      border: '1px solid #e5e7eb',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                    }}
-                  />
-                  <Bar 
-                    dataKey="amount" 
-                    fill="url(#colorAmount)" 
-                    radius={[4, 4, 0, 0]}
-                    stroke="#3B82F6"
-                    strokeWidth={1}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <div className="text-center py-12">
-                <TrendingUp className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No hay ventas en este período</p>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Gráfico de métodos de pago */}
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-          <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-2 md:gap-3">
-              <div className="p-1.5 md:p-2 bg-green-100 rounded-lg">
-                <CreditCard className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
-              </div>
-              <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Métodos de Pago</h2>
-            </div>
-          </div>
-          <div className="p-3 md:p-6">
-            <ResponsiveContainer width="100%" height={200} className="md:!h-[300px]">
-              <PieChart>
-                <Pie
-                  data={metrics.paymentMethodData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={40}
-                  outerRadius={70}
-                  paddingAngle={5}
-                  dataKey="value"
-                  className="md:!innerRadius-[60px] md:!outerRadius-[100px]"
-                >
-                  {metrics.paymentMethodData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value: number) => [
-                    new Intl.NumberFormat('es-CO', { 
-                      style: 'currency', 
-                      currency: 'COP',
-                      minimumFractionDigits: 0 
-                    }).format(value),
-                    'Monto'
-                  ]}
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    fontSize: '12px'
-                  }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-            <div className="mt-3 md:mt-4 space-y-1.5 md:space-y-2">
-              {metrics.paymentMethodData.map((item, index) => (
-                <div key={index} className="flex items-center justify-between text-xs md:text-sm">
-                  <div className="flex items-center gap-1.5 md:gap-2">
-                    <div 
-                      className="w-2.5 h-2.5 md:w-3 md:h-3 rounded-full" 
-                      style={{ backgroundColor: item.color }}
-                    ></div>
-                    <span className="text-gray-600 dark:text-white">{item.name}</span>
-                  </div>
-                  <span className="font-medium text-gray-900 dark:text-white text-xs md:text-sm">
-                    {new Intl.NumberFormat('es-CO', { 
-                      style: 'currency', 
-                      currency: 'COP',
-                      minimumFractionDigits: 0 
-                    }).format(item.value)}
-                  </span>
+      {/* Gráficos y estadísticas mejoradas */}
+      <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
+        {/* Tendencia de Ingresos - Dinámica según filtros */}
+        {isSuperAdmin && (
+          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
+                  <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
                 </div>
-          ))}
+                <div>
+                  <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Tendencia de Ingresos</h3>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                    {effectiveDateFilter === 'all' ? 'Por mes' : 'Últimos 8 días'}
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="h-[250px] md:h-[300px]">
+              {(() => {
+                // Si es anual, mostrar por mes
+                if (effectiveDateFilter === 'all') {
+                  // Agrupar datos por mes
+                  const monthlyData: { [key: string]: number } = {}
+                  
+                  filteredData.sales.forEach((sale: Sale) => {
+                    if (sale.status !== 'cancelled') {
+                      const saleDate = new Date(sale.createdAt)
+                      const monthKey = saleDate.toLocaleDateString('es-CO', { 
+                        month: 'short',
+                        year: 'numeric'
+                      })
+                      
+                      if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = 0
+                      }
+                      
+                      // Sumar efectivo y transferencia
+                      if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+                        monthlyData[monthKey] += sale.total || 0
+                      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+                        sale.payments.forEach(payment => {
+                          if (payment.paymentType === 'cash' || payment.paymentType === 'transfer') {
+                            monthlyData[monthKey] += payment.amount || 0
+                          }
+                        })
+                      }
+                    }
+                  })
+                  
+                  // Agregar abonos de créditos
+                  filteredData.paymentRecords.forEach((payment: any) => {
+                    if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'transfer')) {
+                      const paymentDate = new Date(payment.paymentDate)
+                      const monthKey = paymentDate.toLocaleDateString('es-CO', { 
+                        month: 'short',
+                        year: 'numeric'
+                      })
+                      
+                      if (!monthlyData[monthKey]) {
+                        monthlyData[monthKey] = 0
+                      }
+                      monthlyData[monthKey] += payment.amount || 0
+                    }
+                  })
+                  
+                  // Convertir a array y ordenar por fecha
+                  const monthlyArray = Object.entries(monthlyData)
+                    .map(([month, amount]) => ({
+                      date: month,
+                      amount,
+                      count: 0,
+                      average: 0
+                    }))
+                    .sort((a, b) => {
+                      const dateA = new Date(a.date)
+                      const dateB = new Date(b.date)
+                      return dateA.getTime() - dateB.getTime()
+                    })
+                  
+                  return monthlyArray.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={monthlyArray}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis 
+                          dataKey="date" 
+                          stroke="#666"
+                          fontSize={12}
+                          tick={{ fontSize: 12 }}
+                        />
+                        <YAxis 
+                          stroke="#666"
+                          fontSize={12}
+                          tick={{ fontSize: 12 }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+                            if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+                            return `$${value}`
+                          }}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => [
+                            new Intl.NumberFormat('es-CO', { 
+                              style: 'currency', 
+                              currency: 'COP',
+                              minimumFractionDigits: 0 
+                            }).format(value),
+                            'Ingresos'
+                          ]}
+                          contentStyle={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                        <Line 
+                          type="monotone" 
+                          dataKey="amount" 
+                          stroke="#10B981" 
+                          strokeWidth={3}
+                          dot={{ fill: '#10B981', r: 5, strokeWidth: 2, stroke: '#fff' }}
+                          activeDot={{ r: 7 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-sm text-gray-500">No hay datos disponibles</p>
+                    </div>
+                  )
+                }
+                
+                // Para fecha específica o hoy: últimos 8 días
+                const getDateKey = (dateInput: Date | string): string => {
+                  const date = new Date(dateInput)
+                  const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+                  return normalizedDate.toLocaleDateString('es-CO', { 
+                    weekday: 'short',
+                    day: '2-digit', 
+                    month: '2-digit' 
+                  })
+                }
+                
+                // Determinar la fecha de referencia
+                let referenceDate: Date
+                if (effectiveDateFilter === 'specific' && specificDate) {
+                  referenceDate = new Date(specificDate)
+                } else {
+                  // Para 'today' o si no hay fecha específica, usar hoy
+                  referenceDate = new Date()
+                }
+                referenceDate.setHours(0, 0, 0, 0)
+                
+                // Generar las 8 fechas desde la fecha de referencia hacia atrás (incluyendo la fecha de referencia)
+                const last8Days: Date[] = []
+                for (let i = 0; i < 8; i++) {
+                  const date = new Date(referenceDate)
+                  date.setDate(date.getDate() - i)
+                  last8Days.push(date)
+                }
+                
+                // Invertir para que el más antiguo esté primero
+                last8Days.reverse()
+                
+                // Calcular ingresos por día desde TODOS los datos (no filteredData)
+                // porque filteredData solo tiene el día seleccionado, pero necesitamos los 8 días
+                const dailyData: { [key: string]: number } = {}
+                
+                // Inicializar todos los días con 0
+                last8Days.forEach(date => {
+                  const dateKey = getDateKey(date)
+                  dailyData[dateKey] = 0
+                })
+                
+                // Crear un Set de timestamps para verificación rápida
+                const dayTimestamps = new Set<number>()
+                last8Days.forEach(day => {
+                  const dayStart = new Date(day)
+                  dayStart.setHours(0, 0, 0, 0)
+                  dayTimestamps.add(dayStart.getTime())
+                })
+                
+                // Sumar ventas desde allSales (todos los datos)
+                allSales.forEach((sale: Sale) => {
+                  if (sale.status !== 'cancelled') {
+                    const saleDate = new Date(sale.createdAt)
+                    saleDate.setHours(0, 0, 0, 0)
+                    
+                    // Verificar si la venta está en el rango de los últimos 8 días
+                    if (dayTimestamps.has(saleDate.getTime())) {
+                      const dateKey = getDateKey(saleDate)
+                      
+                      // Sumar efectivo y transferencia
+                      if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+                        dailyData[dateKey] = (dailyData[dateKey] || 0) + (sale.total || 0)
+                      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+                        sale.payments.forEach(payment => {
+                          if (payment.paymentType === 'cash' || payment.paymentType === 'transfer') {
+                            dailyData[dateKey] = (dailyData[dateKey] || 0) + (payment.amount || 0)
+                          }
+                        })
+                      }
+                    }
+                  }
+                })
+                
+                // Sumar abonos de créditos desde allPaymentRecords
+                allPaymentRecords.forEach((payment: any) => {
+                  if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'transfer')) {
+                    const paymentDate = new Date(payment.paymentDate)
+                    paymentDate.setHours(0, 0, 0, 0)
+                    
+                    // Verificar si el pago está en el rango
+                    if (dayTimestamps.has(paymentDate.getTime())) {
+                      const dateKey = getDateKey(paymentDate)
+                      dailyData[dateKey] = (dailyData[dateKey] || 0) + (payment.amount || 0)
+                    }
+                  }
+                })
+                
+                // Convertir a array ordenado
+                const chartData = last8Days.map(date => {
+                  const dateKey = getDateKey(date)
+                  return {
+                    date: dateKey,
+                    amount: dailyData[dateKey] || 0,
+                    count: 0,
+                    average: 0
+                  }
+                })
+                
+                return chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <XAxis 
+                      dataKey="date" 
+                      stroke="#666"
+                      fontSize={12}
+                      tick={{ fontSize: 12 }}
+                    />
+                    <YAxis 
+                      stroke="#666"
+                      fontSize={12}
+                      tick={{ fontSize: 12 }}
+                      tickFormatter={(value) => {
+                        if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+                        if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+                        return `$${value}`
+                      }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [
+                        new Intl.NumberFormat('es-CO', { 
+                          style: 'currency', 
+                          currency: 'COP',
+                          minimumFractionDigits: 0 
+                        }).format(value),
+                        'Ingresos'
+                      ]}
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                      }}
+                    />
+                      <Line 
+                        type="monotone" 
+                        dataKey="amount" 
+                        stroke="#10B981" 
+                        strokeWidth={3}
+                        dot={{ fill: '#10B981', r: 5, strokeWidth: 2, stroke: '#fff' }}
+                        activeDot={{ r: 7 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="flex items-center justify-center h-full">
+                    <p className="text-sm text-gray-500">No hay datos disponibles</p>
+                  </div>
+                )
+              })()}
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      {/* Productos más vendidos con gráfico de barras */}
-      <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm">
-        <div className="px-3 md:px-6 py-3 md:py-4 border-b border-gray-200 dark:border-gray-700">
-          <div className="flex items-center gap-2 md:gap-3">
-            <div className="p-1.5 md:p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-              <Package className="h-4 w-4 md:h-5 md:w-5 text-emerald-600 dark:text-emerald-400" />
+        {/* Gráficas lado a lado */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+          {/* Top Productos Más Rentables */}
+          {isSuperAdmin && (
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
+                    <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Productos Más Rentables</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Por ganancia generada</p>
+                  </div>
+                </div>
+              </div>
+              <div className="h-[250px] md:h-[300px]">
+                {(() => {
+                  // Calcular ganancia por producto
+                  const productProfits: { [key: string]: { name: string; profit: number; sales: number } } = {}
+                  
+                  // Usar allProducts del estado
+                  const productsMap = new Map(allProducts.map(p => [p.id, p]))
+                  
+                  filteredData.sales.forEach((sale: Sale) => {
+                    if (sale.status !== 'cancelled' && sale.items) {
+                      sale.items.forEach((item) => {
+                        const productName = item.productName || 'Producto desconocido'
+                        const product = productsMap.get(item.productId)
+                        const cost = product?.cost || 0
+                        const unitPrice = item.unitPrice || 0
+                        const quantity = item.quantity || 0
+                        
+                        // Calcular precio real después de descuentos (igual que en el cálculo de grossProfit)
+                        const baseTotal = quantity * unitPrice
+                        const discountAmount = item.discountType === 'percentage' 
+                          ? (baseTotal * (item.discount || 0)) / 100 
+                          : (item.discount || 0)
+                        const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
+                        const realUnitPrice = quantity > 0 ? salePriceAfterDiscount / quantity : 0
+                        
+                        const profit = (realUnitPrice - cost) * quantity
+                        
+                        if (!productProfits[productName]) {
+                          productProfits[productName] = { name: productName, profit: 0, sales: 0 }
+                        }
+                        productProfits[productName].profit += profit
+                        productProfits[productName].sales += 1
+                      })
+                    }
+                  })
+                  
+                  const topProducts = Object.values(productProfits)
+                    .filter(p => p.profit > 0) // Solo productos con ganancia positiva
+                    .sort((a, b) => b.profit - a.profit)
+                    .slice(0, 5)
+                  
+                  return topProducts.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={topProducts.map(p => ({ name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name, profit: p.profit }))}
+                        margin={{ top: 10, right: 10, left: 5, bottom: 40 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#059669" stopOpacity={0.9}/>
+                            <stop offset="95%" stopColor="#047857" stopOpacity={0.7}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis 
+                          dataKey="name"
+                          stroke="#666"
+                          fontSize={11}
+                          tick={{ fontSize: 11 }}
+                          angle={-45}
+                          textAnchor="end"
+                          height={60}
+                        />
+                        <YAxis 
+                          stroke="#666"
+                          fontSize={11}
+                          tick={{ fontSize: 11 }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+                            if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+                            return `$${value}`
+                          }}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => [
+                            new Intl.NumberFormat('es-CO', { 
+                              style: 'currency', 
+                              currency: 'COP',
+                              minimumFractionDigits: 0 
+                            }).format(value),
+                            'Ganancia'
+                          ]}
+                          contentStyle={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                        <Bar 
+                          dataKey="profit" 
+                          fill="url(#colorProfit)" 
+                          radius={[4, 4, 0, 0]}
+                          stroke="#047857"
+                          strokeWidth={1}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-sm text-gray-500">No hay datos disponibles</p>
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
-            <h2 className="text-base md:text-lg font-bold text-gray-900 dark:text-white">Productos Más Vendidos</h2>
-          </div>
-        </div>
-        <div className="p-3 md:p-6">
-          {metrics.topProductsChart.length > 0 ? (
-            <ResponsiveContainer width="100%" height={200} className="md:!h-[300px]">
-              <BarChart data={metrics.topProductsChart} margin={{ top: 10, right: 10, left: 5, bottom: 40 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                <XAxis 
-                  dataKey="name" 
-                  stroke="#666"
-                  fontSize={9}
-                  tick={{ fontSize: 9 }}
-                  angle={-45}
-                  textAnchor="end"
-                  height={60}
-                  className="md:text-xs"
-                />
-                <YAxis 
-                  stroke="#666"
-                  fontSize={9}
-                  tick={{ fontSize: 9 }}
-                  className="md:text-xs"
-                />
-                <Tooltip 
-                  formatter={(value: number, name: string) => [
-                    value,
-                    name === 'cantidad' ? 'Unidades' : 'Ingresos'
-                  ]}
-                  labelStyle={{ color: '#374151' }}
-                  contentStyle={{ 
-                    backgroundColor: 'white', 
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                  }}
-                />
-                <Bar dataKey="cantidad" fill="#10B981" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="text-center py-12">
-              <Package className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-500 dark:text-gray-400">No hay productos vendidos en este período</p>
+          )}
+
+          {/* Ingresos por Método de Pago */}
+          {isSuperAdmin && (
+            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
+                    <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Ingresos por Método de Pago</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Efectivo, Transferencia y Mixto</p>
+                  </div>
+                </div>
+              </div>
+              <div className="h-[250px] md:h-[300px]">
+                {(() => {
+                  // Calcular ingresos por método de pago
+                  let efectivoTotal = 0
+                  let transferenciaTotal = 0
+                  let mixtoTotal = 0
+                  
+                  filteredData.sales.forEach((sale: Sale) => {
+                    if (sale.status !== 'cancelled') {
+                      if (sale.paymentMethod === 'cash') {
+                        efectivoTotal += sale.total || 0
+                      } else if (sale.paymentMethod === 'transfer') {
+                        transferenciaTotal += sale.total || 0
+                      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+                        sale.payments.forEach(payment => {
+                          if (payment.paymentType === 'cash') {
+                            efectivoTotal += payment.amount || 0
+                          } else if (payment.paymentType === 'transfer') {
+                            transferenciaTotal += payment.amount || 0
+                          }
+                        })
+                        mixtoTotal += sale.total || 0
+                      }
+                    }
+                  })
+                  
+                  // Agregar abonos de créditos
+                  filteredData.paymentRecords.forEach((payment: any) => {
+                    if (payment.status !== 'cancelled') {
+                      if (payment.paymentMethod === 'cash') {
+                        efectivoTotal += payment.amount || 0
+                      } else if (payment.paymentMethod === 'transfer') {
+                        transferenciaTotal += payment.amount || 0
+                      }
+                    }
+                  })
+                  
+                  const paymentData = [
+                    { name: 'Efectivo', value: efectivoTotal, color: '#10B981' },
+                    { name: 'Transferencia', value: transferenciaTotal, color: '#3B82F6' },
+                    { name: 'Mixto', value: mixtoTotal, color: '#F59E0B' }
+                  ].filter(item => item.value > 0)
+                  
+                  return paymentData.length > 0 ? (
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart 
+                        data={paymentData}
+                        margin={{ top: 10, right: 10, left: 5, bottom: 5 }}
+                      >
+                        <defs>
+                          <linearGradient id="colorEfectivo" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10B981" stopOpacity={0.9}/>
+                            <stop offset="95%" stopColor="#059669" stopOpacity={0.7}/>
+                          </linearGradient>
+                          <linearGradient id="colorTransferencia" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.9}/>
+                            <stop offset="95%" stopColor="#2563EB" stopOpacity={0.7}/>
+                          </linearGradient>
+                          <linearGradient id="colorMixto" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.9}/>
+                            <stop offset="95%" stopColor="#D97706" stopOpacity={0.7}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <XAxis 
+                          dataKey="name"
+                          stroke="#666"
+                          fontSize={11}
+                          tick={{ fontSize: 11 }}
+                        />
+                        <YAxis 
+                          stroke="#666"
+                          fontSize={11}
+                          tick={{ fontSize: 11 }}
+                          tickFormatter={(value) => {
+                            if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
+                            if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
+                            return `$${value}`
+                          }}
+                        />
+                        <Tooltip 
+                          formatter={(value: number) => [
+                            new Intl.NumberFormat('es-CO', { 
+                              style: 'currency', 
+                              currency: 'COP',
+                              minimumFractionDigits: 0 
+                            }).format(value),
+                            'Ingresos'
+                          ]}
+                          contentStyle={{ 
+                            backgroundColor: 'white', 
+                            border: '1px solid #e5e7eb',
+                            borderRadius: '8px',
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                          }}
+                        />
+                        <Bar 
+                          dataKey="value" 
+                          radius={[4, 4, 0, 0]}
+                          strokeWidth={1}
+                        >
+                          {paymentData.map((entry, index) => (
+                            <Cell 
+                              key={`cell-${index}`} 
+                              fill={entry.name === 'Efectivo' ? 'url(#colorEfectivo)' : 
+                                    entry.name === 'Transferencia' ? 'url(#colorTransferencia)' : 
+                                    'url(#colorMixto)'}
+                              stroke={entry.color}
+                            />
+                          ))}
+                        </Bar>
+                      </BarChart>
+                    </ResponsiveContainer>
+                  ) : (
+                    <div className="flex items-center justify-center h-full">
+                      <p className="text-sm text-gray-500">No hay datos disponibles</p>
+                    </div>
+                  )
+                })()}
+              </div>
             </div>
           )}
         </div>

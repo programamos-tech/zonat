@@ -728,6 +728,23 @@ export default function SaleDetailModal({
                       </Badge>
                     </div>
                   </div>
+                  
+                  {/* Motivo de cancelación */}
+                  {sale.status === 'cancelled' && sale.cancellationReason && (
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                      <div className="flex items-start space-x-3">
+                        <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                        <div className="flex-1">
+                          <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                            Motivo de anulación:
+                          </div>
+                          <div className="text-sm text-gray-900 dark:text-white bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-3">
+                            {sale.cancellationReason}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

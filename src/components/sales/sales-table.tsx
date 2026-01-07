@@ -14,7 +14,17 @@ import {
   Download,
   Printer,
   RefreshCcw,
-  CreditCard
+  CreditCard,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  FileText,
+  Package,
+  Calendar,
+  User,
+  AlertTriangle,
+  X
 } from 'lucide-react'
 import { Sale } from '@/types'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -34,6 +44,7 @@ interface SalesTableProps {
   onSearch: (searchTerm: string) => Promise<Sale[]>
   onRefresh?: () => void
   todaySalesTotal?: number
+  onCancel?: (saleId: string, reason: string) => Promise<{ success: boolean, totalRefund?: number }>
 }
 
 export function SalesTable({ 
@@ -50,7 +61,8 @@ export function SalesTable({
   onPageChange,
   onSearch,
   onRefresh,
-  todaySalesTotal
+  todaySalesTotal,
+  onCancel
 }: SalesTableProps) {
   const { canCreate, currentUser } = usePermissions()
   const canCreateSales = canCreate('sales')
@@ -59,6 +71,11 @@ export function SalesTable({
   const [filterStatus, setFilterStatus] = useState('all')
   const [searchResults, setSearchResults] = useState<Sale[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [expandedSales, setExpandedSales] = useState<Set<string>>(new Set())
+  const [showCancelForm, setShowCancelForm] = useState<Record<string, boolean>>({})
+  const [cancelReason, setCancelReason] = useState<Record<string, string>>({})
+  const [isCancelling, setIsCancelling] = useState<Record<string, boolean>>({})
+  const [cancelSuccessMessage, setCancelSuccessMessage] = useState<Record<string, string>>({})
 
   // Efecto para manejar la búsqueda
   useEffect(() => {
@@ -85,14 +102,15 @@ export function SalesTable({
   }, [searchTerm, onSearch])
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-MX', {
+    return new Intl.NumberFormat('es-CO', {
       style: 'currency',
-      currency: 'MXN'
+      currency: 'COP',
+      minimumFractionDigits: 0
     }).format(amount)
   }
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-MX', {
+    return new Date(dateString).toLocaleDateString('es-CO', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
@@ -101,12 +119,12 @@ export function SalesTable({
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
-    const dateStr = date.toLocaleDateString('es-MX', {
+    const dateStr = date.toLocaleDateString('es-CO', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     })
-    const timeStr = date.toLocaleTimeString('es-MX', {
+    const timeStr = date.toLocaleTimeString('es-CO', {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
@@ -145,12 +163,56 @@ export function SalesTable({
       case 'pending':
         return 'Pendiente'
       case 'cancelled':
-        return 'Cancelada'
+        return 'Anulada'
       case 'draft':
         return 'Borrador'
       default:
         return status
     }
+  }
+
+  // Obtener el estado real de la venta (usar estado del crédito si es venta a crédito)
+  const getEffectiveStatus = (sale: Sale): string => {
+    // Si la venta está cancelada, siempre mostrar como cancelada (sin importar el estado del crédito)
+    if (sale.status === 'cancelled') {
+      return 'cancelled'
+    }
+    // Si es una venta a crédito y tiene estado de crédito, usar ese estado
+    if (sale.paymentMethod === 'credit' && sale.creditStatus) {
+      return sale.creditStatus
+    }
+    // Si es una venta a crédito completada pero no tiene crédito asociado, considerar como pendiente
+    if (sale.paymentMethod === 'credit' && sale.status === 'completed' && !sale.creditStatus) {
+      return 'pending'
+    }
+    return sale.status
+  }
+
+  // Obtener el label del estado real
+  const getEffectiveStatusLabel = (sale: Sale): string => {
+    const effectiveStatus = getEffectiveStatus(sale)
+    if (sale.paymentMethod === 'credit' && (effectiveStatus === 'pending' || effectiveStatus === 'partial')) {
+      return 'Pendiente'
+    }
+    if (sale.paymentMethod === 'credit' && effectiveStatus === 'completed') {
+      return 'Completada'
+    }
+    if (sale.paymentMethod === 'credit' && effectiveStatus === 'overdue') {
+      return 'Vencida'
+    }
+    return getStatusLabel(effectiveStatus)
+  }
+
+  // Obtener el color del estado real
+  const getEffectiveStatusColor = (sale: Sale): string => {
+    const effectiveStatus = getEffectiveStatus(sale)
+    if (sale.paymentMethod === 'credit' && (effectiveStatus === 'pending' || effectiveStatus === 'partial')) {
+      return 'bg-yellow-100 text-yellow-800 hover:bg-yellow-200 hover:text-yellow-900 dark:bg-yellow-900/20 dark:text-yellow-400 dark:hover:bg-yellow-900/30 dark:hover:text-yellow-300'
+    }
+    if (sale.paymentMethod === 'credit' && effectiveStatus === 'overdue') {
+      return 'bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300'
+    }
+    return getStatusColor(effectiveStatus)
   }
 
   const getPaymentMethodColor = (method: string) => {
@@ -199,9 +261,34 @@ export function SalesTable({
   )
   
   const filteredSales = uniqueSales.filter(sale => {
-    const matchesStatus = filterStatus === 'all' || sale.status === filterStatus
-    return matchesStatus
+    if (filterStatus === 'all') return true
+    if (filterStatus === 'pending') {
+      // Pendientes: ventas a crédito con créditos pendientes o parciales
+      if (sale.paymentMethod === 'credit') {
+        const effectiveStatus = getEffectiveStatus(sale)
+        return effectiveStatus === 'pending' || effectiveStatus === 'partial'
+      }
+      return false
+    }
+    if (filterStatus === 'cancelled') {
+      // Anuladas: ventas canceladas
+      return sale.status === 'cancelled'
+    }
+    // Para otros estados, usar el filtro normal
+    return sale.status === filterStatus
   })
+
+  const toggleSale = (saleId: string) => {
+    setExpandedSales(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(saleId)) {
+        newSet.delete(saleId)
+      } else {
+        newSet.add(saleId)
+      }
+      return newSet
+    })
+  }
 
   return (
     <div className="space-y-6">
@@ -262,12 +349,12 @@ export function SalesTable({
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col gap-2 md:gap-4">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder={isSearching ? "Buscando..." : "Buscar factura..."}
+                placeholder={isSearching ? "Buscando..." : "Buscar factura o cliente..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full pl-9 md:pl-10 pr-10 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
@@ -281,11 +368,14 @@ export function SalesTable({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
             >
               {statuses.map(status => (
                 <option key={status} value={status}>
-                  {status === 'all' ? 'Todos los estados' : getStatusLabel(status)}
+                  {status === 'all' ? 'Todos los estados' : 
+                   status === 'pending' ? 'Pendientes (Créditos abiertos)' :
+                   status === 'cancelled' ? 'Anuladas' :
+                   getStatusLabel(status)}
                 </option>
               ))}
             </select>
@@ -317,17 +407,23 @@ export function SalesTable({
               <div className="md:hidden space-y-3 p-3">
                 {filteredSales.map((sale, index) => {
                   const { date, time } = formatDateTime(sale.createdAt)
+                  const isExpanded = expandedSales.has(sale.id)
                   return (
                     <div
                       key={sale.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className={`bg-white dark:bg-gray-800 border rounded-lg p-3 space-y-2 ${
+                        isExpanded ? 'border-green-300 dark:border-green-600' : 'border-gray-200 dark:border-gray-700'
+                      }`}
+                      onClick={() => toggleSale(sale.id)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                            {sale.paymentMethod === 'credit' && (
+                            {sale.paymentMethod === 'credit' ? (
                               <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                            ) : (
+                              <FileText className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                             )}
                             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">{generateInvoiceNumber(sale)}</span>
                           </div>
@@ -338,18 +434,38 @@ export function SalesTable({
                             {getPaymentMethodLabel(sale.paymentMethod)}
                           </p>
                         </div>
-                        <Badge className={`${getStatusColor(sale.status)} text-xs shrink-0`}>
+                        <div className="flex items-center gap-2">
+                          <Badge className={`${getEffectiveStatusColor(sale)} text-xs shrink-0`}>
                           <div className="flex items-center space-x-1">
-                            {sale.status === 'completed' ? (
-                              <span className="text-green-600 dark:text-green-400">●</span>
-                            ) : sale.status === 'cancelled' ? (
-                              <span className="text-red-600 dark:text-red-400">●</span>
+                              {(() => {
+                                const effectiveStatus = getEffectiveStatus(sale)
+                                if (effectiveStatus === 'completed') {
+                                  return <span className="text-green-600 dark:text-green-400">●</span>
+                                } else if (effectiveStatus === 'cancelled') {
+                                  return <span className="text-red-600 dark:text-red-400">●</span>
+                                } else {
+                                  return <span className="text-yellow-600 dark:text-yellow-400">●</span>
+                                }
+                              })()}
+                              <span className="hidden sm:inline">{getEffectiveStatusLabel(sale)}</span>
+                            </div>
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              toggleSale(sale.id)
+                            }}
+                            className="h-8 w-8 p-0"
+                          >
+                            {isExpanded ? (
+                              <ChevronUp className="h-5 w-5 text-green-600 dark:text-green-400" />
                             ) : (
-                              <span className="text-yellow-600 dark:text-yellow-400">●</span>
+                              <ChevronDown className="h-5 w-5 text-green-600 dark:text-green-400" />
                             )}
-                            <span className="hidden sm:inline">{getStatusLabel(sale.status)}</span>
+                          </Button>
                           </div>
-                        </Badge>
                       </div>
                       
                       <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
@@ -368,186 +484,776 @@ export function SalesTable({
                         <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} text-xs`} title={getPaymentMethodLabel(sale.paymentMethod)}>
                           {getPaymentMethodLabel(sale.paymentMethod)}
                         </Badge>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onView(sale)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onPrint(sale)}
-                            className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
-                          >
-                            <Printer className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {sale.status !== 'cancelled' && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onPrint(sale)
+                              }}
+                              className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
+
+                      {/* Detalle Expandible Mobile */}
+                      {isExpanded && (
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                          {/* Información Adicional */}
+                          <div className="space-y-3">
+                            <div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-2">
+                                <Calendar className="h-4 w-4" />
+                                Fecha de Creación
+                              </div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {formatDateTime(sale.createdAt).date} {formatDateTime(sale.createdAt).time}
+                              </div>
+                            </div>
+                            {sale.sellerName && (
+                              <div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-2">
+                                  <User className="h-4 w-4" />
+                                  Vendedor
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  {sale.sellerName}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Productos Vendidos */}
+                          <div className="mt-4">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2 mb-3">
+                              <Package className="h-4 w-4 text-green-600" />
+                              Productos ({sale.items?.length || 0})
+                            </h3>
+                            
+                            {(!sale.items || sale.items.length === 0) ? (
+                              <div className="text-center py-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                <Package className="h-6 w-6 text-gray-400 mx-auto mb-2" />
+                                <p className="text-xs text-gray-500 dark:text-gray-400">No hay productos</p>
+                              </div>
+                            ) : (
+                              <div className="space-y-2">
+                                {sale.items.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                                  >
+                                    <div className="space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        <div className="text-sm font-bold text-gray-900 dark:text-white">
+                                          {item.productName}
+                                        </div>
+                                      </div>
+                                      {item.productReferenceCode && (
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 ml-6">
+                                          Ref: {item.productReferenceCode}
+                                        </div>
+                                      )}
+                                      <div className="grid grid-cols-3 gap-2 ml-6 text-xs">
+                                        <div>
+                                          <span className="text-gray-500 dark:text-gray-400">Cant:</span> {item.quantity}
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500 dark:text-gray-400">Precio:</span> {formatCurrency(item.unitPrice)}
+                                        </div>
+                                        <div>
+                                          <span className="text-gray-500 dark:text-gray-400">Total:</span> <span className="font-bold">{formatCurrency(item.total)}</span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Resumen Financiero */}
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                              <Receipt className="h-4 w-4 text-green-600" />
+                              Resumen
+                            </h3>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-500 dark:text-gray-400">Subtotal:</span>
+                                <span className="font-semibold">{formatCurrency(sale.subtotal)}</span>
+                              </div>
+                              {sale.discount > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-500 dark:text-gray-400">Descuento:</span>
+                                  <span className="font-semibold text-red-600 dark:text-red-400">-{formatCurrency(sale.discount)}</span>
+                                </div>
+                              )}
+                              {sale.tax > 0 && (
+                                <div className="flex justify-between">
+                                  <span className="text-gray-500 dark:text-gray-400">Impuesto:</span>
+                                  <span className="font-semibold">{formatCurrency(sale.tax)}</span>
+                                </div>
+                              )}
+                              <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+                                <span className="font-bold text-gray-900 dark:text-white">Total:</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(sale.total)}</span>
+                              </div>
+                            </div>
+                          </div>
+
+                          {/* Información de anulación - Mobile */}
+                          {sale.status === 'cancelled' && (
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                              {/* Motivo de cancelación */}
+                              <div className="flex items-start space-x-2">
+                                <AlertTriangle className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">Motivo: </span>
+                                  <span className="text-xs text-gray-900 dark:text-white">
+                                    {sale.cancellationReason || 'No especificado'}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Indicadores de devolución */}
+                              <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
+                                <div className="flex items-center space-x-1.5">
+                                  <Package className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                  <span>Stock devuelto</span>
+                                </div>
+                                <div className="flex items-center space-x-1.5">
+                                  <Receipt className="h-3 w-3 text-green-600 dark:text-green-400" />
+                                  <span>Dinero devuelto</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Botón de Anular Factura - Mobile */}
+                          {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              {!showCancelForm[sale.id] ? (
+                                <Button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowCancelForm(prev => ({ ...prev, [sale.id]: true }))
+                                    setCancelReason(prev => ({ ...prev, [sale.id]: '' }))
+                                    setCancelSuccessMessage(prev => {
+                                      const newState = { ...prev }
+                                      delete newState[sale.id]
+                                      return newState
+                                    })
+                                  }}
+                                  disabled={isCancelling[sale.id]}
+                                  size="sm"
+                                  variant="outline"
+                                  className="w-full text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20"
+                                >
+                                  <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                                  <span className="text-xs">Anular</span>
+                                </Button>
+                                ) : (
+                                  <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
+                                    {cancelSuccessMessage[sale.id] && (
+                                      <div className={`p-3 rounded-lg border-2 ${
+                                        cancelSuccessMessage[sale.id].includes('exitosamente')
+                                          ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800'
+                                          : 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800'
+                                      }`}>
+                                        <div className={`text-sm font-medium ${
+                                          cancelSuccessMessage[sale.id].includes('exitosamente')
+                                            ? 'text-green-800 dark:text-green-200'
+                                            : 'text-red-800 dark:text-red-200'
+                                        }`}>
+                                          {cancelSuccessMessage[sale.id].split('\n').map((line, index) => (
+                                            <div key={index} className={index === 0 ? 'font-semibold' : ''}>
+                                              {line}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Motivo de anulación: <span className="text-red-500">*</span>
+                                      </label>
+                                      <textarea
+                                        value={cancelReason[sale.id] || ''}
+                                        onChange={(e) => {
+                                          setCancelReason(prev => ({ ...prev, [sale.id]: e.target.value }))
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onFocus={(e) => e.stopPropagation()}
+                                        placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
+                                        disabled={isCancelling[sale.id]}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50"
+                                        rows={3}
+                                      />
+                                    <div className="mt-1 text-right">
+                                      <span className={`text-xs ${(cancelReason[sale.id] || '').length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                                        {(cancelReason[sale.id] || '').length}/10 caracteres mínimo
+                                      </span>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <Button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        setShowCancelForm(prev => {
+                                          const newState = { ...prev }
+                                          delete newState[sale.id]
+                                          return newState
+                                        })
+                                        setCancelReason(prev => {
+                                          const newState = { ...prev }
+                                          delete newState[sale.id]
+                                          return newState
+                                        })
+                                        setCancelSuccessMessage(prev => {
+                                          const newState = { ...prev }
+                                          delete newState[sale.id]
+                                          return newState
+                                        })
+                                      }}
+                                      variant="outline"
+                                      disabled={isCancelling[sale.id]}
+                                      className="flex-1"
+                                    >
+                                      Cancelar
+                                    </Button>
+                                    <Button
+                                      onClick={async (e) => {
+                                        e.stopPropagation()
+                                        if (!cancelReason[sale.id] || cancelReason[sale.id].trim().length < 10 || !onCancel) return
+                                        
+                                        setIsCancelling(prev => ({ ...prev, [sale.id]: true }))
+                                        setCancelSuccessMessage(prev => {
+                                          const newState = { ...prev }
+                                          delete newState[sale.id]
+                                          return newState
+                                        })
+                                        
+                                        try {
+                                          const result = await onCancel(sale.id, cancelReason[sale.id].trim())
+                                          if (result && result.totalRefund !== undefined && result.totalRefund > 0) {
+                                            setCancelSuccessMessage(prev => ({
+                                              ...prev,
+                                              [sale.id]: `Venta anulada exitosamente.\n\nReembolso total: $${result.totalRefund!.toLocaleString('es-CO')}\nProductos devueltos al stock\nCrédito y abonos anulados`
+                                            }))
+                                          } else {
+                                            setCancelSuccessMessage(prev => ({
+                                              ...prev,
+                                              [sale.id]: 'Venta anulada exitosamente.\n\nProductos devueltos al stock'
+                                            }))
+                                          }
+                                          
+                                          setTimeout(() => {
+                                            setShowCancelForm(prev => {
+                                              const newState = { ...prev }
+                                              delete newState[sale.id]
+                                              return newState
+                                            })
+                                            setCancelReason(prev => {
+                                              const newState = { ...prev }
+                                              delete newState[sale.id]
+                                              return newState
+                                            })
+                                            setCancelSuccessMessage(prev => {
+                                              const newState = { ...prev }
+                                              delete newState[sale.id]
+                                              return newState
+                                            })
+                                          }, 3000)
+                                        } catch (error) {
+                                          setCancelSuccessMessage(prev => ({
+                                            ...prev,
+                                            [sale.id]: 'Error al anular la venta. Por favor, inténtalo de nuevo.'
+                                          }))
+                                        } finally {
+                                          setIsCancelling(prev => {
+                                            const newState = { ...prev }
+                                            delete newState[sale.id]
+                                            return newState
+                                          })
+                                        }
+                                      }}
+                                      disabled={!cancelReason[sale.id] || cancelReason[sale.id].trim().length < 10 || isCancelling[sale.id]}
+                                      size="sm"
+                                      className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 text-xs"
+                                    >
+                                      <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                                      {isCancelling[sale.id] ? 'Anulando...' : 'Anular'}
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )
                 })}
               </div>
 
-              {/* Desktop table */}
-              <div className="overflow-x-auto hidden md:block">
-                <table className="w-full table-fixed">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="w-20 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        # Factura
-                      </th>
-                      <th className="w-32 md:w-40 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Cliente
-                      </th>
-                      <th className="w-28 md:w-32 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Método
-                      </th>
-                      <th className="w-28 md:w-36 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Total
-                      </th>
-                      <th className="w-32 md:w-36 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                        Fecha
-                      </th>
-                      <th className="w-24 md:w-28 px-3 md:px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                        Estado
-                      </th>
-                      <th className="w-24 px-3 md:px-4 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              {/* Vista de Cards para Desktop */}
+              <div className="hidden md:block space-y-4 p-4 md:p-6">
                     {filteredSales.map((sale) => {
                       const { date, time } = formatDateTime(sale.createdAt)
+                  const isExpanded = expandedSales.has(sale.id)
                       return (
-                        <tr key={sale.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="px-3 md:px-4 py-4 whitespace-nowrap">
-                            <div className="flex items-center gap-2">
-                              {sale.paymentMethod === 'credit' && (
-                                <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
-                              )}
-                              <div className="font-semibold text-blue-600 dark:text-blue-400 text-sm">
+                    <Card
+                      key={sale.id}
+                      className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                        isExpanded ? 'border-green-300 dark:border-green-600' : ''
+                      }`}
+                      onClick={() => toggleSale(sale.id)}
+                    >
+                      <CardContent className="p-4 md:p-6">
+                        {/* Header con icono, factura, cliente y botones */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            {sale.paymentMethod === 'credit' ? (
+                              <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                            ) : (
+                              <FileText className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                            )}
+                            <div className="flex-1 min-w-0">
+                              <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                                 {generateInvoiceNumber(sale)}
                               </div>
+                              <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                                {sale.clientName}
+                              </div>
                             </div>
-                          </td>
-                          <td className="px-3 md:px-4 py-4">
-                            <div className="font-medium text-gray-900 dark:text-white text-sm truncate" title={sale.clientName}>
-                              {sale.clientName}
-                            </div>
-                          </td>
-                          <td className="px-3 md:px-4 py-4 whitespace-nowrap">
-                            <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} text-xs`}>
-                              {getPaymentMethodLabel(sale.paymentMethod)}
-                            </Badge>
-                          </td>
-                          <td className="px-3 md:px-4 py-4 whitespace-nowrap">
-                            <div className="font-semibold text-gray-900 dark:text-white text-sm">
+                          </div>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                            {sale.status !== 'cancelled' && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onPrint(sale)
+                                }}
+                                className="h-8 px-2 text-orange-600 hover:text-orange-700 hover:bg-orange-50 dark:text-orange-400 dark:hover:text-orange-300 dark:hover:bg-orange-900/20 active:scale-95"
+                                title="Imprimir"
+                              >
+                                <Printer className="h-4 w-4 mr-1.5" />
+                                <span className="text-xs">Imprimir</span>
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                toggleSale(sale.id)
+                              }}
+                              className="h-8 w-8 p-0 hover:bg-green-50 dark:hover:bg-green-900/20"
+                              title={isExpanded ? "Ocultar detalle" : "Ver detalle"}
+                            >
+                              {isExpanded ? (
+                                <ChevronUp className="h-5 w-5 text-green-600 dark:text-green-400 font-bold" />
+                              ) : (
+                                <ChevronDown className="h-5 w-5 text-green-600 dark:text-green-400 font-bold" />
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        {/* Grid de información que ocupa todo el ancho */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                          <div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                            <div className="text-base font-semibold text-gray-900 dark:text-white">
                               {formatCurrency(sale.total)}
                             </div>
-                          </td>
-                          <td className="px-3 md:px-4 py-4 whitespace-nowrap hidden lg:table-cell">
-                            <div className="text-xs text-gray-600 dark:text-gray-300">
-                              <div className="font-medium">{date}</div>
-                              <div className="text-gray-500 dark:text-gray-400">{time}</div>
-                            </div>
-                          </td>
-                          <td className="px-3 md:px-4 py-4 whitespace-nowrap hidden lg:table-cell">
-                            <Badge className={`${getStatusColor(sale.status)} text-xs whitespace-nowrap`}>
-                              {getStatusLabel(sale.status)}
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Método</div>
+                            <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                              {getPaymentMethodLabel(sale.paymentMethod)}
                             </Badge>
-                          </td>
-                          <td className="px-3 md:px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex items-center justify-end gap-1 md:gap-2">
-                              {/* Botón de editar borrador comentado
-                              {sale.status === 'draft' && (
-                                <Button
-                                  size="sm"
-                                  variant="ghost"
-                                  onClick={() => onEdit(sale)}
-                                  className="h-8 w-8 p-0 text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-100"
-                                  title="Editar borrador"
-                                >
-                                  <Edit className="h-4 w-4" />
-                                </Button>
-                              )}
-                              */}
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onView(sale)}
-                                className="h-8 w-8 p-0 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
-                              >
-                                <Eye className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onPrint(sale)}
-                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100"
-                              >
-                                <Printer className="h-4 w-4" />
-                              </Button>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado</div>
+                            <Badge className={`${getEffectiveStatusColor(sale)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                              {getEffectiveStatusLabel(sale)}
+                            </Badge>
+                          </div>
+                          <div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fecha</div>
+                            <div className="text-base font-semibold text-gray-900 dark:text-white">
+                              {date}
                             </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                              {time}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Detalle Expandible */}
+                        {isExpanded && (
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                            {/* Información Adicional */}
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-2">
+                                  <Calendar className="h-4 w-4" />
+                                  Fecha de Creación
+                                </div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  {formatDateTime(sale.createdAt).date} {formatDateTime(sale.createdAt).time}
+                                </div>
+                              </div>
+                              {sale.sellerName && (
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-2">
+                                    <User className="h-4 w-4" />
+                                    Vendedor
+                                  </div>
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    {sale.sellerName}
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Productos Vendidos */}
+                            <div className="mt-4">
+                              <div className="flex items-center justify-between mb-3">
+                                <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                                  <Package className="h-4 w-4 text-green-600" />
+                                  Productos Vendidos ({sale.items?.length || 0})
+                                </h3>
+                              </div>
+                              
+                              {(!sale.items || sale.items.length === 0) ? (
+                                <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                  <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">No hay productos registrados</p>
+                                </div>
+                              ) : (
+                                <div className="space-y-2">
+                                  {sale.items.map((item) => (
+                                    <div
+                                      key={item.id}
+                                      className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                                    >
+                                      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                                        <div className="flex items-center gap-2">
+                                          <Package className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                          <div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Producto</div>
+                                            <div className="text-sm font-bold text-gray-900 dark:text-white">
+                                              {item.productName}
+                                            </div>
+                                            {item.productReferenceCode && (
+                                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                Ref: {item.productReferenceCode}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cantidad</div>
+                                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {item.quantity}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Precio Unitario</div>
+                                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {formatCurrency(item.unitPrice)}
+                                          </div>
+                                        </div>
+                                        <div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                          <div className="text-base font-bold text-gray-900 dark:text-white">
+                                            {formatCurrency(item.total)}
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Resumen Financiero */}
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                              <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
+                                <Receipt className="h-4 w-4 text-green-600" />
+                                Resumen Financiero
+                              </h3>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Subtotal</div>
+                                  <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                    {formatCurrency(sale.subtotal)}
+                                  </div>
+                                </div>
+                                {sale.discount > 0 && (
+                                  <div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Descuento</div>
+                                    <div className="text-sm font-semibold text-red-600 dark:text-red-400">
+                                      -{formatCurrency(sale.discount)}
+                                    </div>
+                                  </div>
+                                )}
+                                {sale.tax > 0 && (
+                                  <div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Impuesto</div>
+                                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                      {formatCurrency(sale.tax)}
+                                    </div>
+                                  </div>
+                                )}
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                  <div className="text-base font-bold text-green-600 dark:text-green-400">
+                                    {formatCurrency(sale.total)}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Información de anulación - Desktop */}
+                            {sale.status === 'cancelled' && (
+                              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                                {/* Motivo de cancelación */}
+                                <div className="flex items-start space-x-2">
+                                  <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
+                                  <div className="flex-1">
+                                    <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Motivo: </span>
+                                    <span className="text-sm text-gray-900 dark:text-white">
+                                      {sale.cancellationReason || 'No especificado'}
+                                    </span>
+                                  </div>
+                                </div>
+                                
+                                {/* Indicadores de devolución */}
+                                <div className="flex items-center space-x-6 text-sm text-gray-600 dark:text-gray-400">
+                                  <div className="flex items-center space-x-2">
+                                    <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    <span>Stock devuelto</span>
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <Receipt className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                    <span>Dinero devuelto</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Botón de Anular Factura */}
+                            {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                {!showCancelForm[sale.id] ? (
+                                  <Button
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      setShowCancelForm(prev => ({ ...prev, [sale.id]: true }))
+                                      setCancelReason(prev => ({ ...prev, [sale.id]: '' }))
+                                      setCancelSuccessMessage(prev => {
+                                        const newState = { ...prev }
+                                        delete newState[sale.id]
+                                        return newState
+                                      })
+                                    }}
+                                    disabled={isCancelling[sale.id]}
+                                    size="sm"
+                                    variant="outline"
+                                    className="text-red-600 border-red-300 hover:bg-red-50 dark:text-red-400 dark:border-red-700 dark:hover:bg-red-900/20"
+                                  >
+                                    <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                                    <span className="text-xs">Anular</span>
+                                  </Button>
+                                ) : (
+                                  <div className="space-y-3" onClick={(e) => e.stopPropagation()}>
+                                    {cancelSuccessMessage[sale.id] && (
+                                      <div className={`p-3 rounded-lg border-2 ${
+                                        cancelSuccessMessage[sale.id].includes('exitosamente')
+                                          ? 'border-green-200 bg-green-50 dark:bg-green-900/20 dark:border-green-800'
+                                          : 'border-red-200 bg-red-50 dark:bg-red-900/20 dark:border-red-800'
+                                      }`}>
+                                        <div className="text-sm font-medium ${
+                                          cancelSuccessMessage[sale.id].includes('exitosamente')
+                                            ? 'text-green-800 dark:text-green-200'
+                                            : 'text-red-800 dark:text-red-200'
+                                        }">
+                                          {cancelSuccessMessage[sale.id].split('\n').map((line, index) => (
+                                            <div key={index} className={index === 0 ? 'font-semibold' : ''}>
+                                              {line}
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    <div>
+                                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                        Motivo de anulación: <span className="text-red-500">*</span>
+                                      </label>
+                                      <textarea
+                                        value={cancelReason[sale.id] || ''}
+                                        onChange={(e) => {
+                                          setCancelReason(prev => ({ ...prev, [sale.id]: e.target.value }))
+                                        }}
+                                        onClick={(e) => e.stopPropagation()}
+                                        onFocus={(e) => e.stopPropagation()}
+                                        placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
+                                        disabled={isCancelling[sale.id]}
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50"
+                                        rows={3}
+                                      />
+                                      <div className="mt-1 text-right">
+                                        <span className={`text-xs ${(cancelReason[sale.id] || '').length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                                          {(cancelReason[sale.id] || '').length}/10 caracteres mínimo
+                                        </span>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        onClick={(e) => {
+                                          e.stopPropagation()
+                                          setShowCancelForm(prev => {
+                                            const newState = { ...prev }
+                                            delete newState[sale.id]
+                                            return newState
+                                          })
+                                          setCancelReason(prev => {
+                                            const newState = { ...prev }
+                                            delete newState[sale.id]
+                                            return newState
+                                          })
+                                          setCancelSuccessMessage(prev => {
+                                            const newState = { ...prev }
+                                            delete newState[sale.id]
+                                            return newState
+                                          })
+                                        }}
+                                        variant="outline"
+                                        disabled={isCancelling[sale.id]}
+                                        className="flex-1"
+                                      >
+                                        Cancelar
+                                      </Button>
+                                      <Button
+                                        onClick={async (e) => {
+                                          e.stopPropagation()
+                                          if (!cancelReason[sale.id] || cancelReason[sale.id].trim().length < 10 || !onCancel) return
+                                          
+                                          setIsCancelling(prev => ({ ...prev, [sale.id]: true }))
+                                          setCancelSuccessMessage(prev => {
+                                            const newState = { ...prev }
+                                            delete newState[sale.id]
+                                            return newState
+                                          })
+                                          
+                                          try {
+                                            const result = await onCancel(sale.id, cancelReason[sale.id].trim())
+                                            if (result && result.totalRefund !== undefined && result.totalRefund > 0) {
+                                              setCancelSuccessMessage(prev => ({
+                                                ...prev,
+                                                [sale.id]: `Venta anulada exitosamente.\n\nReembolso total: $${result.totalRefund!.toLocaleString('es-CO')}\nProductos devueltos al stock\nCrédito y abonos anulados`
+                                              }))
+                                            } else {
+                                              setCancelSuccessMessage(prev => ({
+                                                ...prev,
+                                                [sale.id]: 'Venta anulada exitosamente.\n\nProductos devueltos al stock'
+                                              }))
+                                            }
+                                            
+                                            setTimeout(() => {
+                                              setShowCancelForm(prev => {
+                                                const newState = { ...prev }
+                                                delete newState[sale.id]
+                                                return newState
+                                              })
+                                              setCancelReason(prev => {
+                                                const newState = { ...prev }
+                                                delete newState[sale.id]
+                                                return newState
+                                              })
+                                              setCancelSuccessMessage(prev => {
+                                                const newState = { ...prev }
+                                                delete newState[sale.id]
+                                                return newState
+                                              })
+                                            }, 3000)
+                                          } catch (error) {
+                                            setCancelSuccessMessage(prev => ({
+                                              ...prev,
+                                              [sale.id]: 'Error al anular la venta. Por favor, inténtalo de nuevo.'
+                                            }))
+                                          } finally {
+                                            setIsCancelling(prev => {
+                                              const newState = { ...prev }
+                                              delete newState[sale.id]
+                                              return newState
+                                            })
+                                          }
+                                        }}
+                                        disabled={!cancelReason[sale.id] || cancelReason[sale.id].trim().length < 10 || isCancelling[sale.id]}
+                                        size="sm"
+                                        className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 text-xs"
+                                      >
+                                        <AlertTriangle className="h-3.5 w-3.5 mr-1.5" />
+                                        {isCancelling[sale.id] ? 'Anulando...' : 'Anular'}
+                                      </Button>
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
 
               {/* Paginación - solo mostrar si no hay búsqueda activa */}
               {!searchTerm.trim() && (
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                  <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
-                    <span className="hidden sm:inline">Mostrando </span>
-                    <span className="font-semibold">{sales.length}</span>
-                    <span className="hidden sm:inline"> de </span>
-                    <span className="sm:hidden">/</span>
-                    <span className="font-semibold">{totalSales}</span>
-                    <span className="hidden md:inline"> ventas</span>
-                  </div>
-                  
-                  <div className="flex items-center space-x-1 md:space-x-2">
-                    {/* Botón Anterior */}
+                <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
                     <button
                       onClick={() => onPageChange(currentPage - 1)}
                       disabled={currentPage === 1 || loading}
-                      className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                    className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      ‹
+                    <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
                     
-                    {/* Números de página */}
-                    <div className="flex items-center space-x-0.5 md:space-x-1">
+                  <div className="flex items-center gap-0.5">
                       {Array.from({ length: Math.ceil(totalSales / 10) }, (_, i) => i + 1)
                         .filter(page => {
-                          // Mostrar solo páginas cercanas a la actual
                           return page === 1 || 
                                  page === Math.ceil(totalSales / 10) || 
                                  Math.abs(page - currentPage) <= 2
                         })
                         .map((page, index, array) => {
-                          // Agregar "..." si hay gap
                           const showEllipsis = index > 0 && page - array[index - 1] > 1
                           
                           return (
                             <div key={page} className="flex items-center">
                               {showEllipsis && (
-                                <span className="px-1 md:px-2 text-gray-400 text-xs md:text-sm">...</span>
+                              <span className="px-1 text-gray-400 text-xs">...</span>
                               )}
                               <button
                                 onClick={() => onPageChange(page)}
                                 disabled={loading}
-                                className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
+                              className={`h-7 min-w-[28px] px-2 text-xs rounded border transition-colors ${
                                   page === currentPage 
-                                    ? "bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 font-medium" 
-                                    : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
+                                  ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 font-medium" 
+                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-100 dark:border-gray-600"
                                 }`}
                               >
                                 {page}
@@ -557,15 +1263,13 @@ export function SalesTable({
                         })}
                     </div>
                     
-                    {/* Botón Siguiente */}
                     <button
                       onClick={() => onPageChange(currentPage + 1)}
                       disabled={currentPage >= Math.ceil(totalSales / 10) || loading}
-                      className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
+                    className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      ›
+                    <ChevronRight className="h-3.5 w-3.5" />
                     </button>
-                  </div>
                 </div>
               )}
             </>

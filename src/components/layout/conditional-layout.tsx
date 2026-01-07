@@ -3,6 +3,7 @@
 import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/ui/sidebar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
+import { BetaBanner } from '@/components/ui/beta-banner'
 import { useState, useEffect } from 'react'
 
 interface ConditionalLayoutProps {
@@ -23,10 +24,11 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     <ProtectedRoute>
       <div className="flex h-screen bg-white dark:bg-gray-900">
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
-        <main className={`flex-1 xl:ml-64 relative z-10 bg-white dark:bg-gray-900 transition-all duration-300 ${
+        <main className={`flex-1 xl:ml-56 relative z-10 bg-white dark:bg-gray-900 transition-all duration-300 flex flex-col ${
           isMobileMenuOpen ? 'blur-sm' : ''
         }`}>
-          <div className="h-full overflow-auto bg-white dark:bg-gray-900">
+          <BetaBanner />
+          <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
             {children}
           </div>
         </main>

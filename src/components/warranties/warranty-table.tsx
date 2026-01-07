@@ -209,7 +209,8 @@ export function WarrantyTable({
                   return (
                     <div
                       key={warranty.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all"
+                      onClick={() => onView(warranty)}
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -264,89 +265,95 @@ export function WarrantyTable({
                 })}
               </div>
 
-              {/* Vista de Tabla para Desktop */}
-              <div className="hidden md:block overflow-x-auto warranty-table-tablet-container">
-                <table className="w-full table-fixed md:table-auto lg:table-fixed warranty-table-tablet">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Garantía
-                    </th>
-                    <th className="px-2 md:px-3 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Producto
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                      Motivo
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden md:table-cell">
-                      Fecha
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {warranties.map((warranty) => (
-                    <tr key={warranty.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-5">
-                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
-                          #{warranty.id.slice(-6)}
-                        </div>
-                      </td>
-                      <td className="px-2 md:px-3 py-3 md:py-5">
-                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate max-w-full" title={warranty.clientName}>
-                          {warranty.clientName}
-                        </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5">
-                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate" title={warranty.productReceivedName}>
-                          {warranty.productReceivedName}
-                        </div>
-                        {warranty.productReceivedSerial && (
-                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 truncate" title={`S/N: ${warranty.productReceivedSerial}`}>
-                            S/N: {warranty.productReceivedSerial}
+              {/* Vista de Cards para Desktop */}
+              <div className="hidden md:block space-y-4 p-4 md:p-6">
+                {warranties.map((warranty) => {
+                  const formatDate = (dateString: string) => {
+                    return new Date(dateString).toLocaleDateString('es-CO', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit'
+                    })
+                  }
+                  return (
+                    <Card
+                      key={warranty.id}
+                      className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                      onClick={() => onView(warranty)}
+                    >
+                      <CardContent className="p-4 md:p-6">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-3 mb-2">
+                              <Shield className="h-5 w-5 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2">
+                                  <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                    #{warranty.id.slice(-6)}
+                                  </div>
+                                  {warranty.status === 'completed' && (
+                                    <div className="h-4 w-4 rounded-full bg-green-500 flex-shrink-0" title="Completado" />
+                                  )}
+                                </div>
+                                <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                                  {warranty.clientName}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Producto</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={warranty.productReceivedName}>
+                                  {warranty.productReceivedName}
+                                </div>
+                                {warranty.productReceivedSerial && (
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={`S/N: ${warranty.productReceivedSerial}`}>
+                                    S/N: {warranty.productReceivedSerial}
+                                  </div>
+                                )}
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Motivo</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white truncate" title={warranty.reason}>
+                                  {warranty.reason}
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado</div>
+                                <Badge className={`${getStatusColor(warranty.status)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                  {getStatusIcon(warranty.status)}
+                                  {getStatusLabel(warranty.status)}
+                                </Badge>
+                              </div>
+                              <div>
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fecha</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  {formatDate(warranty.createdAt)}
+                                </div>
+                              </div>
+                            </div>
                           </div>
-                        )}
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
-                        <div className="text-xs md:text-sm text-gray-900 dark:text-white truncate" title={warranty.reason}>
-                          {warranty.reason}
+                          
+                          <div className="flex items-center gap-2 ml-4">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                onView(warranty)
+                              }}
+                              className="h-10 w-10 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                              title="Ver detalles"
+                            >
+                              <Eye className="h-5 w-5" />
+                            </Button>
+                          </div>
                         </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5">
-                        <Badge className={`${getStatusColor(warranty.status)} flex items-center gap-1 w-fit text-xs`}>
-                          {getStatusIcon(warranty.status)}
-                          <span className="hidden sm:inline">{getStatusLabel(warranty.status)}</span>
-                        </Badge>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 hidden md:table-cell">
-                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(warranty.createdAt).toLocaleDateString('es-CO')}
-                        </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 text-right">
-                        <div className="flex items-center justify-end gap-1 md:gap-2">
-                          <Button
-                            onClick={() => onView(warranty)}
-                            variant="ghost"
-                            size="sm"
-                            className="h-7 w-7 md:h-8 md:w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95 touch-manipulation"
-                          >
-                            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
               </div>
             </>
           )}

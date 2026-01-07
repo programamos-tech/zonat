@@ -15,7 +15,7 @@ const items = [
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
   { href: '/payments', label: 'Créditos', icon: CreditCard, module: 'payments' },
   { href: '/roles', label: 'Roles', icon: Shield, module: 'roles' },
-  { href: '/logs', label: 'Registro de Actividades', icon: Activity, module: 'logs' },
+  { href: '/logs', label: 'Actividades', icon: Activity, module: 'logs' },
   { href: '/profile', label: 'Perfil', icon: UserCircle, module: 'dashboard', alwaysVisible: true },
 ]
 

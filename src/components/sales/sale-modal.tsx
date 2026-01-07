@@ -711,23 +711,25 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
         <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 bg-green-50 dark:bg-green-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-green-200 dark:border-green-800 bg-gradient-to-r from-green-50 to-green-100/50 dark:from-green-900/30 dark:to-green-900/20 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <Calculator className="h-6 w-6 text-green-600" />
-            <div className="flex items-center gap-2">
+            <div className="h-10 w-10 rounded-lg bg-green-600 dark:bg-green-700 flex items-center justify-center">
+              <Calculator className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex items-center gap-3">
               <div>
                 <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
                   {sale && sale.status === 'draft' ? 'Editar Borrador' : 'Nueva Venta'}
                 </h2>
-                <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
                   {sale && sale.status === 'draft' ? `Borrador ${invoiceNumber}` : `Factura ${invoiceNumber}`}
                 </p>
               </div>
               {(paymentMethod === 'credit' || sale?.paymentMethod === 'credit') && (
-                <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 dark:bg-orange-900/30 rounded-md border border-orange-300 dark:border-orange-700">
-                  <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                  <span className="text-xs font-medium text-orange-700 dark:text-orange-300">Crédito</span>
-                </div>
+                <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-300 border-orange-300 dark:border-orange-700">
+                  <CreditCard className="h-3.5 w-3.5 mr-1" />
+                  Crédito
+                </Badge>
               )}
             </div>
           </div>
@@ -735,25 +737,27 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
             onClick={handleClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white"
+            className="h-8 w-8 p-0 hover:bg-white/50 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50 dark:bg-gray-900 relative">
           <div className={`grid grid-cols-1 xl:grid-cols-5 gap-4 md:gap-6 ${!selectedClient && selectedProducts.length === 0 ? 'xl:items-start xl:pt-8' : ''}`}>
             {/* Left Column - Client and Products (3/5 del ancho) */}
-            <div className={`xl:col-span-3 ${!selectedClient && selectedProducts.length === 0 ? 'space-y-8' : 'space-y-6'}`}>
+            <div className={`xl:col-span-3 space-y-4 relative`}>
               {/* Client Selection */}
-              <Card className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${!selectedClient ? 'py-2' : ''}`}>
-                <CardHeader className={`${!selectedClient ? 'pb-4' : 'pb-3'}`}>
-                  <CardTitle className="flex items-center text-lg text-gray-900 dark:text-white">
-                    <User className="h-5 w-5 mr-2 text-green-600" />
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
+                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
                     Cliente
                   </CardTitle>
                 </CardHeader>
-                <CardContent className={`${!selectedClient ? 'p-4' : 'p-3'}`}>
+                <CardContent className="p-4 pt-0">
                   <div className="space-y-2">
                     <div className="relative">
                       <div className="relative">
@@ -768,7 +772,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                           setShowClientDropdown(value.length > 0)
                         }}
                           onFocus={() => setShowClientDropdown(true)}
-                          className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600"
+                          className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                         />
                       </div>
                     </div>
@@ -776,54 +780,60 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                     {/* Opción de crear cliente eliminada en el modal de ventas */}
                     
                     {showClientDropdown && (
-                      <div className="mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-lg max-h-48 overflow-y-auto relative z-20">
+                      <div className="mt-2 bg-white dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg shadow-xl max-h-64 overflow-y-auto relative z-[100]">
                         {filteredClients.length === 0 ? (
-                          <div className="px-4 py-3 text-center text-gray-500 dark:text-gray-400 text-sm">
+                          <div className="px-4 py-4 text-center text-gray-500 dark:text-gray-400 text-sm">
                             No se encontraron clientes
                           </div>
                         ) : (
-                          filteredClients.map(client => (
-                            <button
-                              key={client.id}
-                              onClick={() => {
-                                setSelectedClient(client)
-                                setClientSearch(client.name)
-                                setShowClientDropdown(false)
-                              }}
-                              className="w-full px-4 py-3 text-left hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors border-b border-gray-200 dark:border-gray-600 last:border-b-0"
-                            >
-                              <div className="flex items-start justify-between">
-                                <div className="flex-1 min-w-0 pr-3">
-                                  <div className="font-semibold text-gray-900 dark:text-white text-sm leading-tight mb-1" title={client.name}>
-                                    {client.name}
+                          <div className="py-1">
+                            {filteredClients.map(client => (
+                              <button
+                                key={client.id}
+                                onClick={() => {
+                                  setSelectedClient(client)
+                                  setClientSearch(client.name)
+                                  setShowClientDropdown(false)
+                                }}
+                                className="w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-600/50 transition-colors border-b border-gray-100 dark:border-gray-700 last:border-b-0"
+                              >
+                                <div className="flex items-center justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1 truncate" title={client.name}>
+                                      {client.name}
+                                    </div>
+                                    {client.email && (
+                                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate" title={client.email}>
+                                        {client.email}
+                                      </div>
+                                    )}
                                   </div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 leading-tight" title={client.email}>
-                                    {client.email}
+                                  <div className="flex-shrink-0">
+                                    <Badge className={`${getClientTypeColor(client.type)} text-xs whitespace-nowrap`}>
+                                      {client.type === 'mayorista' ? 'Mayorista' : 
+                                       client.type === 'minorista' ? 'Minorista' : 'Consumidor Final'}
+                                    </Badge>
                                   </div>
                                 </div>
-                                <div className="flex-shrink-0">
-                                  <Badge className={`${getClientTypeColor(client.type)} font-medium text-xs`}>
-                                    {client.type === 'mayorista' ? 'Mayorista' : 
-                                     client.type === 'minorista' ? 'Minorista' : 'Consumidor Final'}
-                                  </Badge>
-                                </div>
-                              </div>
-                            </button>
-                          ))
+                              </button>
+                            ))}
+                          </div>
                         )}
                       </div>
                     )}
                   </div>
 
                   {selectedClient && (
-                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-500/30">
+                    <div className="mt-3 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-500/30">
                       <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="font-bold text-gray-900 dark:text-white">{selectedClient.name}</div>
-                          <div className="text-sm text-gray-700 dark:text-gray-300 font-semibold">{selectedClient.email}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-gray-900 dark:text-white text-sm">{selectedClient.name}</div>
+                          {selectedClient.email && (
+                            <div className="text-xs text-gray-600 dark:text-gray-400 mt-0.5">{selectedClient.email}</div>
+                          )}
                         </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge className={`${getClientTypeColor(selectedClient.type)} font-semibold`}>
+                        <div className="flex items-center gap-2 ml-3">
+                          <Badge className={`${getClientTypeColor(selectedClient.type)} text-xs`}>
                             {selectedClient.type === 'mayorista' ? 'Mayorista' : 
                              selectedClient.type === 'minorista' ? 'Minorista' : 'Consumidor Final'}
                           </Badge>
@@ -831,9 +841,9 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                             onClick={handleRemoveClient}
                             size="sm"
                             variant="ghost"
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-600 transition-all duration-200"
+                            className="h-7 w-7 p-0 text-gray-400 hover:text-gray-600 hover:bg-gray-200 dark:text-gray-500 dark:hover:text-gray-300 dark:hover:bg-gray-600"
                           >
-                            <X className="h-4 w-4" />
+                            <X className="h-3.5 w-3.5" />
                           </Button>
                         </div>
                       </div>
@@ -842,17 +852,17 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                 </CardContent>
               </Card>
 
-              {/* Product Selection - Más prominente */}
-              <Card className={`bg-white dark:bg-gray-800 border-2 border-green-200 dark:border-green-700 shadow-lg ${selectedProducts.length === 0 ? 'py-2' : ''}`}>
-                <CardHeader className={`${selectedProducts.length === 0 ? 'pb-4' : 'pb-3'}`}>
-                  <CardTitle className="flex items-center justify-between text-base text-gray-900 dark:text-white">
-                    <div className="flex items-center">
-                      <Package className="h-4 w-4 mr-2 text-green-600" />
-                      Agregar Productos
+              {/* Product Selection */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
+                      <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
                     </div>
+                    Agregar Productos
                   </CardTitle>
                 </CardHeader>
-                <CardContent className={`${selectedProducts.length === 0 ? 'p-4' : 'p-3'}`}>
+                <CardContent className="p-4 pt-0">
                   <div className="space-y-3">
                     {/* Search Input */}
                     <div className="relative">
@@ -893,21 +903,21 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                             setSelectedProductIndex(-1)
                           }
                         }}
-                        className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-600 text-sm"
+                        className="w-full pl-10 pr-4 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 placeholder-gray-500 dark:placeholder-gray-400 text-gray-900 dark:text-white bg-white dark:bg-gray-700"
                       />
                     </div>
                     
-                    {/* Product Dropdown - Más grande y prominente */}
+                    {/* Product Dropdown - Mejorado con z-index alto */}
                     {showProductDropdown && (
                       <div 
                         id="product-dropdown"
-                        className="bg-white dark:bg-gray-700 border-2 border-gray-300 dark:border-gray-600 rounded-xl shadow-xl max-h-96 md:max-h-[500px] overflow-y-auto relative z-50 mt-3"
+                        className="bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-2xl max-h-96 md:max-h-[500px] overflow-y-auto relative z-[100] mt-2"
                       >
                         {/* Botón para cerrar */}
-                        <div className="flex justify-end p-2 border-b border-gray-200 dark:border-gray-600">
+                        <div className="sticky top-0 bg-white dark:bg-gray-700 border-b border-gray-200 dark:border-gray-600 flex justify-end p-2 z-10">
                           <button
                             onClick={() => setShowProductDropdown(false)}
-                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-sm"
+                            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-xs px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-600"
                           >
                             ✕ Cerrar
                           </button>
@@ -929,65 +939,67 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                         ) : (
                           <div className="p-2">
                             {!productSearch.trim() && (
-                              <div className="px-2 py-1 mb-2">
+                              <div className="px-3 py-2 mb-1">
                                 <div className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                                   Productos sugeridos
                                 </div>
                               </div>
                             )}
-                            {filteredProducts.map((product, index) => (
-                              <button
-                                key={product.id}
-                                id={`product-item-${index}`}
-                                onClick={() => {
-                                  handleAddProduct(product)
-                                  setProductSearch('')
-                                  setSelectedProductIndex(-1)
-                                  setShowProductDropdown(false)
-                                }}
-                                onMouseEnter={() => setSelectedProductIndex(index)}
-                                className={`w-full px-3 py-3 text-left rounded-lg transition-colors group ${
-                                  selectedProductIndex === index
-                                    ? 'bg-green-100 dark:bg-green-900/30 border-2 border-green-500 dark:border-green-600'
-                                    : 'hover:bg-gray-100 dark:hover:bg-gray-600 border-2 border-transparent'
-                                }`}
-                              >
-                                <div className="flex items-center justify-between">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1 group-hover:text-gray-600 dark:group-hover:text-gray-300 transition-colors">
-                                      {product.name}
-                                    </div>
-                                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                                      {product.brand} • {product.reference}
-                                    </div>
-                                    <div className="flex items-center justify-between text-xs">
-                                      <div className="flex items-center space-x-3 text-gray-500 dark:text-gray-400">
-                                        <span>Bodega: {product.stock.warehouse || 0}</span>
-                                        <span>•</span>
-                                        <span>Local: {product.stock.store || 0}</span>
+                            <div className="space-y-1">
+                              {filteredProducts.map((product, index) => (
+                                <button
+                                  key={product.id}
+                                  id={`product-item-${index}`}
+                                  onClick={() => {
+                                    handleAddProduct(product)
+                                    setProductSearch('')
+                                    setSelectedProductIndex(-1)
+                                    setShowProductDropdown(false)
+                                  }}
+                                  onMouseEnter={() => setSelectedProductIndex(index)}
+                                  className={`w-full px-3 py-3 text-left rounded-lg transition-all group ${
+                                    selectedProductIndex === index
+                                      ? 'bg-green-50 dark:bg-green-900/20 border border-green-300 dark:border-green-600 shadow-sm'
+                                      : 'hover:bg-gray-50 dark:hover:bg-gray-600/50 border border-transparent'
+                                  }`}
+                                >
+                                  <div className="flex items-start justify-between gap-3">
+                                    <div className="flex-1 min-w-0">
+                                      <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1.5 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                                        {product.name}
                                       </div>
-                                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                        getStockStatus(product.id) === 'Disponible Local' 
-                                          ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600' 
-                                          : getStockStatus(product.id).includes('Bodega')
-                                          ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
-                                          : getStockStatus(product.id).includes('Bajo')
-                                          ? 'bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600'
-                                          : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
-                                      }`}>
-                                        {getStockStatus(product.id)}
+                                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                        {product.brand} • {product.reference}
                                       </div>
+                                      <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-gray-400">
+                                          <span>Bodega: <span className="font-medium">{product.stock.warehouse || 0}</span></span>
+                                          <span>•</span>
+                                          <span>Local: <span className="font-medium">{product.stock.store || 0}</span></span>
+                                        </div>
+                                        <Badge className={`text-xs whitespace-nowrap ${
+                                          getStockStatus(product.id) === 'Disponible Local' 
+                                            ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600' 
+                                            : getStockStatus(product.id).includes('Bodega')
+                                              ? 'bg-green-100 text-green-800 border border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600'
+                                              : getStockStatus(product.id).includes('Bajo')
+                                                ? 'bg-yellow-100 text-yellow-800 border border-yellow-300 dark:bg-yellow-900/30 dark:text-yellow-300 dark:border-yellow-600'
+                                                : 'bg-red-100 text-red-800 border border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
+                                        }`}>
+                                          {getStockStatus(product.id)}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                    <div className="flex-shrink-0 text-right">
+                                      <div className="font-bold text-gray-900 dark:text-white text-sm">
+                                        ${product.price.toLocaleString()}
+                                      </div>
+                                      <div className="text-xs text-gray-500 dark:text-gray-400">c/u</div>
                                     </div>
                                   </div>
-                                  <div className="flex-shrink-0 text-right ml-3">
-                                    <div className="font-bold text-gray-900 dark:text-white text-sm">
-                                      ${product.price.toLocaleString()}
-                                    </div>
-                                    <div className="text-xs text-gray-500">c/u</div>
-                                  </div>
-                                </div>
-                              </button>
-                            ))}
+                                </button>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1008,33 +1020,33 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
 
                   {/* Selected Products */}
                   {orderedSelectedProducts.length > 0 && (
-                    <div className="mt-6">
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
-                        <Badge variant="secondary" className="bg-emerald-100 text-emerald-800 border-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-600">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
+                        <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600 text-xs">
                           {orderedSelectedProducts.length} producto{orderedSelectedProducts.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-2">
                         {orderedSelectedProducts.map(item => (
-                          <div key={item.id} className="bg-gray-100 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
+                          <div key={item.id} className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-3">
                             {/* Product Info Header */}
-                            <div className="flex items-start justify-between mb-2">
-                              <div className="flex-1">
-                                <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
-                                <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-300 mb-2">
-                                  <span>Stock: <span className="font-medium">{getAvailableStock(item.productId)} unidades</span></span>
+                            <div className="flex items-start justify-between mb-3">
+                              <div className="flex-1 min-w-0">
+                                <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">{item.productName}</h4>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                  Stock disponible: <span className="font-medium text-gray-700 dark:text-gray-300">{getAvailableStock(item.productId)} unidades</span>
                                 </div>
-                                <div className="flex items-center space-x-2 mt-2">
-                                  <label className="text-xs font-medium text-gray-400 dark:text-gray-500">
-                                    Precio de venta:
+                                <div className="flex items-center gap-2">
+                                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    Precio:
                                   </label>
                                   <input
                                     type="number"
                                     value={item.unitPrice || ''}
                                     onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
                                     onBlur={() => handlePriceBlur(item.id)}
-                                    className={`w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 px-2 ${
+                                    className={`w-28 h-7 text-xs text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 px-2 ${
                                       item.unitPrice && findProductById(item.productId)?.cost && item.unitPrice < (findProductById(item.productId)?.cost || 0)
                                         ? 'border-red-500 dark:border-red-500'
                                         : 'border-gray-300 dark:border-gray-500'
@@ -1045,39 +1057,39 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                                   />
                                 </div>
                               </div>
-                              <div className="text-right">
-                                <div className="text-lg font-bold text-gray-900 dark:text-white">${item.total.toLocaleString()}</div>
+                              <div className="text-right ml-3">
+                                <div className="text-base font-bold text-gray-900 dark:text-white">${item.total.toLocaleString()}</div>
                                 <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
                               </div>
                             </div>
                             
                             {/* Quantity Controls */}
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center space-x-3">
-                                <span className="text-sm text-gray-300 font-medium">Cantidad:</span>
-                                <div className="flex items-center space-x-2">
+                            <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Cantidad:</span>
+                                <div className="flex items-center gap-1">
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                    className="h-8 w-8 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                                    className="h-7 w-7 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
                                   >
-                                    <Minus className="h-4 w-4" />
+                                    <Minus className="h-3.5 w-3.5" />
                                   </Button>
                                   <input
                                     type="text"
                                     value={item.quantity}
                                     onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                    className="w-16 h-8 text-center font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600"
+                                    className="w-14 h-7 text-center text-sm font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600"
                                     min="1"
                                   />
                                   <Button
                                     size="sm"
                                     variant="outline"
                                     onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                    className="h-8 w-8 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-200 dark:hover:bg-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white"
+                                    className="h-7 w-7 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300"
                                   >
-                                    <Plus className="h-4 w-4" />
+                                    <Plus className="h-3.5 w-3.5" />
                                   </Button>
                                 </div>
                               </div>
@@ -1085,11 +1097,11 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                               {/* Remove Button */}
                               <Button
                                 size="sm"
-                                variant="outline"
+                                variant="ghost"
                                 onClick={() => handleUpdateQuantity(item.id, 0)}
-                                className="h-8 px-3 text-gray-500 border-gray-300 hover:bg-gray-100 hover:text-gray-700 hover:border-gray-400 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 dark:hover:text-gray-200 dark:hover:border-gray-500 transition-all duration-200"
+                                className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                               >
-                                <X className="h-4 w-4 mr-1" />
+                                <X className="h-3.5 w-3.5 mr-1" />
                                 Quitar
                               </Button>
                             </div>
@@ -1115,16 +1127,18 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
             </div>
 
             {/* Right Column - Payment and Summary (2/5 del ancho) */}
-            <div className={`xl:col-span-2 ${!selectedClient && selectedProducts.length === 0 ? 'space-y-6' : 'space-y-4'}`}>
-              {/* Payment Method - Más compacto */}
-              <Card className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${!paymentMethod ? 'py-2' : ''}`}>
-                <CardHeader className={`${!paymentMethod ? 'pb-4' : 'pb-2'}`}>
-                  <CardTitle className="flex items-center text-base text-gray-900 dark:text-white">
-                    <CreditCard className="h-4 w-4 mr-2 text-green-600" />
+            <div className="xl:col-span-2 space-y-4">
+              {/* Payment Method */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center text-base font-semibold text-gray-900 dark:text-white">
+                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
+                      <CreditCard className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
                     Método de Pago
                   </CardTitle>
                 </CardHeader>
-                <CardContent className={`${!paymentMethod ? 'p-4' : 'p-2'}`}>
+                <CardContent className="p-4 pt-0">
                   <div className="space-y-2">
                     {/* Selector de Método de Pago */}
                     <div className="relative">
@@ -1138,7 +1152,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                             setReceivedAmount('')
                           }
                         }}
-                        className="w-full px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-600 appearance-none cursor-pointer text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-700 appearance-none cursor-pointer text-gray-900 dark:text-white"
                       >
                         <option value="" className="bg-white dark:bg-gray-600 text-gray-500 dark:text-gray-400">Seleccionar método de pago</option>
                         <option value="cash" className="bg-white dark:bg-gray-600 text-gray-900 dark:text-white">Efectivo/Contado</option>
@@ -1242,20 +1256,25 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                 </CardContent>
               </Card>
 
-              {/* Summary - Más compacto */}
-              <Card className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm ${orderedValidProducts.length === 0 ? 'py-2' : ''}`}>
-                <CardHeader className={`${orderedValidProducts.length === 0 ? 'pb-4' : 'pb-2'}`}>
-                  <CardTitle className="text-base text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="h-4 w-4 mr-2 text-green-600" />
+              {/* Summary */}
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base font-semibold text-gray-900 dark:text-white flex items-center">
+                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center mr-3">
+                      <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
+                    </div>
                     Resumen de Venta
                   </CardTitle>
                 </CardHeader>
-                <CardContent className={`${orderedValidProducts.length === 0 ? 'p-4' : 'p-2'}`}>
+                <CardContent className="p-4 pt-0">
                   <div className="space-y-3">
                     {orderedValidProducts.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400 text-center py-6">
-                        Agrega productos para ver el resumen de la venta.
-                      </p>
+                      <div className="text-center py-8">
+                        <Package className="h-12 w-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" />
+                        <p className="text-sm text-gray-500 dark:text-gray-400">
+                          Agrega productos para ver el resumen
+                        </p>
+                      </div>
                     ) : (
                       <>
                         <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
@@ -1400,54 +1419,32 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
         </div>
 
         {/* Footer - Sticky siempre visible */}
-        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-800 p-4 md:p-6" style={{ paddingBottom: 'calc(max(56px, env(safe-area-inset-bottom)) + 1rem)' }}>
+        <div className="flex-shrink-0 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 p-4 md:p-6" style={{ paddingBottom: 'calc(max(56px, env(safe-area-inset-bottom)) + 1rem)' }}>
           <div className="flex items-center justify-end gap-3">
             <Button
               onClick={handleClose}
               variant="outline"
-              className="border-gray-300 dark:border-gray-500 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium px-4 py-2 md:px-6 md:py-2.5"
+              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white font-medium px-6 py-2.5"
             >
               Cancelar
             </Button>
             {!sale && (
-              <>
-                {/* Botón de borrador comentado
-                <Button
-                  onClick={handleSaveAsDraft}
-                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
-                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-gray-600 hover:bg-gray-700 text-white"
-                >
-                  Guardar como Borrador
-                </Button>
-                */}
-                <Button
-                  onClick={() => handleSave(false)}
-                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Crear Venta
-                </Button>
-              </>
+              <Button
+                onClick={() => handleSave(false)}
+                disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
+                className="font-medium px-6 py-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
+              >
+                Crear Venta
+              </Button>
             )}
             {sale && sale.status === 'draft' && (
-              <>
-                {/* Botón de borrador comentado
-                <Button
-                  onClick={handleSaveAsDraft}
-                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0}
-                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-gray-600 hover:bg-gray-700 text-white"
-                >
-                  Guardar Cambios (Borrador)
-                </Button>
-                */}
-                <Button
-                  onClick={() => handleSave(false)}
-                  disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-                  className="font-medium px-4 py-2 md:px-6 md:py-2.5 shadow-md disabled:bg-gray-400 disabled:text-gray-200 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
-                >
-                  Finalizar y Crear Venta
-                </Button>
-              </>
+              <Button
+                onClick={() => handleSave(false)}
+                disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
+                className="font-medium px-6 py-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
+              >
+                Finalizar y Crear Venta
+              </Button>
             )}
           </div>
         </div>
