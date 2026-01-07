@@ -227,6 +227,7 @@ export interface Credit {
   createdByName?: string
   createdAt: string
   updatedAt: string
+  credits?: Credit[] // Para créditos agrupados, contiene los créditos individuales
 }
 
 export interface PaymentRecord {

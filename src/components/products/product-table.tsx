@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -17,7 +18,10 @@ import {
   Pause,
   Tag,
   X,
-  RefreshCw
+  RefreshCw,
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { Product, Category } from '@/types'
 import {
@@ -45,6 +49,7 @@ interface ProductTableProps {
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Product[]>
   totalStock?: number
+  onView?: (product: Product) => void
 }
 
 // Número de productos por página
@@ -67,11 +72,12 @@ export function ProductTable({
   onStockTransfer,
   onRefresh,
   onPageChange,
-  onSearch
+  onSearch,
+  onView
 }: ProductTableProps) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterCategory, setFilterCategory] = useState('all')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterStockStatus, setFilterStockStatus] = useState('all')
 
   // Función simple para manejar búsqueda
   const handleSearch = (term: string) => {
@@ -90,14 +96,6 @@ export function ProductTable({
 
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
-
-  // Para búsqueda, usar todos los productos (ya vienen filtrados del contexto)
-  // Para filtros de categoría y estado, aplicar localmente
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = filterCategory === 'all' || product.categoryId === filterCategory
-    const matchesStatus = filterStatus === 'all' || product.status === filterStatus
-    return matchesCategory && matchesStatus
-  })
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId)
@@ -204,6 +202,14 @@ export function ProductTable({
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
   }
 
+  // Para búsqueda, usar todos los productos (ya vienen filtrados del contexto)
+  // Para filtro de estado de stock, aplicar localmente
+  const filteredProducts = products.filter(product => {
+    if (filterStockStatus === 'all') return true
+    const stockStatus = getStockStatusLabel(product)
+    return stockStatus === filterStockStatus
+  })
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -212,13 +218,15 @@ export function ProductTable({
     }).format(amount)
   }
 
-  const categoryOptions = ['all', ...categories.map(c => c.id)]
-  const statuses = [
+  const stockStatusOptions = [
     { value: 'all', label: 'Todos los estados' },
-    { value: 'active', label: 'Activo' },
-    { value: 'inactive', label: 'Inactivo' },
-    { value: 'discontinued', label: 'Descontinuado' },
-    { value: 'out_of_stock', label: 'Sin Stock' }
+    { value: 'Sin Stock', label: 'Sin Stock' },
+    { value: 'Disponible Local', label: 'Disponible Local' },
+    { value: 'Stock Local Bajo', label: 'Stock Local Bajo' },
+    { value: 'Stock Local Muy Bajo', label: 'Stock Local Muy Bajo' },
+    { value: 'Solo Bodega', label: 'Solo Bodega' },
+    { value: 'Solo Bodega (Bajo)', label: 'Solo Bodega (Bajo)' },
+    { value: 'Solo Bodega (Muy Bajo)', label: 'Solo Bodega (Muy Bajo)' }
   ]
 
   return (
@@ -293,22 +301,22 @@ export function ProductTable({
         {/* Search and Filters */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
           <CardContent className="p-3 md:p-4">
-            <div className="flex flex-col gap-2 md:gap-4">
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-        <input
-          type="text"
+                <input
+                  type="text"
                   placeholder="Buscar producto..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') {
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
                       e.preventDefault()
-              handleSearch(searchTerm)
-            }
-          }}
+                      handleSearch(searchTerm)
+                    }
+                  }}
                   className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-        />
+                />
                 {searchTerm && (
                   <button
                     onClick={(e) => {
@@ -333,31 +341,17 @@ export function ProductTable({
                   <Search className="h-4 w-4" />
                 </button>
               </div>
-              <div className="flex flex-col sm:flex-row gap-2 md:gap-4">
               <select
-                value={filterCategory}
-                onChange={(e) => setFilterCategory(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                value={filterStockStatus}
+                onChange={(e) => setFilterStockStatus(e.target.value)}
+                className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
-                <option value="all">Todas las categorías</option>
-                {categories.map(category => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                  className="flex-1 px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
-              >
-                {statuses.map(status => (
+                {stockStatusOptions.map(status => (
                   <option key={status.value} value={status.value}>
                     {status.label}
                   </option>
                 ))}
               </select>
-              </div>
             </div>
           </CardContent>
         </Card>
@@ -482,105 +476,89 @@ export function ProductTable({
                   })}
                 </div>
 
-                {/* Vista de Tabla para Desktop */}
-                <div className="hidden md:block overflow-x-auto products-table-tablet-container lg:overflow-x-visible">
-                <table className="w-full table-auto lg:table-auto products-table-tablet">
-                  <thead className="bg-gray-50 dark:bg-gray-700">
-                    <tr>
-                      <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-10 md:w-12">
-                        #
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-16 md:w-20">
-                        <span className="hidden lg:inline">Referencia</span>
-                        <span className="lg:hidden">Ref.</span>
-                      </th>
-                      <th className="px-2 md:px-3 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                        Producto
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12 md:w-16">
-                        Bodega
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12 md:w-16">
-                        Local
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-12 md:w-16">
-                        Total
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-24 md:w-32">
-                        Estado Stock
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20 md:w-24 hidden lg:table-cell">
-                        Estado
-                      </th>
-                      <th className="px-1 md:px-2 py-2 md:py-3 text-center text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider w-20 md:w-24">
-                        Acciones
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                    {filteredProducts.map((product, index) => {
-                      const StatusIcon = getStatusIcon(product.status)
-                      return (
-                        <tr key={product.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                          <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-4 whitespace-nowrap w-10 md:w-12">
-                            <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white">
-                              {index + 1}
-                            </div>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 w-16 md:w-20">
-                            <div className="text-xs md:text-sm font-mono text-gray-900 dark:text-white font-semibold" title={product.reference}>
-                              {product.reference}
-                            </div>
-                          </td>
-                          <td className="px-2 md:px-3 py-2 md:py-4">
-                            <div className="text-xs md:text-sm">
-                              <div className="font-medium text-gray-900 dark:text-white truncate max-w-[120px] md:max-w-[200px] lg:max-w-none" title={product.name}>
-                                {product.name}
+                {/* Vista de Cards para Desktop */}
+                <div className="hidden md:block space-y-4 p-4 md:p-6">
+                  {filteredProducts.map((product, index) => {
+                    const StatusIcon = getStatusIcon(product.status)
+                    const globalIndex = ((currentPage - 1) * ITEMS_PER_PAGE) + index + 1
+                    return (
+                      <Card
+                        key={product.id}
+                        className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => {
+                          router.push(`/products/${product.id}`)
+                        }}
+                      >
+                        <CardContent className="p-4 md:p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-2">
+                                    <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                      {product.reference}
+                                    </div>
+                                    {product.status === 'active' && (
+                                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                                    )}
+                                  </div>
+                                  <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
+                                    {product.name}
+                                  </div>
+                                </div>
                               </div>
-                              <div className="text-gray-500 dark:text-gray-400 text-xs truncate max-w-[120px] md:max-w-[200px] lg:max-w-none" title={getCategoryName(product.categoryId)}>
-                                {getCategoryName(product.categoryId)}
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
+                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                    {product.stock.warehouse}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
+                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                    {product.stock.store}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                    {product.stock.total}
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado Stock</div>
+                                  <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                    {getStockStatusLabel(product)}
+                                  </Badge>
+                                </div>
                               </div>
+                              
+                              {product.status !== 'active' && (
+                                <div className="mt-4 flex items-center gap-2">
+                                  <Badge className={`${getStatusColor(product.status)} flex items-center gap-1 w-fit text-xs`}>
+                                    <StatusIcon className="h-3 w-3 flex-shrink-0" />
+                                    {getStatusLabel(product.status)}
+                                  </Badge>
+                                </div>
+                              )}
                             </div>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap w-12 md:w-16 text-center">
-                            <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
-                              {product.stock.warehouse}
-                            </div>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap w-12 md:w-16 text-center">
-                            <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
-                              {product.stock.store}
-                            </div>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap w-12 md:w-16 text-center">
-                            <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
-                              {product.stock.total}
-                            </div>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 w-24 md:w-32">
-                            <Badge className={`${getStockStatusColor(product)} text-xs badge-no-truncate`} title={getStockStatusLabel(product)}>
-                              <span className="block">{getStockStatusLabel(product)}</span>
-                            </Badge>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 w-20 md:w-24 hidden lg:table-cell">
-                            <Badge className={`${getStatusColor(product.status)} text-xs`}>
-                              <div className="flex items-center space-x-1">
-                                <StatusIcon className="h-3 w-3 flex-shrink-0" />
-                                <span>{getStatusLabel(product.status)}</span>
-                              </div>
-                            </Badge>
-                          </td>
-                          <td className="px-1 md:px-2 py-2 md:py-4 whitespace-nowrap text-center w-20 md:w-24">
-                            <div className="flex items-center justify-end gap-2 md:gap-3">
+                            
+                            <div className="flex items-center gap-2 ml-4">
                               <Tooltip>
                                 <TooltipTrigger asChild>
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => onEdit(product)}
-                                    className="h-7 w-7 md:h-8 md:w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95 touch-manipulation"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onEdit(product)
+                                    }}
+                                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
                                   >
-                                    <Edit className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                    <Edit className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
@@ -597,10 +575,13 @@ export function ProductTable({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => onStockAdjustment(product)}
-                                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95 touch-manipulation"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onStockAdjustment(product)
+                                      }}
+                                      className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
                                     >
-                                      <Package className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                      <Package className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
@@ -618,10 +599,13 @@ export function ProductTable({
                                     <Button
                                       size="sm"
                                       variant="ghost"
-                                      onClick={() => onStockTransfer(product)}
-                                      className="h-7 w-7 md:h-8 md:w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95 touch-manipulation"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onStockTransfer(product)
+                                      }}
+                                      className="h-8 w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95"
                                     >
-                                      <ArrowRightLeft className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                      <ArrowRightLeft className="h-4 w-4" />
                                     </Button>
                                   </TooltipTrigger>
                                   <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
@@ -638,10 +622,13 @@ export function ProductTable({
                                   <Button
                                     size="sm"
                                     variant="ghost"
-                                    onClick={() => onDelete(product)}
-                                    className="h-7 w-7 md:h-8 md:w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95 touch-manipulation"
+                                    onClick={(e) => {
+                                      e.stopPropagation()
+                                      onDelete(product)
+                                    }}
+                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
                                   >
-                                    <Trash2 className="h-3.5 w-3.5 md:h-4 md:w-4" />
+                                    <Trash2 className="h-4 w-4" />
                                   </Button>
                                 </TooltipTrigger>
                                 <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
@@ -652,84 +639,70 @@ export function ProductTable({
                                 </TooltipContent>
                               </Tooltip>
                             </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
-                  </tbody>
-                </table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )
+                  })}
                 </div>
               </>
             )}
 
             {/* Paginación - Solo mostrar cuando no está en modo búsqueda */}
             {!isSearching && totalProducts > ITEMS_PER_PAGE && (
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-gray-50 dark:bg-gray-700 border-t border-gray-200 dark:border-gray-600">
-                <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
-                  <span className="hidden sm:inline">Mostrando </span>
-                  <span className="font-semibold">{((currentPage - 1) * ITEMS_PER_PAGE) + 1}</span>
-                  <span className="hidden sm:inline"> a </span>
-                  <span className="sm:hidden">-</span>
-                  <span className="font-semibold">{Math.min(currentPage * ITEMS_PER_PAGE, totalProducts)}</span>
-                  <span className="hidden sm:inline"> de </span>
-                  <span className="sm:hidden">/</span>
-                  <span className="font-semibold">{totalProducts}</span>
-                  <span className="hidden md:inline"> productos</span>
+              <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 px-4 md:px-6">
+                <button
+                  onClick={() => onPageChange(currentPage - 1)}
+                  disabled={currentPage === 1 || loading}
+                  className="h-7 w-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronLeft className="h-3.5 w-3.5" />
+                </button>
+                
+                <div className="flex items-center gap-0.5">
+                  {Array.from({ length: Math.ceil(totalProducts / ITEMS_PER_PAGE) }, (_, i) => i + 1).map((page) => {
+                    // Mostrar siempre las primeras 2 páginas, la última, y las páginas alrededor de la actual
+                    if (
+                      page === 1 ||
+                      page === 2 ||
+                      page === Math.ceil(totalProducts / ITEMS_PER_PAGE) ||
+                      (page >= currentPage - 1 && page <= currentPage + 1)
+                    ) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => onPageChange(page)}
+                          disabled={loading}
+                          className={`h-7 w-7 flex items-center justify-center rounded-md text-sm transition-colors ${
+                            currentPage === page
+                              ? 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400 font-medium'
+                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      )
+                    } else if (
+                      page === currentPage - 2 ||
+                      page === currentPage + 2
+                    ) {
+                      return (
+                        <span key={page} className="px-1 text-gray-400 dark:text-gray-500 text-sm">
+                          ...
+                        </span>
+                      )
+                    }
+                    return null
+                  })}
                 </div>
                 
-                <div className="flex items-center space-x-1 md:space-x-2">
-                  {/* Botón Anterior */}
-                  <button
-                    onClick={() => onPageChange(currentPage - 1)}
-                    disabled={currentPage === 1 || loading}
-                    className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-                  >
-                    ‹
-                  </button>
-                  
-                  {/* Números de página */}
-                  <div className="flex items-center space-x-0.5 md:space-x-1">
-                    {Array.from({ length: Math.ceil(totalProducts / ITEMS_PER_PAGE) }, (_, i) => i + 1)
-                      .filter(page => {
-                        // Mostrar solo páginas cercanas a la actual
-                        return page === 1 || 
-                               page === Math.ceil(totalProducts / ITEMS_PER_PAGE) || 
-                               Math.abs(page - currentPage) <= 2
-                      })
-                      .map((page, index, array) => {
-                        // Agregar "..." si hay gap
-                        const showEllipsis = index > 0 && page - array[index - 1] > 1
-                        
-                        return (
-                          <div key={page} className="flex items-center">
-                            {showEllipsis && (
-                              <span className="px-1 md:px-2 text-gray-400 text-xs md:text-sm">...</span>
-                            )}
-                            <button
-                              onClick={() => onPageChange(page)}
-                              disabled={loading}
-                              className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
-                                page === currentPage 
-                                  ? "bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 font-medium" 
-                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
-                              }`}
-                            >
-                              {page}
-                            </button>
-                          </div>
-                        )
-                      })}
-                  </div>
-                  
-                  {/* Botón Siguiente */}
-                  <button
-                    onClick={() => onPageChange(currentPage + 1)}
-                    disabled={!hasMore || loading}
-                    className="px-2 md:px-3 py-1.5 text-sm md:text-base text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed active:scale-95"
-                  >
-                    ›
-                  </button>
-                </div>
+                <button
+                  onClick={() => onPageChange(currentPage + 1)}
+                  disabled={!hasMore || loading}
+                  className="h-7 w-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  <ChevronRight className="h-3.5 w-3.5" />
+                </button>
               </div>
             )}
 

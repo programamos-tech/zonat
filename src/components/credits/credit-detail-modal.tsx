@@ -155,89 +155,141 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
     }
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString('es-CO', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    })
+  }
+
+  const getDueDateColor = (dueDate: string) => {
+    const today = new Date()
+    const due = new Date(dueDate)
+    const diffTime = due.getTime() - today.getTime()
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    if (diffDays < 0) {
+      return 'text-red-600 dark:text-red-400 font-bold'
+    } else if (diffDays <= 7) {
+      return 'text-orange-600 dark:text-orange-400 font-bold'
+    } else {
+      return 'text-green-600 dark:text-green-400 font-bold'
+    }
+  }
+
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col p-4 xl:px-6">
+      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[98vw] xl:max-h-[90vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <CreditCard className="h-5 w-5 md:h-8 md:w-8 text-orange-600" />
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
+          <div className="flex items-center space-x-3">
+            <CreditCard className="h-6 w-6 text-orange-600" />
             <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                Detalles del Crédito
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                {currentCredit?.invoiceNumber}
-              </p>
+              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Detalle de Crédito</h2>
+              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400">{currentCredit?.invoiceNumber}</p>
             </div>
           </div>
           <Button
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            disabled={isLoading}
+            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-white disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 md:p-4">
-          <div className="space-y-3 md:space-y-4">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
+          <div className="space-y-4 md:space-y-6">
             {clientCredits.length > 1 && (
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-                <CardHeader className="p-3 md:p-4">
-                  <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <User className="h-4 w-4 text-gray-600 dark:text-gray-400" />
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg md:text-xl text-gray-900 dark:text-white flex items-center">
+                    <User className="h-5 w-5 md:h-6 md:w-6 mr-2 text-orange-600" />
                     Todos los Créditos de {credit.clientName}
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="p-3 md:p-4 pt-0">
-                  <div className="space-y-2 max-h-48 overflow-y-auto">
-                    {clientCredits.map((c) => {
-                      const isSelected = selectedCreditId === c.id
-                      // Usar colores neutros y uniformes
-      const bgColor = isSelected 
-        ? 'bg-gray-100 dark:bg-gray-700 border-2 border-gray-400 dark:border-gray-500' 
-        : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600'
-      
-                      return (
-                        <div 
-                          key={c.id} 
-                          onClick={() => setSelectedCreditId(c.id)}
-                          className={`border rounded-lg p-3 cursor-pointer transition-all relative hover:shadow-md ${bgColor}`}
-                        >
-                          <div className="flex items-center justify-between mb-2">
-                            <div>
-                              <div className="font-semibold text-gray-900 dark:text-white">
-                                Factura: {c.invoiceNumber}
+                <CardContent className="p-4">
+                  <div className="overflow-x-auto">
+                    <div className="min-w-full">
+                      <div className="grid grid-cols-1 gap-3">
+                        {clientCredits.map((c) => {
+                          const isSelected = selectedCreditId === c.id
+                          const bgColor = isSelected 
+                            ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-400 dark:border-orange-500' 
+                            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600'
+                          
+                          return (
+                            <div
+                              key={c.id} 
+                              onClick={() => setSelectedCreditId(c.id)}
+                              className={`border rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${bgColor}`}
+                            >
+                              <div className="grid grid-cols-2 md:grid-cols-5 gap-4 items-center">
+                                <div className="flex items-center gap-3">
+                                  <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                                  <div>
+                                    <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Factura</div>
+                                    <div className="text-base font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                      {c.invoiceNumber}
+                                    </div>
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Estado</div>
+                                  <Badge className={`${getStatusColor(c.status, c)} flex items-center gap-1 w-fit text-sm`}>
+                                    {getStatusIcon(c.status, c)}
+                                    {isCreditCancelled(c) ? 'Anulado' :
+                                     c.status === 'completed' ? 'Completado' :
+                                     c.status === 'partial' ? 'Parcial' :
+                                     c.status === 'pending' ? 'Pendiente' :
+                                     c.status === 'overdue' ? 'Vencido' :
+                                     c.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
+                                  </Badge>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                    {formatCurrency(c.totalAmount)}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pagado</div>
+                                  <div className="text-base font-semibold text-green-600 dark:text-green-400">
+                                    {formatCurrency(c.paidAmount || 0)}
+                                  </div>
+                                </div>
+                                
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pendiente</div>
+                                  <div className={`text-base font-semibold ${
+                                    c.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                                  }`}>
+                                    {formatCurrency(c.pendingAmount)}
+                                  </div>
+                                </div>
                               </div>
-                              <Badge className={`${getStatusColor(c.status, c)} flex items-center gap-1 w-fit mt-1`}>
-                                {getStatusIcon(c.status, c)}
-                                {isCreditCancelled(c) ? 'Anulado' :
-                                 c.status === 'completed' ? 'Completado' :
-                                 c.status === 'partial' ? 'Parcial' :
-                                 c.status === 'pending' ? 'Pendiente' :
-                                 c.status === 'overdue' ? 'Vencido' :
-                                 c.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
-                              </Badge>
                             </div>
-                            <div className="text-right">
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                Total: ${c.totalAmount.toLocaleString('es-CO')}
-                              </div>
-                              <div className={`text-sm font-semibold ${
-                                c.pendingAmount === 0 ? 'text-green-600' : 'text-red-600'
-                              }`}>
-                                Pendiente: ${c.pendingAmount.toLocaleString('es-CO')}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )
-                    })}
+                          )
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </CardContent>
               </Card>
@@ -245,204 +297,218 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
             
             {/* Información del Crédito y Historial de Abonos - Siempre visible */}
             {currentCredit && (
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 {/* Información del Crédito */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader className="p-3 md:p-4">
-                <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                  <Receipt className="h-4 w-4 text-orange-600" />
-                  Información del Crédito
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0 space-y-2">
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Factura:
-                    </label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {currentCredit?.invoiceNumber}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Cliente:
-                    </label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {currentCredit?.clientName}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      $ Monto Total:
-                    </label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      ${currentCredit?.totalAmount?.toLocaleString('es-CO')}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Estado:
-                    </label>
-                    <Badge className={`${getStatusColor(currentCredit?.status || 'pending', currentCredit)} flex items-center gap-1 w-fit`}>
-                      {getStatusIcon(currentCredit?.status || 'pending', currentCredit)}
-                      {isCreditCancelled(currentCredit) ? 'Anulado' :
-                       currentCredit?.status === 'completed' ? 'Completado' :
-                       currentCredit?.status === 'partial' ? 'Parcial' :
-                       currentCredit?.status === 'pending' ? 'Pendiente' :
-                       currentCredit?.status === 'overdue' ? 'Vencido' :
-                       currentCredit?.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
-                    </Badge>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      $ Pagado:
-                    </label>
-                    <p className="text-lg font-semibold text-green-600">
-                      ${currentCredit?.paidAmount?.toLocaleString('es-CO')}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      $ Pendiente:
-                    </label>
-                    <p className={`text-lg font-semibold ${
-                      currentCredit?.pendingAmount === 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      ${currentCredit?.pendingAmount?.toLocaleString('es-CO')}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                      Fecha de Vencimiento:
-                    </label>
-                    <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                      {currentCredit?.dueDate 
-                        ? new Date(currentCredit.dueDate).toLocaleDateString('es-CO')
-                        : 'No definida'
-                      }
-                    </p>
-                  </div>
-                  
-                  {currentCredit?.createdByName && (
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Registrado por:
-                      </label>
-                      <p className="text-lg font-semibold text-gray-900 dark:text-white">
-                        {currentCredit.createdByName}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Historial de Abonos */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-              <CardHeader className="p-3 md:p-4">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                  <CardTitle className="text-sm md:text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <CreditCard className="h-4 w-4 text-orange-600" />
-                    Historial de Abonos
-                  </CardTitle>
-                  <Button 
-                    onClick={() => {
-
-                      if (currentCredit) {
-
-                        onAddPayment(currentCredit)
-                      } else {
-      // Error silencioso en producción
-                      }
-                    }}
-                    disabled={!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)}
-                    size="sm"
-                    className={`w-full sm:w-auto ${
-                      !currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)
-                        ? 'bg-gray-400 hover:bg-gray-400 text-gray-200 cursor-not-allowed' 
-                        : 'bg-orange-600 hover:bg-orange-700 text-white'
-                    }`}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    {!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit) ? 'Crédito Anulado' : 'Nuevo Abono'}
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="p-3 md:p-4 pt-0">
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-orange-600"></div>
-                  </div>
-                ) : paymentHistory.length === 0 ? (
-                  <div className="text-center py-4">
-                    <CreditCard className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                    <p className="text-sm text-gray-500 dark:text-gray-400">No hay abonos registrados</p>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    {paymentHistory.map((payment) => (
-                      <div key={payment.id} className={`border rounded-lg p-3 ${
-                        currentCredit?.status === 'cancelled' 
-                          ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                          : 'bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600'
-                      }`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <span className={`font-semibold ${
-                              currentCredit?.status === 'cancelled' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
-                            }`}>
-                              ${payment.amount.toLocaleString('es-CO')}
-                            </span>
-                            <Badge className={`${getPaymentMethodColor(payment.paymentMethod)} flex items-center gap-1`}>
-                              {getPaymentMethodIcon(payment.paymentMethod)}
-                              {payment.paymentMethod === 'cash' ? 'Efectivo' :
-                               payment.paymentMethod === 'transfer' ? 'Transferencia' : payment.paymentMethod}
-                            </Badge>
-                            {currentCredit?.status === 'cancelled' && (
-                              <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 flex items-center gap-1">
-                                <XCircle className="h-3 w-3" />
-                                Anulado
-                              </Badge>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {payment.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                            {payment.description}
-                          </p>
-                        )}
-                        
-                        <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400">
-                          <span>Registrado por: {payment.userName}</span>
-                          <span>{new Date(payment.paymentDate).toLocaleString('es-CO')}</span>
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm lg:col-span-1">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg md:text-xl text-gray-900 dark:text-white flex items-center">
+                      <Receipt className="h-5 w-5 md:h-6 md:w-6 mr-2 text-orange-600" />
+                      Información del Crédito
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-3">
+                        <Receipt className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Factura</div>
+                          <div className="font-bold text-orange-600 text-xl">{currentCredit?.invoiceNumber}</div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      
+                      <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <User className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Cliente</div>
+                          <div className="font-semibold text-base text-gray-900 dark:text-white">{currentCredit?.clientName}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-3">
+                        <div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                          <div className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {formatCurrency(currentCredit?.totalAmount || 0)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pagado</div>
+                          <div className="text-lg font-semibold text-green-600 dark:text-green-400">
+                            {formatCurrency(currentCredit?.paidAmount || 0)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pendiente</div>
+                          <div className={`text-lg font-semibold ${
+                            currentCredit?.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
+                          }`}>
+                            {formatCurrency(currentCredit?.pendingAmount || 0)}
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Estado</div>
+                          <Badge className={`${getStatusColor(currentCredit?.status || 'pending', currentCredit)} flex items-center gap-1 w-fit text-sm px-3 py-1`}>
+                            {getStatusIcon(currentCredit?.status || 'pending', currentCredit)}
+                            {isCreditCancelled(currentCredit) ? 'Anulado' :
+                             currentCredit?.status === 'completed' ? 'Completado' :
+                             currentCredit?.status === 'partial' ? 'Parcial' :
+                             currentCredit?.status === 'pending' ? 'Pendiente' :
+                             currentCredit?.status === 'overdue' ? 'Vencido' :
+                             currentCredit?.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {currentCredit?.dueDate && (
+                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <Calendar className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                          <div className="flex-1">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Vencimiento</div>
+                            <div className={`font-semibold text-base ${getDueDateColor(currentCredit.dueDate)}`}>
+                              {formatDate(currentCredit.dueDate)}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {currentCredit?.createdByName && (
+                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <User className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                          <div className="flex-1">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Registrado por</div>
+                            <div className="font-semibold text-base text-gray-900 dark:text-white">{currentCredit.createdByName}</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Historial de Abonos */}
+                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm lg:col-span-2">
+                  <CardHeader className="pb-3">
+                    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <CardTitle className="text-lg md:text-xl text-gray-900 dark:text-white flex items-center">
+                        <CreditCard className="h-5 w-5 md:h-6 md:w-6 mr-2 text-orange-600" />
+                        Historial de Abonos
+                      </CardTitle>
+                      <Button 
+                        onClick={() => {
+                          if (currentCredit) {
+                            onAddPayment(currentCredit)
+                          }
+                        }}
+                        disabled={!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)}
+                        size="sm"
+                        className={`w-full sm:w-auto ${
+                          !currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit)
+                            ? 'bg-gray-400 hover:bg-gray-400 text-gray-200 cursor-not-allowed' 
+                            : 'bg-orange-600 hover:bg-orange-700 text-white'
+                        }`}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        {!currentCredit || currentCredit?.status === 'cancelled' || isCreditCancelled(currentCredit) ? 'Crédito Anulado' : 'Nuevo Abono'}
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="p-4">
+                    {isLoading ? (
+                      <div className="flex items-center justify-center py-12">
+                        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-orange-600"></div>
+                      </div>
+                    ) : paymentHistory.length === 0 ? (
+                      <div className="text-center py-12">
+                        <CreditCard className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                        <p className="text-base text-gray-500 dark:text-gray-400">No hay abonos registrados</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[500px] overflow-y-auto">
+                        {paymentHistory.map((payment) => (
+                          <div
+                            key={payment.id}
+                            className={`border rounded-lg p-4 ${
+                              currentCredit?.status === 'cancelled' 
+                                ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
+                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
+                            } shadow-sm`}
+                          >
+                            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
+                              <div className="flex items-center gap-3">
+                                <DollarSign className={`h-6 w-6 flex-shrink-0 ${
+                                  currentCredit?.status === 'cancelled' ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'
+                                }`} />
+                                <div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Monto</div>
+                                  <div className={`text-xl font-bold ${
+                                    currentCredit?.status === 'cancelled' ? 'text-red-600 dark:text-red-400' : 'text-gray-900 dark:text-white'
+                                  }`}>
+                                    {formatCurrency(payment.amount)}
+                                  </div>
+                                </div>
+                              </div>
+                              
+                              <div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Método de Pago</div>
+                                <Badge className={`${getPaymentMethodColor(payment.paymentMethod)} flex items-center gap-1 w-fit text-sm px-3 py-1`}>
+                                  {getPaymentMethodIcon(payment.paymentMethod)}
+                                  {payment.paymentMethod === 'cash' ? 'Efectivo' :
+                                   payment.paymentMethod === 'transfer' ? 'Transferencia' : payment.paymentMethod}
+                                </Badge>
+                              </div>
+                              
+                              <div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Registrado por</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white">{payment.userName}</div>
+                              </div>
+                              
+                              <div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha</div>
+                                <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                  {new Date(payment.paymentDate).toLocaleString('es-CO')}
+                                </div>
+                              </div>
+                            </div>
+                            
+                            {payment.description && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
+                                <p className="text-sm text-gray-700 dark:text-gray-300">
+                                  {payment.description}
+                                </p>
+                              </div>
+                            )}
+                            
+                            {currentCredit?.status === 'cancelled' && (
+                              <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
+                                <Badge className="bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 flex items-center gap-1 w-fit">
+                                  <XCircle className="h-4 w-4" />
+                                  Anulado
+                                </Badge>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               </div>
             )}
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-          <Button
-            onClick={onClose}
-            className="bg-orange-600 hover:bg-orange-700 text-white"
-          >
-            Cerrar
-          </Button>
+        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0">
+          <div className="flex-1"></div>
+          <div className="flex space-x-3">
+            <Button
+              onClick={onClose}
+              disabled={isLoading}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-6 py-2 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Cerrar
+            </Button>
+          </div>
         </div>
       </div>
     </div>

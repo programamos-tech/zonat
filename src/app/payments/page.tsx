@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from 'next/navigation'
 import { CreditTable } from '@/components/payments/payment-table'
 import { CreditModal } from '@/components/credits/credit-modal'
 import { PaymentModal } from '@/components/credits/payment-modal'
-import { CreditDetailModal } from '@/components/credits/credit-detail-modal'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
@@ -16,9 +15,7 @@ export default function CreditsPage() {
   const [credits, setCredits] = useState<Credit[]>([])
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
-  const [isCreditDetailModalOpen, setIsCreditDetailModalOpen] = useState(false)
   const [selectedCredit, setSelectedCredit] = useState<Credit | null>(null)
-  const [clientCredits, setClientCredits] = useState<Credit[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [initialSearch, setInitialSearch] = useState('')
   const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([])
@@ -36,22 +33,6 @@ export default function CreditsPage() {
     }
   }, [searchParams])
 
-  // Verificar si hay un crédito seleccionado en sessionStorage
-  useEffect(() => {
-    const selectedCreditData = sessionStorage.getItem('selectedCredit')
-    if (selectedCreditData) {
-      try {
-        const credit = JSON.parse(selectedCreditData)
-        setSelectedCredit(credit)
-        setIsCreditDetailModalOpen(true)
-        // Limpiar el sessionStorage después de usarlo
-        sessionStorage.removeItem('selectedCredit')
-      } catch (error) {
-      // Error silencioso en producción
-        sessionStorage.removeItem('selectedCredit')
-      }
-    }
-  }, [])
 
   // Escuchar eventos de crédito cancelado para refrescar la vista
   useEffect(() => {
@@ -139,42 +120,11 @@ export default function CreditsPage() {
   }
 
   const handleView = async (credit: Credit) => {
-    // Cargar todos los créditos del cliente
-    try {
-      const allCredits = await CreditsService.getCreditsByClientId(credit.clientId)
-      setClientCredits(allCredits)
-      
-      // Si tiene múltiples créditos, usar el primero como seleccionado
-      // Esto se manejará en el modal para permitir seleccionar entre ellos
-      setSelectedCredit(credit)
-      setIsCreditDetailModalOpen(true)
-    } catch (error) {
-      // Error silencioso en producción
-      setClientCredits([])
-      setSelectedCredit(credit)
-      setIsCreditDetailModalOpen(true)
-    }
+    // Navegar a la página del cliente
+    router.push(`/payments/${credit.clientId}`)
   }
 
-  const handlePayment = (credit: Credit) => {
 
-    setSelectedCredit(credit)
-    // NO cerrar el modal de detalles, solo abrir el de pago
-    setIsPaymentModalOpen(true)
-
-  }
-
-  const handleViewSale = (invoiceNumber: string) => {
-    // Cerrar el modal de detalles del crédito
-    setIsCreditDetailModalOpen(false)
-    setSelectedCredit(null)
-    
-    // Navegar al módulo de ventas
-    router.push('/sales')
-    
-    // Guardar el número de factura en sessionStorage para que la página de ventas lo pueda usar
-    sessionStorage.setItem('selectedInvoice', invoiceNumber)
-  }
 
   const handleRefresh = async () => {
     await loadCredits()
@@ -227,13 +177,11 @@ export default function CreditsPage() {
         credit.id === selectedCredit.id ? updatedCredit : credit
       ))
 
-      // Recargar los créditos del cliente para actualizar el modal de detalles
-      const allCredits = await CreditsService.getCreditsByClientId(selectedCredit.clientId)
-      setClientCredits(allCredits)
-
       setIsPaymentModalOpen(false)
-      // NO resetear selectedCredit para mantener el modal de detalles abierto
-      // setSelectedCredit(null)
+      setSelectedCredit(null)
+      
+      // Recargar créditos para actualizar la vista
+      await loadCredits()
     } catch (error) {
       // Error silencioso en producción
       // Error silencioso en producción
@@ -276,7 +224,6 @@ export default function CreditsPage() {
         todayPaymentsTotal={todayPaymentsTotal}
         credits={credits}
         onView={handleView}
-        onPayment={handlePayment}
         onCreate={handleCreate}
         isLoading={isLoading}
         onRefresh={handleRefresh}
@@ -295,18 +242,6 @@ export default function CreditsPage() {
         }}
         onAddPayment={handleAddPayment}
         credit={selectedCredit}
-      />
-
-      <CreditDetailModal
-        isOpen={isCreditDetailModalOpen}
-        onClose={() => {
-          setIsCreditDetailModalOpen(false)
-          setClientCredits([])
-        }}
-        credit={selectedCredit}
-        clientCredits={clientCredits}
-        onAddPayment={handlePayment}
-        onViewSale={handleViewSale}
       />
     </div>
     </RoleProtectedRoute>

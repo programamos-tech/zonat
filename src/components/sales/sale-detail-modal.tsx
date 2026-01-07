@@ -12,7 +12,6 @@ import {
   CreditCard, 
   AlertTriangle,
   Download,
-  DollarSign,
   Package,
   Eye,
   Edit
@@ -634,175 +633,105 @@ export default function SaleDetailModal({
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6 mb-4 md:mb-6">
+          <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
             
-            {/* Left Column - Sale Information */}
-            <div className="space-y-3 md:space-y-4">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
-                <Receipt className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
-                Información de la Venta
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3">
-                  <div className="grid grid-cols-2 gap-2 md:gap-3">
-                <div className="flex items-center space-x-3">
-                  <Receipt className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
-                        <div className="font-bold text-green-600 text-lg">{getInvoiceNumber(sale)}</div>
+            {/* Sale Information */}
+            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
+                  <Receipt className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
+                  Información de la Venta
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-3">
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
+                  <div className="flex items-center space-x-3">
+                    <Receipt className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
+                      <div className="font-bold text-green-600 text-lg">{getInvoiceNumber(sale)}</div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <User className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Cliente</div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{sale.clientName}</div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <User className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Cliente</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{sale.clientName}</div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <Calendar className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Fecha</div>
-                    <div className="font-semibold text-gray-900 dark:text-white">{formatDateTime(sale.createdAt)}</div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <Calendar className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Fecha</div>
+                      <div className="font-semibold text-gray-900 dark:text-white">{formatDateTime(sale.createdAt)}</div>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-3">
-                  <CreditCard className="h-5 w-5 text-green-600" />
-                  <div>
-                    <div className="text-sm text-gray-600 dark:text-gray-300">Tipo de Pago</div>
-                        <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} mt-1`}>
-                      {getPaymentMethodLabel(sale.paymentMethod)}
-                    </Badge>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Sección de Pagos Mixtos */}
-              {sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 && (
-                <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
-                  <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
-                    Desglose de Pago Mixto
-                  </h4>
-                  <div className="space-y-2">
-                    {sale.payments.map((payment, index) => (
-                      <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500">
-                        <div className="flex items-center space-x-3">
-                          <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
-                            {getPaymentMethodLabel(payment.paymentType)}
-                          </Badge>
-                          {payment.notes && (
-                            <span className="text-xs text-gray-500 dark:text-gray-400">
-                              {payment.notes}
-                            </span>
-                          )}
-                        </div>
-                        <span className="font-medium text-gray-900 dark:text-white">
-                          ${payment.amount.toLocaleString('es-CO')}
-                        </span>
-                      </div>
-                    ))}
-                    <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
-                      <div className="flex justify-between items-center font-medium">
-                        <span className="text-gray-900 dark:text-white">Total:</span>
-                        <span className="text-emerald-600 dark:text-emerald-400">
-                          ${sale.payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString('es-CO')}
-                        </span>
-                      </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <CreditCard className="h-5 w-5 text-green-600" />
+                    <div>
+                      <div className="text-sm text-gray-600 dark:text-gray-300">Tipo de Pago</div>
+                      <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} mt-1`}>
+                        {getPaymentMethodLabel(sale.paymentMethod)}
+                      </Badge>
                     </div>
                   </div>
                 </div>
-              )}
-              
-                  <div className="mt-4 pt-4 border-t border-gray-600">
+                
+                {/* Sección de Pagos Mixtos */}
+                {sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 && (
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                    <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
+                      Desglose de Pago Mixto
+                    </h4>
+                    <div className="space-y-2">
+                      {sale.payments.map((payment, index) => (
+                        <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500">
+                          <div className="flex items-center space-x-3">
+                            <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
+                              {getPaymentMethodLabel(payment.paymentType)}
+                            </Badge>
+                            {payment.notes && (
+                              <span className="text-xs text-gray-500 dark:text-gray-400">
+                                {payment.notes}
+                              </span>
+                            )}
+                          </div>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            ${payment.amount.toLocaleString('es-CO')}
+                          </span>
+                        </div>
+                      ))}
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex justify-between items-center font-medium">
+                          <span className="text-gray-900 dark:text-white">Total:</span>
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            ${sale.payments.reduce((sum, payment) => sum + payment.amount, 0).toLocaleString('es-CO')}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4 pt-4 border-t border-gray-600">
                   <div className="flex items-center space-x-3">
                     <div className="h-5 w-5 flex items-center justify-center">
                       <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600 dark:text-gray-300">Estado</div>
-                        <Badge className={`${getStatusColor(sale.status)} mt-1`}>
+                      <Badge className={`${getStatusColor(sale.status)} mt-1`}>
                         {getStatusLabel(sale.status)}
                       </Badge>
-                      </div>
                     </div>
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {/* Right Column - Financial Summary */}
-            <div className="space-y-3 md:space-y-4">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
-                    <DollarSign className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
-                    Resumen Financiero
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {/* Subtotal de productos */}
-                    <div className="flex justify-between items-center py-2">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal de productos:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(sale.items.reduce((sum, item) => {
-                          const baseTotal = item.quantity * item.unitPrice
-                          const discountAmount = item.discountType === 'percentage' 
-                            ? (baseTotal * (item.discount || 0)) / 100 
-                            : (item.discount || 0)
-                          return sum + Math.max(0, baseTotal - discountAmount)
-                        }, 0))}
-                      </span>
-                    </div>
-
-                    {/* Descuento por total */}
-                    {sale.discount && sale.discount > 0.001 && (
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">Descuento por total:</span>
-                        <span className="font-semibold text-red-500">
-                          {sale.discountType === 'percentage' 
-                            ? `-${sale.discount}%` 
-                            : `-${formatCurrency(sale.discount)}`
-                          }
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Subtotal después de descuentos */}
-                    <div className="flex justify-between items-center py-2 border-t border-gray-600 pt-3">
-                      <span className="text-gray-700 dark:text-gray-300 font-medium">Subtotal después de descuentos:</span>
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(sale.subtotal)}
-                      </span>
-                    </div>
-
-                    {/* IVA */}
-                    {sale.tax && sale.tax > 0 && (
-                      <div className="flex justify-between items-center py-2">
-                        <span className="text-gray-700 dark:text-gray-300 font-medium">IVA (19%):</span>
-                        <span className="font-semibold text-green-500">
-                          {formatCurrency(sale.tax)}
-                        </span>
-                      </div>
-                    )}
-
-                    {/* Total Final */}
-                    <div className="flex justify-between items-center py-3 border-t-2 border-emerald-500 pt-4">
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">Total Final:</span>
-                      <span className="text-2xl font-bold text-emerald-400">
-                        {formatCurrency(sale.total)}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
                 </div>
-              </div>
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Products Table - Full Width */}
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm mt-3 md:mt-4">

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -9,40 +10,19 @@ import {
   Plus,
   Search,
   Eye,
-  DollarSign,
   Calendar,
   User,
-  FileText,
   CheckCircle,
   Clock,
   AlertCircle,
   XCircle,
-  RefreshCcw
+  RefreshCcw,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 import { Credit } from '@/types'
 
 // Funciones para manejar estados
-const getStatusColor = (status: string, credit?: any) => {
-  // Si el crédito está cancelado (montos en 0), usar color rojo
-  if (isCreditCancelled(credit)) {
-    return 'bg-red-100 text-red-800 border-red-200'
-  }
-  
-  switch (status) {
-    case 'completed':
-      return 'bg-green-100 text-green-800 border-green-200'
-    case 'partial':
-      return 'bg-orange-100 text-orange-800 border-orange-200'
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200'
-    case 'overdue':
-      return 'bg-red-100 text-red-800 border-red-200'
-    case 'cancelled':
-      return 'bg-red-100 text-red-800 border-red-200'
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200'
-  }
-}
 
 const getStatusIcon = (status: string, credit?: any) => {
   // Si el crédito está cancelado (montos en 0), usar ícono X
@@ -98,16 +78,18 @@ const getStatusText = (status: string, credit?: any) => {
 interface CreditTableProps {
   credits: Credit[]
   onView: (credit: Credit) => void
-  onPayment: (credit: Credit) => void
   onCreate: () => void
   isLoading?: boolean
   onRefresh?: () => void
   todayPaymentsTotal?: number
 }
 
-export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = false, onRefresh, todayPaymentsTotal }: CreditTableProps) {
+export function CreditTable({ credits, onView, onCreate, isLoading = false, onRefresh, todayPaymentsTotal }: CreditTableProps) {
+  const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 10
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -158,6 +140,29 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
     return count
   }
 
+
+  const totalDebt = credits
+    .filter(credit => credit.status !== 'cancelled')
+    .reduce((sum, credit) => sum + credit.pendingAmount, 0)
+
+  const filteredCredits = credits.filter(credit => {
+    const matchesSearch = credit.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         credit.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesStatus = filterStatus === 'all' || credit.status === filterStatus
+    return matchesSearch && matchesStatus
+  })
+
+  // Calcular paginación
+  const totalPages = Math.ceil(filteredCredits.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedCredits = filteredCredits.slice(startIndex, endIndex)
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
+
   const getStatusColor = (status: string, credit?: any) => {
     // Si el crédito está cancelado (montos en 0), usar color rojo
     if (isCreditCancelled(credit)) {
@@ -201,17 +206,6 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
         return status
     }
   }
-
-  const totalDebt = credits
-    .filter(credit => credit.status !== 'cancelled')
-    .reduce((sum, credit) => sum + credit.pendingAmount, 0)
-
-  const filteredCredits = credits.filter(credit => {
-    const matchesSearch = credit.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         credit.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || credit.status === filterStatus
-    return matchesSearch && matchesStatus
-  })
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -280,21 +274,27 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
       {/* Search and Filters */}
       <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col gap-2 md:gap-4">
+          <div className="flex flex-col md:flex-row gap-2 md:gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Buscar crédito..."
+                placeholder="Buscar por cliente o número de factura..."
                 value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value)
+                  setCurrentPage(1)
+                }}
                 className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <select
               value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              onChange={(e) => {
+                setFilterStatus(e.target.value)
+                setCurrentPage(1)
+              }}
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 md:w-auto w-full"
             >
               <option value="all">Todos los estados</option>
               <option value="pending">Pendiente</option>
@@ -334,7 +334,8 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
             <>
               {/* Vista de Tarjetas para Mobile */}
               <div className="md:hidden space-y-3 p-3">
-                {filteredCredits.map((credit, index) => {
+                {paginatedCredits.map((credit, index) => {
+                  const globalIndex = startIndex + index
                   return (
                     <div
                       key={credit.id}
@@ -343,7 +344,7 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
+                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{globalIndex + 1}</span>
                             <CreditCard className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                             <span className="text-xs font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
                               {credit.invoiceNumber}
@@ -405,19 +406,6 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onPayment(credit)}
-                            disabled={credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1}
-                            className={`h-8 w-8 p-0 active:scale-95 ${
-                              credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1
-                                ? 'text-gray-400 cursor-not-allowed opacity-50' 
-                                : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
-                            }`}
-                          >
-                            <DollarSign className="h-4 w-4" />
-                          </Button>
                         </div>
                       </div>
                     </div>
@@ -425,124 +413,127 @@ export function CreditTable({ credits, onView, onPayment, onCreate, isLoading = 
                 })}
               </div>
 
-              {/* Vista de Tabla para Desktop */}
-              <div className="hidden md:block overflow-x-auto credits-table-tablet-container">
-                <table className="w-full table-fixed md:table-auto lg:table-fixed credits-table-tablet">
-                <thead className="bg-gray-50 dark:bg-gray-700">
-                  <tr>
-                    <th className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Factura
-                    </th>
-                    <th className="px-2 md:px-3 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Cliente
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Estado
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                      Total Compra
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Saldo Pendiente
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                      Último Abono
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                      Registrado Por
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider hidden lg:table-cell">
-                      Fecha Vencimiento
-                    </th>
-                    <th className="px-1 md:px-2 py-3 md:py-4 text-right text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                      Acciones
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                  {filteredCredits.map((credit) => (
-                    <tr key={credit.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
-                      <td className="pl-3 md:pl-4 pr-1 md:pr-2 py-3 md:py-5">
-                        <div className="flex items-center gap-2">
-                          <CreditCard className="h-4 w-4 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                          <div className="text-xs md:text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 truncate" title={credit.invoiceNumber}>
+              {/* Vista de Cards para Desktop */}
+              <div className="hidden md:block space-y-4 p-4 md:p-6">
+                {paginatedCredits.map((credit) => {
+                  return (
+                    <div key={credit.id}>
+                      {/* Card Principal */}
+                      <Card 
+                        className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => {
+                          // Navegar a la página del cliente
+                          router.push(`/payments/${credit.clientId}`)
+                        }}
+                      >
+                        <CardContent className="p-4 md:p-6">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-3 mb-2">
+                                <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                                <div>
+                                  <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                             {credit.invoiceNumber}
                           </div>
-                        </div>
-                      </td>
-                      <td className="px-2 md:px-3 py-3 md:py-5">
-                        <div className="text-xs md:text-sm font-medium text-gray-900 dark:text-white truncate max-w-full" title={credit.clientName}>
+                                  <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
                           {credit.clientName}
                         </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5">
-                        <Badge className={`${getStatusColor(credit.status, credit)} flex items-center gap-1 w-fit text-xs`}>
-                          {getStatusIcon(credit.status, credit)}
-                          <span className="hidden sm:inline">{getStatusLabel(credit.status, credit)}</span>
-                        </Badge>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
-                        <div className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">
+                                </div>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
                           {formatCurrency(credit.totalAmount)}
                         </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 text-right">
-                        <div className={`text-xs md:text-sm font-semibold ${credit.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pendiente</div>
+                                  <div className={`text-base font-semibold ${credit.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
                           {formatCurrency(credit.pendingAmount)}
                         </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
-                        <div className="text-xs md:text-sm text-gray-900 dark:text-white">
-                          {credit.lastPaymentAmount ? formatCurrency(credit.lastPaymentAmount) : '-'}
-                        </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
-                        <div className="text-xs md:text-sm text-gray-600 dark:text-gray-300 truncate" title={credit.lastPaymentUser || credit.createdByName || '-'}>
-                          {credit.lastPaymentUser || credit.createdByName || '-'}
-                        </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 hidden lg:table-cell">
-                        <div className={`text-xs md:text-sm ${credit.status === 'completed' ? 'text-green-600 dark:text-green-400 font-bold' : (credit.dueDate ? getDueDateColor(credit.dueDate) : 'text-gray-600 dark:text-gray-300')}`}>
-                          {credit.status === 'completed' ? 'Completado' : (credit.dueDate ? formatDate(credit.dueDate) : '-')}
-                        </div>
-                      </td>
-                      <td className="px-1 md:px-2 py-3 md:py-5 text-right">
-                        <div className="flex items-center justify-end gap-1 md:gap-2">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onView(credit)}
-                            className="h-7 w-7 md:h-8 md:w-8 p-0 text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100 active:scale-95 touch-manipulation"
-                            title="Ver detalles"
-                          >
-                            <Eye className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onPayment(credit)}
-                            disabled={credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1}
-                            className={`h-7 w-7 md:h-8 md:w-8 p-0 active:scale-95 touch-manipulation ${
-                              credit.status === 'cancelled' || isCreditCancelled(credit) || getInvoiceCount(credit.invoiceNumber) > 1
-                                ? 'text-gray-400 cursor-not-allowed opacity-50' 
-                                : 'text-yellow-600 hover:text-yellow-900 dark:text-yellow-400 dark:hover:text-yellow-100'
-                            }`}
-                            title={
-                              credit.status === 'cancelled' || isCreditCancelled(credit)
-                                ? 'Crédito anulado' 
-                                : getInvoiceCount(credit.invoiceNumber) > 1 
-                                  ? 'Más de 1 factura - Use el detalle para registrar abonos'
-                                  : 'Registrar abono'
-                            }
-                          >
-                            <DollarSign className="h-3.5 w-3.5 md:h-4 md:w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                                </div>
+                                <div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado</div>
+                                  <Badge className={`${getStatusColor(credit.status, credit)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                    {getStatusIcon(credit.status, credit)}
+                                    {getStatusLabel(credit.status, credit)}
+                                  </Badge>
+                                </div>
+                                {credit.dueDate && (
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Vencimiento</div>
+                                    <div className={`text-base font-semibold ${getDueDateColor(credit.dueDate)}`}>
+                                      {formatDate(credit.dueDate)}
+                                    </div>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )
+                })}
+
+                {/* Paginación */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="h-7 w-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronLeft className="h-3.5 w-3.5" />
+                    </button>
+                    
+                    <div className="flex items-center gap-0.5">
+                      {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                        // Mostrar siempre las primeras 2 páginas, la última, y las páginas alrededor de la actual
+                        if (
+                          page === 1 ||
+                          page === 2 ||
+                          page === totalPages ||
+                          (page >= currentPage - 1 && page <= currentPage + 1)
+                        ) {
+                          return (
+                            <button
+                              key={page}
+                              onClick={() => goToPage(page)}
+                              className={`h-7 w-7 flex items-center justify-center rounded-md text-sm transition-colors ${
+                                currentPage === page
+                                  ? 'bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400 font-medium'
+                                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
+                              }`}
+                            >
+                              {page}
+                            </button>
+                          )
+                        } else if (
+                          page === currentPage - 2 ||
+                          page === currentPage + 2
+                        ) {
+                          return (
+                            <span key={page} className="px-1 text-gray-400 dark:text-gray-500 text-sm">
+                              ...
+                            </span>
+                          )
+                        }
+                        return null
+                      })}
+                    </div>
+                    
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages}
+                      className="h-7 w-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                    >
+                      <ChevronRight className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                )}
               </div>
             </>
           )}

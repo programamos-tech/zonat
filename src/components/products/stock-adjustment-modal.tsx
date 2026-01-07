@@ -109,8 +109,8 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-4xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:p-6">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -243,13 +243,13 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       const numericValue = parseFormattedNumber(e.target.value)
                       handleInputChange('newQuantity', numericValue)
                     }}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
                       errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Ingrese la nueva cantidad"
                   />
                   {errors.newQuantity && (
-                    <p className="mt-1 text-sm text-red-500">{errors.newQuantity}</p>
+                    <p className="mt-1 text-sm text-red-400">{errors.newQuantity}</p>
                   )}
                 </div>
 
@@ -261,7 +261,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <textarea
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 ${
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
                       errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
                     }`}
                     placeholder="Ej: Inventario físico, producto dañado, corrección de error... (opcional)"
@@ -269,7 +269,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   />
                   <div className="mt-1 flex justify-between items-center">
                     {errors.reason && (
-                      <p className="text-sm text-red-500">{errors.reason}</p>
+                      <p className="text-sm text-red-400">{errors.reason}</p>
                     )}
                     <span className={`text-xs ml-auto ${formData.reason.length > 0 && formData.reason.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
                       {formData.reason.length > 0 ? `${formData.reason.length}/10 caracteres mínimo` : 'Campo opcional'}

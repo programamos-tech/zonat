@@ -1435,4 +1435,164 @@ export class SalesService {
       throw error
     }
   }
+
+  // Obtener todas las ventas de un producto específico
+  static async getSalesByProductId(productId: string, startDate?: Date): Promise<Sale[]> {
+    try {
+      // Obtener los IDs de ventas que contienen este producto
+      const { data: saleItems, error: itemsError } = await supabase
+        .from('sale_items')
+        .select('sale_id')
+        .eq('product_id', productId)
+
+      if (itemsError) {
+        console.error('Error obteniendo sale_items:', itemsError)
+        return []
+      }
+
+      if (!saleItems || saleItems.length === 0) {
+        return []
+      }
+
+      // Obtener los IDs de ventas únicos
+      const saleIds = [...new Set(saleItems.map((item: any) => item.sale_id))]
+      
+      if (saleIds.length === 0) {
+        return []
+      }
+
+      // Supabase tiene un límite en .in(), así que dividimos en lotes si es necesario
+      const batchSize = 100
+      const batches: string[][] = []
+      for (let i = 0; i < saleIds.length; i += batchSize) {
+        batches.push(saleIds.slice(i, i + batchSize))
+      }
+
+      // Obtener todas las ventas en lotes
+      const allSalesData: any[] = []
+      for (const batch of batches) {
+        let salesQuery = supabase
+          .from('sales')
+          .select(`
+            *,
+            sale_items (
+              id,
+              product_id,
+              product_name,
+              product_reference_code,
+              quantity,
+              unit_price,
+              discount,
+              discount_type,
+              total
+            ),
+            sale_payments (
+              id,
+              sale_id,
+              payment_type,
+              amount,
+              created_at
+            )
+          `)
+          .in('id', batch)
+        
+        // Si hay una fecha de inicio, filtrar por fecha
+        if (startDate) {
+          salesQuery = salesQuery.gte('created_at', startDate.toISOString())
+        }
+        
+        const { data: salesData, error: salesError } = await salesQuery
+          .order('created_at', { ascending: false })
+
+        if (salesError) {
+          console.error('Error obteniendo ventas (batch):', salesError)
+          continue // Continuar con el siguiente lote aunque este falle
+        }
+
+        if (salesData) {
+          allSalesData.push(...salesData)
+        }
+      }
+
+      if (allSalesData.length === 0) {
+        return []
+      }
+
+      // Mapear las ventas al formato Sale
+      const sales = await Promise.all(
+        allSalesData.map(async (sale: any) => {
+          // Obtener referencias de productos si no están en sale_items
+          const itemsWithReferences = await Promise.all(
+            (sale.sale_items || []).map(async (item: any) => {
+              let productReference = item.product_reference_code
+              
+              if (!productReference || productReference === 'N/A' || productReference === null) {
+                try {
+                  const { data: product } = await supabase
+                    .from('products')
+                    .select('reference')
+                    .eq('id', item.product_id)
+                    .single()
+                  
+                  productReference = product?.reference || 'N/A'
+                } catch (error) {
+                  productReference = 'N/A'
+                }
+              }
+              
+              return {
+                id: item.id,
+                productId: item.product_id,
+                productName: item.product_name,
+                productReferenceCode: productReference,
+                quantity: item.quantity,
+                unitPrice: item.unit_price,
+                discount: item.discount || 0,
+                discountType: item.discount_type || 'amount',
+                tax: item.tax || 0,
+                total: item.total
+              }
+            })
+          )
+
+          return {
+            id: sale.id,
+            clientId: sale.client_id,
+            clientName: sale.client_name,
+            total: sale.total,
+            subtotal: sale.subtotal,
+            tax: sale.tax,
+            discount: sale.discount,
+            discountType: sale.discount_type || 'amount',
+            status: sale.status,
+            paymentMethod: sale.payment_method,
+            invoiceNumber: sale.invoice_number,
+            sellerId: sale.seller_id,
+            sellerName: sale.seller_name || '',
+            sellerEmail: sale.seller_email || '',
+            createdAt: sale.created_at,
+            items: itemsWithReferences,
+            payments: sale.sale_payments?.map((payment: any) => ({
+              id: payment.id,
+              saleId: payment.sale_id,
+              paymentType: payment.payment_type,
+              amount: payment.amount,
+              createdAt: payment.created_at,
+              updatedAt: payment.updated_at || payment.created_at
+            })) || []
+          }
+        })
+      )
+
+      // Filtrar solo las ventas que tienen el producto
+      const salesWithProduct = sales.filter(sale => {
+        return sale.items?.some(item => item.productId === productId) || false
+      }) as Sale[]
+
+      return salesWithProduct
+    } catch (error) {
+      console.error('Error en getSalesByProductId:', error)
+      return []
+    }
+  }
 }

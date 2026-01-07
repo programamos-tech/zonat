@@ -103,7 +103,10 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
               
-              const isActive = pathname === item.href
+              // Para créditos y productos, también considerar activo si la ruta empieza con el href
+              const isActive = pathname === item.href || 
+                (item.href === '/payments' && pathname?.startsWith('/payments')) ||
+                (item.href === '/products' && pathname?.startsWith('/products'))
               return (
                 <Link
                   key={item.name}
