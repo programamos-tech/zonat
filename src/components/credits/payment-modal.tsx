@@ -91,11 +91,14 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
     }
 
     if (formData.paymentMethod === 'cash') {
-      const receivedValue = parseFormattedNumber(formData.receivedAmount)
-      if (!formData.receivedAmount || receivedValue <= 0) {
-        errors.receivedAmount = 'El monto recibido debe ser mayor a 0'
-      } else if (receivedValue < amountValue) {
-        errors.receivedAmount = 'El monto recibido no puede ser menor al monto del abono'
+      // El monto recibido es opcional, pero si se ingresa debe ser válido
+      if (formData.receivedAmount) {
+        const receivedValue = parseFormattedNumber(formData.receivedAmount)
+        if (receivedValue <= 0) {
+          errors.receivedAmount = 'El monto recibido debe ser mayor a 0'
+        } else if (receivedValue < amountValue) {
+          errors.receivedAmount = 'El monto recibido no puede ser menor al monto del abono'
+        }
       }
     }
 
@@ -110,10 +113,13 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
       if (!formData.transferAmount || transferValue <= 0) {
         errors.transferAmount = 'El monto por transferencia debe ser mayor a 0'
       }
-      if (!formData.receivedAmount || receivedValue <= 0) {
-        errors.receivedAmount = 'El monto recibido en efectivo debe ser mayor a 0'
-      } else if (receivedValue < cashValue) {
-        errors.receivedAmount = 'El monto recibido no puede ser menor al monto en efectivo'
+      // El monto recibido es opcional, pero si se ingresa debe ser válido
+      if (formData.receivedAmount) {
+        if (receivedValue <= 0) {
+          errors.receivedAmount = 'El monto recibido en efectivo debe ser mayor a 0'
+        } else if (receivedValue < cashValue) {
+          errors.receivedAmount = 'El monto recibido no puede ser menor al monto en efectivo'
+        }
       }
       
       const totalMixed = cashValue + transferValue
@@ -339,7 +345,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                 {(formData.paymentMethod === 'cash' || formData.paymentMethod === 'mixed') && (
                   <div>
                     <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {formData.paymentMethod === 'cash' ? 'Monto Recibido' : 'Monto Recibido en Efectivo'} *
+                      {formData.paymentMethod === 'cash' ? 'Monto Recibido' : 'Monto Recibido en Efectivo'} (Opcional)
                     </label>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">
                       Ingresa el monto que recibiste del cliente para calcular el vuelto
