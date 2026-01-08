@@ -18,7 +18,6 @@ export default function CreditsPage() {
   const [selectedCredit, setSelectedCredit] = useState<Credit | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [initialSearch, setInitialSearch] = useState('')
-  const [paymentRecords, setPaymentRecords] = useState<PaymentRecord[]>([])
 
   // Cargar créditos al montar el componente
   useEffect(() => {
@@ -52,9 +51,8 @@ export default function CreditsPage() {
   const loadCredits = async () => {
     try {
       setIsLoading(true)
+      // Solo cargar créditos - no cargar payment records aquí (se cargarán cuando se necesiten)
       const creditsData = await CreditsService.getAllCredits()
-      const paymentRecordsData = await CreditsService.getAllPaymentRecords()
-      setPaymentRecords(paymentRecordsData)
       
       // Agrupar créditos por cliente
       const groupedCredits = creditsData.reduce((acc, credit) => {

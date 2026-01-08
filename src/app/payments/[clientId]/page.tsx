@@ -58,46 +58,8 @@ export default function ClientCreditsPage() {
         setClientName(creditsData[0].clientName)
       }
 
-      // Cargar historial de pagos y ventas para cada crédito
-      const historyPromises = creditsData.map(async (credit) => {
-        try {
-          const history = await CreditsService.getPaymentHistory(credit.id)
-          return { creditId: credit.id, history }
-        } catch (error) {
-          return { creditId: credit.id, history: [] }
-        }
-      })
-
-      const salesPromises = creditsData.map(async (credit) => {
-        try {
-          if (credit.saleId) {
-            const sale = await SalesService.getSaleById(credit.saleId)
-            return { creditId: credit.id, sale }
-          }
-          return { creditId: credit.id, sale: null }
-        } catch (error) {
-          return { creditId: credit.id, sale: null }
-        }
-      })
-
-      const [histories, salesData] = await Promise.all([
-        Promise.all(historyPromises),
-        Promise.all(salesPromises)
-      ])
-
-      const historyMap: Record<string, PaymentRecord[]> = {}
-      histories.forEach(({ creditId, history }) => {
-        historyMap[creditId] = history
-      })
-      setPaymentHistory(historyMap)
-
-      const salesMap: Record<string, Sale> = {}
-      salesData.forEach(({ creditId, sale }) => {
-        if (sale) {
-          salesMap[creditId] = sale
-        }
-      })
-      setSales(salesMap)
+      // NO cargar historial y ventas aquí - se cargarán de forma lazy cuando se expanda cada crédito
+      // Esto mejora significativamente el rendimiento inicial
     } catch (error) {
       // Error silencioso en producción
       setCredits([])
@@ -113,24 +75,48 @@ export default function ClientCreditsPage() {
         newSet.delete(creditId)
       } else {
         newSet.add(creditId)
-        // Cargar historial si no está cargado
-        if (!paymentHistory[creditId]) {
-          loadPaymentHistory(creditId)
-        }
+        // Cargar datos de forma lazy solo cuando se expande
+        loadCreditDetails(creditId)
       }
       return newSet
     })
   }
 
-  const loadPaymentHistory = async (creditId: string) => {
+  // Cargar datos de un crédito de forma lazy cuando se expande
+  const loadCreditDetails = async (creditId: string) => {
+    // Si ya tenemos los datos, no cargar de nuevo
+    if (paymentHistory[creditId] !== undefined) {
+      return
+    }
+
     try {
-      const history = await CreditsService.getPaymentHistory(creditId)
+      const credit = credits.find(c => c.id === creditId)
+      if (!credit) return
+
+      // Cargar historial y venta en paralelo solo para este crédito
+      const [history, sale] = await Promise.all([
+        CreditsService.getPaymentHistory(creditId).catch(() => []),
+        credit.saleId ? SalesService.getSaleById(credit.saleId).catch(() => null) : Promise.resolve(null)
+      ])
+
+      // Actualizar solo los datos de este crédito
       setPaymentHistory(prev => ({
         ...prev,
         [creditId]: history
       }))
+
+      if (sale) {
+        setSales(prev => ({
+          ...prev,
+          [creditId]: sale
+        }))
+      }
     } catch (error) {
-      // Error silencioso en producción
+      // Error silencioso - establecer arrays vacíos
+      setPaymentHistory(prev => ({
+        ...prev,
+        [creditId]: []
+      }))
     }
   }
 

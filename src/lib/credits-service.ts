@@ -538,12 +538,29 @@ export class CreditsService {
 
     if (paymentsError) throw paymentsError
 
-    if (!payments || payments.length === 0) {
+    // Si no hay payments, intentar buscar directamente por sale_id si el crédito tiene uno
+    let paymentIds: string[] = []
+    
+    if (payments && payments.length > 0) {
+      paymentIds = payments.map(p => p.id)
+    } else if (credit.saleId) {
+      // Para créditos antiguos, intentar buscar por sale_id
+      const { data: paymentsBySale, error: salePaymentsError } = await supabase
+        .from('payments')
+        .select('id')
+        .eq('sale_id', credit.saleId)
+      
+      if (!salePaymentsError && paymentsBySale && paymentsBySale.length > 0) {
+        paymentIds = paymentsBySale.map(p => p.id)
+      }
+    }
+
+    if (paymentIds.length === 0) {
       return [] // No hay pagos registrados
     }
 
     // Obtener los registros de pago para estos payments
-    const paymentIds = payments.map(p => p.id)
+    // Incluir solo los activos (no cancelados) por defecto, pero también incluir cancelados para historial completo
     const { data, error } = await supabase
       .from('payment_records')
       .select('*')
@@ -551,6 +568,10 @@ export class CreditsService {
       .order('payment_date', { ascending: false })
 
     if (error) throw error
+
+    if (!data || data.length === 0) {
+      return []
+    }
 
     return data.map(payment => ({
       id: payment.id,
@@ -563,6 +584,11 @@ export class CreditsService {
       description: payment.description,
       userId: payment.user_id,
       userName: payment.user_name,
+      status: payment.status || 'active',
+      cancelledAt: payment.cancelled_at,
+      cancelledBy: payment.cancelled_by,
+      cancelledByName: payment.cancelled_by_name,
+      cancellationReason: payment.cancellation_reason,
       createdAt: payment.created_at
     }))
   }

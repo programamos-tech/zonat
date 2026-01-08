@@ -34,30 +34,29 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   const [paymentHistory, setPaymentHistory] = useState<PaymentRecord[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [selectedCreditId, setSelectedCreditId] = useState<string>('')
+  const [loadedCreditId, setLoadedCreditId] = useState<string>('') // Track qué crédito ya cargamos
 
   // Obtener el crédito actualmente seleccionado
   const currentCredit = clientCredits.find(c => c.id === selectedCreditId) || credit
 
   useEffect(() => {
     if (isOpen && credit) {
-      // Inicializar el crédito seleccionado
-
       setSelectedCreditId(credit.id)
+    } else if (!isOpen) {
+      // Limpiar cuando se cierra el modal
+      setPaymentHistory([])
+      setLoadedCreditId('')
     }
   }, [isOpen, credit])
   
-  // Log cuando cambia currentCredit
   useEffect(() => {
-    if (currentCredit) {
-
+    if (isOpen && currentCredit && currentCredit.id) {
+      // Solo cargar si no hemos cargado este crédito antes
+      if (loadedCreditId !== currentCredit.id) {
+        loadPaymentHistory()
+      }
     }
-  }, [currentCredit])
-  
-  useEffect(() => {
-    if (isOpen && currentCredit) {
-      loadPaymentHistory()
-    }
-  }, [isOpen, currentCredit])
+  }, [isOpen, currentCredit?.id, loadedCreditId])
 
   // Forzar re-render cuando cambie la selección
   useEffect(() => {
@@ -69,15 +68,20 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
   }, [selectedCreditId, clientCredits])
 
   const loadPaymentHistory = async () => {
-    if (!currentCredit) return
+    if (!currentCredit || !currentCredit.id) return
+    
+    // Si ya cargamos este crédito, no cargar de nuevo
+    if (loadedCreditId === currentCredit.id) return
     
     setIsLoading(true)
     try {
       const history = await CreditsService.getPaymentHistory(currentCredit.id)
       setPaymentHistory(history)
+      setLoadedCreditId(currentCredit.id) // Marcar como cargado
     } catch (error) {
       // Error silencioso en producción
       setPaymentHistory([])
+      setLoadedCreditId(currentCredit.id) // Marcar como intentado para evitar loops
     } finally {
       setIsLoading(false)
     }
