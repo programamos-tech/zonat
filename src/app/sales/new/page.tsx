@@ -379,29 +379,22 @@ export default function NewSalePage() {
     return (product.stock.store || 0) + (product.stock.warehouse || 0)
   }
 
+  // Productos válidos para mostrar (incluye precio 0)
   const validProducts = useMemo(() => {
-    // Filtrar productos válidos: cantidad > 0 y precio > 0
+    // Filtrar productos válidos: cantidad > 0 (precio puede ser 0 para mostrarlos)
     const filtered = selectedProducts.filter(item => {
       // Validaciones básicas
       if (!item || !item.productId) {
-        console.log('❌ Item inválido (sin productId):', item)
         return false
       }
       if (item.quantity <= 0) {
-        console.log('❌ Item con cantidad <= 0:', item)
         return false
       }
-      if (!item.unitPrice || item.unitPrice <= 0) {
-        console.log('❌ Item con precio <= 0:', item)
-        return false
-      }
+      // Permitir precio 0 para mostrarlos, pero no para calcular total
       return true
     })
     
-    console.log('✅ Productos válidos encontrados:', filtered.length, 'de', selectedProducts.length)
-    console.log('📦 Productos:', filtered.map(p => ({ name: p.productName, qty: p.quantity, price: p.unitPrice, total: p.total })))
-    
-    // Recalcular el total para todos los productos válidos
+    // Recalcular el total para todos los productos (precio 0 = total 0)
     return filtered.map(item => {
       const calculatedTotal = (item.unitPrice || 0) * (item.quantity || 0)
       return { 
@@ -410,6 +403,13 @@ export default function NewSalePage() {
       }
     })
   }, [selectedProducts])
+
+  // Productos válidos para calcular total (excluye precio 0)
+  const validProductsForTotal = useMemo(() => {
+    return validProducts.filter(item => {
+      return item.unitPrice > 0
+    })
+  }, [validProducts])
 
   const orderedValidProducts = useMemo(() => {
     return [...validProducts].sort((a, b) => 
@@ -424,12 +424,12 @@ export default function NewSalePage() {
   }, [selectedProducts])
 
   const subtotal = useMemo(() => {
-    const calculated = validProducts.reduce((sum, item) => {
+    const calculated = validProductsForTotal.reduce((sum, item) => {
       const itemTotal = (item.unitPrice || 0) * (item.quantity || 0)
       return sum + itemTotal
     }, 0)
     return calculated
-  }, [validProducts])
+  }, [validProductsForTotal])
 
   const tax = useMemo(() => {
     return includeTax ? subtotal * 0.19 : 0
@@ -520,6 +520,20 @@ export default function NewSalePage() {
   const handleSave = async () => {
     if (!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod) return
 
+    // Verificar que todos los productos tengan precio > 0
+    const productsWithoutPrice: string[] = []
+    validProducts.forEach(item => {
+      if (!item.unitPrice || item.unitPrice <= 0) {
+        productsWithoutPrice.push(item.productName)
+      }
+    })
+
+    if (productsWithoutPrice.length > 0) {
+      alert(`Los siguientes productos no tienen precio asignado:\n${productsWithoutPrice.join(', ')}\n\nPor favor, asigna un precio a todos los productos antes de crear la venta.`)
+      return
+    }
+
+    // Verificar que los precios sean mayores o iguales al costo
     const invalidProducts: string[] = []
     validProducts.forEach(item => {
       const product = findProductById(item.productId)
@@ -530,7 +544,7 @@ export default function NewSalePage() {
     })
 
     if (invalidProducts.length > 0) {
-      alert(`El precio debe ser mayor. ${invalidProducts.join(', ')}`)
+      alert(`El precio debe ser mayor o igual al costo. ${invalidProducts.join(', ')}`)
       return
     }
 
@@ -546,7 +560,8 @@ export default function NewSalePage() {
       }
     }
 
-    const saleItems = validProducts.map(({ addedAt, ...item }) => item)
+    // Usar solo productos con precio > 0 para crear la venta
+    const saleItems = validProductsForTotal.map(({ addedAt, ...item }) => item)
 
     const saleData: Omit<Sale, 'id' | 'createdAt'> = {
       clientId: selectedClient.id,
@@ -584,33 +599,31 @@ export default function NewSalePage() {
   return (
     <RoleProtectedRoute module="sales" requiredAction="create">
       <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-        {/* Header Fijo */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => router.push('/sales')}
-                  className="h-9 w-9 p-0"
-                >
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-lg bg-green-600 dark:bg-green-700 flex items-center justify-center">
-                    <Calculator className="h-5 w-5 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-xl font-bold text-gray-900 dark:text-white">
-                      Nueva Venta
-                    </h1>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {invoiceNumber}
-                    </p>
-                  </div>
-                </div>
+        {/* Header Fijo - Compacto */}
+        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+          <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-2">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => router.push('/sales')}
+                className="h-8 w-8 p-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+              <div className="h-8 w-8 rounded-lg bg-green-600 dark:bg-green-700 flex items-center justify-center flex-shrink-0">
+                <Calculator className="h-4 w-4 text-white" />
               </div>
+              <div className="flex-1 min-w-0">
+                <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+                  Factura de Venta
+                </h1>
+              </div>
+              {invoiceNumber !== 'Pendiente' && invoiceNumber !== 'Generando...' && (
+                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
+                  {invoiceNumber}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1093,17 +1106,30 @@ export default function NewSalePage() {
                   ) : (
                     <>
                       <div className="space-y-2 max-h-64 overflow-y-auto">
-                        {orderedValidProducts.map((item) => (
-                          <div key={item.id} className="flex justify-between text-sm py-1.5 border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{item.productName}</div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {item.quantity} x {formatCurrency(item.unitPrice)}
+                        {orderedValidProducts.map((item) => {
+                          const hasPrice = item.unitPrice > 0
+                          return (
+                            <div key={item.id} className={`flex justify-between text-sm py-1.5 border-b border-gray-200 dark:border-gray-700 last:border-b-0 ${!hasPrice ? 'opacity-60' : ''}`}>
+                              <div className="flex-1 min-w-0">
+                                <div className={`font-medium truncate flex items-center gap-2 ${!hasPrice ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                                  {item.productName}
+                                  {!hasPrice && (
+                                    <span className="flex items-center gap-1 text-xs">
+                                      <AlertTriangle className="h-3 w-3" />
+                                      Sin precio
+                                    </span>
+                                  )}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {item.quantity} x {formatCurrency(item.unitPrice || 0)}
+                                </div>
+                              </div>
+                              <div className={`font-semibold ml-2 ${!hasPrice ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                                {formatCurrency(item.total)}
                               </div>
                             </div>
-                            <div className="font-semibold ml-2">{formatCurrency(item.total)}</div>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
 
                       <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-700">
@@ -1139,13 +1165,25 @@ export default function NewSalePage() {
                       <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
                         <Button
                           onClick={handleSave}
-                          disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
+                          disabled={
+                            !selectedClient || 
+                            selectedProducts.length === 0 || 
+                            validProducts.length === 0 || 
+                            !paymentMethod ||
+                            validProducts.some(item => !item.unitPrice || item.unitPrice <= 0)
+                          }
                           className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                           size="lg"
                         >
                           <ShoppingCart className="h-5 w-5 mr-2" />
                           Crear Venta
                         </Button>
+                        {validProducts.some(item => !item.unitPrice || item.unitPrice <= 0) && (
+                          <div className="flex items-center justify-center gap-2 text-xs text-orange-600 dark:text-orange-400 mt-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            <span>Asigna un precio a todos los productos para continuar</span>
+                          </div>
+                        )}
                       </div>
                     </>
                   )}

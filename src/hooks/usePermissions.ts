@@ -10,12 +10,29 @@ export function usePermissions() {
     if (!currentUser) return false
     
     // Super admin tiene todos los permisos
-    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') return true
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin' || currentUser.role === 'Super Administrador') return true
 
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
-    // Verificar que el usuario tenga permisos
+    // Verificar permisos basados en rol si no hay permisos explícitos
+    const normalizedRole = (currentUser.role || '').toLowerCase().trim()
+    
+    // Vendedores tienen permisos específicos por defecto
+    if (normalizedRole === 'vendedor' || normalizedRole === 'vendedora') {
+      if (module === 'sales' && (action === 'view' || action === 'create' || action === 'edit')) return true
+      if (module === 'payments' && (action === 'view' || action === 'create' || action === 'edit')) return true
+      if (module === 'clients' && (action === 'view' || action === 'create' || action === 'edit')) return true
+      if (module === 'products' && action === 'view') return true
+    }
+    
+    // Admin tiene permisos específicos
+    if (normalizedRole === 'admin' || normalizedRole === 'administrador') {
+      if (module === 'sales' && (action === 'view' || action === 'create' || action === 'edit')) return true
+      if (module === 'payments' && (action === 'view' || action === 'create' || action === 'edit')) return true
+    }
+    
+    // Verificar que el usuario tenga permisos explícitos
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return false
     
     // Buscar el módulo en los permisos del usuario
