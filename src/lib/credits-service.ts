@@ -529,38 +529,68 @@ export class CreditsService {
       throw new Error('Crédito no encontrado')
     }
 
-    // Buscar en payments por invoice_number y client_id
-    const { data: payments, error: paymentsError } = await supabase
-      .from('payments')
-      .select('id')
-      .eq('invoice_number', credit.invoiceNumber)
-      .eq('client_id', credit.clientId)
+    // Normalizar invoice_number para búsqueda (remover # si existe)
+    const normalizedInvoiceNumber = credit.invoiceNumber?.replace(/^#/, '') || ''
+    const invoiceWithHash = `#${normalizedInvoiceNumber}`
+    const invoiceWithoutHash = normalizedInvoiceNumber
 
-    if (paymentsError) throw paymentsError
-
-    // Si no hay payments, intentar buscar directamente por sale_id si el crédito tiene uno
-    let paymentIds: string[] = []
+    // Buscar en payments por múltiples criterios para encontrar todos los abonos
+    // 1. Por invoice_number exacto (con y sin #)
+    // 2. Por client_id
+    // 3. Por sale_id si existe
     
-    if (payments && payments.length > 0) {
-      paymentIds = payments.map(p => p.id)
-    } else if (credit.saleId) {
-      // Para créditos antiguos, intentar buscar por sale_id
-      const { data: paymentsBySale, error: salePaymentsError } = await supabase
+    const paymentQueries = [
+      // Búsqueda por invoice_number exacto
+      supabase
         .from('payments')
         .select('id')
-        .eq('sale_id', credit.saleId)
-      
-      if (!salePaymentsError && paymentsBySale && paymentsBySale.length > 0) {
-        paymentIds = paymentsBySale.map(p => p.id)
-      }
+        .eq('invoice_number', credit.invoiceNumber)
+        .eq('client_id', credit.clientId),
+      // Búsqueda por invoice_number sin #
+      supabase
+        .from('payments')
+        .select('id')
+        .eq('invoice_number', invoiceWithoutHash)
+        .eq('client_id', credit.clientId),
+      // Búsqueda por invoice_number con #
+      supabase
+        .from('payments')
+        .select('id')
+        .eq('invoice_number', invoiceWithHash)
+        .eq('client_id', credit.clientId),
+    ]
+
+    // Si tiene sale_id, también buscar por ese
+    if (credit.saleId) {
+      paymentQueries.push(
+        supabase
+          .from('payments')
+          .select('id')
+          .eq('sale_id', credit.saleId)
+      )
     }
+
+    // Ejecutar todas las búsquedas en paralelo
+    const paymentResults = await Promise.all(paymentQueries.map(q => q))
+    
+    // Recolectar todos los payment IDs únicos
+    const paymentIdsSet = new Set<string>()
+    
+    paymentResults.forEach(result => {
+      if (!result.error && result.data) {
+        result.data.forEach((p: { id: string }) => {
+          paymentIdsSet.add(p.id)
+        })
+      }
+    })
+
+    const paymentIds = Array.from(paymentIdsSet)
 
     if (paymentIds.length === 0) {
       return [] // No hay pagos registrados
     }
 
     // Obtener los registros de pago para estos payments
-    // Incluir solo los activos (no cancelados) por defecto, pero también incluir cancelados para historial completo
     const { data, error } = await supabase
       .from('payment_records')
       .select('*')
