@@ -639,14 +639,12 @@ export default function ClientCreditsPage() {
                               {formatDateTime(credit.createdAt)}
                             </div>
                           </div>
-                          {credit.createdByName && (
-                            <div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Registrado por</div>
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {credit.createdByName}
-                              </div>
+                          <div>
+                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
+                            <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 font-mono">
+                              #{credit.id.substring(0, 8)}
                             </div>
-                          )}
+                          </div>
                           {credit.lastPaymentDate && (
                             <div>
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Último Abono</div>
