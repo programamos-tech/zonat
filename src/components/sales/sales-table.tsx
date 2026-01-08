@@ -26,8 +26,9 @@ import {
   AlertTriangle,
   X
 } from 'lucide-react'
-import { Sale } from '@/types'
+import { Sale, Credit } from '@/types'
 import { usePermissions } from '@/hooks/usePermissions'
+import { CreditsService } from '@/lib/credits-service'
 
 interface SalesTableProps {
   sales: Sale[]
@@ -76,6 +77,51 @@ export function SalesTable({
   const [cancelReason, setCancelReason] = useState<Record<string, string>>({})
   const [isCancelling, setIsCancelling] = useState<Record<string, boolean>>({})
   const [cancelSuccessMessage, setCancelSuccessMessage] = useState<Record<string, string>>({})
+  const [credits, setCredits] = useState<Record<string, Credit>>({})
+
+  // Cargar créditos para ventas de tipo crédito
+  useEffect(() => {
+    const loadCredits = async () => {
+      const creditSales = sales.filter(sale => sale.paymentMethod === 'credit' && sale.invoiceNumber)
+      const creditsToLoad: Record<string, Credit> = {}
+      
+      await Promise.all(
+        creditSales.map(async (sale) => {
+          if (!credits[sale.id] && sale.invoiceNumber) {
+            try {
+              const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+              if (credit) {
+                creditsToLoad[sale.id] = credit
+              }
+            } catch (error) {
+              // Error silencioso
+            }
+          }
+        })
+      )
+      
+      if (Object.keys(creditsToLoad).length > 0) {
+        setCredits(prev => ({ ...prev, ...creditsToLoad }))
+      }
+    }
+    
+    if (sales.length > 0) {
+      loadCredits()
+    }
+  }, [sales])
+
+  // Función helper para generar ID del crédito
+  const getCreditId = (credit: Credit): string => {
+    const clientInitials = credit.clientName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('')
+      .substring(0, 2)
+      .padEnd(2, 'X')
+    
+    const creditSuffix = credit.id.substring(credit.id.length - 6).toLowerCase()
+    return `${clientInitials}${creditSuffix}`
+  }
 
   // Efecto para manejar la búsqueda
   useEffect(() => {
@@ -825,8 +871,25 @@ export function SalesTable({
                               <FileText className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                             )}
                             <div className="flex-1 min-w-0">
-                              <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-                                {generateInvoiceNumber(sale)}
+                              <div className="flex items-center gap-4 mb-2">
+                                <div className="flex-1">
+                                  <div className="flex items-center gap-3">
+                                    <div className="flex-1">
+                                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Factura</div>
+                                      <div className="text-xl font-bold text-gray-900 dark:text-white">
+                                        {generateInvoiceNumber(sale)}
+                                      </div>
+                                    </div>
+                                    {sale.paymentMethod === 'credit' && credits[sale.id] && (
+                                      <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
+                                        <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                          #{getCreditId(credits[sale.id])}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
                               </div>
                               <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
                                 {sale.clientName}

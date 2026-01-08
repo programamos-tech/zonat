@@ -238,13 +238,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   }
 
   const updateQuantity = (productId: string, newQuantity: number, fromButton: boolean = false) => {
-    // Solo eliminar si viene del botón de menos y la cantidad es 0 o menor
-    if (fromButton && newQuantity <= 0) {
-      removeProduct(productId)
-      return
-    }
-    
-    // Permitir escribir 0 temporalmente, pero no valores negativos
+    // No eliminar el producto aunque la cantidad sea 0, solo actualizar
+    // Permitir escribir 0, pero no valores negativos
     if (newQuantity < 0) {
       return
     }
@@ -252,7 +247,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     const product = products.find(p => p.id === productId)
     if (product) {
       const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
-      if (newQuantity > totalStock) {
+      // Verificar stock solo si la cantidad es mayor a 0
+      if (newQuantity > 0 && newQuantity > totalStock) {
         showStockAlert(`No hay suficiente stock para "${product.name}". Stock disponible: ${totalStock}`, productId)
         return
       }
@@ -276,11 +272,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   }
 
   const handleQuantityBlur = (productId: string) => {
-    const item = selectedProducts.find(i => i.productId === productId)
-    if (item && item.quantity <= 0) {
-      // Si la cantidad es 0 o menor al perder el foco, restaurar a 1
-      updateQuantity(productId, 1, false)
-    }
+    // Ya no restauramos a 1, permitimos que quede en 0
+    // El producto se mantiene en la lista aunque tenga cantidad 0
   }
 
   const moveHighlightedProduct = (direction: 1 | -1) => {

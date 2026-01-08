@@ -309,8 +309,8 @@ export default function NewSalePage() {
   }
 
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setSelectedProducts(selectedProducts.filter(item => item.id !== itemId))
+    // No eliminar el producto si la cantidad es 0, solo actualizar
+    if (newQuantity < 0) {
       return
     }
 
@@ -320,7 +320,8 @@ export default function NewSalePage() {
     const product = products.find(p => p.id === item.productId)
     const availableStock = (product?.stock.store || 0) + (product?.stock.warehouse || 0)
     
-    if (newQuantity > availableStock) {
+    // Verificar stock solo si la cantidad es mayor a 0
+    if (newQuantity > 0 && newQuantity > availableStock) {
       setStockAlert({
         show: true,
         message: `Stock disponible: ${availableStock} unidades`, 

@@ -527,8 +527,8 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
   }
 
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setSelectedProducts(prev => prev.filter(item => item.id !== itemId))
+    // No eliminar el producto si la cantidad es 0, solo actualizar
+    if (newQuantity < 0) {
       return
     }
 
@@ -538,8 +538,8 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
 
     const availableStock = getAvailableStock(item.productId)
     
-    // Verificar que no se exceda el stock disponible
-    if (newQuantity > availableStock) {
+    // Verificar que no se exceda el stock disponible (solo si es mayor a 0)
+    if (newQuantity > 0 && newQuantity > availableStock) {
       showStockAlert(`Solo hay ${availableStock} unidades disponibles de este producto`, item.productId)
       return
     }

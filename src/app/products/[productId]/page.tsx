@@ -28,6 +28,7 @@ import { Product, Category, Sale } from '@/types'
 import { ProductsService } from '@/lib/products-service'
 import { SalesService } from '@/lib/sales-service'
 import { useCategories } from '@/contexts/categories-context'
+import { useAuth } from '@/contexts/auth-context'
 import { StockAdjustmentModal } from '@/components/products/stock-adjustment-modal'
 import { StockTransferModal } from '@/components/products/stock-transfer-modal'
 import { ProductModal } from '@/components/products/product-modal'
@@ -39,6 +40,10 @@ export default function ProductDetailPage() {
   const router = useRouter()
   const productId = params.productId as string
   const { categories } = useCategories()
+  const { user } = useAuth()
+  
+  // Verificar si el usuario es Super Admin
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
   
   const [product, setProduct] = useState<Product | null>(null)
   const [sales, setSales] = useState<Sale[]>([]) // Todas las ventas desde la creación
@@ -604,15 +609,16 @@ export default function ProductDetailPage() {
           </CardContent>
         </Card>
 
-        {/* Análisis de Rotación y Márgenes */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-              <BarChart3 className="h-5 w-5 text-cyan-600" />
-              Análisis de Rotación y Márgenes
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
+        {/* Análisis de Rotación y Márgenes - Solo para Super Admin */}
+        {isSuperAdmin && (
+          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <CardHeader>
+              <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                <BarChart3 className="h-5 w-5 text-cyan-600" />
+                Análisis de Rotación y Márgenes
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
             {/* Métricas Principales */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-800">
@@ -737,6 +743,7 @@ export default function ProductDetailPage() {
             )}
           </CardContent>
         </Card>
+        )}
 
       </div>
 

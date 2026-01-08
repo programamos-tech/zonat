@@ -295,18 +295,16 @@ export default function ClientCreditsPage() {
   }
 
   const getCreditDescription = (credit: Credit): string => {
-    const sale = sales[credit.id]
-    if (sale && sale.items && sale.items.length > 0) {
-      // Generar descripción basada en los productos
-      const productNames = sale.items.map(item => item.productName).join(', ')
-      // Limitar a 60 caracteres para no hacer la card muy larga
-      if (productNames.length > 60) {
-        return productNames.substring(0, 57) + '...'
-      }
-      return productNames
-    }
-    // Si no hay venta o productos, mostrar el nombre del cliente
-    return credit.clientName
+    // Generar ID del crédito con las primeras 2 letras del cliente + últimos 6 caracteres del UUID
+    const clientInitials = credit.clientName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('')
+      .substring(0, 2)
+      .padEnd(2, 'X') // Si el nombre tiene menos de 2 palabras, rellenar con X
+    
+    const creditSuffix = credit.id.substring(credit.id.length - 6).toLowerCase()
+    return `${clientInitials}${creditSuffix}`
   }
 
   const totalDebt = credits.reduce((sum, credit) => sum + credit.pendingAmount, 0)
@@ -540,14 +538,22 @@ export default function ClientCreditsPage() {
                     {/* Header del Crédito */}
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-3 mb-2">
+                        <div className="flex items-center gap-4 mb-2">
                           <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
-                          <div>
-                            <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-                              {credit.invoiceNumber}
-                            </div>
-                            <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                              {getCreditDescription(credit)}
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3">
+                              <div className="flex-1">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
+                                <div className="text-xl font-bold text-gray-900 dark:text-white font-mono">
+                                  #{getCreditDescription(credit)}
+                                </div>
+                              </div>
+                              <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Factura</div>
+                                <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                                  {credit.invoiceNumber}
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -639,12 +645,14 @@ export default function ClientCreditsPage() {
                               {formatDateTime(credit.createdAt)}
                             </div>
                           </div>
-                          <div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
-                            <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 font-mono">
-                              #{credit.id.substring(0, 8)}
+                          {credit.createdByName && (
+                            <div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Registrado por</div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {credit.createdByName}
+                              </div>
                             </div>
-                          </div>
+                          )}
                           {credit.lastPaymentDate && (
                             <div>
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Último Abono</div>

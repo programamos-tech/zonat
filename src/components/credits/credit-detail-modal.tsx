@@ -375,13 +375,15 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                         </div>
                       )}
                       
-                      <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                        <CreditCard className="h-6 w-6 text-orange-600 flex-shrink-0" />
-                        <div className="flex-1">
-                          <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">ID Crédito</div>
-                          <div className="font-semibold text-base text-blue-600 dark:text-blue-400 font-mono">{currentCredit ? `#${currentCredit.id.substring(0, 8)}` : ''}</div>
+                      {currentCredit?.createdByName && (
+                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <User className="h-6 w-6 text-orange-600 flex-shrink-0" />
+                          <div className="flex-1">
+                            <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Registrado por</div>
+                            <div className="font-semibold text-base text-gray-900 dark:text-white">{currentCredit.createdByName}</div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
