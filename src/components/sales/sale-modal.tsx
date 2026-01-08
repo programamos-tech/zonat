@@ -526,6 +526,10 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     }
   }
 
+  const handleRemoveProduct = (itemId: string) => {
+    setSelectedProducts(prev => prev.filter(item => item.id !== itemId))
+  }
+
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
     // No eliminar el producto si la cantidad es 0, solo actualizar
     if (newQuantity < 0) {
@@ -1098,7 +1102,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                               <Button
                                 size="sm"
                                 variant="ghost"
-                                onClick={() => handleUpdateQuantity(item.id, 0)}
+                                onClick={() => handleRemoveProduct(item.id)}
                                 className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                               >
                                 <X className="h-3.5 w-3.5 mr-1" />
