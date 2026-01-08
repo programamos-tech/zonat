@@ -679,14 +679,14 @@ export default function SaleDetailModal({
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3">
-                {/* Factura e ID Crédito - Estilo similar a créditos pero invertido */}
+                {/* Factura e ID Crédito - Estilo exacto a créditos pero invertido */}
                 <div className="flex items-center gap-4 mb-4">
-                  <Receipt className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <Receipt className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Factura</div>
-                        <div className="text-xl font-bold text-green-600">
+                        <div className="text-xl font-bold text-gray-900 dark:text-white">
                           {getInvoiceNumber(sale)}
                         </div>
                       </div>
