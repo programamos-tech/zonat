@@ -16,8 +16,9 @@ import {
   Eye,
   Edit
 } from 'lucide-react'
-import { Sale, CompanyConfig, Client } from '@/types'
+import { Sale, CompanyConfig, Client, Credit } from '@/types'
 import { CompanyService } from '@/lib/company-service'
+import { CreditsService } from '@/lib/credits-service'
 import { InvoiceTemplate } from './invoice-template'
 
 interface SaleDetailModalProps {
@@ -48,6 +49,40 @@ export default function SaleDetailModal({
   const [cancelSuccessMessage, setCancelSuccessMessage] = useState<string | null>(null)
   const [isFinalizing, setIsFinalizing] = useState(false)
   const cancelFormRef = useRef<HTMLDivElement>(null)
+  const [credit, setCredit] = useState<Credit | null>(null)
+
+  // Cargar crédito si la venta es de tipo crédito
+  useEffect(() => {
+    const loadCredit = async () => {
+      if (sale && sale.paymentMethod === 'credit' && sale.invoiceNumber) {
+        try {
+          const creditData = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+          setCredit(creditData)
+        } catch (error) {
+          setCredit(null)
+        }
+      } else {
+        setCredit(null)
+      }
+    }
+    
+    if (isOpen && sale) {
+      loadCredit()
+    }
+  }, [isOpen, sale])
+
+  // Función helper para generar ID del crédito
+  const getCreditId = (credit: Credit): string => {
+    const clientInitials = credit.clientName
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase())
+      .join('')
+      .substring(0, 2)
+      .padEnd(2, 'X')
+    
+    const creditSuffix = credit.id.substring(credit.id.length - 6).toLowerCase()
+    return `${clientInitials}${creditSuffix}`
+  }
 
   useEffect(() => {
     if (showCancelForm && cancelFormRef.current) {
@@ -644,15 +679,30 @@ export default function SaleDetailModal({
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3">
-                <div className="grid grid-cols-2 gap-2 md:gap-3">
-                  <div className="flex items-center space-x-3">
-                    <Receipt className="h-5 w-5 text-green-600" />
-                    <div>
-                      <div className="text-sm text-gray-600 dark:text-gray-300">Factura</div>
-                      <div className="font-bold text-green-600 text-lg">{getInvoiceNumber(sale)}</div>
+                {/* Factura e ID Crédito - Estilo similar a créditos pero invertido */}
+                <div className="flex items-center gap-4 mb-4">
+                  <Receipt className="h-5 w-5 text-green-600 flex-shrink-0" />
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Factura</div>
+                        <div className="text-xl font-bold text-green-600">
+                          {getInvoiceNumber(sale)}
+                        </div>
+                      </div>
+                      {sale.paymentMethod === 'credit' && credit && (
+                        <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
+                          <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                            #{getCreditId(credit)}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                  
+                </div>
+                
+                <div className="grid grid-cols-2 gap-2 md:gap-3">
                   <div className="flex items-center space-x-3">
                     <User className="h-5 w-5 text-green-600" />
                     <div>
@@ -660,6 +710,16 @@ export default function SaleDetailModal({
                       <div className="font-semibold text-gray-900 dark:text-white">{sale.clientName}</div>
                     </div>
                   </div>
+                  
+                  {sale.sellerName && (
+                    <div className="flex items-center space-x-3">
+                      <User className="h-5 w-5 text-green-600" />
+                      <div>
+                        <div className="text-sm text-gray-600 dark:text-gray-300">Vendedor</div>
+                        <div className="font-semibold text-gray-900 dark:text-white">{sale.sellerName}</div>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="flex items-center space-x-3">
                     <Calendar className="h-5 w-5 text-green-600" />
