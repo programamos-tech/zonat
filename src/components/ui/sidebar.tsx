@@ -99,10 +99,11 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
               
-              // Para créditos y productos, también considerar activo si la ruta empieza con el href
+              // Para créditos, productos y ventas, también considerar activo si la ruta empieza con el href
               const isActive = pathname === item.href || 
                 (item.href === '/payments' && pathname?.startsWith('/payments')) ||
-                (item.href === '/products' && pathname?.startsWith('/products'))
+                (item.href === '/products' && pathname?.startsWith('/products')) ||
+                (item.href === '/sales' && pathname?.startsWith('/sales'))
               
               // Colores por módulo para el estado activo
               const getActiveColor = () => {

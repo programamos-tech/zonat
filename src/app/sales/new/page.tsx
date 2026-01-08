@@ -329,11 +329,13 @@ export default function NewSalePage() {
       return
     }
 
-    setSelectedProducts(selectedProducts.map(i => 
-      i.id === itemId 
-        ? { ...i, quantity: newQuantity, total: i.unitPrice * newQuantity }
-        : i
-    ))
+    setSelectedProducts(selectedProducts.map(i => {
+      if (i.id === itemId) {
+        const calculatedTotal = i.unitPrice * newQuantity
+        return { ...i, quantity: newQuantity, total: calculatedTotal }
+      }
+      return i
+    }))
   }
 
   const handleQuantityInputChange = (itemId: string, value: string) => {
@@ -342,11 +344,15 @@ export default function NewSalePage() {
   }
 
   const handleUpdatePrice = (itemId: string, newPrice: number) => {
-    setSelectedProducts(selectedProducts.map(item => 
-      item.id === itemId 
-        ? { ...item, unitPrice: newPrice, total: newPrice * item.quantity }
-        : item
-    ))
+    if (newPrice < 0) return
+    
+    setSelectedProducts(selectedProducts.map(item => {
+      if (item.id === itemId) {
+        const calculatedTotal = newPrice * item.quantity
+        return { ...item, unitPrice: newPrice, total: calculatedTotal }
+      }
+      return item
+    }))
   }
 
   const handlePriceBlur = (itemId: string) => {
@@ -374,11 +380,36 @@ export default function NewSalePage() {
   }
 
   const validProducts = useMemo(() => {
-    return selectedProducts.filter(item => {
-      const product = findProductById(item.productId)
-      return product && item.quantity > 0 && item.unitPrice > 0
+    // Filtrar productos válidos: cantidad > 0 y precio > 0
+    const filtered = selectedProducts.filter(item => {
+      // Validaciones básicas
+      if (!item || !item.productId) {
+        console.log('❌ Item inválido (sin productId):', item)
+        return false
+      }
+      if (item.quantity <= 0) {
+        console.log('❌ Item con cantidad <= 0:', item)
+        return false
+      }
+      if (!item.unitPrice || item.unitPrice <= 0) {
+        console.log('❌ Item con precio <= 0:', item)
+        return false
+      }
+      return true
     })
-  }, [selectedProducts, products])
+    
+    console.log('✅ Productos válidos encontrados:', filtered.length, 'de', selectedProducts.length)
+    console.log('📦 Productos:', filtered.map(p => ({ name: p.productName, qty: p.quantity, price: p.unitPrice, total: p.total })))
+    
+    // Recalcular el total para todos los productos válidos
+    return filtered.map(item => {
+      const calculatedTotal = (item.unitPrice || 0) * (item.quantity || 0)
+      return { 
+        ...item, 
+        total: calculatedTotal 
+      }
+    })
+  }, [selectedProducts])
 
   const orderedValidProducts = useMemo(() => {
     return [...validProducts].sort((a, b) => 
@@ -393,7 +424,11 @@ export default function NewSalePage() {
   }, [selectedProducts])
 
   const subtotal = useMemo(() => {
-    return validProducts.reduce((sum, item) => sum + item.total, 0)
+    const calculated = validProducts.reduce((sum, item) => {
+      const itemTotal = (item.unitPrice || 0) * (item.quantity || 0)
+      return sum + itemTotal
+    }, 0)
+    return calculated
   }, [validProducts])
 
   const tax = useMemo(() => {
@@ -725,7 +760,12 @@ export default function NewSalePage() {
                                     <input
                                       type="number"
                                       value={item.unitPrice || ''}
-                                      onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
+                                      onChange={(e) => {
+                                        const value = parseFloat(e.target.value) || 0
+                                        if (value >= 0) {
+                                          handleUpdatePrice(item.id, value)
+                                        }
+                                      }}
                                       onBlur={() => handlePriceBlur(item.id)}
                                       className="w-28 h-7 text-xs text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 px-2"
                                       min={product?.cost || 0}
