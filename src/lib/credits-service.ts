@@ -529,88 +529,99 @@ export class CreditsService {
       throw new Error('Crédito no encontrado')
     }
 
-    // Normalizar invoice_number para búsqueda (remover # si existe)
-    const normalizedInvoiceNumber = credit.invoiceNumber?.replace(/^#/, '') || ''
-    const invoiceWithHash = `#${normalizedInvoiceNumber}`
-    const invoiceWithoutHash = normalizedInvoiceNumber
-
-    // Buscar en payments por múltiples criterios para encontrar todos los abonos
-    // 1. Por invoice_number exacto (con y sin #)
-    // 2. Por client_id
-    // 3. Por sale_id si existe
+    // Estrategia: Buscar payment_records directamente usando JOIN con payments por sale_id
+    // Esto es más directo y confiable que buscar por invoice_number
     
-    const paymentQueries = [
-      // Búsqueda por invoice_number exacto
-      supabase
-        .from('payments')
-        .select('id')
-        .eq('invoice_number', credit.invoiceNumber)
-        .eq('client_id', credit.clientId),
-      // Búsqueda por invoice_number sin #
-      supabase
-        .from('payments')
-        .select('id')
-        .eq('invoice_number', invoiceWithoutHash)
-        .eq('client_id', credit.clientId),
-      // Búsqueda por invoice_number con #
-      supabase
-        .from('payments')
-        .select('id')
-        .eq('invoice_number', invoiceWithHash)
-        .eq('client_id', credit.clientId),
-    ]
+    let paymentRecords: any[] = []
 
-    // Si tiene sale_id, también buscar por ese
+    // PRIORIDAD 1: Buscar directamente con JOIN por sale_id (más confiable)
     if (credit.saleId) {
-      paymentQueries.push(
-        supabase
+      // Usar JOIN para obtener payment_records directamente relacionados con el sale_id
+      const { data: recordsBySale, error: saleError } = await supabase
+        .from('payment_records')
+        .select(`
+          *,
+          payments!inner(sale_id)
+        `)
+        .eq('payments.sale_id', credit.saleId)
+        .order('payment_date', { ascending: false })
+
+      if (!saleError && recordsBySale && recordsBySale.length > 0) {
+        paymentRecords = recordsBySale
+      }
+    }
+
+    // PRIORIDAD 2: Si no encontramos por sale_id o no hay sale_id, buscar por invoice_number
+    if (paymentRecords.length === 0) {
+      const paymentIdsSet = new Set<string>()
+
+      // Buscar por sale_id directamente en payments
+      if (credit.saleId) {
+        const { data: paymentsBySale, error: saleError } = await supabase
           .from('payments')
           .select('id')
           .eq('sale_id', credit.saleId)
-      )
-    }
-
-    // Ejecutar todas las búsquedas en paralelo
-    const paymentResults = await Promise.all(paymentQueries.map(q => q))
-    
-    // Recolectar todos los payment IDs únicos
-    const paymentIdsSet = new Set<string>()
-    
-    paymentResults.forEach(result => {
-      if (!result.error && result.data) {
-        result.data.forEach((p: { id: string }) => {
-          paymentIdsSet.add(p.id)
-        })
+        
+        if (!saleError && paymentsBySale) {
+          paymentsBySale.forEach((p: { id: string }) => {
+            paymentIdsSet.add(p.id)
+          })
+        }
       }
-    })
 
-    const paymentIds = Array.from(paymentIdsSet)
+      // Buscar por invoice_number con variaciones
+      const normalizedInvoiceNumber = credit.invoiceNumber?.replace(/^#|\s/g, '') || ''
+      const invoiceVariations = [
+        credit.invoiceNumber,
+        `#${normalizedInvoiceNumber}`,
+        normalizedInvoiceNumber,
+        normalizedInvoiceNumber.padStart(4, '0'),
+      ].filter(Boolean)
 
-    if (paymentIds.length === 0) {
-      return [] // No hay pagos registrados
+      for (const invoiceVar of invoiceVariations) {
+        if (!invoiceVar) continue
+
+        const { data: paymentsByInvoice, error: invoiceError } = await supabase
+          .from('payments')
+          .select('id')
+          .eq('invoice_number', invoiceVar)
+          .eq('client_id', credit.clientId)
+        
+        if (!invoiceError && paymentsByInvoice) {
+          paymentsByInvoice.forEach((p: { id: string }) => {
+            paymentIdsSet.add(p.id)
+          })
+        }
+      }
+
+      const paymentIds = Array.from(paymentIdsSet)
+
+      if (paymentIds.length > 0) {
+        const { data, error } = await supabase
+          .from('payment_records')
+          .select('*')
+          .in('payment_id', paymentIds)
+          .order('payment_date', { ascending: false })
+
+        if (!error && data) {
+          paymentRecords = data
+        }
+      }
     }
 
-    // Obtener los registros de pago para estos payments
-    const { data, error } = await supabase
-      .from('payment_records')
-      .select('*')
-      .in('payment_id', paymentIds)
-      .order('payment_date', { ascending: false })
-
-    if (error) throw error
-
-    if (!data || data.length === 0) {
+    if (paymentRecords.length === 0) {
       return []
     }
 
-    return data.map(payment => ({
+    // Mapear los resultados (pueden venir con o sin el objeto payments del JOIN)
+    return paymentRecords.map((payment: any) => ({
       id: payment.id,
-      creditId: creditId, // Mantener el creditId original
+      creditId: creditId,
       amount: payment.amount,
       paymentDate: payment.payment_date,
       paymentMethod: payment.payment_method,
-      cashAmount: undefined, // La tabla no tiene este campo
-      transferAmount: undefined, // La tabla no tiene este campo
+      cashAmount: undefined,
+      transferAmount: undefined,
       description: payment.description,
       userId: payment.user_id,
       userName: payment.user_name,
