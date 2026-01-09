@@ -3,9 +3,10 @@ export interface User {
   name: string
   email: string
   password: string
-  role: 'superadmin' | 'admin' | 'vendedor' | 'inventario' | 'contador'
+  role: 'superadmin' | 'admin' | 'vendedor' | 'inventario' | 'contador' | 'supervisor_tienda'
   permissions: Permission[]
   isActive: boolean
+  storeId?: string // ID de la tienda a la que pertenece el usuario
   lastLogin?: string
   createdAt: string
   updatedAt: string
@@ -45,6 +46,7 @@ export interface Product {
   updatedAt: string
 }
 
+// StockTransfer antiguo (mantener para compatibilidad)
 export interface StockTransfer {
   id: string
   productId: string
@@ -56,6 +58,27 @@ export interface StockTransfer {
   userId: string
   userName: string
   createdAt: string
+}
+
+// Nuevo StockTransfer entre tiendas
+export interface StoreStockTransfer {
+  id: string
+  fromStoreId: string
+  fromStoreName?: string
+  toStoreId: string
+  toStoreName?: string
+  productId: string
+  productName?: string
+  quantity: number
+  status: 'pending' | 'in_transit' | 'received' | 'cancelled'
+  notes?: string
+  createdBy?: string
+  createdByName?: string
+  receivedBy?: string
+  receivedByName?: string
+  receivedAt?: string
+  createdAt: string
+  updatedAt: string
 }
 
 export interface StockAdjustment {
@@ -76,6 +99,7 @@ export interface Category {
   name: string
   description: string
   status: 'active' | 'inactive'
+  storeId?: string // ID de la tienda a la que pertenece la categoría (opcional)
   createdAt: string
   updatedAt: string
 }
@@ -94,6 +118,7 @@ export interface Client {
   currentDebt: number
   status: 'active' | 'inactive'
   nit?: string
+  storeId?: string // ID de la tienda a la que pertenece el cliente
   createdAt: string
 }
 
@@ -135,6 +160,7 @@ export interface Warranty {
   reason: string
   status: 'pending' | 'in_progress' | 'completed' | 'rejected' | 'discarded'
   notes?: string
+  storeId?: string // ID de la tienda a la que pertenece la garantía
   createdAt: string
   updatedAt: string
   completedAt?: string
@@ -191,6 +217,7 @@ export interface Sale {
   sellerId?: string
   sellerName?: string
   sellerEmail?: string
+  storeId?: string // ID de la tienda donde se realizó la venta
   createdAt: string
   items: SaleItem[]
   creditStatus?: 'pending' | 'partial' | 'completed' | 'overdue' | 'cancelled' // Estado del crédito asociado (solo para ventas a crédito)
@@ -227,6 +254,7 @@ export interface Credit {
   dueDate?: string
   createdBy?: string
   createdByName?: string
+  storeId?: string // ID de la tienda a la que pertenece el crédito
   createdAt: string
   updatedAt: string
   credits?: Credit[] // Para créditos agrupados, contiene los créditos individuales
@@ -243,6 +271,7 @@ export interface PaymentRecord {
   description?: string
   userId: string
   userName: string
+  storeId?: string // ID de la tienda a la que pertenece el registro de pago
   status?: 'active' | 'cancelled'
   cancelledAt?: string
   cancelledBy?: string
@@ -253,6 +282,31 @@ export interface PaymentRecord {
 
 // Mantener Payment para compatibilidad
 export interface Payment extends Credit {}
+
+export interface Store {
+  id: string
+  name: string
+  nit?: string
+  logo?: string
+  address?: string
+  city?: string
+  isActive: boolean
+  deletedAt?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface StoreStock {
+  id: string
+  storeId: string
+  storeName?: string
+  productId: string
+  productName?: string
+  quantity: number
+  location?: string
+  createdAt: string
+  updatedAt: string
+}
 
 export interface DashboardStats {
   totalSales: number
