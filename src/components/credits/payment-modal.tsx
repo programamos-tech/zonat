@@ -215,8 +215,8 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-0 md:p-4 pb-20 md:pb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-none md:rounded-lg xl:rounded-xl shadow-2xl w-full h-full md:h-auto md:max-h-[90vh] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
           <div className="flex items-center space-x-3">
@@ -241,17 +241,17 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-4 md:p-6 bg-white dark:bg-gray-800">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 h-full">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 bg-white dark:bg-gray-800 min-h-0">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información del Crédito */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
                 <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
                   <Receipt className="h-4 w-4 md:h-5 md:w-5 mr-2 text-orange-600" />
                   Información del Crédito
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3">
+              <CardContent className="p-3 md:p-6">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
                     <User className="h-5 w-5 text-orange-600 flex-shrink-0" />
@@ -292,13 +292,13 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
 
             {/* Detalles del Abono */}
             <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-2 px-3 md:px-6 pt-3 md:pt-6">
                 <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
                   <CreditCard className="h-4 w-4 md:h-5 md:w-5 mr-2 text-orange-600" />
                   Detalles del Abono
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-3 space-y-4">
+              <CardContent className="p-3 md:p-6 space-y-4">
                 <div>
                   <label className="block text-base font-medium text-gray-700 dark:text-gray-300 mb-2">
                     Monto del Abono *
@@ -450,19 +450,19 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
           <div className="flex-1"></div>
-          <div className="flex space-x-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <Button
               onClick={handleClose}
               variant="outline"
-              className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 px-6 py-2"
+              className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 px-4 sm:px-6 py-2.5 w-full sm:w-auto"
             >
               Cancelar
             </Button>
             <Button
               onClick={handleSubmit}
-              className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-6 py-2"
+              className="bg-orange-600 hover:bg-orange-700 text-white font-medium px-4 sm:px-6 py-2.5 w-full sm:w-auto"
             >
               Registrar Abono
             </Button>

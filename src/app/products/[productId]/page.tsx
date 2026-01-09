@@ -437,111 +437,119 @@ export default function ProductDetailPage() {
 
   return (
     <RoleProtectedRoute module="products" requiredAction="view">
-      <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen pb-20 lg:pb-6">
         {/* Header */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-4 md:p-6">
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <Package className="h-6 w-6 md:h-8 md:w-8 text-cyan-600" />
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 flex-wrap">
-                      <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                        {product.name}
-                      </h1>
-                      {product.status === 'active' && (
-                        <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+          <CardContent className="p-3 md:p-6">
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+                    <Package className="h-5 w-5 md:h-8 md:w-8 text-cyan-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 md:gap-3 flex-wrap">
+                        <h1 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
+                          {product.name}
+                        </h1>
+                        {product.status === 'active' && (
+                          <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-1">
+                        <div className="text-xs md:text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
+                          {product.reference}
+                        </div>
+                        <Button
+                          variant="outline"
+                          onClick={() => router.push('/products')}
+                          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 h-auto flex-shrink-0"
+                        >
+                          <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                          <span className="hidden md:inline">Volver</span>
+                        </Button>
+                      </div>
+                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                        {getCategoryName(product.categoryId)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Resumen */}
+                  <div className="grid grid-cols-3 gap-2 md:gap-4 mt-3 md:mt-4">
+                    <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
+                      <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                        {formatNumber(product.stock.warehouse)}
+                      </div>
+                    </div>
+                    <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
+                      <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                        {formatNumber(product.stock.store)}
+                      </div>
+                    </div>
+                    <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                      <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                        {formatNumber(product.stock.total)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Estados y Botones de Acción */}
+                  <div className="flex flex-col gap-3 mt-3 md:mt-4">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-xs md:text-sm whitespace-nowrap`}>
+                        {getStockStatusLabel(product)}
+                      </Badge>
+                      {product.status !== 'active' && (
+                        <Badge className={`${getStatusColor(product.status)} flex items-center gap-1 w-fit text-xs md:text-sm`}>
+                          <StatusIcon className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                          {getStatusLabel(product.status)}
+                        </Badge>
                       )}
                     </div>
-                    <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400 mt-1">
-                      {product.reference}
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                      {getCategoryName(product.categoryId)}
+                    
+                    {/* Botones en grid para mobile */}
+                    <div className="grid grid-cols-2 md:flex md:items-center md:gap-2 gap-2 md:mt-0">
+                      <Button
+                        onClick={handleEdit}
+                        className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                      >
+                        <Edit className="h-3.5 w-3.5 md:mr-1.5" />
+                        <span className="hidden md:inline">Editar</span>
+                        <span className="md:hidden">Editar</span>
+                      </Button>
+                      <Button
+                        onClick={handleStockAdjustment}
+                        variant="outline"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                      >
+                        <Package className="h-3.5 w-3.5 md:mr-1.5" />
+                        <span className="hidden md:inline">Ajustar</span>
+                        <span className="md:hidden">Ajustar</span>
+                      </Button>
+                      <Button
+                        onClick={handleStockTransfer}
+                        variant="outline"
+                        className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                      >
+                        <ArrowRightLeft className="h-3.5 w-3.5 md:mr-1.5" />
+                        <span className="hidden md:inline">Transferir</span>
+                        <span className="md:hidden">Transferir</span>
+                      </Button>
+                      <Button
+                        onClick={handleDelete}
+                        variant="outline"
+                        className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                      >
+                        <Trash2 className="h-3.5 w-3.5 md:mr-1.5" />
+                        <span className="hidden md:inline">Eliminar</span>
+                        <span className="md:hidden">Eliminar</span>
+                      </Button>
                     </div>
                   </div>
                 </div>
-
-                {/* Resumen */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Stock Bodega</div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {formatNumber(product.stock.warehouse)}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Stock Local</div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {formatNumber(product.stock.store)}
-                    </div>
-                  </div>
-                  <div className="p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Stock Total</div>
-                    <div className="text-2xl font-bold text-gray-900 dark:text-white">
-                      {formatNumber(product.stock.total)}
-                    </div>
-                  </div>
-                </div>
-
-                {/* Estados y Botones de Acción */}
-                <div className="flex items-center gap-3 mt-4 flex-wrap">
-                  <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
-                    {getStockStatusLabel(product)}
-                  </Badge>
-                  {product.status !== 'active' && (
-                    <Badge className={`${getStatusColor(product.status)} flex items-center gap-1 w-fit text-sm`}>
-                      <StatusIcon className="h-4 w-4 flex-shrink-0" />
-                      {getStatusLabel(product.status)}
-                    </Badge>
-                  )}
-                  
-                  <div className="flex items-center gap-2 ml-auto">
-                    <Button
-                      onClick={handleEdit}
-                      className="bg-cyan-600 hover:bg-cyan-700 text-white text-sm px-3 py-1 h-auto"
-                    >
-                      <Edit className="h-3.5 w-3.5 mr-1.5" />
-                      Editar
-                    </Button>
-                    <Button
-                      onClick={handleStockAdjustment}
-                      variant="outline"
-                      className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-sm px-3 py-1 h-auto"
-                    >
-                      <Package className="h-3.5 w-3.5 mr-1.5" />
-                      Ajustar
-                    </Button>
-                    <Button
-                      onClick={handleStockTransfer}
-                      variant="outline"
-                      className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 text-sm px-3 py-1 h-auto"
-                    >
-                      <ArrowRightLeft className="h-3.5 w-3.5 mr-1.5" />
-                      Transferir
-                    </Button>
-                    <Button
-                      onClick={handleDelete}
-                      variant="outline"
-                      className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20 text-sm px-3 py-1 h-auto"
-                    >
-                      <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-                      Eliminar
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/products')}
-                  className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Productos
-                </Button>
               </div>
             </div>
           </CardContent>
@@ -549,59 +557,59 @@ export default function ProductDetailPage() {
 
         {/* Información Detallada */}
         <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardHeader>
-            <CardTitle className="text-lg text-gray-900 dark:text-white">
+          <CardHeader className="p-3 md:p-6 pb-3 md:pb-6">
+            <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white">
               Información del Producto
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <CardContent className="p-3 md:p-6 pt-0 md:pt-0 space-y-3 md:space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
               <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
-                <div className="text-base text-gray-900 dark:text-white">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
+                <div className="text-sm md:text-base text-gray-900 dark:text-white">
                   {product.description || 'Sin descripción'}
                 </div>
               </div>
               {product.brand && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Marca</div>
-                  <div className="text-base text-gray-900 dark:text-white">
+                  <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Marca</div>
+                  <div className="text-sm md:text-base text-gray-900 dark:text-white">
                     {product.brand}
                   </div>
                 </div>
               )}
               <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Precio de Venta</div>
-                <div className="text-base font-semibold text-gray-900 dark:text-white">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Precio de Venta</div>
+                <div className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(product.price)}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Costo</div>
-                <div className="text-base font-semibold text-gray-900 dark:text-white">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Costo</div>
+                <div className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">
                   {formatCurrency(product.cost)}
                 </div>
               </div>
               <div>
-                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Fecha de Creación</div>
-                <div className="text-base text-gray-900 dark:text-white">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Fecha de Creación</div>
+                <div className="text-sm md:text-base text-gray-900 dark:text-white">
                   {formatDate(product.createdAt)}
                 </div>
               </div>
               {product.updatedAt && (
                 <div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Última Actualización</div>
-                  <div className="text-base text-gray-900 dark:text-white">
+                  <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Última Actualización</div>
+                  <div className="text-sm md:text-base text-gray-900 dark:text-white">
                     {formatDate(product.updatedAt)}
                   </div>
                 </div>
               )}
               <div>
-                <div className="text-sm text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1">
-                  Última Actualización de Inventario
-                  <span className="text-xs text-gray-400 dark:text-gray-600 italic">(próximamente)</span>
+                <div className="text-xs md:text-sm text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1 flex-wrap">
+                  <span>Última Actualización de Inventario</span>
+                  <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-600 italic">(próximamente)</span>
                 </div>
-                <div className="text-base text-gray-400 dark:text-gray-600 italic">
+                <div className="text-sm md:text-base text-gray-400 dark:text-gray-600 italic">
                   No disponible
                 </div>
               </div>
@@ -612,67 +620,67 @@ export default function ProductDetailPage() {
         {/* Análisis de Rotación y Márgenes - Solo para Super Admin */}
         {isSuperAdmin && (
           <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-            <CardHeader>
-              <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                <BarChart3 className="h-5 w-5 text-cyan-600" />
+            <CardHeader className="p-3 md:p-6 pb-3 md:pb-6">
+              <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
+                <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-cyan-600" />
                 Análisis de Rotación y Márgenes
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
+            <CardContent className="p-3 md:p-6 pt-0 md:pt-0 space-y-4 md:space-y-6">
             {/* Métricas Principales */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                  <div className="text-xs text-blue-600 dark:text-blue-400 font-medium">Unidades Vendidas</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
+              <div className="p-2 md:p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
+                  <div className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium truncate">Unidades Vendidas</div>
                 </div>
-                <div className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                <div className="text-lg md:text-2xl font-bold text-blue-900 dark:text-blue-100">
                   {formatNumber(metrics.totalSold)}
                 </div>
-                <div className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                <div className="text-[10px] md:text-xs text-blue-700 dark:text-blue-300 mt-0.5 md:mt-1">
                   Total histórico
                 </div>
               </div>
               
-              <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
-                  <div className="text-xs text-green-600 dark:text-green-400 font-medium">Ingresos Totales</div>
+              <div className="p-2 md:p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg border border-green-200 dark:border-green-800">
+                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+                  <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <div className="text-[10px] md:text-xs text-green-600 dark:text-green-400 font-medium truncate">Ingresos Totales</div>
                 </div>
-                <div className="text-xl font-bold text-green-900 dark:text-green-100">
+                <div className="text-base md:text-xl font-bold text-green-900 dark:text-green-100 truncate">
                   {formatCurrency(metrics.totalRevenue)}
                 </div>
-                <div className="text-xs text-green-700 dark:text-green-300 mt-1">
+                <div className="text-[10px] md:text-xs text-green-700 dark:text-green-300 mt-0.5 md:mt-1">
                   Total histórico
                 </div>
               </div>
               
-              <div className="p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <DollarSign className="h-4 w-4 text-purple-600 dark:text-purple-400" />
-                  <div className="text-xs text-purple-600 dark:text-purple-400 font-medium">Ganancia Total</div>
+              <div className="p-2 md:p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+                  <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
+                  <div className="text-[10px] md:text-xs text-purple-600 dark:text-purple-400 font-medium truncate">Ganancia Total</div>
                 </div>
-                <div className="text-xl font-bold text-purple-900 dark:text-purple-100">
+                <div className="text-base md:text-xl font-bold text-purple-900 dark:text-purple-100 truncate">
                   {formatCurrency(metrics.totalProfit)}
                 </div>
-                <div className="text-xs text-purple-700 dark:text-purple-300 mt-1">
+                <div className="text-[10px] md:text-xs text-purple-700 dark:text-purple-300 mt-0.5 md:mt-1">
                   {metrics.profitMargin.toFixed(1)}% margen
                 </div>
               </div>
               
-              <div className="p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                  <div className="text-xs text-orange-600 dark:text-orange-400 font-medium">Promedio Diario</div>
+              <div className="p-2 md:p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg border border-orange-200 dark:border-orange-800">
+                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
+                  <Calendar className="h-3 w-3 md:h-4 md:w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                  <div className="text-[10px] md:text-xs text-orange-600 dark:text-orange-400 font-medium truncate">Promedio Diario</div>
                 </div>
-                <div className="text-2xl font-bold text-orange-900 dark:text-orange-100">
+                <div className="text-lg md:text-2xl font-bold text-orange-900 dark:text-orange-100">
                   {new Intl.NumberFormat('es-CO', {
                     minimumFractionDigits: 1,
                     maximumFractionDigits: 1
                   }).format(metrics.averageDailySales)}
                 </div>
-                <div className="text-xs text-orange-700 dark:text-orange-300 mt-1">
-                  unidades/día (desde creación)
+                <div className="text-[10px] md:text-xs text-orange-700 dark:text-orange-300 mt-0.5 md:mt-1">
+                  unidades/día
                 </div>
               </div>
             </div>
@@ -680,10 +688,10 @@ export default function ProductDetailPage() {
             {/* Gráfica de Rotación por Día */}
             {metrics.salesByDay.length > 0 && (
               <div>
-                <div className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-4">
+                <div className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 md:mb-4">
                   Rotación Diaria (Últimos {Math.min(30, metrics.salesByDay.length)} días)
                 </div>
-                <div className="h-80 w-full">
+                <div className="h-64 md:h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={metrics.salesByDay} margin={{ top: 5, right: 10, left: 0, bottom: 50 }}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />

@@ -110,40 +110,71 @@ export function BottomNav() {
         {showLeftButton && (
           <button
             onClick={() => scroll('left')}
-            className="absolute left-0 z-10 h-14 md:h-16 px-2 md:px-3 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
+            className="absolute left-0 z-10 h-16 md:h-20 px-3 md:px-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
             aria-label="Scroll izquierda"
           >
-            <ChevronLeft className="h-5 w-5 md:h-6 md:w-6 text-gray-600 dark:text-gray-400" />
+            <ChevronLeft className="h-6 w-6 md:h-7 md:w-7 text-gray-600 dark:text-gray-400" />
           </button>
         )}
 
         {/* Contenedor de scroll */}
         <ul 
           ref={scrollContainerRef}
-          className={`flex items-stretch h-14 md:h-16 gap-0.5 overflow-x-auto scrollbar-hide flex-1 ${
-            showLeftButton ? 'pl-10 md:pl-12' : 'pl-1 md:pl-1.5'
+          className={`flex items-stretch h-16 md:h-20 gap-1 overflow-x-auto scrollbar-hide flex-1 ${
+            showLeftButton ? 'pl-12 md:pl-14' : 'pl-2 md:pl-2.5'
           } ${
-            showRightButton ? 'pr-10 md:pr-12' : 'pr-1 md:pr-1.5'
+            showRightButton ? 'pr-12 md:pr-14' : 'pr-2 md:pr-2.5'
           }`}
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
-          {visibleItems.map(({ href, label, icon: Icon }) => {
-            const active = currentPathname === href || (href !== '/dashboard' && currentPathname?.startsWith(href))
+          {visibleItems.map(({ href, label, icon: Icon, module }) => {
+            const active = currentPathname === href || 
+              (href !== '/dashboard' && currentPathname?.startsWith(href)) ||
+              (href === '/payments' && currentPathname?.startsWith('/payments')) ||
+              (href === '/products' && currentPathname?.startsWith('/products')) ||
+              (href === '/sales' && currentPathname?.startsWith('/sales'))
+            
+            // Colores por módulo para el estado activo (igual que el sidebar)
+            const getActiveColor = () => {
+              switch (module) {
+                case 'dashboard': return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                case 'products': return 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400'
+                case 'clients': return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
+                case 'sales': return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                case 'warranties': return 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
+                case 'payments': return 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
+                case 'roles': return 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
+                case 'logs': return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                default: return 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
+              }
+            }
+            
+            const getIconColor = () => {
+              if (!active) return 'text-gray-500 dark:text-gray-400'
+              switch (module) {
+                case 'dashboard': return 'text-green-700 dark:text-green-400'
+                case 'products': return 'text-cyan-700 dark:text-cyan-400'
+                case 'clients': return 'text-red-700 dark:text-red-400'
+                case 'sales': return 'text-green-700 dark:text-green-400'
+                case 'warranties': return 'text-purple-700 dark:text-purple-400'
+                case 'payments': return 'text-orange-700 dark:text-orange-400'
+                case 'roles': return 'text-indigo-700 dark:text-indigo-400'
+                case 'logs': return 'text-gray-700 dark:text-gray-300'
+                default: return 'text-gray-900 dark:text-white'
+              }
+            }
+            
             return (
-              <li key={href} className="flex-shrink-0 flex-1 min-w-[65px] md:min-w-[75px] max-w-[85px] md:max-w-[95px]">
+              <li key={href} className="flex-shrink-0 flex-1 min-w-[70px] md:min-w-[80px] max-w-[90px] md:max-w-[100px]">
                 <Link
                   href={href}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1 md:px-1.5 text-[8px] md:text-[9px] lg:text-[10px] transition-all duration-200 rounded-t-lg touch-manipulation ${
+                  className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg touch-manipulation ${
                     active 
-                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 shadow-sm font-medium' 
+                      ? `${getActiveColor()} shadow-sm font-semibold` 
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
                   }`}
                 >
-                  <Icon className={`h-4 w-4 md:h-5 md:w-5 lg:h-6 lg:w-6 flex-shrink-0 transition-colors ${
-                    active 
-                      ? 'text-blue-600 dark:text-blue-400' 
-                      : 'text-gray-500 dark:text-gray-400'
-                  }`} />
+                  <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
                   <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
                 </Link>
               </li>
@@ -155,10 +186,10 @@ export function BottomNav() {
         {showRightButton && (
           <button
             onClick={() => scroll('right')}
-            className="absolute right-0 z-10 h-14 md:h-16 px-2 md:px-3 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
+            className="absolute right-0 z-10 h-16 md:h-20 px-3 md:px-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
             aria-label="Scroll derecha"
           >
-            <ChevronRight className="h-5 w-5 md:h-6 md:w-6 text-gray-600 dark:text-gray-400" />
+            <ChevronRight className="h-6 w-6 md:h-7 md:w-7 text-gray-600 dark:text-gray-400" />
           </button>
         )}
       </div>

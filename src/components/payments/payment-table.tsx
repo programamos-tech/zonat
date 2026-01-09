@@ -339,7 +339,8 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                   return (
                     <div
                       key={credit.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      onClick={() => router.push(`/payments/${credit.clientId}`)}
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -397,7 +398,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                             </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-1 shrink-0">
+                        <div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
                           <Button
                             size="sm"
                             variant="ghost"

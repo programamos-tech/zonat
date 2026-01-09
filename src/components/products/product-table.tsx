@@ -390,7 +390,8 @@ export function ProductTable({
                     return (
                       <div
                         key={product.id}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                        onClick={() => router.push(`/products/${product.id}`)}
+                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
@@ -432,7 +433,7 @@ export function ProductTable({
                           <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
                             {getStockStatusLabel(product)}
                           </Badge>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             <Button
                               size="sm"
                               variant="ghost"

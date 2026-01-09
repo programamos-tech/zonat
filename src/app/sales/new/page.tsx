@@ -751,8 +751,8 @@ export default function NewSalePage() {
                   {orderedSelectedProducts.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
-                        <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600 text-xs">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
+                        <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600 text-sm">
                           {orderedSelectedProducts.length} producto{orderedSelectedProducts.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
@@ -767,12 +767,12 @@ export default function NewSalePage() {
                             <div key={item.id} className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-gray-900 dark:text-white text-sm mb-1">{item.productName}</h4>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">
+                                  <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
                                     Ref: {reference} | Bodega: {warehouseStock} | Local: {localStock}
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <label className="text-xs font-medium text-gray-600 dark:text-gray-400">
+                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
                                       Precio:
                                     </label>
                                     <input
@@ -785,7 +785,7 @@ export default function NewSalePage() {
                                         }
                                       }}
                                       onBlur={() => handlePriceBlur(item.id)}
-                                      className="w-28 h-7 text-xs text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 px-2"
+                                      className="w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 px-2"
                                       min={product?.cost || 0}
                                       step="100"
                                       placeholder="0"
@@ -793,37 +793,37 @@ export default function NewSalePage() {
                                   </div>
                                 </div>
                                 <div className="text-right ml-3">
-                                  <div className="text-base font-bold text-gray-900 dark:text-white">{formatCurrency(item.total)}</div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
+                                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(item.total)}</div>
+                                  <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
                                 </div>
                               </div>
                               
                               <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">Cantidad:</span>
+                                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Cantidad:</span>
                                   <div className="flex items-center gap-1">
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                      className="h-7 w-7 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                      className="h-8 w-8 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
                                     >
-                                      <Minus className="h-3.5 w-3.5" />
+                                      <Minus className="h-4 w-4" />
                                     </Button>
                                     <input
                                       type="text"
                                       value={item.quantity}
                                       onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                      className="w-14 h-7 text-center text-sm font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600"
+                                      className="w-16 h-8 text-center text-base font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600"
                                       min="1"
                                     />
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                      className="h-7 w-7 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                      className="h-8 w-8 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
                                     >
-                                      <Plus className="h-3.5 w-3.5" />
+                                      <Plus className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </div>
@@ -832,9 +832,9 @@ export default function NewSalePage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleRemoveProduct(item.id)}
-                                  className="h-7 px-2 text-xs text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                  className="h-8 px-3 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
                                 >
-                                  <X className="h-3.5 w-3.5 mr-1" />
+                                  <X className="h-4 w-4 mr-1" />
                                   Quitar
                                 </Button>
                               </div>

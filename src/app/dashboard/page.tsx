@@ -76,6 +76,40 @@ export default function DashboardPage() {
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCancelledModal, setShowCancelledModal] = useState(false)
+  const [isDarkMode, setIsDarkMode] = useState(false)
+
+  // Detectar modo oscuro directamente desde el DOM
+  useEffect(() => {
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'))
+    }
+    
+    // Verificar inicialmente
+    checkDarkMode()
+    
+    // Observar cambios en la clase del documento
+    const observer = new MutationObserver(checkDarkMode)
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+    
+    // También escuchar cambios en el media query del sistema
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleMediaChange = () => {
+      // Solo actualizar si no hay una clase explícita
+      if (!document.documentElement.classList.contains('dark') && 
+          !document.documentElement.classList.contains('light')) {
+        checkDarkMode()
+      }
+    }
+    mediaQuery.addEventListener('change', handleMediaChange)
+    
+    return () => {
+      observer.disconnect()
+      mediaQuery.removeEventListener('change', handleMediaChange)
+    }
+  }, [])
 
   const goToCredits = useCallback(() => {
     router.push('/payments')
@@ -151,19 +185,19 @@ export default function DashboardPage() {
           endDate: endDate.toISOString()
         })
         
-        // Para la gráfica de tendencia, necesitamos 8 días hacia atrás desde la fecha seleccionada
+        // Para la gráfica de tendencia, necesitamos 15 días hacia atrás desde la fecha seleccionada
         // Calcular el rango extendido para ventas y pagos (solo para gráfica)
         let chartStartDate = startDate
         if (currentFilter === 'specific' && dateToUse) {
-          // Extender 8 días hacia atrás desde la fecha seleccionada
+          // Extender 15 días hacia atrás desde la fecha seleccionada
           const extendedStart = new Date(dateToUse)
-          extendedStart.setDate(extendedStart.getDate() - 7) // 7 días antes + el día seleccionado = 8 días
+          extendedStart.setDate(extendedStart.getDate() - 14) // 14 días antes + el día seleccionado = 15 días
           extendedStart.setHours(0, 0, 0, 0)
           chartStartDate = extendedStart
         } else if (currentFilter === 'today') {
-          // Para hoy, también extender 8 días hacia atrás
+          // Para hoy, también extender 15 días hacia atrás
           const extendedStart = new Date()
-          extendedStart.setDate(extendedStart.getDate() - 7)
+          extendedStart.setDate(extendedStart.getDate() - 14)
           extendedStart.setHours(0, 0, 0, 0)
           chartStartDate = extendedStart
         }
@@ -172,7 +206,7 @@ export default function DashboardPage() {
           // Para ventas, usar el rango extendido para la gráfica
           withTimeout(SalesService.getDashboardSales(chartStartDate, endDate), 20000),
           withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 15000),
-          withTimeout(CreditsService.getCreditsByDateRange(startDate, endDate), 15000),
+          withTimeout(CreditsService.getAllCredits(), 15000), // SIEMPRE cargar TODOS los créditos para mostrar el total adeudado hasta hoy
           withTimeout(ClientsService.getAllClients(), 15000), // Clientes siempre todos
           withTimeout(ProductsService.getAllProductsLegacy(), 15000), // Productos siempre todos
           // Para pagos, usar el rango extendido para la gráfica
@@ -233,7 +267,7 @@ export default function DashboardPage() {
         const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
           withTimeout(SalesService.getDashboardSales(startDate, endDate), 30000), // Más tiempo para años completos
           withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 20000),
-          withTimeout(CreditsService.getCreditsByDateRange(startDate, endDate), 20000),
+          withTimeout(CreditsService.getAllCredits(), 20000), // SIEMPRE cargar TODOS los créditos para mostrar el total adeudado hasta hoy
           withTimeout(ClientsService.getAllClients(), 15000),
           withTimeout(ProductsService.getAllProductsLegacy(), 15000),
           withTimeout(CreditsService.getPaymentRecordsByDateRange(startDate, endDate), 20000)
@@ -402,7 +436,7 @@ export default function DashboardPage() {
     }
 
     // Para filtros específicos (today, specific), los datos YA vienen filtrados del backend
-    // PERO ahora cargamos 8 días para la gráfica, así que necesitamos filtrar solo el día seleccionado para las métricas
+    // PERO ahora cargamos 15 días para la gráfica, así que necesitamos filtrar solo el día seleccionado para las métricas
     if (effectiveDateFilter === 'specific' && !specificDate) {
       // Si es 'specific' pero no hay fecha seleccionada, devolver vacío
       return {
@@ -414,7 +448,7 @@ export default function DashboardPage() {
     }
 
     // Para 'today' o 'specific' con fecha, necesitamos filtrar solo el día seleccionado para las métricas
-    // (aunque allSales tiene 8 días para la gráfica)
+    // (aunque allSales tiene 15 días para la gráfica)
     if (effectiveDateFilter === 'today' || (effectiveDateFilter === 'specific' && specificDate)) {
       const targetDate = effectiveDateFilter === 'today' ? new Date() : new Date(specificDate!)
       targetDate.setHours(0, 0, 0, 0)
@@ -1247,9 +1281,9 @@ export default function DashboardPage() {
       )}
 
       {/* Header con estilo de las otras páginas */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-4 md:mb-6">
+      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-3 md:mb-6">
         <CardHeader className="p-3 md:p-6">
-          <div className="flex flex-col gap-3 md:gap-4">
+          <div className="flex flex-col gap-2 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
               <div className="flex-1 min-w-0">
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
@@ -1261,7 +1295,7 @@ export default function DashboardPage() {
                     </Badge>
                   )}
                 </CardTitle>
-                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1">
+                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-0.5 md:mt-1">
                   Resumen ejecutivo y métricas de rendimiento
                 </p>
               </div>
@@ -1273,7 +1307,7 @@ export default function DashboardPage() {
                       <select
                         value={dateFilter}
                         onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
-                        className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 md:px-3 py-1.5 md:py-2 pr-7 md:pr-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                        className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                       >
                         {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
                           <option key={filter} value={filter}>
@@ -1281,8 +1315,8 @@ export default function DashboardPage() {
                           </option>
                         ))}
                       </select>
-                      <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                        <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 md:pr-2 pointer-events-none">
+                        <svg className="w-4 h-4 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
                       </div>
@@ -1290,11 +1324,11 @@ export default function DashboardPage() {
                     
                     {/* Selector de año cuando "Todo el Tiempo" está seleccionado */}
                     {dateFilter === 'all' && isSuperAdmin && (
-                      <div className="relative ml-2">
+                      <div className="relative w-full sm:w-auto sm:ml-2">
                         <select
                           value={selectedYear}
                           onChange={(e) => handleYearChange(Number(e.target.value))}
-                          className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-2.5 md:px-3 py-1.5 md:py-2 pr-7 md:pr-8 text-xs md:text-sm text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                           {availableYears.map((year) => (
                             <option key={year} value={year}>
@@ -1302,8 +1336,8 @@ export default function DashboardPage() {
                             </option>
                           ))}
                         </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                          <svg className="w-3.5 h-3.5 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 md:pr-2 pointer-events-none">
+                          <svg className="w-4 h-4 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                           </svg>
                         </div>
@@ -1335,16 +1369,13 @@ export default function DashboardPage() {
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   variant="outline"
-                  className="w-full sm:w-auto justify-center sm:justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                  className="w-full sm:w-auto justify-center sm:justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-3 md:px-4 py-2 md:py-2"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-4 w-4 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
                   <span className="hidden md:inline">Actualizar</span>
                 </Button>
               </div>
             </div>
-            <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
-              Resumen ejecutivo y métricas
-            </p>
           </div>
         </CardHeader>
       </Card>
@@ -1715,7 +1746,7 @@ export default function DashboardPage() {
                 <div>
                   <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Tendencia de Ingresos</h3>
                   <p className="text-xs text-gray-500 dark:text-gray-400">
-                    {effectiveDateFilter === 'all' ? 'Por mes' : 'Últimos 8 días'}
+                    {effectiveDateFilter === 'all' ? 'Por mes' : 'Últimos 15 días'}
                   </p>
                 </div>
               </div>
@@ -1782,20 +1813,33 @@ export default function DashboardPage() {
                       return dateA.getTime() - dateB.getTime()
                     })
                   
+                  // Colores adaptativos para modo oscuro
+                  const gridColor = isDarkMode ? '#111827' : '#f0f0f0' // Grid casi invisible en modo oscuro
+                  const axisColor = isDarkMode ? '#6b7280' : '#666'
+                  const lineColor = isDarkMode ? '#34d399' : '#10B981' // Verde más claro en modo oscuro
+                  const dotStrokeColor = isDarkMode ? '#111827' : '#fff'
+                  const tooltipBg = isDarkMode ? '#1f2937' : 'white'
+                  const tooltipBorder = isDarkMode ? '#374151' : '#e5e7eb'
+                  const tooltipText = isDarkMode ? '#f3f4f6' : '#111827'
+                  
                   return monthlyArray.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={monthlyArray}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                        <CartesianGrid 
+                          strokeDasharray="3 3" 
+                          stroke={gridColor} 
+                          strokeOpacity={isDarkMode ? 0.3 : 1}
+                        />
                         <XAxis 
                           dataKey="date" 
-                          stroke="#666"
+                          stroke={axisColor}
                           fontSize={12}
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: 12, fill: axisColor }}
                         />
                         <YAxis 
-                          stroke="#666"
+                          stroke={axisColor}
                           fontSize={12}
-                          tick={{ fontSize: 12 }}
+                          tick={{ fontSize: 12, fill: axisColor }}
                           tickFormatter={(value) => {
                             if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
                             if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
@@ -1812,30 +1856,32 @@ export default function DashboardPage() {
                             'Ingresos'
                           ]}
                           contentStyle={{ 
-                            backgroundColor: 'white', 
-                            border: '1px solid #e5e7eb',
+                            backgroundColor: tooltipBg, 
+                            border: `1px solid ${tooltipBorder}`,
                             borderRadius: '8px',
-                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                            boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                            color: tooltipText
                           }}
+                          labelStyle={{ color: tooltipText }}
                         />
                         <Line 
                           type="monotone" 
                           dataKey="amount" 
-                          stroke="#10B981" 
+                          stroke={lineColor} 
                           strokeWidth={3}
-                          dot={{ fill: '#10B981', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                          activeDot={{ r: 7 }}
+                          dot={{ fill: lineColor, r: 5, strokeWidth: 2, stroke: dotStrokeColor }}
+                          activeDot={{ r: 7, fill: lineColor }}
                         />
                       </LineChart>
                     </ResponsiveContainer>
                   ) : (
                     <div className="flex items-center justify-center h-full">
-                      <p className="text-sm text-gray-500">No hay datos disponibles</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos disponibles</p>
                     </div>
                   )
                 }
                 
-                // Para fecha específica o hoy: últimos 8 días
+                // Para fecha específica o hoy: últimos 15 días
                 const getDateKey = (dateInput: Date | string): string => {
                   const date = new Date(dateInput)
                   const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -1856,30 +1902,30 @@ export default function DashboardPage() {
                 }
                 referenceDate.setHours(0, 0, 0, 0)
                 
-                // Generar las 8 fechas desde la fecha de referencia hacia atrás (incluyendo la fecha de referencia)
-                const last8Days: Date[] = []
-                for (let i = 0; i < 8; i++) {
+                // Generar las 15 fechas desde la fecha de referencia hacia atrás (incluyendo la fecha de referencia)
+                const last15Days: Date[] = []
+                for (let i = 0; i < 15; i++) {
                   const date = new Date(referenceDate)
                   date.setDate(date.getDate() - i)
-                  last8Days.push(date)
+                  last15Days.push(date)
                 }
                 
                 // Invertir para que el más antiguo esté primero
-                last8Days.reverse()
+                last15Days.reverse()
                 
                 // Calcular ingresos por día desde TODOS los datos (no filteredData)
-                // porque filteredData solo tiene el día seleccionado, pero necesitamos los 8 días
+                // porque filteredData solo tiene el día seleccionado, pero necesitamos los 15 días
                 const dailyData: { [key: string]: number } = {}
                 
                 // Inicializar todos los días con 0
-                last8Days.forEach(date => {
+                last15Days.forEach(date => {
                   const dateKey = getDateKey(date)
                   dailyData[dateKey] = 0
                 })
                 
                 // Crear un Set de timestamps para verificación rápida
                 const dayTimestamps = new Set<number>()
-                last8Days.forEach(day => {
+                last15Days.forEach(day => {
                   const dayStart = new Date(day)
                   dayStart.setHours(0, 0, 0, 0)
                   dayTimestamps.add(dayStart.getTime())
@@ -1891,7 +1937,7 @@ export default function DashboardPage() {
                     const saleDate = new Date(sale.createdAt)
                     saleDate.setHours(0, 0, 0, 0)
                     
-                    // Verificar si la venta está en el rango de los últimos 8 días
+                    // Verificar si la venta está en el rango de los últimos 15 días
                     if (dayTimestamps.has(saleDate.getTime())) {
                       const dateKey = getDateKey(saleDate)
                       
@@ -1924,7 +1970,7 @@ export default function DashboardPage() {
                 })
                 
                 // Convertir a array ordenado
-                const chartData = last8Days.map(date => {
+                const chartData = last15Days.map(date => {
                   const dateKey = getDateKey(date)
                   return {
                     date: dateKey,
@@ -1934,20 +1980,33 @@ export default function DashboardPage() {
                   }
                 })
                 
+                // Colores adaptativos para modo oscuro
+                const gridColor = isDarkMode ? '#111827' : '#f0f0f0' // Grid casi invisible en modo oscuro
+                const axisColor = isDarkMode ? '#6b7280' : '#666'
+                const lineColor = isDarkMode ? '#34d399' : '#10B981' // Verde más claro en modo oscuro
+                const dotStrokeColor = isDarkMode ? '#111827' : '#fff'
+                const tooltipBg = isDarkMode ? '#1f2937' : 'white'
+                const tooltipBorder = isDarkMode ? '#374151' : '#e5e7eb'
+                const tooltipText = isDarkMode ? '#f3f4f6' : '#111827'
+                
                 return chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart data={chartData}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                    <CartesianGrid 
+                      strokeDasharray="3 3" 
+                      stroke={gridColor} 
+                      strokeOpacity={isDarkMode ? 0.3 : 1}
+                    />
                     <XAxis 
                       dataKey="date" 
-                      stroke="#666"
-                      fontSize={12}
-                      tick={{ fontSize: 12 }}
+                      stroke={axisColor}
+                      fontSize={10}
+                      tick={{ fontSize: 10, fill: axisColor }}
                     />
                     <YAxis 
-                      stroke="#666"
-                      fontSize={12}
-                      tick={{ fontSize: 12 }}
+                      stroke={axisColor}
+                      fontSize={10}
+                      tick={{ fontSize: 10, fill: axisColor }}
                       tickFormatter={(value) => {
                         if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
                         if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
@@ -1964,25 +2023,27 @@ export default function DashboardPage() {
                         'Ingresos'
                       ]}
                       contentStyle={{ 
-                        backgroundColor: 'white', 
-                        border: '1px solid #e5e7eb',
+                        backgroundColor: tooltipBg, 
+                        border: `1px solid ${tooltipBorder}`,
                         borderRadius: '8px',
-                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
+                        boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+                        color: tooltipText
                       }}
+                      labelStyle={{ color: tooltipText }}
                     />
                       <Line 
                         type="monotone" 
                         dataKey="amount" 
-                        stroke="#10B981" 
+                        stroke={lineColor} 
                         strokeWidth={3}
-                        dot={{ fill: '#10B981', r: 5, strokeWidth: 2, stroke: '#fff' }}
-                        activeDot={{ r: 7 }}
+                        dot={{ fill: lineColor, r: 5, strokeWidth: 2, stroke: dotStrokeColor }}
+                        activeDot={{ r: 7, fill: lineColor }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
                 ) : (
                   <div className="flex items-center justify-center h-full">
-                    <p className="text-sm text-gray-500">No hay datos disponibles</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400">No hay datos disponibles</p>
                   </div>
                 )
               })()}
