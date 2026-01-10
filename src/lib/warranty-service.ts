@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import { Warranty, WarrantyProduct, WarrantyStatusHistory } from '@/types'
 import { AuthService } from './auth-service'
+import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export class WarrantyService {
   // Obtener todas las garantías con paginación
@@ -11,9 +12,11 @@ export class WarrantyService {
   }> {
     try {
       const offset = (page - 1) * limit
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
 
       // Obtener garantías con relaciones
-      const { data: warranties, error: warrantiesError } = await supabase
+      let warrantiesQuery = supabase
         .from('warranties')
         .select(`
           *,
@@ -66,6 +69,13 @@ export class WarrantyService {
             )
           )
         `)
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        warrantiesQuery = warrantiesQuery.eq('store_id', storeId)
+      }
+
+      const { data: warranties, error: warrantiesError } = await warrantiesQuery
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -74,9 +84,16 @@ export class WarrantyService {
       }
 
       // Obtener total de garantías
-      const { count, error: countError } = await supabase
+      let countQuery = supabase
         .from('warranties')
         .select('*', { count: 'exact', head: true })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        countQuery = countQuery.eq('store_id', storeId)
+      }
+
+      const { count, error: countError } = await countQuery
 
       if (countError) {
         throw countError
@@ -96,6 +113,7 @@ export class WarrantyService {
         reason: warranty.reason,
         status: warranty.status,
         notes: warranty.notes,
+        storeId: warranty.store_id || undefined,
         createdAt: warranty.created_at,
         updatedAt: warranty.updated_at,
         completedAt: warranty.completed_at,
@@ -149,6 +167,9 @@ export class WarrantyService {
   // Método optimizado para dashboard con filtrado por fecha
   static async getWarrantiesByDateRange(startDate?: Date, endDate?: Date): Promise<Warranty[]> {
     try {
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+
       let query = supabase
         .from('warranties')
         .select(`
@@ -202,7 +223,13 @@ export class WarrantyService {
             )
           )
         `)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      query = query.order('created_at', { ascending: false })
 
       // Aplicar filtros de fecha si existen
       if (startDate) {
@@ -244,6 +271,7 @@ export class WarrantyService {
         reason: warranty.reason,
         status: warranty.status,
         notes: warranty.notes,
+        storeId: warranty.store_id || undefined,
         createdAt: warranty.created_at,
         updatedAt: warranty.updated_at,
         completedAt: warranty.completed_at,
@@ -293,7 +321,9 @@ export class WarrantyService {
   // Obtener garantía por ID
   static async getWarrantyById(id: string): Promise<Warranty | null> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabase
         .from('warranties')
         .select(`
           *,
@@ -347,7 +377,13 @@ export class WarrantyService {
           )
         `)
         .eq('id', id)
-        .single()
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query.single()
 
       if (error) {
         throw error
@@ -369,6 +405,7 @@ export class WarrantyService {
         reason: data.reason,
         status: data.status,
         notes: data.notes,
+        storeId: data.store_id || undefined,
         createdAt: data.created_at,
         updatedAt: data.updated_at,
         completedAt: data.completed_at,
@@ -394,6 +431,9 @@ export class WarrantyService {
       const quantityReceived = warrantyData.quantityReceived || 1
       const quantityDelivered = warrantyData.replacementQuantity || 1
 
+      // Obtener store_id del usuario actual
+      const storeId = warrantyData.storeId || getCurrentUserStoreId() || '00000000-0000-0000-0000-000000000001'
+
       const { data, error } = await supabase
         .from('warranties')
         .insert([{
@@ -410,7 +450,8 @@ export class WarrantyService {
           notes: warrantyData.notes,
           created_by: warrantyData.createdBy,
           quantity_received: quantityReceived,
-          quantity_delivered: quantityDelivered
+          quantity_delivered: quantityDelivered,
+          store_id: storeId
         }])
         .select()
         .single()
@@ -661,6 +702,18 @@ export class WarrantyService {
     userId?: string
   ): Promise<void> {
     try {
+      // Verificar que la garantía pertenece a la tienda del usuario (si no es admin principal)
+      const existingWarranty = await this.getWarrantyById(warrantyId)
+      if (!existingWarranty) {
+        throw new Error('Garantía no encontrada')
+      }
+
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      if (storeId && !canAccessAllStores(user) && existingWarranty.storeId !== storeId) {
+        throw new Error('No tienes permiso para actualizar esta garantía')
+      }
+
       // Obtener estado actual
       const { data: currentWarranty, error: fetchError } = await supabase
         .from('warranties')

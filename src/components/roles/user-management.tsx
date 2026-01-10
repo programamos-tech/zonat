@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/auth-context'
-import { User, Permission } from '@/types'
+import { User, Permission, Store } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -10,9 +10,11 @@ import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Search, Edit, Trash2, Eye, UserCheck, UserX, X, User, Shield } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, UserCheck, UserX, X, User, Shield, Store as StoreIcon } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
+import { StoresService } from '@/lib/stores-service'
+import { canAccessAllStores } from '@/lib/store-helper'
 
 const roleOptions = [
   { value: 'superadmin', label: 'Super Admin' },
@@ -74,6 +76,7 @@ const roleDescriptions = {
 export function UserManagement() {
   const { user: currentUser, getAllUsers, createUser, updateUser, deleteUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
+  const [stores, setStores] = useState<Store[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
@@ -84,6 +87,7 @@ export function UserManagement() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [userToDelete, setUserToDelete] = useState<User | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
+  const canManageStores = currentUser && canAccessAllStores(currentUser)
 
   // Formulario para crear/editar usuario
   const [formData, setFormData] = useState({
@@ -92,7 +96,8 @@ export function UserManagement() {
     password: '',
     role: 'vendedor',
     permissions: [] as any[],
-    isActive: true
+    isActive: true,
+    storeId: '' // ID de la tienda asignada
   })
 
 
@@ -105,10 +110,22 @@ export function UserManagement() {
     }
   }, [formData.role, selectedUser, isCreateModalOpen])
 
-  // Cargar usuarios
+  // Cargar usuarios y tiendas
   useEffect(() => {
     loadUsers()
-  }, [])
+    if (canManageStores) {
+      loadStores()
+    }
+  }, [canManageStores])
+
+  const loadStores = async () => {
+    try {
+      const storesData = await StoresService.getAllStores(true) // Incluir inactivas
+      setStores(storesData)
+    } catch (error) {
+      console.error('Error loading stores:', error)
+    }
+  }
 
   const loadUsers = async () => {
     setLoading(true)
@@ -140,8 +157,12 @@ export function UserManagement() {
   // Crear usuario
   const handleCreateUser = async () => {
     try {
+      const userData = {
+        ...formData,
+        storeId: formData.storeId || undefined // Convertir string vacío a undefined
+      }
 
-      const success = await createUser(formData)
+      const success = await createUser(userData)
 
       if (success) {
         toast.success('Usuario creado exitosamente')
@@ -267,7 +288,8 @@ export function UserManagement() {
         password: '', // No mostrar contraseña
         role: user.role || 'vendedor',
         permissions: normalizedPermissions,
-        isActive: user.isActive !== undefined ? user.isActive : true
+        isActive: user.isActive !== undefined ? user.isActive : true,
+        storeId: user.storeId || ''
       })
       setIsEditModalOpen(true)
     } catch (error: any) {
@@ -282,6 +304,7 @@ export function UserManagement() {
       name: '',
       email: '',
       password: '',
+      storeId: '',
       role: 'vendedor',
       permissions: [],
       isActive: true
@@ -524,6 +547,33 @@ export function UserManagement() {
                               </Select>
                             </div>
                           </div>
+                          {canManageStores && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2 flex items-center gap-2">
+                                <StoreIcon className="h-4 w-4" />
+                                Tienda (Opcional)
+                              </label>
+                              <Select 
+                                value={formData.storeId || 'main'} 
+                                onValueChange={(value) => setFormData({ ...formData, storeId: value === 'main' ? '' : value })}
+                              >
+                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                                  <SelectValue placeholder="Seleccionar tienda (opcional)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="main">Sin tienda (Tienda Principal)</SelectItem>
+                                  {stores.map(store => (
+                                    <SelectItem key={store.id} value={store.id}>
+                                      {store.name} {!store.isActive && '(Inactiva)'}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                Si no seleccionas una tienda, el usuario será asignado a la tienda principal
+                              </p>
+                            </div>
+                          )}
                         </CardContent>
                   </Card>
 
@@ -966,6 +1016,30 @@ export function UserManagement() {
                           Usuario Activo
                         </Label>
                       </div>
+                      {canManageStores && (
+                        <div>
+                          <Label htmlFor="editStore" className="flex items-center gap-2">
+                            <StoreIcon className="h-4 w-4" />
+                            Tienda
+                          </Label>
+                          <Select 
+                            value={formData.storeId || 'main'} 
+                            onValueChange={(value) => setFormData({ ...formData, storeId: value === 'main' ? '' : value })}
+                          >
+                            <SelectTrigger className="mt-1">
+                              <SelectValue placeholder="Seleccionar tienda" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="main">Sin tienda (Tienda Principal)</SelectItem>
+                              {stores.map(store => (
+                                <SelectItem key={store.id} value={store.id}>
+                                  {store.name} {!store.isActive && '(Inactiva)'}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 </div>

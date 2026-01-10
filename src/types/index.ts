@@ -60,17 +60,31 @@ export interface StockTransfer {
   createdAt: string
 }
 
-// Nuevo StockTransfer entre tiendas
+// Item individual de una transferencia
+export interface TransferItem {
+  id: string
+  transferId: string
+  productId: string
+  productName: string
+  productReference?: string
+  quantity: number // Cantidad esperada/enviada
+  quantityReceived?: number // Cantidad recibida (solo para recepciones)
+  fromLocation?: 'warehouse' | 'store' // Ubicación de origen (bodega o local)
+  notes?: string // Nota específica del item (para recepciones)
+  createdAt: string
+  updatedAt: string
+}
+
+// Transferencia entre tiendas (puede tener múltiples productos)
 export interface StoreStockTransfer {
   id: string
+  transferNumber?: string // Número único de transferencia (ej: TRF-20260110-0001)
   fromStoreId: string
   fromStoreName?: string
   toStoreId: string
   toStoreName?: string
-  productId: string
-  productName?: string
-  quantity: number
   status: 'pending' | 'in_transit' | 'received' | 'cancelled'
+  description?: string // Descripción general de la transferencia
   notes?: string
   createdBy?: string
   createdByName?: string
@@ -79,6 +93,12 @@ export interface StoreStockTransfer {
   receivedAt?: string
   createdAt: string
   updatedAt: string
+  // Items de la transferencia (múltiples productos)
+  items?: TransferItem[]
+  // Campos legacy para compatibilidad (deprecated)
+  productId?: string
+  productName?: string
+  quantity?: number
 }
 
 export interface StockAdjustment {
@@ -283,18 +303,8 @@ export interface PaymentRecord {
 // Mantener Payment para compatibilidad
 export interface Payment extends Credit {}
 
-export interface Store {
-  id: string
-  name: string
-  nit?: string
-  logo?: string
-  address?: string
-  city?: string
-  isActive: boolean
-  deletedAt?: string
-  createdAt: string
-  updatedAt: string
-}
+// Store interface moved to store.ts for better module resolution
+export type { Store } from './store'
 
 export interface StoreStock {
   id: string
@@ -318,3 +328,4 @@ export interface DashboardStats {
   pendingPayments: number
   lowStockProducts: number
 }
+

@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
+import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export interface LogEntry {
   id: string
@@ -17,11 +18,20 @@ export class LogsService {
   static async getLogsByPage(page: number = 1, limit: number = 20): Promise<{ logs: LogEntry[], total: number, hasMore: boolean }> {
     try {
       const offset = (page - 1) * limit
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
       
       // Obtener total de logs (usar supabaseAdmin para evitar problemas de RLS)
-      const { count: totalCount, error: countError } = await supabaseAdmin
+      let countQuery = supabaseAdmin
         .from('logs')
         .select('*', { count: 'exact', head: true })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        countQuery = countQuery.eq('store_id', storeId)
+      }
+
+      const { count: totalCount, error: countError } = await countQuery
 
       if (countError) {
         console.error('[LogsService] Error counting logs:', countError)
@@ -31,7 +41,7 @@ export class LogsService {
       // Obtener logs de la página (usar supabaseAdmin para evitar problemas de RLS)
       // Intentar primero con el JOIN, si falla se hará consulta separada
       // Usar el nombre correcto de la foreign key: fk_logs_user_id
-      const { data: logs, error } = await supabaseAdmin
+      let logsQuery = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -40,6 +50,13 @@ export class LogsService {
             name
           )
         `)
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        logsQuery = logsQuery.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await logsQuery
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -59,9 +76,16 @@ export class LogsService {
           console.error('[LogsService] Error fetching logs:', error)
         }
         // Si hay error con el join, intentar sin el join y luego obtener usuarios por separado
-        const { data: logsWithoutJoin, error: errorWithoutJoin } = await supabaseAdmin
+        let logsWithoutJoinQuery = supabaseAdmin
           .from('logs')
           .select('*')
+
+        // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+        if (storeId && !canAccessAllStores(user)) {
+          logsWithoutJoinQuery = logsWithoutJoinQuery.eq('store_id', storeId)
+        }
+
+        const { data: logsWithoutJoin, error: errorWithoutJoin } = await logsWithoutJoinQuery
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1)
         
@@ -204,7 +228,9 @@ export class LogsService {
   // Obtener todos los logs (método legacy para compatibilidad)
   static async getAllLogs(): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -212,7 +238,13 @@ export class LogsService {
             name
           )
         `)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error fetching all logs:', error)
@@ -254,7 +286,9 @@ export class LogsService {
   // Obtener logs por módulo
   static async getLogsByModule(module: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -263,7 +297,13 @@ export class LogsService {
           )
         `)
         .eq('module', module)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error fetching logs by module:', error)
@@ -303,7 +343,9 @@ export class LogsService {
   // Obtener logs por usuario
   static async getLogsByUser(userId: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -312,7 +354,13 @@ export class LogsService {
           )
         `)
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error fetching logs by user:', error)
@@ -352,7 +400,9 @@ export class LogsService {
   // Buscar logs por término
   static async searchLogs(searchTerm: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -361,7 +411,13 @@ export class LogsService {
           )
         `)
         .or(`action.ilike.%${searchTerm}%,module.ilike.%${searchTerm}%,details::text.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error searching logs:', error)

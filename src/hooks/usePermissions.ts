@@ -15,25 +15,12 @@ export function usePermissions() {
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
-    // Verificar permisos basados en rol si no hay permisos explícitos
-    const normalizedRole = (currentUser.role || '').toLowerCase().trim()
-    
-    // Vendedores tienen permisos específicos por defecto
-    if (normalizedRole === 'vendedor' || normalizedRole === 'vendedora') {
-      if (module === 'sales' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'payments' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'clients' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'products' && action === 'view') return true
-    }
-    
-    // Admin tiene permisos específicos
-    if (normalizedRole === 'admin' || normalizedRole === 'administrador') {
-      if (module === 'sales' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'payments' && (action === 'view' || action === 'create' || action === 'edit')) return true
-    }
-    
     // Verificar que el usuario tenga permisos explícitos
-    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return false
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions) || currentUser.permissions.length === 0) {
+      // Si no hay permisos explícitos, NO dar permisos por defecto
+      // Esto asegura que los permisos deben ser explícitamente configurados
+      return false
+    }
     
     // Buscar el módulo en los permisos del usuario
     const modulePermission = currentUser.permissions.find(p => p.module === module)

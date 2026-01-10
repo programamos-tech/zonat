@@ -15,21 +15,41 @@ import {
   X,
   LogOut,
   ShieldCheck,
-  UserCircle
+  UserCircle,
+  Store,
+  Warehouse,
+  ArrowRightLeft,
+  CheckCircle,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
 // ThemeToggle removed
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
+import { canAccessAllStores } from '@/lib/store-helper'
+import { StoresService } from '@/lib/stores-service'
+import type { Store } from '@/types/store'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
-  { name: 'Productos', href: '/products', icon: Package, module: 'products' },
+  { 
+    name: 'Inventario', 
+    href: '/inventory/products', 
+    icon: Warehouse, 
+    module: 'products',
+    submenu: [
+      { name: 'Productos', href: '/inventory/products', icon: Package, module: 'products' },
+      { name: 'Transferencias', href: '/inventory/transfers', icon: ArrowRightLeft, module: 'products' },
+      { name: 'Recepciones', href: '/inventory/receptions', icon: CheckCircle, module: 'products' },
+    ]
+  },
   { name: 'Clientes', href: '/clients', icon: Users, module: 'clients' },
   { name: 'Ventas', href: '/sales', icon: Receipt, module: 'sales' },
   { name: 'Garantías', href: '/warranties', icon: ShieldCheck, module: 'warranties' },
   { name: 'Créditos', href: '/payments', icon: CreditCard, module: 'payments' },
+  { name: 'Tiendas', href: '/stores', icon: Store, module: 'roles', requiresAllStoresAccess: true },
   { name: 'Roles', href: '/roles', icon: Shield, module: 'roles' },
   { name: 'Actividades', href: '/logs', icon: Activity, module: 'logs' },
   { name: 'Perfil', href: '/profile', icon: UserCircle, module: 'dashboard' },
@@ -46,11 +66,46 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
   const { canView } = usePermissions()
   const { user, logout } = useAuth()
   const sidebarRef = useRef<HTMLDivElement>(null)
+  const [currentStore, setCurrentStore] = useState<Store | null>(null)
+  const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set())
+
+  // Expandir automáticamente el menú de Inventario si estamos en alguna de sus rutas
+  useEffect(() => {
+    if (pathname?.startsWith('/inventory')) {
+      setExpandedMenus(prev => new Set([...prev, 'Inventario']))
+    }
+  }, [pathname])
 
   // Notificar al layout cuando cambie el estado del menú móvil
   useEffect(() => {
     onMobileMenuToggle?.(isMobileMenuOpen)
   }, [isMobileMenuOpen, onMobileMenuToggle])
+
+  // Cargar información de la tienda del usuario
+  useEffect(() => {
+    const loadStoreInfo = async () => {
+      if (user?.storeId) {
+        try {
+          const store = await StoresService.getStoreById(user.storeId)
+          setCurrentStore(store)
+        } catch (error) {
+          console.error('Error loading store info:', error)
+        }
+      } else {
+        // Si no tiene storeId, es de la tienda principal
+        try {
+          const mainStore = await StoresService.getMainStore()
+          setCurrentStore(mainStore)
+        } catch (error) {
+          console.error('Error loading main store:', error)
+        }
+      }
+    }
+
+    if (user) {
+      loadStoreInfo()
+    }
+  }, [user])
 
   // Cerrar menú cuando se hace click fuera del sidebar
   useEffect(() => {
@@ -86,10 +141,30 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
         )}
       >
         <div className="flex flex-col h-full">
-          {/* Logo */}
-          <div className="flex items-center justify-center h-20 px-4 border-b border-gray-100 dark:border-gray-800">
-            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity">
-              <Logo size="lg" />
+          {/* Logo y Tienda */}
+          <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
+            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity flex flex-col items-center">
+              {currentStore?.logo ? (
+                <img 
+                  src={currentStore.logo} 
+                  alt={currentStore.name}
+                  className="h-12 w-12 rounded-lg object-cover mb-2"
+                />
+              ) : (
+                <Logo size="lg" />
+              )}
+              {currentStore && (
+                <div className="mt-2 text-center">
+                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[180px]">
+                    {currentStore.name}
+                  </p>
+                  {currentStore.city && (
+                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[180px]">
+                      {currentStore.city}
+                    </p>
+                  )}
+                </div>
+              )}
             </Link>
           </div>
 
@@ -99,11 +174,28 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
               
-              // Para créditos, productos y ventas, también considerar activo si la ruta empieza con el href
+              // Si requiere acceso a todas las tiendas, verificar
+              if (item.requiresAllStoresAccess && !canAccessAllStores(user)) return null
+              
+              // Verificar si tiene submenú
+              const hasSubmenu = item.submenu && item.submenu.length > 0
+              const isExpanded = expandedMenus.has(item.name)
+              
+              // Verificar si algún subitem está activo
+              const isSubmenuActive = hasSubmenu && item.submenu?.some(subitem => {
+                if (subitem.href === '/inventory/products' && pathname?.startsWith('/inventory/products')) return true
+                if (subitem.href === '/inventory/transfers' && pathname?.startsWith('/inventory/transfers')) return true
+                if (subitem.href === '/inventory/receptions' && pathname?.startsWith('/inventory/receptions')) return true
+                return pathname === subitem.href
+              })
+              
+              // Para créditos, productos, ventas y stores, también considerar activo si la ruta empieza con el href
               const isActive = pathname === item.href || 
                 (item.href === '/payments' && pathname?.startsWith('/payments')) ||
-                (item.href === '/products' && pathname?.startsWith('/products')) ||
-                (item.href === '/sales' && pathname?.startsWith('/sales'))
+                (item.href === '/inventory/products' && pathname?.startsWith('/inventory')) ||
+                (item.href === '/sales' && pathname?.startsWith('/sales')) ||
+                (item.href === '/stores' && pathname?.startsWith('/stores')) ||
+                isSubmenuActive
               
               // Colores por módulo para el estado activo
               const getActiveColor = () => {
@@ -116,30 +208,109 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                   case 'payments': return 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
                   case 'roles': return 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
                   case 'logs': return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                  case 'stores': return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                   default: return 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
                 }
               }
+
+              const toggleSubmenu = (e: React.MouseEvent) => {
+                e.preventDefault()
+                e.stopPropagation()
+                setExpandedMenus(prev => {
+                  const newSet = new Set(prev)
+                  if (newSet.has(item.name)) {
+                    newSet.delete(item.name)
+                  } else {
+                    newSet.add(item.name)
+                  }
+                  return newSet
+                })
+              }
               
               return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className={cn(
-                    "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                    isActive
-                      ? getActiveColor()
-                      : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                <div key={item.name}>
+                  {hasSubmenu ? (
+                    <>
+                      <button
+                        onClick={toggleSubmenu}
+                        className={cn(
+                          "group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
+                          isActive || isSubmenuActive
+                            ? getActiveColor()
+                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                        )}
+                      >
+                        <div className="flex items-center flex-1">
+                          <item.icon className={cn(
+                            "h-5 w-5 transition-all duration-200 flex-shrink-0",
+                            isActive || isSubmenuActive
+                              ? "mr-3" 
+                              : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                          )} />
+                          <span className="flex-1 truncate text-left">{item.name}</span>
+                        </div>
+                        {isExpanded ? (
+                          <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                        )}
+                      </button>
+                      {isExpanded && item.submenu && (
+                        <div className="ml-4 mt-1 space-y-1">
+                          {item.submenu.map((subitem) => {
+                            if (!canView(subitem.module)) return null
+                            
+                            const isSubActive = pathname === subitem.href ||
+                              (subitem.href === '/inventory/products' && pathname?.startsWith('/inventory/products')) ||
+                              (subitem.href === '/inventory/transfers' && pathname?.startsWith('/inventory/transfers')) ||
+                              (subitem.href === '/inventory/receptions' && pathname?.startsWith('/inventory/receptions'))
+                            
+                            return (
+                              <Link
+                                key={subitem.name}
+                                href={subitem.href}
+                                onClick={() => setIsMobileMenuOpen(false)}
+                                className={cn(
+                                  "group flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
+                                  isSubActive
+                                    ? "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400"
+                                    : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                                )}
+                              >
+                                <subitem.icon className={cn(
+                                  "h-4 w-4 transition-all duration-200 flex-shrink-0 mr-2",
+                                  isSubActive
+                                    ? "" 
+                                    : "text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                                )} />
+                                <span className="flex-1 truncate">{subitem.name}</span>
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
+                        isActive
+                          ? getActiveColor()
+                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <item.icon className={cn(
+                        "h-5 w-5 transition-all duration-200 flex-shrink-0",
+                        isActive 
+                          ? "mr-3" 
+                          : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                      )} />
+                      <span className="flex-1 truncate">{item.name}</span>
+                    </Link>
                   )}
-                >
-                  <item.icon className={cn(
-                    "h-5 w-5 transition-all duration-200 flex-shrink-0",
-                    isActive 
-                      ? "mr-3" 
-                      : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
-                  )} />
-                  <span className="flex-1 truncate">{item.name}</span>
-                </Link>
+                </div>
               )
             })}
           </nav>

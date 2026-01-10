@@ -1629,7 +1629,7 @@ export default function DashboardPage() {
         {/* Productos en Stock - Solo para Super Admin */}
         {isSuperAdmin && (
           <div 
-            onClick={() => router.push('/products')}
+            onClick={() => router.push('/inventory/products')}
             className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-3">

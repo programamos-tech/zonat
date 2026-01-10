@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS "public"."stores" (
     "id" UUID DEFAULT gen_random_uuid() NOT NULL,
     "name" VARCHAR(255) NOT NULL,
     "nit" VARCHAR(50),
-    "logo" TEXT,
+    "logo_url" TEXT,
     "address" TEXT,
     "city" VARCHAR(100),
     "is_active" BOOLEAN DEFAULT true NOT NULL,

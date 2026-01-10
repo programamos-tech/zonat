@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/auth-context'
 
 const items = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, module: 'dashboard', alwaysVisible: true },
-  { href: '/products', label: 'Productos', icon: Package, module: 'products' },
+  { href: '/inventory/products', label: 'Inventario', icon: Package, module: 'products' },
   { href: '/clients', label: 'Clientes', icon: Users, module: 'clients' },
   { href: '/sales', label: 'Ventas', icon: Receipt, module: 'sales' },
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
@@ -131,7 +131,7 @@ export function BottomNav() {
             const active = currentPathname === href || 
               (href !== '/dashboard' && currentPathname?.startsWith(href)) ||
               (href === '/payments' && currentPathname?.startsWith('/payments')) ||
-              (href === '/products' && currentPathname?.startsWith('/products')) ||
+              (href === '/inventory/products' && currentPathname?.startsWith('/inventory')) ||
               (href === '/sales' && currentPathname?.startsWith('/sales'))
             
             // Colores por módulo para el estado activo (igual que el sidebar)

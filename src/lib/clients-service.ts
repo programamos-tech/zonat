@@ -1,15 +1,24 @@
 import { supabase } from './supabase'
 import { Client } from '@/types'
 import { AuthService } from './auth-service'
+import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export class ClientsService {
   // Obtener todos los clientes
   static async getAllClients(): Promise<Client[]> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabase
         .from('clients')
         .select('*')
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
       // Error silencioso en producción
@@ -29,6 +38,7 @@ export class ClientsService {
         creditLimit: client.credit_limit || 0,
         currentDebt: client.current_debt || 0,
         status: client.status,
+        storeId: client.store_id || undefined,
         createdAt: client.created_at
       }))
     } catch (error) {
@@ -40,11 +50,18 @@ export class ClientsService {
   // Obtener cliente por ID
   static async getClientById(id: string): Promise<Client | null> {
     try {
-      const { data, error } = await supabase
+      const storeId = getCurrentUserStoreId()
+      let query = supabase
         .from('clients')
         .select('*')
         .eq('id', id)
-        .single()
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(null)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query.single()
 
       if (error) {
       // Error silencioso en producción
@@ -64,6 +81,7 @@ export class ClientsService {
         creditLimit: data.credit_limit || 0,
         currentDebt: data.current_debt || 0,
         status: data.status,
+        storeId: data.store_id || undefined,
         createdAt: data.created_at
       }
     } catch (error) {
@@ -80,6 +98,9 @@ export class ClientsService {
         ? clientData.email.trim() 
         : null
 
+      // Obtener store_id del usuario actual
+      const storeId = getCurrentUserStoreId()
+      
       const { data, error } = await supabase
         .from('clients')
         .insert({
@@ -93,7 +114,8 @@ export class ClientsService {
           type: clientData.type,
           credit_limit: clientData.creditLimit,
           current_debt: clientData.currentDebt,
-          status: clientData.status
+          status: clientData.status,
+          store_id: storeId || '00000000-0000-0000-0000-000000000001' // Tienda principal por defecto
         })
         .select()
         .single()
@@ -125,6 +147,7 @@ export class ClientsService {
         creditLimit: data.credit_limit || 0,
         currentDebt: data.current_debt || 0,
         status: data.status,
+        storeId: data.store_id || undefined,
         createdAt: data.created_at
       }
 
@@ -159,6 +182,13 @@ export class ClientsService {
       // Obtener el cliente actual antes de actualizarlo para el log
       const currentClient = await this.getClientById(id)
       if (!currentClient) {
+        return false
+      }
+
+      // Verificar que el cliente pertenece a la tienda del usuario (si no es admin principal)
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      if (storeId && !canAccessAllStores(user) && currentClient.storeId !== storeId) {
         return false
       }
 
@@ -240,6 +270,16 @@ export class ClientsService {
     try {
       // Obtener información del cliente antes de eliminarlo para el log
       const clientToDelete = await this.getClientById(id)
+      if (!clientToDelete) {
+        return false
+      }
+
+      // Verificar que el cliente pertenece a la tienda del usuario (si no es admin principal)
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      if (storeId && !canAccessAllStores(user) && clientToDelete.storeId !== storeId) {
+        return false
+      }
       
       const { error } = await supabase
         .from('clients')
@@ -277,11 +317,19 @@ export class ClientsService {
   // Buscar clientes
   static async searchClients(query: string): Promise<Client[]> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let dbQuery = supabase
         .from('clients')
         .select('*')
         .or(`name.ilike.%${query}%,email.ilike.%${query}%,document.ilike.%${query}%`)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        dbQuery = dbQuery.eq('store_id', storeId)
+      }
+
+      const { data, error } = await dbQuery.order('created_at', { ascending: false })
 
       if (error) {
       // Error silencioso en producción
@@ -301,6 +349,7 @@ export class ClientsService {
         creditLimit: client.credit_limit || 0,
         currentDebt: client.current_debt || 0,
         status: client.status,
+        storeId: client.store_id || undefined,
         createdAt: client.created_at
       }))
     } catch (error) {

@@ -4,7 +4,8 @@ import { usePathname } from 'next/navigation'
 import { Sidebar } from '@/components/ui/sidebar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { BetaBanner } from '@/components/ui/beta-banner'
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { useStoreUrl } from '@/hooks/use-store-url'
 
 interface ConditionalLayoutProps {
   children: React.ReactNode
@@ -13,6 +14,9 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  
+  // Actualizar URL con el identificador de la tienda
+  useStoreUrl()
   
   // Si es la página de login, no mostrar sidebar ni protección
   if (pathname === '/login') {

@@ -29,7 +29,7 @@ export function RoleProtectedRoute({
         if (isSuperAdmin) {
           router.push('/dashboard')
         } else {
-          router.push('/products')
+          router.push('/inventory/products')
         }
       }
     }

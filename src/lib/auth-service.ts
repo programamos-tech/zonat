@@ -72,6 +72,7 @@ export class AuthService {
         role: user.role,
         permissions: permissions,
         isActive: user.is_active,
+        storeId: user.store_id || undefined,
         lastLogin: user.last_login,
         createdAt: user.created_at,
         updatedAt: user.updated_at
@@ -89,6 +90,7 @@ export class AuthService {
     password: string
     role: string
     permissions: any[]
+    storeId?: string
   }, currentUserId?: string): Promise<User | null> {
     try {
 
@@ -100,6 +102,7 @@ export class AuthService {
           password: userData.password, // En producción, hashear la contraseña
           role: userData.role,
           permissions: userData.permissions,
+          store_id: userData.storeId || null,
           is_active: true,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -136,6 +139,7 @@ export class AuthService {
         role: user.role,
         permissions: user.permissions || [],
         isActive: user.is_active,
+        storeId: user.store_id || undefined,
         lastLogin: user.last_login,
         createdAt: user.created_at,
         updatedAt: user.updated_at
@@ -166,6 +170,7 @@ export class AuthService {
         role: user.role,
         permissions: user.permissions || [],
         isActive: user.is_active,
+        storeId: user.store_id || undefined,
         lastLogin: user.last_login,
         createdAt: user.created_at,
         updatedAt: user.updated_at
@@ -197,6 +202,7 @@ export class AuthService {
         role: user.role,
         permissions: user.permissions || [],
         isActive: user.is_active,
+        storeId: user.store_id || undefined,
         lastLogin: user.last_login,
         createdAt: user.created_at,
         updatedAt: user.updated_at
@@ -226,6 +232,7 @@ export class AuthService {
       if (updates.role) dbUpdates.role = updates.role
       if (updates.permissions) dbUpdates.permissions = updates.permissions
       if (updates.isActive !== undefined) dbUpdates.is_active = updates.isActive
+      if (updates.storeId !== undefined) dbUpdates.store_id = updates.storeId || null
       if (updates.lastLogin) dbUpdates.last_login = updates.lastLogin
 
       const { error } = await supabaseAdmin
@@ -389,6 +396,15 @@ export class AuthService {
     details: any
   ): Promise<void> {
     try {
+      // Obtener store_id del usuario actual
+      let storeId: string | null = null
+      try {
+        const currentUser = await this.getCurrentUser()
+        storeId = currentUser?.storeId || null
+      } catch (error) {
+        // Error silencioso - continuar sin store_id
+      }
+
       const { data, error } = await supabaseAdmin
         .from('logs')
         .insert({
@@ -396,6 +412,7 @@ export class AuthService {
           action,
           module,
           details,
+          store_id: storeId || '00000000-0000-0000-0000-000000000001', // Tienda principal por defecto
           ip_address: null, // Se puede obtener del request
           user_agent: null, // Se puede obtener del request
           created_at: new Date().toISOString()
@@ -613,6 +630,7 @@ export class AuthService {
         role: dbUser.role,
         permissions: permissions,
         isActive: dbUser.is_active,
+        storeId: dbUser.store_id || undefined,
         lastLogin: dbUser.last_login,
         createdAt: dbUser.created_at,
         updatedAt: dbUser.updated_at

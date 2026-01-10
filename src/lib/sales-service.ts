@@ -2,14 +2,24 @@ import { supabase } from './supabase'
 import { Sale, SaleItem, SalePayment } from '@/types'
 import { AuthService } from './auth-service'
 import { ProductsService } from './products-service'
+import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export class SalesService {
   // Generar el siguiente número de factura
   static async getNextInvoiceNumber(): Promise<string> {
     try {
-      const { count, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabase
         .from('sales')
         .select('*', { count: 'exact', head: true })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { count, error } = await query
 
       if (error) {
       // Error silencioso en producción
@@ -27,11 +37,20 @@ export class SalesService {
   static async getAllSales(page: number = 1, limit: number = 10): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
     try {
       const offset = (page - 1) * limit
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
       
       // Obtener el total de ventas
-      const { count, error: countError } = await supabase
+      let countQuery = supabase
         .from('sales')
         .select('*', { count: 'exact', head: true })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        countQuery = countQuery.eq('store_id', storeId)
+      }
+
+      const { count, error: countError } = await countQuery
       
       if (countError) {
       // Error silencioso en producción
@@ -39,7 +58,7 @@ export class SalesService {
       }
       
       // Obtener las ventas paginadas con los códigos de referencia y pagos mixtos
-      const { data, error } = await supabase
+      let dataQuery = supabase
         .from('sales')
         .select(`
           *,
@@ -61,6 +80,13 @@ export class SalesService {
             created_at
           )
         `)
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        dataQuery = dataQuery.eq('store_id', storeId)
+      }
+
+      const { data, error } = await dataQuery
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -140,6 +166,7 @@ export class SalesService {
             sellerId: sale.seller_id,
             sellerName: sale.seller_name,
             sellerEmail: sale.seller_email,
+            storeId: sale.store_id || undefined,
             createdAt: sale.created_at,
             items: itemsWithReferences,
             creditStatus: creditStatus, // Estado del crédito asociado
@@ -162,6 +189,9 @@ export class SalesService {
   // Método optimizado para dashboard con filtrado por fecha
   static async getDashboardSales(startDate?: Date, endDate?: Date): Promise<Sale[]> {
     try {
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+
       // Construir query base
       let query = supabase
         .from('sales')
@@ -185,7 +215,13 @@ export class SalesService {
             created_at
           )
         `)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      query = query.order('created_at', { ascending: false })
 
       // Aplicar filtros de fecha si existen
       if (startDate) {
@@ -217,6 +253,9 @@ export class SalesService {
       let hasMore = true
       
       while (hasMore) {
+        const user = getCurrentUser()
+        const storeId = getCurrentUserStoreId()
+
         let paginatedQuery = supabase
           .from('sales')
           .select(`
@@ -239,7 +278,13 @@ export class SalesService {
               created_at
             )
           `)
-          .order('created_at', { ascending: false })
+
+        // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+        if (storeId && !canAccessAllStores(user)) {
+          paginatedQuery = paginatedQuery.eq('store_id', storeId)
+        }
+
+        paginatedQuery = paginatedQuery.order('created_at', { ascending: false })
           .range(offset, offset + limit - 1) // Lotes de 1,000
 
         // Aplicar filtros de fecha si existen
@@ -335,6 +380,7 @@ export class SalesService {
         sellerId: sale.seller_id,
         sellerName: sale.seller_name,
         sellerEmail: sale.seller_email,
+        storeId: sale.store_id || undefined,
         createdAt: sale.created_at,
         items: itemsWithReferences,
         cancellationReason: sale.cancellation_reason || undefined
@@ -351,7 +397,9 @@ export class SalesService {
 
   static async getSaleById(id: string): Promise<Sale | null> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabase
         .from('sales')
         .select(`
           *,
@@ -374,7 +422,13 @@ export class SalesService {
           )
         `)
         .eq('id', id)
-        .single()
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query.single()
 
       if (error) {
       // Error silencioso en producción
@@ -445,6 +499,7 @@ export class SalesService {
         sellerId: data.seller_id,
         sellerName: data.seller_name,
         sellerEmail: data.seller_email,
+        storeId: data.store_id || undefined,
         createdAt: data.created_at,
         items: itemsWithReferences
       }
@@ -467,6 +522,9 @@ export class SalesService {
       // Obtener información del usuario actual
       const currentUser = await AuthService.getCurrentUser()
       
+      // Obtener store_id del usuario actual
+      const storeId = getCurrentUserStoreId()
+
       // Crear la venta
       const { data: sale, error: saleError } = await supabase
         .from('sales')
@@ -482,7 +540,8 @@ export class SalesService {
           invoice_number: invoiceNumber,
           seller_id: currentUser?.id || currentUserId,
           seller_name: currentUser?.name || 'Usuario',
-          seller_email: currentUser?.email || ''
+          seller_email: currentUser?.email || '',
+          store_id: storeId || '00000000-0000-0000-0000-000000000001' // Tienda principal por defecto
         })
         .select()
         .single()
@@ -691,6 +750,13 @@ export class SalesService {
       const existingSale = await this.getSaleById(id)
       if (!existingSale) {
         throw new Error('Venta no encontrada')
+      }
+
+      // Verificar que la venta pertenece a la tienda del usuario (si no es admin principal)
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      if (storeId && !canAccessAllStores(user) && existingSale.storeId !== storeId) {
+        throw new Error('No tienes permiso para editar esta venta')
       }
       
       if (existingSale.status !== 'draft') {
@@ -915,6 +981,18 @@ export class SalesService {
 
   static async deleteSale(id: string, currentUserId: string): Promise<void> {
     try {
+      // Verificar que la venta pertenece a la tienda del usuario (si no es admin principal)
+      const existingSale = await this.getSaleById(id)
+      if (!existingSale) {
+        throw new Error('Venta no encontrada')
+      }
+
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      if (storeId && !canAccessAllStores(user) && existingSale.storeId !== storeId) {
+        throw new Error('No tienes permiso para eliminar esta venta')
+      }
+
       const { error } = await supabase
         .from('sales')
         .delete()
@@ -1312,6 +1390,9 @@ export class SalesService {
       const cleanTerm = searchTerm.trim()
       if (!cleanTerm) return []
 
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+
       // Construir la consulta de búsqueda (SIN excluir ventas canceladas para garantías)
       let searchQuery = supabase
         .from('sales')
@@ -1328,6 +1409,11 @@ export class SalesService {
             total
           )
         `)
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        searchQuery = searchQuery.eq('store_id', storeId)
+      }
 
       // Lógica de búsqueda mejorada
       let searchConditions: string[] = []
@@ -1458,6 +1544,9 @@ export class SalesService {
       const numericValue = cleanTerm.replace('#', '')
       const isNumber = !isNaN(Number(numericValue)) && numericValue.length > 0
       
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+
       let query = supabase
         .from('sales')
         .select(`
@@ -1473,6 +1562,11 @@ export class SalesService {
             total
           )
         `)
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
 
       // Buscar en ambos campos: número de factura Y nombre del cliente
       if (isNumber) {
@@ -1567,6 +1661,7 @@ export class SalesService {
           sellerId: sale.seller_id,
           sellerName: sale.seller_name || '',
           sellerEmail: sale.seller_email || '',
+          storeId: sale.store_id || undefined,
           createdAt: sale.created_at,
           items,
           payments: payments.length > 0 ? payments : undefined,
@@ -1614,6 +1709,9 @@ export class SalesService {
       // Obtener todas las ventas en lotes
       const allSalesData: any[] = []
       for (const batch of batches) {
+        const user = getCurrentUser()
+        const storeId = getCurrentUserStoreId()
+
         let salesQuery = supabase
           .from('sales')
           .select(`
@@ -1638,6 +1736,11 @@ export class SalesService {
             )
           `)
           .in('id', batch)
+        
+        // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+        if (storeId && !canAccessAllStores(user)) {
+          salesQuery = salesQuery.eq('store_id', storeId)
+        }
         
         // Si hay una fecha de inicio, filtrar por fecha
         if (startDate) {
@@ -1713,6 +1816,7 @@ export class SalesService {
             sellerId: sale.seller_id,
             sellerName: sale.seller_name || '',
             sellerEmail: sale.seller_email || '',
+            storeId: sale.store_id || undefined,
             createdAt: sale.created_at,
             items: itemsWithReferences,
             payments: sale.sale_payments?.map((payment: any) => ({
