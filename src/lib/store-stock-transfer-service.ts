@@ -109,6 +109,13 @@ export class StoreStockTransferService {
       for (const item of items) {
         if (isFromMainStore) {
           // Para la tienda principal, descontar de products.stock_warehouse o products.stock_store
+          console.log('[STORE STOCK TRANSFER] Deducting stock from MAIN STORE:', {
+            productId: item.productId,
+            productName: item.productName,
+            fromLocation: item.fromLocation,
+            quantity: item.quantity
+          })
+          
           const { data: product } = await supabaseAdmin
             .from('products')
             .select('stock_warehouse, stock_store')
@@ -121,6 +128,14 @@ export class StoreStockTransferService {
               ? (product.stock_warehouse || 0)
               : (product.stock_store || 0)
             const newStock = currentStock - item.quantity
+
+            console.log('[STORE STOCK TRANSFER] Stock calculation for MAIN STORE:', {
+              productId: item.productId,
+              field,
+              currentStock,
+              quantityToDeduct: item.quantity,
+              newStock
+            })
 
             if (newStock < 0) {
               console.error(`Insufficient stock for product ${item.productName}`)
@@ -135,13 +150,28 @@ export class StoreStockTransferService {
               .eq('id', item.productId)
 
             if (updateError) {
-              console.error('Error updating product stock:', updateError)
+              console.error('[STORE STOCK TRANSFER] Error updating product stock:', updateError)
               await supabaseAdmin.from('stock_transfers').delete().eq('id', transfer.id)
               return null
             }
+            
+            console.log('[STORE STOCK TRANSFER] Stock successfully deducted from MAIN STORE:', {
+              productId: item.productId,
+              field,
+              previousStock: currentStock,
+              newStock
+            })
+          } else {
+            console.error('[STORE STOCK TRANSFER] Product not found when trying to deduct stock:', item.productId)
           }
         } else {
           // Para micro tiendas, descontar de store_stock
+          console.log('[STORE STOCK TRANSFER] Deducting stock from MICRO STORE:', {
+            storeId: fromStoreId,
+            productId: item.productId,
+            productName: item.productName,
+            quantity: item.quantity
+          })
           await this.updateStoreStock(fromStoreId, item.productId, -item.quantity)
         }
       }
@@ -264,7 +294,7 @@ export class StoreStockTransferService {
         .from('stock_transfers')
         .select('*')
         .eq('to_store_id', storeId)
-        .eq('status', 'pending')
+        .in('status', ['pending', 'in_transit'])
         .order('created_at', { ascending: false })
 
       if (error) {
@@ -316,7 +346,7 @@ export class StoreStockTransferService {
         .from('stock_transfers')
         .select('*')
         .eq('to_store_id', storeId)
-        .eq('status', 'received')
+        .in('status', ['received', 'partially_received'])
         .order('received_at', { ascending: false })
 
       if (error) {
@@ -373,7 +403,10 @@ export class StoreStockTransferService {
       if (direction === 'sent') {
         query = query.eq('from_store_id', storeId)
       } else if (direction === 'received') {
-        query = query.eq('to_store_id', storeId)
+        // Incluir tanto 'received' como 'partially_received'
+        query = query
+          .eq('to_store_id', storeId)
+          .in('status', ['received', 'partially_received'])
       } else {
         query = query.or(`from_store_id.eq.${storeId},to_store_id.eq.${storeId}`)
       }
@@ -466,11 +499,33 @@ export class StoreStockTransferService {
         }
       }
 
-      // Actualizar estado de la transferencia
+      // Determinar si es recepción parcial o completa
+      let isPartial = false
+      if (transfer.items && transfer.items.length > 0) {
+        // Verificar si algún item tiene cantidad recibida menor a la esperada
+        for (const receivedItem of itemsToReceive) {
+          const originalItem = transfer.items.find(item => item.id === receivedItem.itemId)
+          if (originalItem && receivedItem.quantityReceived < originalItem.quantity) {
+            isPartial = true
+            break
+          }
+        }
+      } else {
+        // Para transferencias legacy, verificar si la cantidad recibida es menor
+        if (transfer.quantity && itemsToReceive.length > 0) {
+          const totalReceived = itemsToReceive.reduce((sum, item) => sum + item.quantityReceived, 0)
+          if (totalReceived < transfer.quantity) {
+            isPartial = true
+          }
+        }
+      }
+
+      // Actualizar estado de la transferencia (received o partially_received)
+      const finalStatus = isPartial ? 'partially_received' : 'received'
       const { error: updateError } = await supabaseAdmin
         .from('stock_transfers')
         .update({
-          status: 'received',
+          status: finalStatus,
           received_by: receivedBy || null,
           received_by_name: receivedByName || null,
           received_at: new Date().toISOString()
@@ -488,7 +543,7 @@ export class StoreStockTransferService {
           const originalItem = transfer.items.find(item => item.id === receivedItem.itemId)
           if (originalItem) {
             // Actualizar el item con la cantidad recibida y nota (NO modificar quantity original)
-            await supabaseAdmin
+            const { error: updateItemError } = await supabaseAdmin
               .from('transfer_items')
               .update({
                 quantity_received: receivedItem.quantityReceived,
@@ -496,10 +551,24 @@ export class StoreStockTransferService {
               })
               .eq('id', receivedItem.itemId)
 
+            if (updateItemError) {
+              console.error('Error updating transfer item:', updateItemError)
+            }
+
             // Aumentar stock en la tienda destino solo con la cantidad recibida (si es mayor a 0)
             // Permitir 0 para recepciones parciales sin stock
             if (receivedItem.quantityReceived > 0) {
-              await this.updateStoreStock(transfer.toStoreId, originalItem.productId, receivedItem.quantityReceived)
+              console.log('[STORE STOCK TRANSFER] Updating stock for micro store:', {
+                storeId: transfer.toStoreId,
+                productId: originalItem.productId,
+                quantityReceived: receivedItem.quantityReceived
+              })
+              const stockUpdated = await this.updateStoreStock(transfer.toStoreId, originalItem.productId, receivedItem.quantityReceived)
+              if (!stockUpdated) {
+                console.error('[STORE STOCK TRANSFER] Failed to update stock for product:', originalItem.productId)
+              } else {
+                console.log('[STORE STOCK TRANSFER] Stock updated successfully')
+              }
             }
           }
         }
@@ -509,7 +578,15 @@ export class StoreStockTransferService {
           const quantityToReceive = itemsToReceive.length > 0 
             ? itemsToReceive[0].quantityReceived 
             : transfer.quantity
-          await this.updateStoreStock(transfer.toStoreId, transfer.productId, quantityToReceive)
+          console.log('[STORE STOCK TRANSFER] Updating stock for legacy transfer:', {
+            storeId: transfer.toStoreId,
+            productId: transfer.productId,
+            quantityReceived: quantityToReceive
+          })
+          const stockUpdated = await this.updateStoreStock(transfer.toStoreId, transfer.productId, quantityToReceive)
+          if (!stockUpdated) {
+            console.error('[STORE STOCK TRANSFER] Failed to update stock for legacy transfer')
+          }
         }
       }
 
@@ -612,20 +689,39 @@ export class StoreStockTransferService {
   // Obtener stock de un producto en una tienda
   static async getStoreStock(storeId: string, productId: string): Promise<StoreStock | null> {
     try {
-      const { data, error } = await supabase
-        .from('store_stock')
-        .select(`
-          *,
-          store:stores(id, name),
-          product:products(id, name, reference)
-        `)
-        .eq('store_id', storeId)
-        .eq('product_id', productId)
-        .single()
+      // Intentar con supabaseAdmin primero
+      let data: any = null
+      let error: any = null
+      
+      try {
+        const result = await supabaseAdmin
+          .from('store_stock')
+          .select('*')
+          .eq('store_id', storeId)
+          .eq('product_id', productId)
+          .maybeSingle()
+        data = result.data
+        error = result.error
+      } catch (err) {
+        console.warn('[STORE STOCK TRANSFER] supabaseAdmin failed, trying supabase:', err)
+        try {
+          const result = await supabase
+            .from('store_stock')
+            .select('*')
+            .eq('store_id', storeId)
+            .eq('product_id', productId)
+            .maybeSingle()
+          data = result.data
+          error = result.error
+        } catch (err2) {
+          console.error('[STORE STOCK TRANSFER] Both failed:', err2)
+          error = err2
+        }
+      }
 
       if (error) {
         // Si no existe, retornar stock 0
-        if (error.code === 'PGRST116') {
+        if (error.code === 'PGRST116' || error.code === 'PGRST116') {
           return {
             id: '',
             storeId: storeId,
@@ -635,13 +731,25 @@ export class StoreStockTransferService {
             updatedAt: new Date().toISOString()
           }
         }
-        console.error('Error fetching store stock:', error)
+        console.error('[STORE STOCK TRANSFER] Error fetching store stock:', error)
         return null
+      }
+
+      if (!data) {
+        // Si no hay datos, retornar stock 0
+        return {
+          id: '',
+          storeId: storeId,
+          productId: productId,
+          quantity: 0,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
       }
 
       return this.mapStoreStock(data)
     } catch (error) {
-      console.error('Error in getStoreStock:', error)
+      console.error('[STORE STOCK TRANSFER] Error in getStoreStock:', error)
       return null
     }
   }
@@ -677,34 +785,98 @@ export class StoreStockTransferService {
     quantityChange: number
   ): Promise<boolean> {
     try {
+      console.log('[STORE STOCK TRANSFER] updateStoreStock called:', {
+        storeId,
+        productId,
+        quantityChange
+      })
+
       // Obtener stock actual
       const currentStock = await this.getStoreStock(storeId, productId)
-      const newQuantity = (currentStock?.quantity || 0) + quantityChange
+      const currentQuantity = currentStock?.quantity || 0
+      const newQuantity = currentQuantity + quantityChange
+
+      console.log('[STORE STOCK TRANSFER] Stock calculation:', {
+        currentQuantity,
+        quantityChange,
+        newQuantity
+      })
 
       if (newQuantity < 0) {
-        console.error('Insufficient stock')
+        console.error('[STORE STOCK TRANSFER] Insufficient stock:', {
+          currentQuantity,
+          quantityChange,
+          newQuantity
+        })
         return false
       }
 
-      // Upsert stock
-      const { error } = await supabaseAdmin
+      // Upsert stock - asegurar que location sea 'local' para micro tiendas
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
+      const upsertData: any = {
+        store_id: storeId,
+        product_id: productId,
+        stock_quantity: newQuantity
+      }
+      
+      // Solo establecer location para micro tiendas (siempre 'local')
+      if (!isMainStore) {
+        upsertData.location = 'local'
+      }
+
+      console.log('[STORE STOCK TRANSFER] Upserting stock:', {
+        upsertData,
+        isMainStore
+      })
+
+      const { data, error } = await supabaseAdmin
         .from('store_stock')
-        .upsert({
-          store_id: storeId,
-          product_id: productId,
-          quantity: newQuantity
-        }, {
+        .upsert(upsertData, {
           onConflict: 'store_id,product_id'
         })
+        .select()
 
       if (error) {
-        console.error('Error updating store stock:', error)
+        console.error('[STORE STOCK TRANSFER] Error updating store stock:', {
+          error,
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          storeId,
+          productId,
+          quantityChange,
+          newQuantity,
+          upsertData
+        })
+        // Intentar sin location si el error es por la columna location
+        if (error.message && error.message.includes('location')) {
+          console.log('[STORE STOCK TRANSFER] Retrying without location column')
+          const { error: retryError } = await supabaseAdmin
+            .from('store_stock')
+            .upsert({
+              store_id: storeId,
+              product_id: productId,
+              stock_quantity: newQuantity
+            }, {
+              onConflict: 'store_id,product_id'
+            })
+          
+          if (retryError) {
+            console.error('[STORE STOCK TRANSFER] Error on retry:', retryError)
+            return false
+          }
+          return true
+        }
         return false
       }
 
+      console.log('[STORE STOCK TRANSFER] Stock updated successfully:', data)
       return true
     } catch (error) {
-      console.error('Error in updateStoreStock:', error)
+      console.error('[STORE STOCK TRANSFER] Error in updateStoreStock:', error)
       return false
     }
   }
@@ -758,7 +930,7 @@ export class StoreStockTransferService {
       storeName: data.store?.name || undefined,
       productId: data.product_id,
       productName: data.product?.name || undefined,
-      quantity: data.quantity || 0,
+      quantity: data.stock_quantity || 0,
       location: data.location || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at

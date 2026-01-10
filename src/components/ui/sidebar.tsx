@@ -28,7 +28,7 @@ import { Logo } from './logo'
 // ThemeToggle removed
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
-import { canAccessAllStores } from '@/lib/store-helper'
+import { canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import type { Store } from '@/types/store'
 
@@ -259,6 +259,9 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                         <div className="ml-4 mt-1 space-y-1">
                           {item.submenu.map((subitem) => {
                             if (!canView(subitem.module)) return null
+                            
+                            // Ocultar "Transferencias" para usuarios de micro tiendas
+                            if (subitem.href === '/inventory/transfers' && !isMainStoreUser(user)) return null
                             
                             const isSubActive = pathname === subitem.href ||
                               (subitem.href === '/inventory/products' && pathname?.startsWith('/inventory/products')) ||

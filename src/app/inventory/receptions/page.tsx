@@ -14,9 +14,11 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { ReceiveTransferModal } from '@/components/inventory/receive-transfer-modal'
+import { useProducts } from '@/contexts/products-context'
 
 export default function ReceptionsPage() {
   const { user } = useAuth()
+  const { refreshProducts } = useProducts() // Agregar refreshProducts para actualizar productos después de recibir
   const [pendingTransfers, setPendingTransfers] = useState<StoreStockTransfer[]>([])
   const [receivedTransfers, setReceivedTransfers] = useState<StoreStockTransfer[]>([])
   const [loading, setLoading] = useState(true)
@@ -87,6 +89,8 @@ export default function ReceptionsPage() {
         setIsReceiveModalOpen(false)
         setTransferToReceive(null)
         await loadTransfers()
+        // Refrescar productos para mostrar el nuevo stock
+        await refreshProducts()
       } else {
         toast.error('Error al recibir la transferencia')
       }
@@ -104,6 +108,8 @@ export default function ReceptionsPage() {
         return <Badge className="bg-blue-500 hover:bg-blue-600">En Tránsito</Badge>
       case 'received':
         return <Badge className="bg-green-500 hover:bg-green-600">Recibida</Badge>
+      case 'partially_received':
+        return <Badge className="bg-orange-500 hover:bg-orange-600">Parcialmente Recibida</Badge>
       case 'cancelled':
         return <Badge className="bg-red-500 hover:bg-red-600">Cancelada</Badge>
       default:
@@ -205,7 +211,7 @@ export default function ReceptionsPage() {
                 const totalQuantity = transfer.items && transfer.items.length > 0
                   ? transfer.items.reduce((sum, item) => sum + (item.quantityReceived || item.quantity), 0)
                   : transfer.quantity || 0
-                const isReceived = transfer.status === 'received'
+                const isReceived = transfer.status === 'received' || transfer.status === 'partially_received'
 
                 return (
                   <Card
@@ -222,7 +228,13 @@ export default function ReceptionsPage() {
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-4 mb-2">
-                            <CheckCircle className={`h-5 w-5 flex-shrink-0 ${isReceived ? 'text-green-600 dark:text-green-400' : 'text-cyan-600 dark:text-cyan-400'}`} />
+                            <CheckCircle className={`h-5 w-5 flex-shrink-0 ${
+                              transfer.status === 'partially_received' 
+                                ? 'text-orange-600 dark:text-orange-400' 
+                                : isReceived 
+                                ? 'text-green-600 dark:text-green-400' 
+                                : 'text-cyan-600 dark:text-cyan-400'
+                            }`} />
                             <div className="flex-1">
                               <div className="flex items-center gap-3">
                                 <div className="flex-1">

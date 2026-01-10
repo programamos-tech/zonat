@@ -191,6 +191,18 @@ export class SalesService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const canAccessAll = canAccessAllStores(user)
+
+      console.log('[SALES SERVICE] getDashboardSales - Initial:', {
+        storeId,
+        canAccessAll,
+        userRole: user?.role,
+        userId: user?.id,
+        userName: user?.name,
+        isMainStore: storeId === '00000000-0000-0000-0000-000000000001' || !storeId,
+        startDate: startDate?.toISOString(),
+        endDate: endDate?.toISOString()
+      })
 
       // Construir query base
       let query = supabase
@@ -217,32 +229,45 @@ export class SalesService {
         `)
 
       // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      if (storeId && !canAccessAll) {
         query = query.eq('store_id', storeId)
+        console.log('[SALES SERVICE] Filtering by store_id:', storeId)
+      } else {
+        console.log('[SALES SERVICE] NOT filtering by store_id (showing all stores)')
       }
 
       query = query.order('created_at', { ascending: false })
 
       // Aplicar filtros de fecha si existen
       if (startDate) {
-        // Usar inicio del día en UTC para evitar problemas de zona horaria
-        const startUTC = new Date(Date.UTC(
+        // Usar inicio del día en hora local (sin conversión UTC)
+        const startLocal = new Date(
           startDate.getFullYear(),
           startDate.getMonth(),
           startDate.getDate(),
           0, 0, 0, 0
-        ))
-        query = query.gte('created_at', startUTC.toISOString())
+        )
+        query = query.gte('created_at', startLocal.toISOString())
+        console.log('[SALES SERVICE] Date filter - startDate:', {
+          original: startDate.toISOString(),
+          local: startLocal.toISOString(),
+          localString: startLocal.toLocaleString('es-CO')
+        })
       }
       if (endDate) {
-        // Usar final del día en UTC para incluir todo el día
-        const endUTC = new Date(Date.UTC(
+        // Usar final del día en hora local (sin conversión UTC)
+        const endLocal = new Date(
           endDate.getFullYear(),
           endDate.getMonth(),
           endDate.getDate(),
           23, 59, 59, 999
-        ))
-        query = query.lte('created_at', endUTC.toISOString())
+        )
+        query = query.lte('created_at', endLocal.toISOString())
+        console.log('[SALES SERVICE] Date filter - endDate:', {
+          original: endDate.toISOString(),
+          local: endLocal.toISOString(),
+          localString: endLocal.toLocaleString('es-CO')
+        })
       }
 
       // Ejecutar query - Supabase tiene límite de 1,000 registros por query
@@ -280,8 +305,10 @@ export class SalesService {
           `)
 
         // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-        if (storeId && !canAccessAllStores(user)) {
+        const canAccessAll = canAccessAllStores(user)
+        if (storeId && !canAccessAll) {
           paginatedQuery = paginatedQuery.eq('store_id', storeId)
+          console.log('[SALES SERVICE] Paginated query filtering by store_id:', storeId)
         }
 
         paginatedQuery = paginatedQuery.order('created_at', { ascending: false })
@@ -289,22 +316,24 @@ export class SalesService {
 
         // Aplicar filtros de fecha si existen
         if (startDate) {
-          const startUTC = new Date(Date.UTC(
+          // Usar inicio del día en hora local (sin conversión UTC)
+          const startLocal = new Date(
             startDate.getFullYear(),
             startDate.getMonth(),
             startDate.getDate(),
             0, 0, 0, 0
-          ))
-          paginatedQuery = paginatedQuery.gte('created_at', startUTC.toISOString())
+          )
+          paginatedQuery = paginatedQuery.gte('created_at', startLocal.toISOString())
         }
         if (endDate) {
-          const endUTC = new Date(Date.UTC(
+          // Usar final del día en hora local (sin conversión UTC)
+          const endLocal = new Date(
             endDate.getFullYear(),
             endDate.getMonth(),
             endDate.getDate(),
             23, 59, 59, 999
-          ))
-          paginatedQuery = paginatedQuery.lte('created_at', endUTC.toISOString())
+          )
+          paginatedQuery = paginatedQuery.lte('created_at', endLocal.toISOString())
         }
 
         const { data, error } = await paginatedQuery
@@ -324,6 +353,18 @@ export class SalesService {
           hasMore = false
         }
       }
+
+      console.log('[SALES SERVICE] getDashboardSales - Raw sales from DB:', {
+        totalSales: allSales.length,
+        sales: allSales.slice(0, 5).map(s => ({
+          id: s.id,
+          invoice_number: s.invoice_number,
+          store_id: s.store_id,
+          total: s.total,
+          created_at: s.created_at,
+          status: s.status
+        }))
+      })
 
       // Procesar referencias de productos (mismo código que getAllSales)
       const sales = await Promise.all(
@@ -387,6 +428,18 @@ export class SalesService {
       }
         })
       )
+
+      console.log('[SALES SERVICE] getDashboardSales - Processed sales:', {
+        totalSales: sales.length,
+        sales: sales.slice(0, 5).map(s => ({
+          id: s.id,
+          invoice: s.invoiceNumber,
+          storeId: s.storeId,
+          total: s.total,
+          createdAt: s.createdAt,
+          status: s.status
+        }))
+      })
 
       return sales
     } catch (error) {

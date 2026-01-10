@@ -50,19 +50,34 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   }, [isOpen, fromStoreId])
 
   const loadAvailableProducts = async () => {
-    if (!fromStoreId) return
+    if (!fromStoreId) {
+      console.error('[TRANSFER MODAL] No fromStoreId provided')
+      return
+    }
 
     setLoadingProducts(true)
     try {
-      // Obtener TODOS los productos de la tienda principal (sin límite)
+      console.log('[TRANSFER MODAL] Loading products with fromStoreId:', fromStoreId)
+      // Obtener TODOS los productos de la tienda origen (sin límite)
       // Usamos getAllProductsLegacy que carga todos los productos en lotes
-      const allProducts = await ProductsService.getAllProductsLegacy()
+      // IMPORTANTE: Pasamos fromStoreId para obtener el stock correcto de la tienda origen
+      const allProducts = await ProductsService.getAllProductsLegacy(fromStoreId)
+      
+      console.log('[TRANSFER MODAL] Loaded products:', allProducts.length)
+      if (allProducts.length > 0) {
+        const firstProduct = allProducts[0]
+        console.log('[TRANSFER MODAL] First product stock:', {
+          id: firstProduct.id,
+          name: firstProduct.name,
+          stock: firstProduct.stock
+        })
+      }
       
       // Cargar TODOS los productos, no solo los que tienen stock
       // El usuario puede buscar cualquier producto, incluso si no tiene stock
       setAvailableProducts(allProducts)
     } catch (error) {
-      console.error('Error loading products:', error)
+      console.error('[TRANSFER MODAL] Error loading products:', error)
       toast.error('Error al cargar productos disponibles')
     } finally {
       setLoadingProducts(false)

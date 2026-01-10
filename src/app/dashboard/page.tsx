@@ -20,7 +20,8 @@ import {
   ArrowDownRight,
   Activity,
   XCircle,
-  RefreshCw
+  RefreshCw,
+  Store as StoreIcon
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -41,6 +42,8 @@ import {
 import { useSales } from '@/contexts/sales-context'
 import { useProducts } from '@/contexts/products-context'
 import { useAuth } from '@/contexts/auth-context'
+import { getCurrentUserStoreId, isMainStoreUser } from '@/lib/store-helper'
+import { StoresService } from '@/lib/stores-service'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Sale } from '@/types'
 import { CancelledInvoicesModal } from '@/components/dashboard/cancelled-invoices-modal'
@@ -77,6 +80,39 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCancelledModal, setShowCancelledModal] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [currentStoreName, setCurrentStoreName] = useState<string | null>(null)
+  const [currentStoreCity, setCurrentStoreCity] = useState<string | null>(null)
+
+  // Cargar información de la tienda actual
+  useEffect(() => {
+    const loadStoreInfo = async () => {
+      const storeId = getCurrentUserStoreId()
+      console.log('[DASHBOARD] Loading store info:', { storeId, user: user?.id, isMainStore: isMainStoreUser(user) })
+      
+      if (storeId && !isMainStoreUser(user)) {
+        try {
+          console.log('[DASHBOARD] Fetching store data for:', storeId)
+          const store = await StoresService.getStoreById(storeId)
+          console.log('[DASHBOARD] Store data received:', store)
+          
+          if (store) {
+            setCurrentStoreName(store.name)
+            setCurrentStoreCity(store.city || null)
+            console.log('[DASHBOARD] Store info set:', { name: store.name, city: store.city })
+          }
+        } catch (error) {
+          console.error('[DASHBOARD] Error loading store info:', error)
+        }
+      } else {
+        console.log('[DASHBOARD] Not loading store info - isMainStore or no storeId')
+        setCurrentStoreName(null)
+        setCurrentStoreCity(null)
+      }
+    }
+    if (user) {
+      loadStoreInfo()
+    }
+  }, [user])
 
   // Detectar modo oscuro directamente desde el DOM
   useEffect(() => {
@@ -208,7 +244,7 @@ export default function DashboardPage() {
           withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 15000),
           withTimeout(CreditsService.getAllCredits(), 15000), // SIEMPRE cargar TODOS los créditos para mostrar el total adeudado hasta hoy
           withTimeout(ClientsService.getAllClients(), 15000), // Clientes siempre todos
-          withTimeout(ProductsService.getAllProductsLegacy(), 15000), // Productos siempre todos
+          withTimeout(ProductsService.getAllProductsLegacy(getCurrentUserStoreId()), 15000), // Productos siempre todos
           // Para pagos, usar el rango extendido para la gráfica
           withTimeout(CreditsService.getPaymentRecordsByDateRange(chartStartDate, endDate), 15000)
         ])
@@ -225,7 +261,19 @@ export default function DashboardPage() {
           ventas: sales.length,
           garantias: warranties.length,
           creditos: credits.length,
-          abonos: payments.length
+          abonos: payments.length,
+          fechaInicio: startDate.toISOString(),
+          fechaFin: endDate.toISOString(),
+          storeId: getCurrentUserStoreId(),
+          ventasDetalle: sales.slice(0, 5).map(s => ({
+            id: s.id,
+            invoice: s.invoiceNumber,
+            total: s.total,
+            storeId: s.storeId,
+            createdAt: s.createdAt,
+            paymentMethod: s.paymentMethod,
+            status: s.status
+          }))
         })
         
         setAllSales(sales)
@@ -383,6 +431,59 @@ export default function DashboardPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Solo ejecutar una vez al montar
 
+  // Escuchar cambios en las ventas del contexto para actualizar el dashboard
+  useEffect(() => {
+    console.log('[DASHBOARD LISTENER] Checking for new sales:', {
+      salesInContext: sales.length,
+      salesInDashboard: allSales.length,
+      salesIds: sales.map(s => s.id),
+      dashboardIds: allSales.map(s => s.id)
+    })
+    
+    // Si hay ventas en el contexto, verificar si hay una venta nueva
+    if (sales.length > 0) {
+      // Verificar si hay una venta nueva que no esté en allSales
+      const newSales = sales.filter(sale => {
+        const saleDate = new Date(sale.createdAt)
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        const saleDay = new Date(saleDate)
+        saleDay.setHours(0, 0, 0, 0)
+        
+        // Solo considerar ventas de hoy
+        const isToday = saleDay.getTime() === today.getTime()
+        const notInDashboard = !allSales.find(existingSale => existingSale.id === sale.id)
+        
+        if (isToday && notInDashboard) {
+          console.log('[DASHBOARD LISTENER] Found new sale:', {
+            id: sale.id,
+            invoice: sale.invoiceNumber,
+            total: sale.total,
+            createdAt: sale.createdAt,
+            storeId: sale.storeId
+          })
+        }
+        
+        return isToday && notInDashboard
+      })
+      
+      if (newSales.length > 0) {
+        console.log('🔄 [DASHBOARD] Nueva venta detectada, actualizando dashboard...', {
+          newSalesCount: newSales.length,
+          newSales: newSales.map(s => ({ id: s.id, invoice: s.invoiceNumber, total: s.total }))
+        })
+        // Recargar datos del dashboard para incluir la nueva venta
+        // Usar un pequeño delay para asegurar que la venta esté completamente guardada
+        const timeoutId = setTimeout(() => {
+          loadDashboardData(false, effectiveDateFilter, specificDate, selectedYear)
+        }, 1000) // Aumentar delay a 1 segundo
+        
+        return () => clearTimeout(timeoutId)
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sales.length, allSales.length, sales]) // Incluir sales completo para detectar cambios
+
   // Función para obtener fechas de filtro
   const getDateRange = (filter: DateFilter, year?: number, overrideSpecificDate?: Date | null) => {
     const now = new Date()
@@ -459,7 +560,30 @@ export default function DashboardPage() {
       const filteredSales = allSales.filter(sale => {
         const saleDate = new Date(sale.createdAt)
         saleDate.setHours(0, 0, 0, 0)
-        return saleDate.getTime() === targetDate.getTime()
+        const matches = saleDate.getTime() === targetDate.getTime()
+        
+        // Log para debugging
+        if (allSales.length > 0 && allSales.length < 10) {
+          console.log('[DASHBOARD] Filtering sale:', {
+            saleId: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            saleDate: saleDate.toISOString(),
+            targetDate: targetDate.toISOString(),
+            saleDateTime: saleDate.getTime(),
+            targetDateTime: targetDate.getTime(),
+            matches,
+            createdAt: sale.createdAt
+          })
+        }
+        
+        return matches
+      })
+      
+      console.log('[DASHBOARD] Filtered sales for today:', {
+        totalSales: allSales.length,
+        filteredSales: filteredSales.length,
+        targetDate: targetDate.toISOString(),
+        sales: filteredSales.map(s => ({ id: s.id, invoice: s.invoiceNumber, total: s.total, createdAt: s.createdAt }))
       })
       
       // Filtrar pagos solo del día seleccionado
@@ -1289,6 +1413,12 @@ export default function DashboardPage() {
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 flex-shrink-0" />
                   <span className="flex-shrink-0">Dashboard</span>
+                  {currentStoreName && !isMainStoreUser(user) && (
+                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-sm md:text-base px-3 py-1.5 flex-shrink-0 border border-green-300 dark:border-green-700">
+                      <StoreIcon className="h-4 w-4 md:h-5 md:w-5 mr-1.5" />
+                      {currentStoreName}
+                    </Badge>
+                  )}
                   {(isRefreshing || isFiltering) && (
                     <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs flex-shrink-0">
                       Actualizando...
@@ -1296,7 +1426,9 @@ export default function DashboardPage() {
                   )}
                 </CardTitle>
                 <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-0.5 md:mt-1">
-                  Resumen ejecutivo y métricas de rendimiento
+                  {currentStoreName && !isMainStoreUser(user) 
+                    ? 'Estás viendo el dashboard de esta micro tienda. Los datos mostrados corresponden únicamente a esta ubicación.'
+                    : 'Resumen ejecutivo y métricas de rendimiento'}
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
@@ -1931,8 +2063,20 @@ export default function DashboardPage() {
                   dayTimestamps.add(dayStart.getTime())
                 })
                 
+                // Obtener el storeId actual para filtrar ventas
+                const currentStoreId = getCurrentUserStoreId()
+                const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+                
                 // Sumar ventas desde allSales (todos los datos)
+                // IMPORTANTE: Filtrar por store_id para micro tiendas
                 allSales.forEach((sale: Sale) => {
+                  // Filtrar por store_id si es una micro tienda
+                  if (currentStoreId && currentStoreId !== MAIN_STORE_ID) {
+                    if (sale.storeId !== currentStoreId) {
+                      return // Saltar ventas de otras tiendas
+                    }
+                  }
+                  
                   if (sale.status !== 'cancelled') {
                     const saleDate = new Date(sale.createdAt)
                     saleDate.setHours(0, 0, 0, 0)
@@ -1955,8 +2099,26 @@ export default function DashboardPage() {
                   }
                 })
                 
+                // Obtener el storeId actual para filtrar pagos
+                // (ya está definido arriba, pero lo reutilizamos)
+                
                 // Sumar abonos de créditos desde allPaymentRecords
+                // IMPORTANTE: Filtrar por store_id para micro tiendas
                 allPaymentRecords.forEach((payment: any) => {
+                  // Filtrar por store_id si es una micro tienda
+                  if (currentStoreId && currentStoreId !== MAIN_STORE_ID) {
+                    // Los pagos pueden tener storeId en el crédito asociado
+                    // Por ahora, si el pago no tiene storeId, asumimos que es de la tienda principal
+                    // y lo excluimos para micro tiendas
+                    if (payment.storeId && payment.storeId !== currentStoreId) {
+                      return // Saltar pagos de otras tiendas
+                    }
+                    // Si no tiene storeId, probablemente es de la tienda principal, saltarlo
+                    if (!payment.storeId) {
+                      return
+                    }
+                  }
+                  
                   if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'transfer')) {
                     const paymentDate = new Date(payment.paymentDate)
                     paymentDate.setHours(0, 0, 0, 0)
@@ -1981,8 +2143,8 @@ export default function DashboardPage() {
                 })
                 
                 // Colores adaptativos para modo oscuro
-                const gridColor = isDarkMode ? '#111827' : '#f0f0f0' // Grid casi invisible en modo oscuro
-                const axisColor = isDarkMode ? '#6b7280' : '#666'
+                const gridColor = isDarkMode ? '#374151' : '#e5e7eb' // Grid más visible
+                const axisColor = isDarkMode ? '#9ca3af' : '#666'
                 const lineColor = isDarkMode ? '#34d399' : '#10B981' // Verde más claro en modo oscuro
                 const dotStrokeColor = isDarkMode ? '#111827' : '#fff'
                 const tooltipBg = isDarkMode ? '#1f2937' : 'white'
@@ -1995,7 +2157,7 @@ export default function DashboardPage() {
                     <CartesianGrid 
                       strokeDasharray="3 3" 
                       stroke={gridColor} 
-                      strokeOpacity={isDarkMode ? 0.3 : 1}
+                      strokeOpacity={isDarkMode ? 0.5 : 0.8}
                     />
                     <XAxis 
                       dataKey="date" 

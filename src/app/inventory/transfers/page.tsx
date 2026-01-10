@@ -10,7 +10,7 @@ import { StoreStockTransfer, Store } from '@/types'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { StoresService } from '@/lib/stores-service'
 import { useAuth } from '@/contexts/auth-context'
-import { getCurrentUserStoreId, canAccessAllStores } from '@/lib/store-helper'
+import { getCurrentUserStoreId, canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
@@ -31,6 +31,18 @@ export default function TransfersPage() {
   
   const currentStoreId = getCurrentUserStoreId()
   const canManageAllStores = canAccessAllStores(user)
+  const isMainStore = isMainStoreUser(user)
+  
+  // Para la tienda principal, usar el MAIN_STORE_ID explícitamente
+  const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+  const fromStoreIdForTransfer = isMainStore ? MAIN_STORE_ID : (currentStoreId || undefined)
+  
+  // Redirigir a recepciones si el usuario no es de la tienda principal
+  useEffect(() => {
+    if (user && !isMainStore) {
+      window.location.href = '/inventory/receptions'
+    }
+  }, [user, isMainStore])
 
   const toggleTransfer = (transferId: string) => {
     setExpandedTransfers(prev => {
@@ -141,11 +153,24 @@ export default function TransfersPage() {
         return <Badge className="bg-blue-500 hover:bg-blue-600">En Tránsito</Badge>
       case 'received':
         return <Badge className="bg-green-500 hover:bg-green-600">Recibida</Badge>
+      case 'partially_received':
+        return <Badge className="bg-orange-500 hover:bg-orange-600">Parcialmente Recibida</Badge>
       case 'cancelled':
         return <Badge className="bg-red-500 hover:bg-red-600">Cancelada</Badge>
       default:
         return <Badge>{status}</Badge>
     }
+  }
+
+  // Si no es tienda principal, mostrar mensaje de redirección
+  if (user && !isMainStore) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-gray-600 dark:text-gray-400">Redirigiendo a recepciones...</p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {
@@ -228,11 +253,17 @@ export default function TransfersPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {transfers.map((transfer) => {
-              const isExpanded = expandedTransfers.has(transfer.id)
-              const totalQuantity = transfer.items && transfer.items.length > 0
-                ? transfer.items.reduce((sum, item) => sum + item.quantity, 0)
-                : transfer.quantity || 0
+                        {transfers.map((transfer) => {
+                          const isExpanded = expandedTransfers.has(transfer.id)
+                          const isReceived = transfer.status === 'received' || transfer.status === 'partially_received'
+                          const totalQuantity = transfer.items && transfer.items.length > 0
+                            ? transfer.items.reduce((sum, item) => sum + item.quantity, 0)
+                            : transfer.quantity || 0
+                          const totalReceived = transfer.items && transfer.items.length > 0 && isReceived
+                            ? transfer.items.reduce((sum, item) => sum + (item.quantityReceived || item.quantity), 0)
+                            : isReceived && transfer.quantity
+                            ? transfer.quantity
+                            : null
 
               return (
                 <Card
@@ -286,15 +317,17 @@ export default function TransfersPage() {
                                 : '1 producto'}
                             </div>
                           </div>
-                          <div>
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total / Estado</div>
-                            <div className="flex items-center gap-2">
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                {totalQuantity} unidades
-                              </div>
-                              {getStatusBadge(transfer.status)}
-                            </div>
-                          </div>
+                                      <div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total / Estado</div>
+                                        <div className="flex items-center gap-2">
+                                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {isReceived && totalReceived !== null
+                                              ? `${totalReceived} / ${totalQuantity} unidades`
+                                              : `${totalQuantity} unidades`}
+                                          </div>
+                                          {getStatusBadge(transfer.status)}
+                                        </div>
+                                      </div>
                         </div>
 
                         <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
@@ -354,7 +387,7 @@ export default function TransfersPage() {
                               </div>
                             </div>
                           )}
-                          {transfer.receivedAt && (
+                          {isReceived && transfer.receivedAt && (
                             <div>
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                                 <Calendar className="h-3 w-3" />
@@ -365,7 +398,7 @@ export default function TransfersPage() {
                               </div>
                             </div>
                           )}
-                          {transfer.receivedByName && (
+                          {isReceived && transfer.receivedByName && (
                             <div>
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                                 <User className="h-3 w-3" />
@@ -389,43 +422,71 @@ export default function TransfersPage() {
                           
                           <div className="space-y-2">
                             {transfer.items && transfer.items.length > 0 ? (
-                              transfer.items.map((item) => (
-                                <div
-                                  key={item.id}
-                                  className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
-                                >
-                                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-center">
-                                    <div className="flex items-center gap-2">
-                                      <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                                      <div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Producto</div>
-                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                                          {item.productName}
+                              transfer.items.map((item) => {
+                                const quantityReceived = item.quantityReceived !== undefined ? item.quantityReceived : item.quantity
+                                const isPartial = isReceived && quantityReceived < item.quantity
+                                
+                                return (
+                                  <div
+                                    key={item.id}
+                                    className={`border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
+                                  >
+                                    <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
+                                      <div className="flex items-center gap-2">
+                                        <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                        <div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Producto</div>
+                                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                                            {item.productName}
+                                          </div>
+                                          {item.productReference && (
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">
+                                              Ref: {item.productReference}
+                                            </div>
+                                          )}
                                         </div>
-                                        {item.productReference && (
-                                          <div className="text-xs text-gray-500 dark:text-gray-400">
-                                            Ref: {item.productReference}
+                                      </div>
+                                      <div>
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Esperada</div>
+                                        <div className="text-base font-bold text-gray-900 dark:text-white">
+                                          {item.quantity} unidades
+                                        </div>
+                                      </div>
+                                      {isReceived && (
+                                        <div>
+                                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Recibida</div>
+                                          <div className={`text-base font-bold ${isPartial ? 'text-yellow-600 dark:text-yellow-400' : 'text-green-600 dark:text-green-400'}`}>
+                                            {quantityReceived} unidades
+                                          </div>
+                                          {isPartial && (
+                                            <div className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
+                                              Faltan {item.quantity - quantityReceived} unidades
+                                            </div>
+                                          )}
+                                        </div>
+                                      )}
+                                      <div className="flex flex-col gap-2">
+                                        {item.fromLocation && (
+                                          <div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Origen</div>
+                                            <Badge className="bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300 text-xs">
+                                              {item.fromLocation === 'warehouse' ? 'Bodega' : 'Local'}
+                                            </Badge>
+                                          </div>
+                                        )}
+                                        {isReceived && item.notes && (
+                                          <div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Nota</div>
+                                            <p className="text-xs text-gray-700 dark:text-gray-300 italic">
+                                              {item.notes}
+                                            </p>
                                           </div>
                                         )}
                                       </div>
                                     </div>
-                                    <div>
-                                      <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cantidad</div>
-                                      <div className="text-base font-bold text-gray-900 dark:text-white">
-                                        {item.quantity} unidades
-                                      </div>
-                                    </div>
-                                    {item.fromLocation && (
-                                      <div>
-                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Origen</div>
-                                        <Badge className="bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300 text-xs">
-                                          {item.fromLocation === 'warehouse' ? 'Bodega' : 'Local'}
-                                        </Badge>
-                                      </div>
-                                    )}
                                   </div>
-                                </div>
-                              ))
+                                )
+                              })
                             ) : (
                               <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
                                 <div className="flex justify-between items-center">
@@ -495,8 +556,10 @@ export default function TransfersPage() {
             await loadTransfers()
           }}
           stores={stores}
-          fromStoreId={currentStoreId || undefined}
+          fromStoreId={fromStoreIdForTransfer}
         />
+        {/* Debug: Log cuando se abre el modal */}
+        {isCreateModalOpen && console.log('[TRANSFERS PAGE] Opening modal with fromStoreId:', fromStoreIdForTransfer, 'isMainStore:', isMainStore, 'currentStoreId:', currentStoreId)}
 
 
         <ConfirmModal

@@ -1,14 +1,196 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 import { Product } from '@/types'
 import { v4 as uuidv4 } from 'uuid'
 import { AuthService } from './auth-service'
+import { StoresService } from './stores-service'
+import { getCurrentUserStoreId, isMainStoreUser } from './store-helper'
 
 export class ProductsService {
+  // Helper para obtener stock según el tipo de tienda
+  private static async getProductStockForStore(productId: string, storeId: string | null): Promise<{ warehouse: number, store: number, total: number }> {
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const isMainStore = !storeId || storeId === MAIN_STORE_ID
+
+    if (isMainStore) {
+      // Para tienda principal, obtener stock de products
+      const { data: product } = await supabaseAdmin
+        .from('products')
+        .select('stock_warehouse, stock_store')
+        .eq('id', productId)
+        .single()
+
+      if (!product) {
+        return { warehouse: 0, store: 0, total: 0 }
+      }
+
+      const warehouse = product.stock_warehouse || 0
+      const store = product.stock_store || 0
+      return { warehouse, store, total: warehouse + store }
+    } else {
+      // Para micro tiendas, obtener stock de store_stock
+      const { data: storeStock } = await supabaseAdmin
+        .from('store_stock')
+        .select('stock_quantity')
+        .eq('store_id', storeId)
+        .eq('product_id', productId)
+        .maybeSingle()
+
+      const storeStockQuantity = storeStock?.stock_quantity || 0
+      // En micro tiendas, todo el stock es "local" (store), no hay warehouse
+      return { warehouse: 0, store: storeStockQuantity, total: storeStockQuantity }
+    }
+  }
+
+  // Helper para obtener stock de múltiples productos de una vez (optimizado)
+  private static async getProductsStockForStore(productIds: string[], storeId: string | null): Promise<Map<string, { warehouse: number, store: number, total: number }>> {
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const isMainStore = !storeId || storeId === MAIN_STORE_ID
+    const stockMap = new Map<string, { warehouse: number, store: number, total: number }>()
+
+    console.log('[PRODUCTS SERVICE] getProductsStockForStore - storeId:', storeId, 'isMainStore:', isMainStore, 'productIds count:', productIds.length)
+
+    if (isMainStore) {
+      // Para tienda principal, obtener stock de products
+      // Intentar con supabaseAdmin primero, si falla usar supabase
+      let products: any[] | null = null
+      let error: any = null
+      
+      try {
+        const result = await supabaseAdmin
+          .from('products')
+          .select('id, stock_warehouse, stock_store')
+          .in('id', productIds)
+        products = result.data
+        error = result.error
+      } catch (err) {
+        console.warn('[PRODUCTS SERVICE] supabaseAdmin failed, trying supabase:', err)
+        try {
+          const result = await supabase
+            .from('products')
+            .select('id, stock_warehouse, stock_store')
+            .in('id', productIds)
+          products = result.data
+          error = result.error
+        } catch (err2) {
+          console.error('[PRODUCTS SERVICE] Both supabaseAdmin and supabase failed:', err2)
+          error = err2
+        }
+      }
+
+      if (error) {
+        console.error('[PRODUCTS SERVICE] Error fetching products stock:', error)
+      }
+
+      console.log('[PRODUCTS SERVICE] Fetched products for stock:', products?.length || 0, 'products:', products?.slice(0, 3))
+
+      if (products && products.length > 0) {
+        products.forEach((product: any) => {
+          const warehouse = product.stock_warehouse || 0
+          const store = product.stock_store || 0
+          const stock = { warehouse, store, total: warehouse + store }
+          stockMap.set(product.id, stock)
+          if (productIds.indexOf(product.id) < 3) {
+            console.log('[PRODUCTS SERVICE] Set stock for product:', product.id, stock)
+          }
+        })
+      }
+    } else {
+      // Para micro tiendas, obtener stock de store_stock
+      // Dividir en lotes para evitar timeouts con muchas peticiones
+      const BATCH_SIZE = 100
+      let storeStocks: any[] = []
+      let error: any = null
+      
+      // Procesar en lotes
+      for (let i = 0; i < productIds.length; i += BATCH_SIZE) {
+        const batch = productIds.slice(i, i + BATCH_SIZE)
+        
+        try {
+          const result = await supabaseAdmin
+            .from('store_stock')
+            .select('product_id, stock_quantity')
+            .eq('store_id', storeId)
+            .in('product_id', batch)
+          
+          if (result.data) {
+            storeStocks.push(...result.data)
+          }
+          
+          if (result.error && !error) {
+            error = result.error
+          }
+        } catch (err) {
+          console.warn(`[PRODUCTS SERVICE] supabaseAdmin failed for batch ${i / BATCH_SIZE + 1}, trying supabase:`, err)
+          try {
+            const result = await supabase
+              .from('store_stock')
+              .select('product_id, stock_quantity')
+              .eq('store_id', storeId)
+              .in('product_id', batch)
+            
+            if (result.data) {
+              storeStocks.push(...result.data)
+            }
+            
+            if (result.error && !error) {
+              error = result.error
+            }
+          } catch (err2) {
+            console.error(`[PRODUCTS SERVICE] Both failed for batch ${i / BATCH_SIZE + 1}:`, err2)
+            if (!error) {
+              error = err2
+            }
+          }
+        }
+      }
+      
+      // Si no hay datos pero tampoco hay error, mantener storeStocks como array vacío
+      // (no establecer como null para evitar problemas en el logging)
+
+      if (error) {
+        console.error('[PRODUCTS SERVICE] Error fetching store_stock:', {
+          error,
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          storeId,
+          productIdsCount: productIds.length,
+          productIdsSample: productIds.slice(0, 3)
+        })
+        // Si hay error, todos los productos tendrán stock 0 (se rellenará más abajo)
+      }
+
+      console.log('[PRODUCTS SERVICE] Fetched store_stock:', storeStocks.length || 0, 'stocks:', storeStocks.slice(0, 3))
+
+      if (storeStocks.length > 0) {
+        storeStocks.forEach((stock: any) => {
+          const quantity = stock.stock_quantity || 0
+          stockMap.set(stock.product_id, { warehouse: 0, store: quantity, total: quantity })
+          if (productIds.indexOf(stock.product_id) < 3) {
+            console.log('[PRODUCTS SERVICE] Set stock for product from store_stock:', stock.product_id, { warehouse: 0, store: quantity, total: quantity })
+          }
+        })
+      }
+    }
+
+    // Rellenar con 0 para productos que no tienen stock
+    productIds.forEach(id => {
+      if (!stockMap.has(id)) {
+        stockMap.set(id, { warehouse: 0, store: 0, total: 0 })
+      }
+    })
+
+    console.log('[PRODUCTS SERVICE] Final stockMap size:', stockMap.size, 'sample:', Array.from(stockMap.entries()).slice(0, 3))
+    return stockMap
+  }
+
   // Obtener todos los productos con paginación
   static async getAllProducts(page: number = 1, limit: number = 10): Promise<{ products: Product[], total: number, hasMore: boolean }> {
     try {
       const from = (page - 1) * limit
       const to = from + limit - 1
+      const currentStoreId = getCurrentUserStoreId()
 
       // Obtener productos paginados
       // Ordenar por created_at (más recientes primero)
@@ -33,24 +215,28 @@ export class ProductsService {
         return { products: [], total: 0, hasMore: false }
       }
 
-      const mappedProducts = data.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        categoryId: product.category_id,
-        brand: product.brand,
-        reference: product.reference,
-        price: product.price,
-        cost: product.cost,
-        stock: {
-          warehouse: product.stock_warehouse || 0,
-          store: product.stock_store || 0,
-          total: (product.stock_warehouse || 0) + (product.stock_store || 0)
-        },
-        status: product.status,
-        createdAt: product.created_at,
-        updatedAt: product.updated_at
-      }))
+      // Mapear productos con stock correcto según el tipo de tienda (optimizado)
+      const productIds = data.map((p: any) => p.id)
+      const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
+      
+      const mappedProducts = data.map((product: any) => {
+        const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
+        
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          categoryId: product.category_id,
+          brand: product.brand,
+          reference: product.reference,
+          price: product.price,
+          cost: product.cost,
+          stock: stock,
+          status: product.status,
+          createdAt: product.created_at,
+          updatedAt: product.updated_at
+        }
+      })
 
       // Ordenar en el cliente: productos con stock primero, luego por fecha más reciente
       const products = mappedProducts.sort((a, b) => {
@@ -79,7 +265,7 @@ export class ProductsService {
   }
 
   // Obtener todos los productos (sin paginación - para compatibilidad)
-  static async getAllProductsLegacy(): Promise<Product[]> {
+  static async getAllProductsLegacy(storeId: string | null = null): Promise<Product[]> {
     try {
       // Supabase tiene un límite por defecto de 1000 registros, necesitamos obtener todos en lotes
       const allProducts: Product[] = []
@@ -107,24 +293,57 @@ export class ProductsService {
           break
         }
 
-        const mappedProducts = data.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          description: product.description,
-          categoryId: product.category_id,
-          brand: product.brand,
-          reference: product.reference,
-          price: product.price,
-          cost: product.cost,
-          stock: {
-            warehouse: product.stock_warehouse || 0,
-            store: product.stock_store || 0,
-            total: (product.stock_warehouse || 0) + (product.stock_store || 0)
-          },
-          status: product.status,
-          createdAt: product.created_at,
-          updatedAt: product.updated_at
-        }))
+        // Obtener stock correcto según el tipo de tienda (optimizado)
+        // Usar el storeId pasado como parámetro, o el del usuario actual si no se pasa
+        const currentStoreId = storeId !== null ? storeId : getCurrentUserStoreId()
+        console.log('[PRODUCTS SERVICE] getAllProductsLegacy - storeId:', storeId, 'currentStoreId:', currentStoreId)
+        const productIds = data.map((p: any) => p.id)
+        const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
+        
+        // Log para depuración
+        if (productIds.length > 0) {
+          const firstProductStock = stockMap.get(productIds[0])
+          console.log('[PRODUCTS SERVICE] First product stock from map:', {
+            productId: productIds[0],
+            stock: firstProductStock,
+            stockMapSize: stockMap.size
+          })
+        }
+        
+        const mappedProducts = data.map((product: any) => {
+          // Usar el stock del stockMap (que ya tiene el stock correcto según el tipo de tienda)
+          // Si no está en el stockMap, usar valores por defecto
+          const stockFromMap = stockMap.get(product.id)
+          const stock = stockFromMap || { warehouse: 0, store: 0, total: 0 }
+          
+          // Log para depuración
+          if (productIds.indexOf(product.id) < 3) {
+            console.log('[PRODUCTS SERVICE] Mapped product stock:', {
+              productId: product.id,
+              productName: product.name,
+              stockFromMap: stockFromMap,
+              stock_warehouse_from_db: product.stock_warehouse,
+              stock_store_from_db: product.stock_store,
+              finalStock: stock,
+              currentStoreId: currentStoreId
+            })
+          }
+          
+          return {
+            id: product.id,
+            name: product.name,
+            description: product.description,
+            categoryId: product.category_id,
+            brand: product.brand,
+            reference: product.reference,
+            price: product.price,
+            cost: product.cost,
+            stock: stock,
+            status: product.status,
+            createdAt: product.created_at,
+            updatedAt: product.updated_at
+          }
+        })
 
         // Ordenar: productos con stock primero, luego por fecha más reciente
         const sortedProducts = mappedProducts.sort((a, b) => {
@@ -176,47 +395,64 @@ export class ProductsService {
   // Obtener el stock total de todos los productos (más eficiente que obtener todos los productos)
   static async getTotalStock(): Promise<number> {
     try {
-      // Obtener todos los productos en lotes para evitar el límite de 1000
-      let totalStock = 0
-      let page = 0
-      const pageSize = 1000
-      let hasMore = true
+      const currentStoreId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
 
-      while (hasMore) {
-        const from = page * pageSize
-        const to = from + pageSize - 1
+      if (isMainStore) {
+        // Para tienda principal, sumar stock de products
+        let totalStock = 0
+        let page = 0
+        const pageSize = 1000
+        let hasMore = true
 
-        const { data, error } = await supabase
-          .from('products')
-          .select('stock_warehouse, stock_store')
-          .range(from, to)
+        while (hasMore) {
+          const from = page * pageSize
+          const to = from + pageSize - 1
+
+          const { data, error } = await supabase
+            .from('products')
+            .select('stock_warehouse, stock_store')
+            .range(from, to)
+
+          if (error) {
+            break
+          }
+
+          if (!data || data.length === 0) {
+            hasMore = false
+            break
+          }
+
+          const pageStock = data.reduce((sum, product) => {
+            const warehouseStock = product.stock_warehouse || 0
+            const storeStock = product.stock_store || 0
+            return sum + warehouseStock + storeStock
+          }, 0)
+
+          totalStock += pageStock
+
+          if (data.length < pageSize) {
+            hasMore = false
+          } else {
+            page++
+          }
+        }
+
+        return totalStock
+      } else {
+        // Para micro tiendas, sumar stock de store_stock
+        const { data, error } = await supabaseAdmin
+          .from('store_stock')
+          .select('stock_quantity')
+          .eq('store_id', currentStoreId)
 
         if (error) {
-          break
+          return 0
         }
 
-        if (!data || data.length === 0) {
-          hasMore = false
-          break
-        }
-
-        const pageStock = data.reduce((sum, product) => {
-          const warehouseStock = product.stock_warehouse || 0
-          const storeStock = product.stock_store || 0
-          return sum + warehouseStock + storeStock
-        }, 0)
-
-        totalStock += pageStock
-
-        // Si obtuvimos menos productos que el tamaño de página, no hay más
-        if (data.length < pageSize) {
-          hasMore = false
-        } else {
-          page++
-        }
+        return data?.reduce((sum, stock) => sum + (stock.stock_quantity || 0), 0) || 0
       }
-
-      return totalStock
     } catch (error) {
       return 0
     }
@@ -236,6 +472,10 @@ export class ProductsService {
         return null
       }
 
+      // Obtener stock correcto según el tipo de tienda
+      const currentStoreId = getCurrentUserStoreId()
+      const stock = await this.getProductStockForStore(id, currentStoreId)
+
       return {
         id: data.id,
         name: data.name,
@@ -245,11 +485,7 @@ export class ProductsService {
         reference: data.reference,
         price: data.price,
         cost: data.cost,
-        stock: {
-          warehouse: data.stock_warehouse || 0,
-          store: data.stock_store || 0,
-          total: (data.stock_warehouse || 0) + (data.stock_store || 0)
-        },
+        stock: stock,
         status: data.status,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -286,6 +522,29 @@ export class ProductsService {
       if (error) {
       // Error silencioso en producción
         return null
+      }
+
+      // Crear stock inicial en todas las micro tiendas activas (con cantidad 0)
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const allStores = await StoresService.getAllStores(false) // Solo tiendas activas
+      const microStores = allStores.filter(store => store.id !== MAIN_STORE_ID)
+      
+      if (microStores.length > 0) {
+        const storeStockInserts = microStores.map(store => ({
+          store_id: store.id,
+          product_id: data.id,
+          stock_quantity: 0, // Stock inicial en 0 para todas las micro tiendas
+          location: 'local' // Todas las micro tiendas tienen stock en "local"
+        }))
+        
+        const { error: storeStockError } = await supabaseAdmin
+          .from('store_stock')
+          .insert(storeStockInserts)
+        
+        if (storeStockError) {
+          console.error('Error creating initial stock for micro stores:', storeStockError)
+          // No fallar la creación del producto si hay error al crear stock en tiendas
+        }
       }
 
       // Registrar la actividad
@@ -474,24 +733,29 @@ export class ProductsService {
         return []
       }
 
-      const mappedProducts = data.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        description: product.description,
-        categoryId: product.category_id,
-        brand: product.brand,
-        reference: product.reference,
-        price: product.price,
-        cost: product.cost,
-        stock: {
-          warehouse: product.stock_warehouse || 0,
-          store: product.stock_store || 0,
-          total: (product.stock_warehouse || 0) + (product.stock_store || 0)
-        },
-        status: product.status,
-        createdAt: product.created_at,
-        updatedAt: product.created_at // Usar created_at como fallback
-      }))
+      // Obtener stock correcto según el tipo de tienda
+      const currentStoreId = getCurrentUserStoreId()
+      const productIds = data.map((p: any) => p.id)
+      const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
+      
+      const mappedProducts = data.map((product: any) => {
+        const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
+        
+        return {
+          id: product.id,
+          name: product.name,
+          description: product.description,
+          categoryId: product.category_id,
+          brand: product.brand,
+          reference: product.reference,
+          price: product.price,
+          cost: product.cost,
+          stock: stock,
+          status: product.status,
+          createdAt: product.created_at,
+          updatedAt: product.created_at // Usar created_at como fallback
+        }
+      })
 
       // Ordenar: productos con stock primero, luego por fecha más reciente
       return mappedProducts.sort((a, b) => {

@@ -222,13 +222,15 @@ export class PDFService {
       ? 'Pendiente' 
       : transfer.status === 'received' 
       ? 'Recibida' 
+      : transfer.status === 'partially_received'
+      ? 'Parcialmente Recibida'
       : transfer.status === 'cancelled'
       ? 'Cancelada'
       : transfer.status
     doc.text(statusText, margin + 60, statusY)
 
     // Received info if applicable
-    if (transfer.status === 'received' && transfer.receivedAt) {
+    if ((transfer.status === 'received' || transfer.status === 'partially_received') && transfer.receivedAt) {
       const receivedY = statusY + 7
       doc.setFont('helvetica', 'bold')
       doc.text('Fecha de Recepción:', margin, receivedY)

@@ -70,7 +70,36 @@ export class StoresService {
         return null
       }
 
-      return this.mapStore(data)
+      const newStore = this.mapStore(data)
+
+      // Crear stock inicial (0) para todos los productos existentes en la nueva micro tienda
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      if (newStore.id !== MAIN_STORE_ID) {
+        // Solo para micro tiendas, no para la tienda principal
+        const { data: allProducts, error: productsError } = await supabaseAdmin
+          .from('products')
+          .select('id')
+        
+        if (!productsError && allProducts && allProducts.length > 0) {
+          const storeStockInserts = allProducts.map((product: any) => ({
+            store_id: newStore.id,
+            product_id: product.id,
+            stock_quantity: 0, // Stock inicial en 0
+            location: 'local' // Todas las micro tiendas tienen stock en "local"
+          }))
+          
+          const { error: storeStockError } = await supabaseAdmin
+            .from('store_stock')
+            .insert(storeStockInserts)
+          
+          if (storeStockError) {
+            console.error('Error creating initial stock for new store:', storeStockError)
+            // No fallar la creación de la tienda si hay error al crear stock
+          }
+        }
+      }
+
+      return newStore
     } catch (error) {
       console.error('Error in createStore:', error)
       return null

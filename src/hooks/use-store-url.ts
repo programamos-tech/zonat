@@ -28,14 +28,8 @@ export function useStoreUrl() {
         return
       }
 
-      // Si el storeId no ha cambiado, no hacer nada
-      if (lastStoreIdRef.current === user.storeId) {
-        return
-      }
-
       try {
         isUpdatingRef.current = true
-        lastStoreIdRef.current = user.storeId
 
         // Obtener información de la tienda
         let store
@@ -67,9 +61,11 @@ export function useStoreUrl() {
         const currentStore = currentUrl.searchParams.get('store')
 
         // Si la URL no tiene el storeId o es diferente, actualizarla
-        if (currentStore !== slug) {
+        // También actualizar si el storeId cambió
+        if (currentStore !== slug || lastStoreIdRef.current !== user.storeId) {
           currentUrl.searchParams.set('store', slug)
           router.replace(currentUrl.pathname + currentUrl.search, { scroll: false })
+          lastStoreIdRef.current = user.storeId
         }
       } catch (error) {
         console.error('Error updating URL with store:', error)
@@ -85,7 +81,7 @@ export function useStoreUrl() {
 
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.storeId, pathname]) // Solo ejecutar cuando cambie el storeId o el pathname
+  }, [user?.storeId, pathname, user]) // Incluir user completo para detectar cambios
 
   return { storeSlug }
 }
