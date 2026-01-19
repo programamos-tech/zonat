@@ -818,7 +818,7 @@ export class StoreStockTransferService {
       const upsertData: any = {
         store_id: storeId,
         product_id: productId,
-        stock_quantity: newQuantity
+        quantity: newQuantity
       }
       
       // Solo establecer location para micro tiendas (siempre 'local')
@@ -859,7 +859,7 @@ export class StoreStockTransferService {
             .upsert({
               store_id: storeId,
               product_id: productId,
-              stock_quantity: newQuantity
+              quantity: newQuantity
             }, {
               onConflict: 'store_id,product_id'
             })
@@ -930,7 +930,7 @@ export class StoreStockTransferService {
       storeName: data.store?.name || undefined,
       productId: data.product_id,
       productName: data.product?.name || undefined,
-      quantity: data.stock_quantity || 0,
+      quantity: data.quantity || 0,
       location: data.location || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at

@@ -84,7 +84,7 @@ export class StoresService {
           const storeStockInserts = allProducts.map((product: any) => ({
             store_id: newStore.id,
             product_id: product.id,
-            stock_quantity: 0, // Stock inicial en 0
+            quantity: 0, // Stock inicial en 0
             location: 'local' // Todas las micro tiendas tienen stock en "local"
           }))
           

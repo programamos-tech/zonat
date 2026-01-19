@@ -30,12 +30,12 @@ export class ProductsService {
       // Para micro tiendas, obtener stock de store_stock
       const { data: storeStock } = await supabaseAdmin
         .from('store_stock')
-        .select('stock_quantity')
+        .select('quantity')
         .eq('store_id', storeId)
         .eq('product_id', productId)
         .maybeSingle()
 
-      const storeStockQuantity = storeStock?.stock_quantity || 0
+      const storeStockQuantity = storeStock?.quantity || 0
       // En micro tiendas, todo el stock es "local" (store), no hay warehouse
       return { warehouse: 0, store: storeStockQuantity, total: storeStockQuantity }
     }
@@ -51,39 +51,84 @@ export class ProductsService {
 
     if (isMainStore) {
       // Para tienda principal, obtener stock de products
-      // Intentar con supabaseAdmin primero, si falla usar supabase
-      let products: any[] | null = null
+      // Dividir en lotes para evitar timeouts y problemas con muchas peticiones
+      const BATCH_SIZE = 100
+      let products: any[] = []
       let error: any = null
+      
+      // Procesar en lotes
+      for (let i = 0; i < productIds.length; i += BATCH_SIZE) {
+        const batch = productIds.slice(i, i + BATCH_SIZE)
+        let batchSuccess = false
       
       try {
         const result = await supabaseAdmin
           .from('products')
           .select('id, stock_warehouse, stock_store')
-          .in('id', productIds)
-        products = result.data
+            .in('id', batch)
+          
+          if (result.data) {
+            products.push(...result.data)
+            batchSuccess = true
+          }
+          
+          if (result.error) {
+            console.warn(`[PRODUCTS SERVICE] supabaseAdmin error for batch ${i / BATCH_SIZE + 1}:`, result.error)
+            if (!error) {
         error = result.error
+            }
+          }
       } catch (err) {
-        console.warn('[PRODUCTS SERVICE] supabaseAdmin failed, trying supabase:', err)
+          console.warn(`[PRODUCTS SERVICE] supabaseAdmin exception for batch ${i / BATCH_SIZE + 1}, trying supabase:`, err)
+        }
+        
+        // Si el primer intento falló, intentar con supabase
+        if (!batchSuccess) {
         try {
           const result = await supabase
             .from('products')
             .select('id, stock_warehouse, stock_store')
-            .in('id', productIds)
-          products = result.data
+              .in('id', batch)
+            
+            if (result.data) {
+              products.push(...result.data)
+              batchSuccess = true
+            }
+            
+            if (result.error) {
+              console.warn(`[PRODUCTS SERVICE] supabase error for batch ${i / BATCH_SIZE + 1}:`, result.error)
+              if (!error) {
           error = result.error
+              }
+            }
         } catch (err2) {
-          console.error('[PRODUCTS SERVICE] Both supabaseAdmin and supabase failed:', err2)
+            console.error(`[PRODUCTS SERVICE] Both failed for batch ${i / BATCH_SIZE + 1}:`, err2)
+            if (!error) {
           error = err2
+            }
         }
+        }
+        
+        // Si el lote falló completamente, continuar con el siguiente
+        // Los productos de este lote tendrán stock 0 (se rellenará más abajo)
       }
 
       if (error) {
-        console.error('[PRODUCTS SERVICE] Error fetching products stock:', error)
+        console.error('[PRODUCTS SERVICE] Error fetching products stock:', {
+          error,
+          message: error?.message,
+          code: error?.code,
+          details: error?.details,
+          hint: error?.hint,
+          productIdsCount: productIds.length,
+          productIdsSample: productIds.slice(0, 3)
+        })
+        // Si hay error, todos los productos tendrán stock 0 (se rellenará más abajo)
       }
 
-      console.log('[PRODUCTS SERVICE] Fetched products for stock:', products?.length || 0, 'products:', products?.slice(0, 3))
+      console.log('[PRODUCTS SERVICE] Fetched products for stock:', products.length || 0, 'products:', products.slice(0, 3))
 
-      if (products && products.length > 0) {
+      if (products.length > 0) {
         products.forEach((product: any) => {
           const warehouse = product.stock_warehouse || 0
           const store = product.stock_store || 0
@@ -108,7 +153,7 @@ export class ProductsService {
         try {
           const result = await supabaseAdmin
             .from('store_stock')
-            .select('product_id, stock_quantity')
+            .select('product_id, quantity')
             .eq('store_id', storeId)
             .in('product_id', batch)
           
@@ -124,7 +169,7 @@ export class ProductsService {
           try {
             const result = await supabase
               .from('store_stock')
-              .select('product_id, stock_quantity')
+              .select('product_id, quantity')
               .eq('store_id', storeId)
               .in('product_id', batch)
             
@@ -165,7 +210,7 @@ export class ProductsService {
 
       if (storeStocks.length > 0) {
         storeStocks.forEach((stock: any) => {
-          const quantity = stock.stock_quantity || 0
+          const quantity = stock.quantity || 0
           stockMap.set(stock.product_id, { warehouse: 0, store: quantity, total: quantity })
           if (productIds.indexOf(stock.product_id) < 3) {
             console.log('[PRODUCTS SERVICE] Set stock for product from store_stock:', stock.product_id, { warehouse: 0, store: quantity, total: quantity })
@@ -444,14 +489,14 @@ export class ProductsService {
         // Para micro tiendas, sumar stock de store_stock
         const { data, error } = await supabaseAdmin
           .from('store_stock')
-          .select('stock_quantity')
+          .select('quantity')
           .eq('store_id', currentStoreId)
 
         if (error) {
           return 0
         }
 
-        return data?.reduce((sum, stock) => sum + (stock.stock_quantity || 0), 0) || 0
+        return data?.reduce((sum, stock) => sum + (stock.quantity || 0), 0) || 0
       }
     } catch (error) {
       return 0
@@ -533,7 +578,7 @@ export class ProductsService {
         const storeStockInserts = microStores.map(store => ({
           store_id: store.id,
           product_id: data.id,
-          stock_quantity: 0, // Stock inicial en 0 para todas las micro tiendas
+          quantity: 0, // Stock inicial en 0 para todas las micro tiendas
           location: 'local' // Todas las micro tiendas tienen stock en "local"
         }))
         

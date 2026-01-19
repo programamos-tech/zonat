@@ -62,11 +62,11 @@ export default function TransfersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Solo ejecutar una vez al montar
 
-  // Cargar transferencias cuando cambia el filtro o el storeId
+  // Cargar transferencias cuando cambia el filtro, el storeId o el estado de tienda principal
   useEffect(() => {
     loadTransfers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, currentStoreId])
+  }, [filter, currentStoreId, isMainStore])
 
   const loadStores = async () => {
     try {
@@ -78,7 +78,10 @@ export default function TransfersPage() {
   }
 
   const loadTransfers = async () => {
-    if (!currentStoreId) {
+    // Para la tienda principal, usar MAIN_STORE_ID explícitamente
+    const storeIdToUse = isMainStore ? MAIN_STORE_ID : (currentStoreId || null)
+    
+    if (!storeIdToUse) {
       setLoading(false)
       return
     }
@@ -86,7 +89,7 @@ export default function TransfersPage() {
     setLoading(true)
     try {
       const transfersData = await StoreStockTransferService.getStoreTransfers(
-        currentStoreId,
+        storeIdToUse,
         filter === 'all' ? 'all' : filter
       )
       setTransfers(transfersData)
