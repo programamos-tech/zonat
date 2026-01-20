@@ -48,6 +48,8 @@ export default function NewSalePage() {
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
   const productRefs = useRef<(HTMLDivElement | null)[]>([])
   const lastSearchTermRef = useRef<string>('')
+  // Cache de productos agregados a la venta para mantener su información de stock
+  const [productsInSaleCache, setProductsInSaleCache] = useState<Map<string, Product>>(new Map())
   
   const [mixedPayments, setMixedPayments] = useState<SalePayment[]>([])
   const [showMixedPayments, setShowMixedPayments] = useState(false)
@@ -291,6 +293,13 @@ export default function NewSalePage() {
       return
     }
 
+    // Guardar el producto en el cache para mantener su información de stock
+    setProductsInSaleCache(prev => {
+      const newCache = new Map(prev)
+      newCache.set(product.id, product)
+      return newCache
+    })
+
     const newItem: SaleItem = {
       id: `temp-${Date.now()}`,
       productId: product.id,
@@ -309,7 +318,20 @@ export default function NewSalePage() {
   }
 
   const handleRemoveProduct = (itemId: string) => {
+    const item = selectedProducts.find(i => i.id === itemId)
     setSelectedProducts(selectedProducts.filter(item => item.id !== itemId))
+    
+    // Limpiar el cache solo si no hay más items de ese producto en la venta
+    if (item) {
+      const hasOtherItems = selectedProducts.some(i => i.id !== itemId && i.productId === item.productId)
+      if (!hasOtherItems) {
+        setProductsInSaleCache(prev => {
+          const newCache = new Map(prev)
+          newCache.delete(item.productId)
+          return newCache
+        })
+      }
+    }
   }
 
   const handleUpdateQuantity = (itemId: string, newQuantity: number) => {
@@ -321,7 +343,8 @@ export default function NewSalePage() {
     const item = selectedProducts.find(i => i.id === itemId)
     if (!item) return
 
-    const product = products.find(p => p.id === item.productId)
+    // Usar findProductById que busca en contexto y cache
+    const product = findProductById(item.productId)
     const availableStock = (product?.stock.store || 0) + (product?.stock.warehouse || 0)
     
     // Verificar stock solo si la cantidad es mayor a 0
@@ -363,7 +386,8 @@ export default function NewSalePage() {
   const handlePriceBlur = (itemId: string) => {
     const item = selectedProducts.find(i => i.id === itemId)
     if (!item) return
-    const product = products.find(p => p.id === item.productId)
+    // Usar findProductById que busca en contexto y cache
+    const product = findProductById(item.productId)
     const productCost = product?.cost || 0
     if (item.unitPrice < productCost) {
       setStockAlert({
@@ -375,7 +399,15 @@ export default function NewSalePage() {
   }
 
   const findProductById = (productId: string) => {
-    return products.find(p => p.id === productId)
+    // Primero buscar en el array de productos del contexto
+    const productInContext = products.find(p => p.id === productId)
+    if (productInContext) return productInContext
+    
+    // Si no está en el contexto, buscar en el cache de productos agregados a la venta
+    const productInCache = productsInSaleCache.get(productId)
+    if (productInCache) return productInCache
+    
+    return undefined
   }
 
   const getAvailableStock = (productId: string) => {
