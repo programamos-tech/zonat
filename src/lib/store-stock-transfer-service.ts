@@ -1,16 +1,21 @@
 import { supabase, supabaseAdmin } from './supabase'
-import { StoreStockTransfer, StoreStock, TransferItem } from '@/types'
+import { StoreStockTransfer, StoreStock, TransferItem, Sale, SaleItem } from '@/types'
+import { SalesService } from './sales-service'
+import { StoresService } from './stores-service'
+import { ProductsService } from './products-service'
+import { AuthService } from './auth-service'
 
 export class StoreStockTransferService {
   // Crear transferencia con múltiples productos
   static async createTransfer(
     fromStoreId: string,
     toStoreId: string,
-    items: Array<{ productId: string; productName: string; productReference?: string; quantity: number; fromLocation: 'warehouse' | 'store' }>,
+    items: Array<{ productId: string; productName: string; productReference?: string; quantity: number; fromLocation: 'warehouse' | 'store'; unitPrice?: number }>,
     description?: string,
     notes?: string,
     createdBy?: string,
-    createdByName?: string
+    createdByName?: string,
+    paymentInfo?: { method: 'cash' | 'transfer' | 'mixed'; cashAmount: number; transferAmount: number }
   ): Promise<StoreStockTransfer | null> {
     try {
       // Validar que hay items
@@ -21,6 +26,21 @@ export class StoreStockTransferService {
 
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const isFromMainStore = fromStoreId === MAIN_STORE_ID || !fromStoreId
+
+      console.log('[CREATE TRANSFER] Starting transfer creation:', {
+        fromStoreId,
+        toStoreId,
+        itemsCount: items.length,
+        isFromMainStore,
+        MAIN_STORE_ID,
+        paymentInfo,
+        items: items.map(item => ({
+          productId: item.productId,
+          productName: item.productName,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice
+        }))
+      })
 
       // Verificar stock disponible para todos los productos
       for (const item of items) {
@@ -67,8 +87,8 @@ export class StoreStockTransferService {
           created_by: createdBy || null,
           created_by_name: createdByName || null,
           // Campos legacy para compatibilidad (deprecated)
+          // Nota: product_name no existe en stock_transfers, solo en transfer_items
           product_id: items[0].productId,
-          product_name: items[0].productName || 'Producto',
           quantity: items.reduce((sum, item) => sum + item.quantity, 0)
         })
         .select()
@@ -173,6 +193,389 @@ export class StoreStockTransferService {
             quantity: item.quantity
           })
           await this.updateStoreStock(fromStoreId, item.productId, -item.quantity)
+        }
+      }
+
+      // Si la transferencia es desde la tienda principal, crear una factura automáticamente
+      console.log('[CREATE TRANSFER] Checking if should create invoice:', {
+        isFromMainStore,
+        fromStoreId,
+        MAIN_STORE_ID
+      })
+      
+      if (isFromMainStore) {
+        console.log('[CREATE TRANSFER] Is from main store, creating invoice...')
+        try {
+          // Obtener información de la tienda destino
+          const toStore = await StoresService.getStoreById(toStoreId)
+          console.log('[CREATE TRANSFER] To store found:', {
+            toStoreId,
+            toStore: toStore ? { id: toStore.id, name: toStore.name } : null
+          })
+          
+          if (!toStore) {
+            console.error('[TRANSFER INVOICE] Store not found:', toStoreId)
+          } else {
+            // Buscar o crear un cliente para la tienda
+            let storeClientId = toStoreId
+            
+            // Buscar si ya existe un cliente con el nombre de la tienda
+            const { data: existingClients, error: searchError } = await supabaseAdmin
+              .from('clients')
+              .select('id, name')
+              .eq('name', toStore.name)
+              .limit(1)
+            
+            if (!searchError && existingClients && existingClients.length > 0) {
+              storeClientId = existingClients[0].id
+              console.log('[TRANSFER INVOICE] Found existing client for store:', {
+                storeName: toStore.name,
+                clientId: storeClientId
+              })
+            } else {
+              // Crear un cliente para la tienda si no existe
+              console.log('[TRANSFER INVOICE] Creating client for store:', toStore.name)
+              const { data: newClient, error: clientError } = await supabaseAdmin
+                .from('clients')
+                .insert({
+                  name: toStore.name,
+                  email: null,
+                  phone: null,
+                  document: `STORE-${toStoreId.substring(0, 8)}`, // Documento único basado en el ID de la tienda
+                  address: toStore.address || null,
+                  city: toStore.city || null,
+                  state: null,
+                  type: 'mayorista',
+                  credit_limit: 0,
+                  current_debt: 0,
+                  status: 'active',
+                  store_id: toStoreId
+                })
+                .select()
+                .single()
+              
+              if (clientError) {
+                console.error('[TRANSFER INVOICE] Error creating client for store:', clientError)
+                // Intentar buscar de nuevo por nombre en caso de error
+                const { data: retryClients } = await supabaseAdmin
+                  .from('clients')
+                  .select('id')
+                  .eq('name', toStore.name)
+                  .limit(1)
+                
+                if (retryClients && retryClients.length > 0) {
+                  storeClientId = retryClients[0].id
+                  console.log('[TRANSFER INVOICE] Found client on retry:', storeClientId)
+                } else {
+                  console.error('[TRANSFER INVOICE] Could not create or find client for store. Sale creation will fail.')
+                  throw new Error(`No se pudo crear o encontrar un cliente para la tienda ${toStore.name}`)
+                }
+              } else if (newClient) {
+                storeClientId = newClient.id
+                console.log('[TRANSFER INVOICE] Created client for store:', {
+                  clientId: storeClientId,
+                  storeName: toStore.name
+                })
+              }
+            }
+            // Crear items de la venta con precios (usar precios proporcionados en la transferencia)
+            const saleItems: SaleItem[] = []
+            let subtotal = 0
+
+            for (const item of items) {
+              // Usar el precio proporcionado en la transferencia, o obtenerlo del producto si no se proporcionó
+              let unitPrice = item.unitPrice || 0
+              
+              // Si no se proporcionó precio, obtenerlo del producto
+              if (!unitPrice || unitPrice === 0) {
+                const product = await ProductsService.getProductById(item.productId)
+                unitPrice = product?.price || 0
+              }
+              
+              const quantity = item.quantity
+              const totalPrice = unitPrice * quantity
+              subtotal += totalPrice
+
+              saleItems.push({
+                id: '', // Se generará en la BD
+                productId: item.productId,
+                productName: item.productName,
+                productReferenceCode: item.productReference || '',
+                quantity: quantity,
+                unitPrice: unitPrice,
+                totalPrice: totalPrice,
+                total: totalPrice,
+                discount: 0
+              })
+            }
+
+            console.log('[CREATE TRANSFER] Sale items prepared:', {
+              saleItemsCount: saleItems.length,
+              subtotal,
+              items: saleItems.map((item) => ({
+                productName: item.productName,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                total: item.total
+              }))
+            })
+
+            // Solo crear la factura si hay items válidos
+            if (saleItems.length > 0 && subtotal > 0) {
+              console.log('[CREATE TRANSFER] Creating invoice (subtotal > 0)')
+              // Obtener usuario actual
+              const currentUser = await AuthService.getCurrentUser()
+              const currentUserId = currentUser?.id || createdBy || ''
+
+              // Generar número de factura
+              const invoiceNumber = await SalesService.getNextInvoiceNumber()
+
+              console.log('[TRANSFER INVOICE] Creating invoice with payment info:', {
+                paymentInfo,
+                subtotal,
+                paymentMethod: paymentInfo?.method || 'transfer',
+                cashAmount: paymentInfo?.cashAmount,
+                transferAmount: paymentInfo?.transferAmount,
+                invoiceNumber,
+                currentUserId,
+                toStoreId,
+                toStoreName: toStore.name,
+                MAIN_STORE_ID
+              })
+
+              // Validar que todos los datos necesarios estén presentes
+              if (!toStoreId || !toStore.name || !invoiceNumber) {
+                console.error('[TRANSFER INVOICE] Missing required data:', {
+                  toStoreId: !!toStoreId,
+                  toStoreName: !!toStore.name,
+                  invoiceNumber: !!invoiceNumber
+                })
+                throw new Error('Missing required data to create invoice')
+              }
+
+              // Crear la venta directamente en la BD (sin descontar stock, ya se descontó en la transferencia)
+              // Asegurar que todos los campos requeridos tengan valores válidos
+              const saleData: any = {
+                client_id: storeClientId, // Usar el ID del cliente de la tienda
+                client_name: toStore.name || 'Tienda sin nombre', // Nombre de la tienda como cliente
+                total: subtotal,
+                subtotal: subtotal,
+                tax: 0,
+                discount: 0,
+                status: 'completed', // Venta completada automáticamente
+                payment_method: paymentInfo?.method || 'transfer', // Método de pago
+                invoice_number: invoiceNumber,
+                seller_id: currentUserId || createdBy || null,
+                seller_name: currentUser?.name || createdByName || 'Sistema',
+                seller_email: currentUser?.email || '',
+                store_id: MAIN_STORE_ID // La venta es de la tienda principal
+              }
+
+              // Remover campos null o undefined que puedan causar problemas
+              Object.keys(saleData).forEach(key => {
+                if (saleData[key] === undefined) {
+                  delete saleData[key]
+                }
+              })
+
+              console.log('[TRANSFER INVOICE] Sale data to insert:', saleData)
+              console.log('[TRANSFER INVOICE] Sale data validation:', {
+                hasClientId: !!saleData.client_id,
+                hasClientName: !!saleData.client_name,
+                hasTotal: saleData.total > 0,
+                hasSubtotal: saleData.subtotal > 0,
+                hasInvoiceNumber: !!saleData.invoice_number,
+                hasStoreId: !!saleData.store_id,
+                sellerId: saleData.seller_id
+              })
+
+              const { data: sale, error: saleError } = await supabaseAdmin
+                .from('sales')
+                .insert(saleData)
+                .select()
+                .single()
+
+              if (saleError) {
+                // Mejorar el logging del error
+                const errorInfo = {
+                  message: saleError?.message || 'Unknown error',
+                  code: saleError?.code || 'Unknown code',
+                  hint: saleError?.hint || 'No hint',
+                  details: saleError?.details || 'No details',
+                  error: saleError
+                }
+                console.error('[TRANSFER INVOICE] Error creating sale:', errorInfo)
+                console.error('[TRANSFER INVOICE] Error stringified:', JSON.stringify(errorInfo, null, 2))
+                console.error('[TRANSFER INVOICE] Sale data that failed:', saleData)
+                
+                // Intentar obtener más información del error
+                if (saleError instanceof Error) {
+                  console.error('[TRANSFER INVOICE] Error stack:', saleError.stack)
+                }
+                
+                // No fallar la transferencia si hay error al crear la factura, pero loguear
+                // Continuar con la transferencia aunque falle la factura
+              } else if (sale) {
+                console.log('[TRANSFER INVOICE] Sale created successfully:', {
+                  saleId: sale.id,
+                  invoiceNumber: sale.invoice_number,
+                  total: sale.total,
+                  client_id: sale.client_id,
+                  store_id: sale.store_id,
+                  created_at: sale.created_at,
+                  toStoreId: toStoreId,
+                  transferId: transfer.id
+                })
+                // Crear los items de la venta
+                const saleItemsToInsert = saleItems.map(item => ({
+                  sale_id: sale.id,
+                  product_id: item.productId,
+                  product_name: item.productName,
+                  product_reference_code: item.productReferenceCode || null,
+                  quantity: item.quantity,
+                  unit_price: item.unitPrice,
+                  discount: item.discount || 0,
+                  total: item.total
+                }))
+
+                const { error: itemsError } = await supabaseAdmin
+                  .from('sale_items')
+                  .insert(saleItemsToInsert)
+
+                if (itemsError) {
+                  console.error('[TRANSFER INVOICE] Error creating sale items:', itemsError)
+                  // Eliminar la venta si falla la creación de items
+                  await supabaseAdmin.from('sales').delete().eq('id', sale.id)
+                } else {
+                  // Crear registros de pago según el método
+                  if (paymentInfo && paymentInfo.method === 'mixed') {
+                    console.log('[TRANSFER INVOICE] Creating mixed payment records:', {
+                      saleId: sale.id,
+                      cashAmount: paymentInfo.cashAmount,
+                      transferAmount: paymentInfo.transferAmount,
+                      total: subtotal
+                    })
+                    
+                    // Pagos mixtos: crear registros en sale_payments (para que el dashboard los vea)
+                    const { data: salePaymentsData, error: salePaymentsError } = await supabaseAdmin
+                      .from('sale_payments')
+                      .insert([
+                        {
+                          sale_id: sale.id,
+                          payment_type: 'cash',
+                          amount: paymentInfo.cashAmount
+                        },
+                        {
+                          sale_id: sale.id,
+                          payment_type: 'transfer',
+                          amount: paymentInfo.transferAmount
+                        }
+                      ])
+                      .select()
+                    
+                    if (salePaymentsError) {
+                      console.error('[TRANSFER INVOICE] Error creating sale_payments:', salePaymentsError)
+                      // No fallar la transferencia si hay error, pero loguear
+                    } else {
+                      console.log('[TRANSFER INVOICE] sale_payments created successfully:', salePaymentsData)
+                    }
+                    
+                    // También crear registros en payments (para compatibilidad)
+                    const { error: paymentsError } = await supabaseAdmin
+                      .from('payments')
+                      .insert([
+                        {
+                          sale_id: sale.id,
+                          amount: paymentInfo.cashAmount,
+                          payment_method: 'cash',
+                          payment_date: new Date().toISOString(),
+                          status: 'completed',
+                          notes: `Factura generada automáticamente por transferencia a ${toStore.name} - Parte en efectivo`
+                        },
+                        {
+                          sale_id: sale.id,
+                          amount: paymentInfo.transferAmount,
+                          payment_method: 'transfer',
+                          payment_date: new Date().toISOString(),
+                          status: 'completed',
+                          notes: `Factura generada automáticamente por transferencia a ${toStore.name} - Parte por transferencia`
+                        }
+                      ])
+                    
+                    if (paymentsError) {
+                      console.error('[TRANSFER INVOICE] Error creating payments:', paymentsError)
+                    } else {
+                      console.log('[TRANSFER INVOICE] payments created successfully')
+                    }
+                  } else {
+                    // Pago único
+                    const method = paymentInfo?.method || 'transfer'
+                    console.log('[TRANSFER INVOICE] Creating single payment:', {
+                      saleId: sale.id,
+                      method,
+                      amount: subtotal
+                    })
+                    
+                    // Crear registro en sale_payments (para que el dashboard lo vea)
+                    const { data: salePaymentsData, error: salePaymentsError } = await supabaseAdmin
+                      .from('sale_payments')
+                      .insert({
+                        sale_id: sale.id,
+                        payment_type: method,
+                        amount: subtotal
+                      })
+                      .select()
+                    
+                    if (salePaymentsError) {
+                      console.error('[TRANSFER INVOICE] Error creating sale_payments:', salePaymentsError)
+                      // No fallar la transferencia si hay error, pero loguear
+                    } else {
+                      console.log('[TRANSFER INVOICE] sale_payments created successfully:', salePaymentsData)
+                    }
+                    
+                    // También crear registro en payments (para compatibilidad)
+                    const { error: paymentsError } = await supabaseAdmin
+                      .from('payments')
+                      .insert({
+                        sale_id: sale.id,
+                        amount: subtotal,
+                        payment_method: method,
+                        payment_date: new Date().toISOString(),
+                        status: 'completed',
+                        notes: `Factura generada automáticamente por transferencia a ${toStore.name}`
+                      })
+                    
+                    if (paymentsError) {
+                      console.error('[TRANSFER INVOICE] Error creating payment:', paymentsError)
+                    } else {
+                      console.log('[TRANSFER INVOICE] payment created successfully')
+                    }
+                  }
+
+                  console.log('[TRANSFER INVOICE] Invoice created successfully:', {
+                    invoiceNumber: invoiceNumber,
+                    saleId: sale.id,
+                    total: subtotal,
+                    itemsCount: saleItems.length,
+                    paymentMethod: paymentInfo?.method || 'transfer'
+                  })
+                }
+              } else {
+                console.error('[TRANSFER INVOICE] Sale creation returned null or undefined')
+              }
+            } else {
+              console.warn('[CREATE TRANSFER] Not creating invoice because:', {
+                saleItemsCount: saleItems.length,
+                subtotal,
+                reason: saleItems.length === 0 ? 'No sale items' : 'Subtotal is 0'
+              })
+            }
+          }
+        } catch (invoiceError) {
+          // No fallar la transferencia si hay error al crear la factura
+          console.error('[TRANSFER INVOICE] Error creating invoice:', invoiceError)
+          console.error('[TRANSFER INVOICE] Error stack:', invoiceError instanceof Error ? invoiceError.stack : 'No stack trace')
+          console.error('[TRANSFER INVOICE] Error details:', JSON.stringify(invoiceError, null, 2))
         }
       }
 
@@ -287,15 +690,110 @@ export class StoreStockTransferService {
     }
   }
 
-  // Obtener transferencias pendientes de recepción para una tienda
-  static async getPendingTransfers(storeId: string): Promise<StoreStockTransfer[]> {
+  // Obtener transferencias pendientes de recepción para una tienda (con paginación)
+  static async getPendingTransfers(storeId: string, page: number = 1, limit: number = 10): Promise<{ transfers: StoreStockTransfer[], total: number, hasMore: boolean }> {
     try {
-      const { data: transfers, error } = await supabaseAdmin
+      const offset = (page - 1) * limit
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
+      // Obtener el total de transferencias pendientes
+      let countQuery = supabaseAdmin
+        .from('stock_transfers')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['pending', 'in_transit'])
+      
+      if (!isMainStore) {
+        countQuery = countQuery.eq('to_store_id', storeId)
+      }
+      
+      const { count, error: countError } = await countQuery
+      
+      if (countError) {
+        console.error('Error counting pending transfers:', countError)
+        return { transfers: [], total: 0, hasMore: false }
+      }
+      
+      // Obtener transferencias paginadas
+      let query = supabaseAdmin
         .from('stock_transfers')
         .select('*')
-        .eq('to_store_id', storeId)
         .in('status', ['pending', 'in_transit'])
         .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+      
+      // Si es la tienda principal, mostrar todas las transferencias pendientes
+      // Si no, solo las que van hacia esa tienda
+      if (!isMainStore) {
+        query = query.eq('to_store_id', storeId)
+      }
+      
+      const { data: transfers, error } = await query
+
+      if (error) {
+        console.error('Error fetching pending transfers:', error)
+        return { transfers: [], total: count || 0, hasMore: false }
+      }
+
+      if (!transfers || transfers.length === 0) {
+        return { transfers: [], total: count || 0, hasMore: false }
+      }
+
+      // Obtener nombres de tiendas y items para cada transferencia
+      const transfersWithItems = await Promise.all(
+        transfers.map(async (transfer: any) => {
+          // Obtener nombres de las tiendas por separado
+          const [fromStoreResult, toStoreResult] = await Promise.all([
+            supabaseAdmin.from('stores').select('id, name').eq('id', transfer.from_store_id).single(),
+            supabaseAdmin.from('stores').select('id, name').eq('id', transfer.to_store_id).single()
+          ])
+
+          const transferWithStores = {
+            ...transfer,
+            from_store: fromStoreResult.data || { id: transfer.from_store_id, name: null },
+            to_store: toStoreResult.data || { id: transfer.to_store_id, name: null }
+          }
+
+          // Obtener items de la transferencia
+          const { data: items } = await supabaseAdmin
+            .from('transfer_items')
+            .select('*')
+            .eq('transfer_id', transfer.id)
+            .order('created_at', { ascending: true })
+
+          return this.mapTransfer(transferWithStores, items || [])
+        })
+      )
+
+      const total = count || 0
+      const hasMore = offset + transfers.length < total
+
+      return { transfers: transfersWithItems, total, hasMore }
+    } catch (error) {
+      console.error('Error in getPendingTransfers:', error)
+      return { transfers: [], total: 0, hasMore: false }
+    }
+  }
+
+  // Obtener transferencias pendientes de recepción para una tienda (sin paginación - para compatibilidad)
+  static async getPendingTransfersLegacy(storeId: string): Promise<StoreStockTransfer[]> {
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
+      let query = supabaseAdmin
+        .from('stock_transfers')
+        .select('*')
+        .in('status', ['pending', 'in_transit'])
+        .order('created_at', { ascending: false })
+      
+      // Si es la tienda principal, mostrar todas las transferencias pendientes
+      // Si no, solo las que van hacia esa tienda
+      if (!isMainStore) {
+        query = query.eq('to_store_id', storeId)
+      }
+      
+      const { data: transfers, error } = await query
 
       if (error) {
         console.error('Error fetching pending transfers:', error)
@@ -339,15 +837,110 @@ export class StoreStockTransferService {
     }
   }
 
-  // Obtener transferencias recibidas (completadas) para una tienda
-  static async getReceivedTransfers(storeId: string): Promise<StoreStockTransfer[]> {
+  // Obtener transferencias recibidas (completadas) para una tienda (con paginación)
+  static async getReceivedTransfers(storeId: string, page: number = 1, limit: number = 10): Promise<{ transfers: StoreStockTransfer[], total: number, hasMore: boolean }> {
     try {
-      const { data: transfers, error } = await supabaseAdmin
+      const offset = (page - 1) * limit
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
+      // Obtener el total de transferencias recibidas
+      let countQuery = supabaseAdmin
+        .from('stock_transfers')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['received', 'partially_received'])
+      
+      if (!isMainStore) {
+        countQuery = countQuery.eq('to_store_id', storeId)
+      }
+      
+      const { count, error: countError } = await countQuery
+      
+      if (countError) {
+        console.error('Error counting received transfers:', countError)
+        return { transfers: [], total: 0, hasMore: false }
+      }
+      
+      // Obtener transferencias paginadas
+      let query = supabaseAdmin
         .from('stock_transfers')
         .select('*')
-        .eq('to_store_id', storeId)
         .in('status', ['received', 'partially_received'])
         .order('received_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+      
+      // Si es la tienda principal, mostrar todas las transferencias recibidas
+      // Si no, solo las que fueron recibidas por esa tienda
+      if (!isMainStore) {
+        query = query.eq('to_store_id', storeId)
+      }
+      
+      const { data: transfers, error } = await query
+
+      if (error) {
+        console.error('Error fetching received transfers:', error)
+        return { transfers: [], total: count || 0, hasMore: false }
+      }
+
+      if (!transfers || transfers.length === 0) {
+        return { transfers: [], total: count || 0, hasMore: false }
+      }
+
+      // Obtener nombres de tiendas y items para cada transferencia
+      const transfersWithItems = await Promise.all(
+        transfers.map(async (transfer: any) => {
+          // Obtener nombres de las tiendas por separado
+          const [fromStoreResult, toStoreResult] = await Promise.all([
+            supabaseAdmin.from('stores').select('id, name').eq('id', transfer.from_store_id).single(),
+            supabaseAdmin.from('stores').select('id, name').eq('id', transfer.to_store_id).single()
+          ])
+
+          const transferWithStores = {
+            ...transfer,
+            from_store: fromStoreResult.data || { id: transfer.from_store_id, name: null },
+            to_store: toStoreResult.data || { id: transfer.to_store_id, name: null }
+          }
+
+          // Obtener items de la transferencia
+          const { data: items } = await supabaseAdmin
+            .from('transfer_items')
+            .select('*')
+            .eq('transfer_id', transfer.id)
+            .order('created_at', { ascending: true })
+
+          return this.mapTransfer(transferWithStores, items || [])
+        })
+      )
+
+      const total = count || 0
+      const hasMore = offset + transfers.length < total
+
+      return { transfers: transfersWithItems, total, hasMore }
+    } catch (error) {
+      console.error('Error in getReceivedTransfers:', error)
+      return { transfers: [], total: 0, hasMore: false }
+    }
+  }
+
+  // Obtener transferencias recibidas (completadas) para una tienda (sin paginación - para compatibilidad)
+  static async getReceivedTransfersLegacy(storeId: string): Promise<StoreStockTransfer[]> {
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
+      let query = supabaseAdmin
+        .from('stock_transfers')
+        .select('*')
+        .in('status', ['received', 'partially_received'])
+        .order('received_at', { ascending: false })
+      
+      // Si es la tienda principal, mostrar todas las transferencias recibidas
+      // Si no, solo las que fueron recibidas por esa tienda
+      if (!isMainStore) {
+        query = query.eq('to_store_id', storeId)
+      }
+      
+      const { data: transfers, error } = await query
 
       if (error) {
         console.error('Error fetching received transfers:', error)
@@ -391,16 +984,122 @@ export class StoreStockTransferService {
     }
   }
 
-  // Obtener todas las transferencias de una tienda (enviadas y recibidas)
-  static async getStoreTransfers(storeId: string, direction: 'sent' | 'received' | 'all' = 'all'): Promise<StoreStockTransfer[]> {
+  // Obtener todas las transferencias de una tienda (enviadas y recibidas) con paginación
+  static async getStoreTransfers(storeId: string, direction: 'sent' | 'received' | 'all' = 'all', page: number = 1, limit: number = 10): Promise<{ transfers: StoreStockTransfer[], total: number, hasMore: boolean }> {
     try {
+      const offset = (page - 1) * limit
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
+      // Obtener el total de transferencias
+      let countQuery = supabaseAdmin
+        .from('stock_transfers')
+        .select('*', { count: 'exact', head: true })
+      
+      // Aplicar filtros según direction
+      if (isMainStore && direction === 'all') {
+        // No aplicar ningún filtro para la tienda principal
+      } else if (direction === 'sent') {
+        countQuery = countQuery.eq('from_store_id', storeId)
+      } else if (direction === 'received') {
+        countQuery = countQuery
+          .eq('to_store_id', storeId)
+          .in('status', ['received', 'partially_received'])
+      } else {
+        countQuery = countQuery.or(`from_store_id.eq.${storeId},to_store_id.eq.${storeId}`)
+      }
+      
+      const { count, error: countError } = await countQuery
+      
+      if (countError) {
+        console.error('Error counting transfers:', countError)
+        return { transfers: [], total: 0, hasMore: false }
+      }
+      
+      // Obtener transferencias paginadas
+      let query = supabaseAdmin
+        .from('stock_transfers')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1)
+
+      // Si es la tienda principal y direction es 'all', mostrar TODAS las transferencias
+      if (isMainStore && direction === 'all') {
+        // No aplicar ningún filtro, mostrar todas
+      } else if (direction === 'sent') {
+        query = query.eq('from_store_id', storeId)
+      } else if (direction === 'received') {
+        // Incluir tanto 'received' como 'partially_received'
+        query = query
+          .eq('to_store_id', storeId)
+          .in('status', ['received', 'partially_received'])
+      } else {
+        query = query.or(`from_store_id.eq.${storeId},to_store_id.eq.${storeId}`)
+      }
+
+      const { data: transfers, error } = await query
+
+      if (error) {
+        console.error('Error fetching transfers:', error)
+        return { transfers: [], total: count || 0, hasMore: false }
+      }
+
+      if (!transfers || transfers.length === 0) {
+        return { transfers: [], total: count || 0, hasMore: false }
+      }
+
+      // Obtener nombres de tiendas y items para cada transferencia
+      const transfersWithItems = await Promise.all(
+        transfers.map(async (transfer: any) => {
+          // Obtener nombres de las tiendas por separado
+          const [fromStoreResult, toStoreResult] = await Promise.all([
+            supabaseAdmin.from('stores').select('id, name').eq('id', transfer.from_store_id).single(),
+            supabaseAdmin.from('stores').select('id, name').eq('id', transfer.to_store_id).single()
+          ])
+
+          const transferWithStores = {
+            ...transfer,
+            from_store: fromStoreResult.data || { id: transfer.from_store_id, name: null },
+            to_store: toStoreResult.data || { id: transfer.to_store_id, name: null }
+          }
+
+          // Obtener items de la transferencia
+          const { data: items } = await supabaseAdmin
+            .from('transfer_items')
+            .select('*')
+            .eq('transfer_id', transfer.id)
+            .order('created_at', { ascending: true })
+
+          return this.mapTransfer(transferWithStores, items || [])
+        })
+      )
+
+      const total = count || 0
+      const hasMore = offset + transfers.length < total
+
+      return { transfers: transfersWithItems, total, hasMore }
+    } catch (error) {
+      console.error('Error in getStoreTransfers:', error)
+      return { transfers: [], total: 0, hasMore: false }
+    }
+  }
+
+  // Obtener todas las transferencias de una tienda (enviadas y recibidas) sin paginación (para compatibilidad)
+  static async getStoreTransfersLegacy(storeId: string, direction: 'sent' | 'received' | 'all' = 'all'): Promise<StoreStockTransfer[]> {
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = storeId === MAIN_STORE_ID
+      
       // Obtener transferencias sin relaciones para evitar errores
       let query = supabaseAdmin
         .from('stock_transfers')
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (direction === 'sent') {
+      // Si es la tienda principal y direction es 'all', mostrar TODAS las transferencias
+      if (isMainStore && direction === 'all') {
+        // No aplicar ningún filtro, mostrar todas
+      } else if (direction === 'sent') {
         query = query.eq('from_store_id', storeId)
       } else if (direction === 'received') {
         // Incluir tanto 'received' como 'partially_received'
@@ -881,7 +1580,435 @@ export class StoreStockTransferService {
     }
   }
 
+  // Obtener la transferencia asociada a una venta (método inverso)
+  static async getTransferBySaleId(saleId: string): Promise<StoreStockTransfer | null> {
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
+      // Obtener la venta para saber el client_id y la fecha
+      const { data: sale, error: saleError } = await supabaseAdmin
+        .from('sales')
+        .select('id, client_id, store_id, created_at')
+        .eq('id', saleId)
+        .single()
+      
+      if (saleError || !sale) {
+        console.log('[TRANSFER BY SALE] Sale not found:', saleId)
+        return null
+      }
+      
+      // Solo buscar si la venta es de la tienda principal
+      if (sale.store_id !== MAIN_STORE_ID) {
+        console.log('[TRANSFER BY SALE] Sale is not from main store, skipping transfer lookup')
+        return null
+      }
+      
+      // Obtener el cliente para saber su store_id (la tienda destino)
+      const { data: client, error: clientError } = await supabaseAdmin
+        .from('clients')
+        .select('id, store_id, name')
+        .eq('id', sale.client_id)
+        .single()
+      
+      if (clientError || !client || !client.store_id) {
+        console.log('[TRANSFER BY SALE] Client not found or has no store_id:', sale.client_id)
+        return null
+      }
+      
+      const toStoreId = client.store_id
+      
+      // Buscar transferencias que tengan el toStoreId y fecha de creación cercana (dentro de 2 horas)
+      const saleDate = new Date(sale.created_at)
+      const startDate = new Date(saleDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
+      const endDate = new Date(saleDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
+      
+      const { data: transfers, error } = await supabaseAdmin
+        .from('stock_transfers')
+        .select('*')
+        .eq('to_store_id', toStoreId)
+        .eq('from_store_id', MAIN_STORE_ID)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(1)
+      
+      if (error || !transfers || transfers.length === 0) {
+        console.log('[TRANSFER BY SALE] No transfer found for sale:', saleId)
+        return null
+      }
+      
+      // Obtener la transferencia completa con items
+      return await this.getTransferById(transfers[0].id)
+    } catch (error) {
+      console.error('[TRANSFER BY SALE] Error in getTransferBySaleId:', error)
+      return null
+    }
+  }
+
   // Mapear datos de transferencia
+  // Obtener la venta asociada a una transferencia
+  static async getTransferSale(transferId: string): Promise<Sale | null> {
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
+      // Obtener la transferencia para saber el toStoreId y la fecha
+      const transfer = await this.getTransferById(transferId)
+      if (!transfer) {
+        console.log('[TRANSFER SALE] Transfer not found:', transferId)
+        return null
+      }
+      
+      // Verificar si es desde la tienda principal (igual que en createTransfer)
+      const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID || !transfer.fromStoreId
+      
+      console.log('[TRANSFER SALE] Looking for sale:', {
+        transferId,
+        fromStoreId: transfer.fromStoreId,
+        toStoreId: transfer.toStoreId,
+        createdAt: transfer.createdAt,
+        isFromMainStore,
+        MAIN_STORE_ID
+      })
+      
+      // Solo buscar si la transferencia es desde la tienda principal
+      if (!isFromMainStore) {
+        console.log('[TRANSFER SALE] Transfer is not from main store, skipping sale lookup')
+        return null
+      }
+      
+      // Buscar el cliente asociado a la tienda destino
+      // El cliente tiene store_id = toStoreId
+      const { data: storeClients, error: clientSearchError } = await supabaseAdmin
+        .from('clients')
+        .select('id, name, store_id')
+        .eq('store_id', transfer.toStoreId)
+        .limit(5) // Puede haber múltiples clientes para la misma tienda
+      
+      if (clientSearchError || !storeClients || storeClients.length === 0) {
+        console.log('[TRANSFER SALE] No client found for store:', transfer.toStoreId)
+        // Intentar búsqueda alternativa: buscar por nombre de la tienda
+        const { data: toStore } = await supabaseAdmin
+          .from('stores')
+          .select('id, name')
+          .eq('id', transfer.toStoreId)
+          .single()
+        
+        if (toStore) {
+          const { data: clientsByName } = await supabaseAdmin
+            .from('clients')
+            .select('id, name, store_id')
+            .eq('name', toStore.name)
+            .limit(5)
+          
+          if (clientsByName && clientsByName.length > 0) {
+            console.log('[TRANSFER SALE] Found client by store name:', clientsByName[0].id)
+            // Usar el primer cliente encontrado
+            const clientIds = clientsByName.map(c => c.id)
+            
+            // Buscar la venta asociada usando los IDs de clientes encontrados
+            const transferDate = new Date(transfer.createdAt)
+            const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
+            const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
+            
+            console.log('[TRANSFER SALE] Searching sale with client IDs:', {
+              clientIds,
+              store_id: MAIN_STORE_ID,
+              transferDate: transferDate.toISOString(),
+              startDate: startDate.toISOString(),
+              endDate: endDate.toISOString()
+            })
+            
+            const { data: sales, error } = await supabaseAdmin
+              .from('sales')
+              .select(`
+                *,
+                sale_items (
+                  id,
+                  product_id,
+                  product_name,
+                  product_reference_code,
+                  quantity,
+                  unit_price,
+                  discount,
+                  total
+                ),
+                sale_payments (
+                  id,
+                  sale_id,
+                  payment_type,
+                  amount,
+                  created_at
+                )
+              `)
+              .in('client_id', clientIds)
+              .eq('store_id', MAIN_STORE_ID)
+              .gte('created_at', startDate.toISOString())
+              .lte('created_at', endDate.toISOString())
+              .order('created_at', { ascending: false })
+              .limit(5)
+            
+            if (error) {
+              console.error('[TRANSFER SALE] Error fetching sale:', error)
+              return null
+            }
+            
+            console.log('[TRANSFER SALE] Found sales:', {
+              count: sales?.length || 0,
+              sales: sales?.map(s => ({
+                id: s.id,
+                client_id: s.client_id,
+                total: s.total,
+                created_at: s.created_at,
+                invoice_number: s.invoice_number
+              }))
+            })
+            
+            if (!sales || sales.length === 0) {
+              // Continuar con la búsqueda sin filtro de fecha (lógica más abajo)
+              // Por ahora retornar null, la lógica de búsqueda sin fecha está más abajo
+              console.log('[TRANSFER SALE] No sale found with date filter, will try without date filter')
+            } else {
+              // Si hay múltiples, buscar la que tenga los mismos productos
+              let sale = sales[0]
+              if (sales.length > 1) {
+                const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
+                const matchingSale = sales.find(s => {
+                  const saleProductIds = new Set(s.sale_items?.map((item: any) => item.product_id) || [])
+                  return transferProductIds.size === saleProductIds.size && 
+                    [...transferProductIds].every(id => saleProductIds.has(id))
+                })
+                if (matchingSale) {
+                  sale = matchingSale
+                  console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
+                }
+              }
+              
+              return this.mapSaleToType(sale)
+            }
+            
+            // Si hay múltiples, buscar la que tenga los mismos productos
+            let sale = sales[0]
+            if (sales.length > 1) {
+              const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
+              const matchingSale = sales.find(s => {
+                const saleProductIds = new Set(s.sale_items?.map((item: any) => item.product_id) || [])
+                return transferProductIds.size === saleProductIds.size && 
+                  [...transferProductIds].every(id => saleProductIds.has(id))
+              })
+              if (matchingSale) {
+                sale = matchingSale
+                console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
+              }
+            }
+            
+            return this.mapSaleToType(sale)
+          }
+        }
+        
+        return null
+      }
+      
+      // Usar los IDs de los clientes encontrados para buscar la venta
+      const clientIds = storeClients.map(c => c.id)
+      
+      // Buscar la venta asociada: client_id en clientIds, store_id = MAIN_STORE_ID
+      // y fecha de creación cercana (dentro de 2 horas de la transferencia para ser más flexible)
+      const transferDate = new Date(transfer.createdAt)
+      const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
+      const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
+      
+      console.log('[TRANSFER SALE] Searching sale with filters:', {
+        clientIds,
+        store_id: MAIN_STORE_ID,
+        transferDate: transferDate.toISOString(),
+        startDate: startDate.toISOString(),
+        endDate: endDate.toISOString()
+      })
+      
+      const { data: sales, error } = await supabaseAdmin
+        .from('sales')
+        .select(`
+          *,
+          sale_items (
+            id,
+            product_id,
+            product_name,
+            product_reference_code,
+            quantity,
+            unit_price,
+            discount,
+            total
+          ),
+          sale_payments (
+            id,
+            sale_id,
+            payment_type,
+            amount,
+            created_at
+          )
+        `)
+        .in('client_id', clientIds)
+        .eq('store_id', MAIN_STORE_ID)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(5) // Obtener hasta 5 para ver si hay múltiples
+      
+      if (error) {
+        console.error('[TRANSFER SALE] Error fetching sale:', error)
+        return null
+      }
+      
+      console.log('[TRANSFER SALE] Found sales:', {
+        count: sales?.length || 0,
+        sales: sales?.map(s => ({
+          id: s.id,
+          client_id: s.client_id,
+          total: s.total,
+          created_at: s.created_at,
+          invoice_number: s.invoice_number
+        }))
+      })
+      
+      if (!sales || sales.length === 0) {
+        console.log('[TRANSFER SALE] No sale found for transfer with date filter, trying without date filter...')
+        // Intentar búsqueda más amplia sin filtro de fecha usando los clientIds
+        const { data: salesWithoutDate, error: error2 } = await supabaseAdmin
+          .from('sales')
+          .select(`
+            *,
+            sale_items (
+              id,
+              product_id,
+              product_name,
+              product_reference_code,
+              quantity,
+              unit_price,
+              discount,
+              total
+            ),
+            sale_payments (
+              id,
+              sale_id,
+              payment_type,
+              amount,
+              created_at
+            )
+          `)
+          .in('client_id', clientIds)
+          .eq('store_id', MAIN_STORE_ID)
+          .order('created_at', { ascending: false })
+          .limit(10) // Aumentar el límite para buscar más ventas
+        
+        if (error2) {
+          console.error('[TRANSFER SALE] Error in fallback search:', error2)
+          return null
+        }
+        
+        console.log('[TRANSFER SALE] Found sales without date filter:', {
+          count: salesWithoutDate?.length || 0,
+          sales: salesWithoutDate?.map(s => ({
+            id: s.id,
+            client_id: s.client_id,
+            created_at: s.created_at,
+            invoice_number: s.invoice_number
+          }))
+        })
+        
+        if (salesWithoutDate && salesWithoutDate.length > 0) {
+          // Buscar la venta que tenga los mismos productos
+          const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
+          console.log('[TRANSFER SALE] Transfer product IDs:', Array.from(transferProductIds))
+          
+          for (const sale of salesWithoutDate) {
+            const saleProductIds = new Set(sale.sale_items?.map((item: any) => item.product_id) || [])
+            console.log('[TRANSFER SALE] Checking sale:', {
+              saleId: sale.id,
+              saleProductIds: Array.from(saleProductIds),
+              transferProductIds: Array.from(transferProductIds)
+            })
+            
+            // Verificar que los productos coincidan
+            const productsMatch = transferProductIds.size === saleProductIds.size && 
+              transferProductIds.size > 0 &&
+              [...transferProductIds].every(id => saleProductIds.has(id))
+            
+            if (productsMatch) {
+              console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
+              return this.mapSaleToType(sale)
+            }
+          }
+          
+          // Si no encontramos por productos, devolver la más reciente
+          console.log('[TRANSFER SALE] No matching sale by products, returning most recent:', salesWithoutDate[0].id)
+          return this.mapSaleToType(salesWithoutDate[0])
+        }
+        
+        console.log('[TRANSFER SALE] No sale found for transfer after all searches')
+        return null
+      }
+      
+      // Si hay ventas encontradas, buscar la que tenga los mismos productos
+      let sale = sales[0]
+      if (sales.length > 1) {
+        const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
+        const matchingSale = sales.find(s => {
+          const saleProductIds = new Set(s.sale_items?.map((item: any) => item.product_id) || [])
+          return transferProductIds.size === saleProductIds.size && 
+            [...transferProductIds].every(id => saleProductIds.has(id))
+        })
+        if (matchingSale) {
+          sale = matchingSale
+          console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
+        }
+      }
+      
+      // Mapear a formato Sale
+      return this.mapSaleToType(sale)
+    } catch (error) {
+      console.error('[TRANSFER SALE] Error in getTransferSale:', error)
+      return null
+    }
+  }
+
+  // Método auxiliar para mapear una venta a formato Sale
+  private static mapSaleToType(sale: any): Sale {
+    return {
+      id: sale.id,
+      clientId: sale.client_id,
+      clientName: sale.client_name,
+      total: sale.total,
+      subtotal: sale.subtotal,
+      tax: sale.tax || 0,
+      discount: sale.discount || 0,
+      status: sale.status,
+      paymentMethod: sale.payment_method,
+      invoiceNumber: sale.invoice_number,
+      sellerId: sale.seller_id,
+      sellerName: sale.seller_name,
+      sellerEmail: sale.seller_email,
+      storeId: sale.store_id,
+      createdAt: sale.created_at,
+      items: sale.sale_items?.map((item: any) => ({
+        id: item.id,
+        productId: item.product_id,
+        productName: item.product_name,
+        productReferenceCode: item.product_reference_code,
+        quantity: item.quantity,
+        unitPrice: item.unit_price,
+        discount: item.discount || 0,
+        total: item.total
+      })) || [],
+      payments: sale.sale_payments?.map((payment: any) => ({
+        id: payment.id,
+        saleId: payment.sale_id,
+        paymentType: payment.payment_type,
+        amount: payment.amount,
+        createdAt: payment.created_at
+      })) || []
+    }
+  }
+
   private static mapTransfer(data: any, items: any[] = []): StoreStockTransfer {
     const transferItems: TransferItem[] = items.map((item: any) => ({
       id: item.id,

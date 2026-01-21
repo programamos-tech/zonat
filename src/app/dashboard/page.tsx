@@ -21,7 +21,9 @@ import {
   Activity,
   XCircle,
   RefreshCw,
-  Store as StoreIcon
+  Store as StoreIcon,
+  Home,
+  Crown
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -557,33 +559,45 @@ export default function DashboardPage() {
       nextDay.setDate(nextDay.getDate() + 1)
       
       // Filtrar ventas solo del día seleccionado
+      // Usar comparación más flexible para evitar problemas de zona horaria
       const filteredSales = allSales.filter(sale => {
         const saleDate = new Date(sale.createdAt)
-        saleDate.setHours(0, 0, 0, 0)
-        const matches = saleDate.getTime() === targetDate.getTime()
+        // Normalizar ambas fechas a medianoche en hora local
+        const saleDateNormalized = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate())
+        const targetDateNormalized = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
+        const matches = saleDateNormalized.getTime() === targetDateNormalized.getTime()
         
-        // Log para debugging
-        if (allSales.length > 0 && allSales.length < 10) {
+        // Log para debugging (solo para las primeras ventas)
+        if (allSales.length > 0 && allSales.length < 20) {
           console.log('[DASHBOARD] Filtering sale:', {
             saleId: sale.id,
             invoiceNumber: sale.invoiceNumber,
-            saleDate: saleDate.toISOString(),
-            targetDate: targetDate.toISOString(),
-            saleDateTime: saleDate.getTime(),
-            targetDateTime: targetDate.getTime(),
+            saleDate: saleDateNormalized.toISOString(),
+            targetDate: targetDateNormalized.toISOString(),
+            saleDateTime: saleDateNormalized.getTime(),
+            targetDateTime: targetDateNormalized.getTime(),
             matches,
-            createdAt: sale.createdAt
+            createdAt: sale.createdAt,
+            paymentMethod: sale.paymentMethod,
+            total: sale.total
           })
         }
         
         return matches
       })
       
-      console.log('[DASHBOARD] Filtered sales for today:', {
+      console.log('[DASHBOARD] Filtered sales for date:', {
         totalSales: allSales.length,
         filteredSales: filteredSales.length,
         targetDate: targetDate.toISOString(),
-        sales: filteredSales.map(s => ({ id: s.id, invoice: s.invoiceNumber, total: s.total, createdAt: s.createdAt }))
+        sales: filteredSales.map(s => ({ 
+          id: s.id, 
+          invoice: s.invoiceNumber, 
+          total: s.total, 
+          createdAt: s.createdAt,
+          paymentMethod: s.paymentMethod,
+          payments: s.payments?.length || 0
+        }))
       })
       
       // Filtrar pagos solo del día seleccionado
@@ -637,12 +651,9 @@ export default function DashboardPage() {
     
     // Procesar solo ventas activas (no canceladas)
     activeSales.forEach(sale => {
-      if (sale.paymentMethod === 'cash') {
-        cashRevenue += sale.total
-      } else if (sale.paymentMethod === 'transfer') {
-        transferRevenue += sale.total
-      } else if (sale.paymentMethod === 'mixed' && sale.payments) {
-        // Desglosar pagos mixtos
+      // Priorizar usar sale.payments si están disponibles (más preciso)
+      if (sale.payments && sale.payments.length > 0) {
+        // Usar los registros de pagos (más preciso, especialmente para transferencias)
         sale.payments.forEach(payment => {
           if (payment.paymentType === 'cash') {
             cashRevenue += payment.amount || 0
@@ -650,7 +661,31 @@ export default function DashboardPage() {
             transferRevenue += payment.amount || 0
           }
         })
+      } else {
+        // Fallback: usar paymentMethod si no hay registros de payments
+        if (sale.paymentMethod === 'cash') {
+          cashRevenue += sale.total
+        } else if (sale.paymentMethod === 'transfer') {
+          transferRevenue += sale.total
+        } else if (sale.paymentMethod === 'mixed') {
+          // Si es mixed pero no tiene payments, loguear para debugging
+          console.warn('[DASHBOARD] Sale with mixed payment method but no payments:', {
+            saleId: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            total: sale.total,
+            payments: sale.payments
+          })
+        }
       }
+    })
+    
+    console.log('[DASHBOARD] Revenue calculation:', {
+      activeSalesCount: activeSales.length,
+      cashRevenue,
+      transferRevenue,
+      totalRevenue: cashRevenue + transferRevenue,
+      mixedSales: activeSales.filter(s => s.paymentMethod === 'mixed').length,
+      mixedSalesWithPayments: activeSales.filter(s => s.paymentMethod === 'mixed' && s.payments && s.payments.length > 0).length
     })
     
     // Agregar abonos de créditos
@@ -1419,6 +1454,12 @@ export default function DashboardPage() {
                       {currentStoreName}
                     </Badge>
                   )}
+                  {isMainStoreUser(user) && (
+                    <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-sm md:text-base px-3 py-1.5 flex-shrink-0 border border-emerald-300 dark:border-emerald-700">
+                      <Crown className="h-4 w-4 md:h-5 md:w-5 mr-1.5" />
+                      Tienda Principal
+                    </Badge>
+                  )}
                   {(isRefreshing || isFiltering) && (
                     <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs flex-shrink-0">
                       Actualizando...
@@ -1428,6 +1469,8 @@ export default function DashboardPage() {
                 <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-0.5 md:mt-1">
                   {currentStoreName && !isMainStoreUser(user) 
                     ? 'Estás viendo el dashboard de esta micro tienda. Los datos mostrados corresponden únicamente a esta ubicación.'
+                    : isMainStoreUser(user)
+                    ? 'Resumen ejecutivo y métricas de rendimiento de la tienda principal'
                     : 'Resumen ejecutivo y métricas de rendimiento'}
                 </p>
               </div>

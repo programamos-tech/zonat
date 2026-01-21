@@ -13,6 +13,7 @@ interface AuthContextType {
   getAllUsers: () => Promise<User[]>
   updateUser: (id: string, updates: Partial<User>) => Promise<boolean>
   deleteUser: (id: string) => Promise<boolean>
+  switchStore: (storeId: string | undefined) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -133,6 +134,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const switchStore = (storeId: string | undefined) => {
+    if (!user) return
+    
+    const updatedUser = {
+      ...user,
+      storeId: storeId
+    }
+    
+    setUser(updatedUser)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('zonat_user', JSON.stringify(updatedUser))
+    }
+  }
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -142,7 +157,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createUser, 
       getAllUsers, 
       updateUser, 
-      deleteUser 
+      deleteUser,
+      switchStore
     }}>
       {children}
     </AuthContext.Provider>

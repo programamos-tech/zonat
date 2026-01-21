@@ -3,10 +3,12 @@
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Package, Store as StoreIcon, Calendar, User, FileText } from 'lucide-react'
-import { StoreStockTransfer } from '@/types'
+import { X, Package, Store as StoreIcon, Calendar, User, FileText, DollarSign, CreditCard } from 'lucide-react'
+import { StoreStockTransfer, Sale } from '@/types'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { useState, useEffect } from 'react'
+import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 
 interface TransferDetailModalProps {
   isOpen: boolean
@@ -15,7 +17,50 @@ interface TransferDetailModalProps {
 }
 
 export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetailModalProps) {
+  const [sale, setSale] = useState<Sale | null>(null)
+  const [loadingSale, setLoadingSale] = useState(false)
+
+  useEffect(() => {
+    if (isOpen && transfer) {
+      // Solo buscar la venta si la transferencia es desde la tienda principal
+      // Verificar igual que en getTransferSale (considerar null/undefined)
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID || !transfer.fromStoreId
+      
+      if (isFromMainStore) {
+        setLoadingSale(true)
+        StoreStockTransferService.getTransferSale(transfer.id)
+          .then((saleData) => {
+            setSale(saleData)
+            if (!saleData) {
+              console.log('[TRANSFER DETAIL MODAL] No sale found for transfer:', transfer.id)
+            }
+          })
+          .catch((error) => {
+            console.error('Error loading transfer sale:', error)
+            setSale(null)
+          })
+          .finally(() => {
+            setLoadingSale(false)
+          })
+      } else {
+        setSale(null)
+      }
+    } else {
+      setSale(null)
+    }
+  }, [isOpen, transfer])
+
   if (!isOpen || !transfer) return null
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -99,18 +144,44 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
               <CardContent className="p-4">
                 {transfer.items && transfer.items.length > 0 ? (
                   <div className="space-y-2">
-                    {transfer.items.map((item) => (
-                      <div key={item.id} className="flex justify-between items-center py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
-                        <div>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">{item.productName}</p>
+                    {transfer.items.map((item) => {
+                      // Buscar el precio unitario en la venta asociada
+                      const saleItem = sale?.items?.find(si => si.productId === item.productId)
+                      const unitPrice = saleItem?.unitPrice || 0
+                      const itemTotal = unitPrice * item.quantity
+                      
+                      return (
+                        <div key={item.id} className="py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                          <div className="flex justify-between items-start">
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900 dark:text-white">{item.productName}</p>
+                              {item.productReference && (
+                                <p className="text-xs text-gray-500 dark:text-gray-400">Ref: {item.productReference}</p>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                                {item.quantity} {item.quantity === 1 ? 'unidad' : 'unidades'}
+                              </p>
+                              {unitPrice > 0 && (
+                                <>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">
+                                    {formatCurrency(unitPrice)} c/u
+                                  </p>
+                                  <p className="text-sm font-semibold text-cyan-600 dark:text-cyan-400">
+                                    {formatCurrency(itemTotal)}
+                                  </p>
+                                </>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white">x{item.quantity}</p>
-                      </div>
-                    ))}
+                      )
+                    })}
                     <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white flex justify-between">
-                        <span>Total:</span>
-                        <span>{totalQuantity} unidades</span>
+                        <span>Total unidades:</span>
+                        <span>{totalQuantity} {totalQuantity === 1 ? 'unidad' : 'unidades'}</span>
                       </p>
                     </div>
                   </div>
@@ -123,6 +194,96 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
               </CardContent>
             </Card>
           </div>
+
+          {/* Valor de la Transferencia */}
+          {(() => {
+            const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+            const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID || !transfer.fromStoreId
+            
+            if (!isFromMainStore) {
+              return null
+            }
+            
+            if (loadingSale) {
+              return (
+                <div className="text-center py-4">
+                  <p className="text-sm text-gray-500 dark:text-gray-400">Cargando información de venta...</p>
+                </div>
+              )
+            }
+            
+            if (!sale) {
+              return (
+                <div className="border-2 border-yellow-500 rounded-lg p-4 bg-yellow-50/50 dark:bg-yellow-900/20">
+                  <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                    No se encontró información de venta para esta transferencia. Verifica la consola para más detalles.
+                  </p>
+                </div>
+              )
+            }
+            
+            return (
+              <div>
+                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+                  <DollarSign className="h-3 w-3" />
+                  Valor de la Transferencia
+                </p>
+                <Card className="dark:bg-gray-800 dark:border-gray-700 border-2 border-cyan-500">
+                  <CardContent className="p-4">
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total de la venta:</span>
+                        <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                          {formatCurrency(sale.total)}
+                        </span>
+                      </div>
+                    
+                    {sale.payments && sale.payments.length > 0 ? (
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                        <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Desglose de pagos:</p>
+                        {sale.payments.map((payment) => (
+                          <div key={payment.id} className="flex justify-between items-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                              <CreditCard className="h-3 w-3" />
+                              {payment.paymentType === 'cash' ? 'Efectivo' : 
+                               payment.paymentType === 'transfer' ? 'Transferencia' : 
+                               payment.paymentType}
+                            </span>
+                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {formatCurrency(payment.amount)}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                            <CreditCard className="h-3 w-3" />
+                            {sale.paymentMethod === 'cash' ? 'Efectivo' : 
+                             sale.paymentMethod === 'transfer' ? 'Transferencia' : 
+                             sale.paymentMethod}
+                          </span>
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                            {formatCurrency(sale.total)}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {sale.invoiceNumber && (
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                          Factura: {sale.invoiceNumber}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+            )
+          })()}
 
           {/* Fechas y Usuarios */}
           <div className="grid grid-cols-2 gap-4">

@@ -3,17 +3,21 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ChevronLeft, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ChevronLeft, ChevronRight, ArrowRightLeft, CheckCircle, Store } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
+import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
 
 const items = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, module: 'dashboard', alwaysVisible: true },
-  { href: '/inventory/products', label: 'Inventario', icon: Package, module: 'products' },
+  { href: '/inventory/products', label: 'Productos', icon: Package, module: 'products' },
+  { href: '/inventory/transfers', label: 'Transferencias', icon: ArrowRightLeft, module: 'products', requiresMainStore: true },
+  { href: '/inventory/receptions', label: 'Recepciones', icon: CheckCircle, module: 'products' },
   { href: '/clients', label: 'Clientes', icon: Users, module: 'clients' },
   { href: '/sales', label: 'Ventas', icon: Receipt, module: 'sales' },
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
   { href: '/payments', label: 'Créditos', icon: CreditCard, module: 'payments' },
+  { href: '/stores', label: 'Tiendas', icon: Store, module: 'roles' },
   { href: '/roles', label: 'Roles', icon: Shield, module: 'roles' },
   { href: '/logs', label: 'Actividades', icon: Activity, module: 'logs' },
   { href: '/profile', label: 'Perfil', icon: UserCircle, module: 'dashboard', alwaysVisible: true },
@@ -41,6 +45,14 @@ export function BottomNav() {
     .filter(item => {
       if (item.alwaysVisible && user) {
         return true
+      }
+      // Ocultar transferencias si el usuario no es de la tienda principal
+      if (item.requiresMainStore && !isMainStoreUser(user)) {
+        return false
+      }
+      // Para el módulo de Tiendas, siempre mostrarlo pero solo permitir acceso si es super admin
+      if (item.href === '/stores') {
+        return canView(item.module) // Mostrar siempre si tiene permisos del módulo
       }
       return canView(item.module)
     })
@@ -128,11 +140,17 @@ export function BottomNav() {
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {visibleItems.map(({ href, label, icon: Icon, module }) => {
+            const isStoresModule = href === '/stores'
+            const canAccessStores = isStoresModule ? canAccessAllStores(user) : true
+            
             const active = currentPathname === href || 
               (href !== '/dashboard' && currentPathname?.startsWith(href)) ||
               (href === '/payments' && currentPathname?.startsWith('/payments')) ||
-              (href === '/inventory/products' && currentPathname?.startsWith('/inventory')) ||
-              (href === '/sales' && currentPathname?.startsWith('/sales'))
+              (href === '/inventory/products' && currentPathname?.startsWith('/inventory/products')) ||
+              (href === '/inventory/transfers' && currentPathname?.startsWith('/inventory/transfers')) ||
+              (href === '/inventory/receptions' && currentPathname?.startsWith('/inventory/receptions')) ||
+              (href === '/sales' && currentPathname?.startsWith('/sales')) ||
+              (href === '/stores' && currentPathname?.startsWith('/stores'))
             
             // Colores por módulo para el estado activo (igual que el sidebar)
             const getActiveColor = () => {
@@ -145,6 +163,7 @@ export function BottomNav() {
                 case 'payments': return 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
                 case 'roles': return 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
                 case 'logs': return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                case 'stores': return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
                 default: return 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
               }
             }
@@ -160,23 +179,38 @@ export function BottomNav() {
                 case 'payments': return 'text-orange-700 dark:text-orange-400'
                 case 'roles': return 'text-indigo-700 dark:text-indigo-400'
                 case 'logs': return 'text-gray-700 dark:text-gray-300'
+                case 'stores': return 'text-emerald-700 dark:text-emerald-400'
                 default: return 'text-gray-900 dark:text-white'
               }
             }
             
             return (
               <li key={href} className="flex-shrink-0 flex-1 min-w-[70px] md:min-w-[80px] max-w-[90px] md:max-w-[100px]">
-                <Link
-                  href={href}
-                  className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg touch-manipulation ${
-                    active 
-                      ? `${getActiveColor()} shadow-sm font-semibold` 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
-                  }`}
-                >
-                  <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
-                  <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
-                </Link>
+                {isStoresModule && !canAccessStores ? (
+                  <div
+                    className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg cursor-not-allowed opacity-50 ${
+                      active 
+                        ? `${getActiveColor()} shadow-sm font-semibold` 
+                        : 'text-gray-400 dark:text-gray-500'
+                    }`}
+                    title="Solo disponible para Super Administradores"
+                  >
+                    <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
+                    <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
+                  </div>
+                ) : (
+                  <Link
+                    href={href}
+                    className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg touch-manipulation ${
+                      active 
+                        ? `${getActiveColor()} shadow-sm font-semibold` 
+                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
+                    }`}
+                  >
+                    <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
+                    <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
+                  </Link>
+                )}
               </li>
             )
           })}

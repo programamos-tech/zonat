@@ -4,9 +4,9 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Plus, Package, ArrowRightLeft, RefreshCw, X, Store as StoreIcon, ChevronDown, ChevronUp, Calendar, User, FileText, Download } from 'lucide-react'
+import { Plus, Package, ArrowRightLeft, RefreshCw, X, Store as StoreIcon, ChevronDown, ChevronUp, Calendar, User, FileText, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
-import { StoreStockTransfer, Store } from '@/types'
+import { StoreStockTransfer, Store, Sale } from '@/types'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { StoresService } from '@/lib/stores-service'
 import { useAuth } from '@/contexts/auth-context'
@@ -17,6 +17,7 @@ import { es } from 'date-fns/locale'
 import { TransferModal } from '@/components/inventory/transfer-modal'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { PDFService } from '@/lib/pdf-service'
+import { DollarSign, CreditCard } from 'lucide-react'
 
 export default function TransfersPage() {
   const { user } = useAuth()
@@ -28,6 +29,11 @@ export default function TransfersPage() {
   const [transferToCancel, setTransferToCancel] = useState<StoreStockTransfer | null>(null)
   const [filter, setFilter] = useState<'all' | 'sent' | 'received'>('all')
   const [expandedTransfers, setExpandedTransfers] = useState<Set<string>>(new Set())
+  const [transferSales, setTransferSales] = useState<Map<string, Sale>>(new Map())
+  const [loadingSales, setLoadingSales] = useState<Set<string>>(new Set())
+  const [currentPage, setCurrentPage] = useState(1)
+  const [totalTransfers, setTotalTransfers] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
   
   const currentStoreId = getCurrentUserStoreId()
   const canManageAllStores = canAccessAllStores(user)
@@ -35,6 +41,100 @@ export default function TransfersPage() {
   
   // Para la tienda principal, usar el MAIN_STORE_ID explícitamente
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount)
+  }
+  
+  // Cargar la venta asociada cuando se expande una transferencia
+  const loadTransferSale = async (transferId: string) => {
+    console.log('[TRANSFERS PAGE] loadTransferSale called:', {
+      transferId,
+      isLoading: loadingSales.has(transferId),
+      alreadyLoaded: transferSales.has(transferId)
+    })
+    
+    if (loadingSales.has(transferId) || transferSales.has(transferId)) {
+      console.log('[TRANSFERS PAGE] Sale already loading or loaded, skipping')
+      return // Ya está cargando o ya está cargada
+    }
+    
+    const transfer = transfers.find(t => t.id === transferId)
+    console.log('[TRANSFERS PAGE] Transfer found:', {
+      transferId,
+      transfer: transfer ? {
+        id: transfer.id,
+        fromStoreId: transfer.fromStoreId,
+        toStoreId: transfer.toStoreId,
+        createdAt: transfer.createdAt
+      } : null,
+      MAIN_STORE_ID,
+      isFromMainStore: transfer?.fromStoreId === MAIN_STORE_ID
+    })
+    
+    if (!transfer) {
+      console.log('[TRANSFERS PAGE] Transfer not found')
+      return
+    }
+    
+    if (transfer.fromStoreId !== MAIN_STORE_ID) {
+      console.log('[TRANSFERS PAGE] Transfer is not from main store, skipping')
+      return // Solo cargar para transferencias desde la tienda principal
+    }
+    
+    console.log('[TRANSFERS PAGE] Starting to load sale for transfer:', transferId)
+    setLoadingSales(prev => new Set(prev).add(transferId))
+    
+    try {
+      const sale = await StoreStockTransferService.getTransferSale(transferId)
+      console.log('[TRANSFERS PAGE] Sale loaded:', {
+        transferId,
+        sale: sale ? {
+          id: sale.id,
+          total: sale.total,
+          paymentMethod: sale.paymentMethod,
+          itemsCount: sale.items?.length || 0,
+          paymentsCount: sale.payments?.length || 0
+        } : null
+      })
+      
+      if (sale) {
+        setTransferSales(prev => {
+          const newMap = new Map(prev)
+          newMap.set(transferId, sale)
+          console.log('[TRANSFERS PAGE] Sale added to state:', transferId)
+          return newMap
+        })
+      } else {
+        console.log('[TRANSFERS PAGE] No sale found for transfer:', transferId)
+      }
+    } catch (error) {
+      console.error('[TRANSFERS PAGE] Error loading transfer sale:', error)
+    } finally {
+      setLoadingSales(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(transferId)
+        return newSet
+      })
+    }
+  }
+  
+  // Cargar venta cuando se expande una transferencia
+  useEffect(() => {
+    expandedTransfers.forEach(transferId => {
+      const transfer = transfers.find(t => t.id === transferId)
+      if (transfer && transfer.fromStoreId === MAIN_STORE_ID && !loadingSales.has(transferId) && !transferSales.has(transferId)) {
+        loadTransferSale(transferId)
+      }
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expandedTransfers])
+  
   const fromStoreIdForTransfer = isMainStore ? MAIN_STORE_ID : (currentStoreId || undefined)
   
   // Redirigir a recepciones si el usuario no es de la tienda principal
@@ -47,11 +147,27 @@ export default function TransfersPage() {
   const toggleTransfer = (transferId: string) => {
     setExpandedTransfers(prev => {
       const newSet = new Set(prev)
+      const isExpanding = !newSet.has(transferId)
       if (newSet.has(transferId)) {
         newSet.delete(transferId)
       } else {
         newSet.add(transferId)
       }
+      
+      // Si se está expandiendo, cargar la venta inmediatamente
+      if (isExpanding) {
+        const transfer = transfers.find(t => t.id === transferId)
+        console.log('[TRANSFERS PAGE] Expanding transfer:', {
+          transferId,
+          fromStoreId: transfer?.fromStoreId,
+          MAIN_STORE_ID,
+          isFromMainStore: transfer?.fromStoreId === MAIN_STORE_ID
+        })
+        if (transfer && transfer.fromStoreId === MAIN_STORE_ID) {
+          loadTransferSale(transferId)
+        }
+      }
+      
       return newSet
     })
   }
@@ -62,11 +178,11 @@ export default function TransfersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Solo ejecutar una vez al montar
 
-  // Cargar transferencias cuando cambia el filtro, el storeId o el estado de tienda principal
+  // Cargar transferencias cuando cambia el filtro, el storeId, el estado de tienda principal o la página
   useEffect(() => {
     loadTransfers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, currentStoreId, isMainStore])
+  }, [filter, currentStoreId, isMainStore, currentPage])
 
   const loadStores = async () => {
     try {
@@ -88,11 +204,34 @@ export default function TransfersPage() {
 
     setLoading(true)
     try {
-      const transfersData = await StoreStockTransferService.getStoreTransfers(
+      console.log('[TRANSFERS PAGE] Loading transfers:', {
         storeIdToUse,
-        filter === 'all' ? 'all' : filter
+        isMainStore,
+        filter,
+        currentStoreId,
+        page: currentPage
+      })
+      const result = await StoreStockTransferService.getStoreTransfers(
+        storeIdToUse,
+        filter === 'all' ? 'all' : filter,
+        currentPage,
+        10 // limit
       )
-      setTransfers(transfersData)
+      console.log('[TRANSFERS PAGE] Transfers loaded:', {
+        count: result.transfers.length,
+        total: result.total,
+        hasMore: result.hasMore,
+        transfers: result.transfers.slice(0, 3).map(t => ({
+          id: t.id,
+          fromStore: t.fromStoreName,
+          toStore: t.toStoreName,
+          status: t.status,
+          createdAt: t.createdAt
+        }))
+      })
+      setTransfers(result.transfers)
+      setTotalTransfers(result.total)
+      setHasMore(result.hasMore)
     } catch (error) {
       toast.error('Error al cargar las transferencias')
       console.error('Error loading transfers:', error)
@@ -511,6 +650,137 @@ export default function TransfersPage() {
                           </div>
                         </div>
 
+                        {/* Valor de la Transferencia */}
+                        {(() => {
+                          const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID
+                          const isLoading = loadingSales.has(transfer.id)
+                          const hasSale = transferSales.has(transfer.id)
+                          
+                          console.log('[TRANSFERS PAGE] Rendering value section:', {
+                            transferId: transfer.id,
+                            isFromMainStore,
+                            isLoading,
+                            hasSale,
+                            fromStoreId: transfer.fromStoreId,
+                            MAIN_STORE_ID
+                          })
+                          
+                          if (!isFromMainStore) {
+                            return null
+                          }
+                          
+                          return (
+                            <div className="mt-4">
+                              {isLoading ? (
+                                <div className="text-center py-4">
+                                  <p className="text-sm text-gray-500 dark:text-gray-400">Cargando información de venta...</p>
+                                </div>
+                              ) : hasSale ? (
+                              (() => {
+                                const sale = transferSales.get(transfer.id)!
+                                return (
+                                  <div className="border-2 border-cyan-500 rounded-lg p-4 bg-cyan-50/50 dark:bg-cyan-900/20">
+                                    <div className="flex items-center gap-2 mb-3">
+                                      <DollarSign className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                                      <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+                                        Valor de la Transferencia
+                                      </h3>
+                                    </div>
+                                    <div className="space-y-3">
+                                      <div className="flex justify-between items-center">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total de la venta:</span>
+                                        <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                                          {formatCurrency(sale.total)}
+                                        </span>
+                                      </div>
+                                      
+                                      {sale.payments && sale.payments.length > 0 ? (
+                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Desglose de pagos:</p>
+                                          {sale.payments.map((payment) => (
+                                            <div key={payment.id} className="flex justify-between items-center">
+                                              <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                                <CreditCard className="h-3 w-3" />
+                                                {payment.paymentType === 'cash' ? 'Efectivo' : 
+                                                 payment.paymentType === 'transfer' ? 'Transferencia' : 
+                                                 payment.paymentType}
+                                              </span>
+                                              <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                                {formatCurrency(payment.amount)}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      ) : (
+                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                          <div className="flex justify-between items-center">
+                                            <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
+                                              <CreditCard className="h-3 w-3" />
+                                              {sale.paymentMethod === 'cash' ? 'Efectivo' : 
+                                               sale.paymentMethod === 'transfer' ? 'Transferencia' : 
+                                               sale.paymentMethod}
+                                            </span>
+                                            <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                              {formatCurrency(sale.total)}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                      
+                                      {sale.invoiceNumber && (
+                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                                            Factura: {sale.invoiceNumber}
+                                          </p>
+                                        </div>
+                                      )}
+                                      
+                                      {/* Mostrar precios unitarios en productos */}
+                                      {sale.items && sale.items.length > 0 && (
+                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 mt-3">
+                                          <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Precios por producto:</p>
+                                          <div className="space-y-1">
+                                            {transfer.items && transfer.items.length > 0 ? (
+                                              transfer.items.map((item) => {
+                                                const saleItem = sale.items.find(si => si.productId === item.productId)
+                                                const unitPrice = saleItem?.unitPrice || 0
+                                                const itemTotal = unitPrice * item.quantity
+                                                
+                                                return saleItem ? (
+                                                  <div key={item.id} className="flex justify-between items-center text-xs">
+                                                    <span className="text-gray-600 dark:text-gray-400 truncate flex-1 mr-2">
+                                                      {item.productName}
+                                                    </span>
+                                                    <div className="text-right">
+                                                      <span className="text-gray-500 dark:text-gray-400">
+                                                        {formatCurrency(unitPrice)} x {item.quantity} = 
+                                                      </span>
+                                                      <span className="ml-1 font-semibold text-gray-900 dark:text-white">
+                                                        {formatCurrency(itemTotal)}
+                                                      </span>
+                                                    </div>
+                                                  </div>
+                                                ) : null
+                                              })
+                                            ) : null}
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                )
+                              })()
+                            ) : (
+                              <div className="border-2 border-yellow-500 rounded-lg p-4 bg-yellow-50/50 dark:bg-yellow-900/20">
+                                <p className="text-sm text-yellow-700 dark:text-yellow-300">
+                                  No se encontró información de venta para esta transferencia. Verifica la consola para más detalles.
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          )
+                        })()}
+
                         {/* Acciones */}
                         <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
                           <Button
@@ -547,6 +817,58 @@ export default function TransfersPage() {
                 </Card>
               )
             })}
+          </div>
+        )}
+
+        {/* Paginación */}
+        {totalTransfers > 10 && (
+          <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-lg">
+            <button
+              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              disabled={currentPage === 1 || loading}
+              className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronLeft className="h-3.5 w-3.5" />
+            </button>
+            
+            <div className="flex items-center gap-0.5">
+              {Array.from({ length: Math.ceil(totalTransfers / 10) }, (_, i) => i + 1)
+                .filter(page => {
+                  return page === 1 || 
+                         page === Math.ceil(totalTransfers / 10) || 
+                         Math.abs(page - currentPage) <= 2
+                })
+                .map((page, index, array) => {
+                  const showEllipsis = index > 0 && page - array[index - 1] > 1
+                  
+                  return (
+                    <div key={page} className="flex items-center">
+                      {showEllipsis && (
+                        <span className="px-1 text-gray-400 text-xs">...</span>
+                      )}
+                      <button
+                        onClick={() => setCurrentPage(page)}
+                        disabled={loading}
+                        className={`h-7 min-w-[28px] px-2 text-xs rounded border transition-colors ${
+                          page === currentPage 
+                          ? "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800 font-medium" 
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-100 dark:border-gray-600"
+                        }`}
+                      >
+                        {page}
+                      </button>
+                    </div>
+                  )
+                })}
+            </div>
+            
+            <button
+              onClick={() => setCurrentPage(prev => prev + 1)}
+              disabled={currentPage >= Math.ceil(totalTransfers / 10) || loading}
+              className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <ChevronRight className="h-3.5 w-3.5" />
+            </button>
           </div>
         )}
 

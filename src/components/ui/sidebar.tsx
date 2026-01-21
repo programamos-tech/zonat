@@ -21,7 +21,8 @@ import {
   ArrowRightLeft,
   CheckCircle,
   ChevronDown,
-  ChevronRight
+  ChevronRight,
+  Crown
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -142,27 +143,41 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
       >
         <div className="flex flex-col h-full">
           {/* Logo y Tienda */}
-          <div className="px-4 py-4 border-b border-gray-100 dark:border-gray-800">
-            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity flex flex-col items-center">
-              {currentStore?.logo ? (
-                <img 
-                  src={currentStore.logo} 
-                  alt={currentStore.name}
-                  className="h-12 w-12 rounded-lg object-cover mb-2"
-                />
-              ) : (
-                <Logo size="lg" />
-              )}
+          <div className={cn(
+            "px-4 py-4 border-b transition-all duration-300",
+            isMainStoreUser(user)
+              ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30"
+              : "border-gray-100 dark:border-gray-800"
+          )}>
+            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity flex flex-col items-center relative">
+              <div className="relative">
+                {currentStore?.logo ? (
+                  <img 
+                    src={currentStore.logo} 
+                    alt={currentStore.name}
+                    className="h-12 w-12 rounded-lg object-cover mb-2"
+                  />
+                ) : (
+                  <div className="mb-2">
+                    <Logo size="lg" />
+                  </div>
+                )}
+                {isMainStoreUser(user) && (
+                  <div className="absolute -top-1 -right-1 bg-emerald-400 dark:bg-emerald-500 rounded-full p-1 shadow-md">
+                    <Crown className="h-3 w-3 text-white" />
+                  </div>
+                )}
+              </div>
               {currentStore && (
                 <div className="mt-2 text-center">
-                  <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 truncate max-w-[180px]">
+                  <p className={cn(
+                    "text-xs font-semibold truncate max-w-[180px] transition-colors",
+                    isMainStoreUser(user)
+                      ? "text-emerald-700 dark:text-emerald-300"
+                      : "text-gray-700 dark:text-gray-300"
+                  )}>
                     {currentStore.name}
                   </p>
-                  {currentStore.city && (
-                    <p className="text-[10px] text-gray-500 dark:text-gray-400 truncate max-w-[180px]">
-                      {currentStore.city}
-                    </p>
-                  )}
                 </div>
               )}
             </Link>
@@ -174,8 +189,12 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
               
-              // Si requiere acceso a todas las tiendas, verificar
-              if (item.requiresAllStoresAccess && !canAccessAllStores(user)) return null
+              // Para el módulo de Tiendas, siempre mostrarlo pero solo permitir acceso si es super admin
+              const isStoresModule = item.href === '/stores'
+              const canAccessStores = isStoresModule ? canAccessAllStores(user) : true
+              
+              // Si requiere acceso a todas las tiendas (y no es stores), verificar
+              if (item.requiresAllStoresAccess && !isStoresModule && !canAccessAllStores(user)) return null
               
               // Verificar si tiene submenú
               const hasSubmenu = item.submenu && item.submenu.length > 0
@@ -294,24 +313,39 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                       )}
                     </>
                   ) : (
-                    <Link
-                      href={item.href}
-                      onClick={() => setIsMobileMenuOpen(false)}
-                      className={cn(
-                        "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                        isActive
-                          ? getActiveColor()
-                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                    <>
+                      {isStoresModule && !canAccessStores ? (
+                        <div
+                          className={cn(
+                            "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 cursor-not-allowed opacity-50",
+                            "text-gray-400 dark:text-gray-500"
+                          )}
+                          title="Solo disponible para Super Administradores"
+                        >
+                          <item.icon className="h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3" />
+                          <span className="flex-1 truncate">{item.name}</span>
+                        </div>
+                      ) : (
+                        <Link
+                          href={item.href}
+                          onClick={() => setIsMobileMenuOpen(false)}
+                          className={cn(
+                            "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
+                            isActive
+                              ? getActiveColor()
+                              : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                          )}
+                        >
+                          <item.icon className={cn(
+                            "h-5 w-5 transition-all duration-200 flex-shrink-0",
+                            isActive
+                              ? "mr-3" 
+                              : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                          )} />
+                          <span className="flex-1 truncate">{item.name}</span>
+                        </Link>
                       )}
-                    >
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-all duration-200 flex-shrink-0",
-                        isActive 
-                          ? "mr-3" 
-                          : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
-                      )} />
-                      <span className="flex-1 truncate">{item.name}</span>
-                    </Link>
+                    </>
                   )}
                 </div>
               )

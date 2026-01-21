@@ -14,11 +14,13 @@ import {
   Download,
   Package,
   Eye,
-  Edit
+  Edit,
+  Truck
 } from 'lucide-react'
-import { Sale, CompanyConfig, Client, Credit } from '@/types'
+import { Sale, CompanyConfig, Client, Credit, StoreStockTransfer } from '@/types'
 import { CompanyService } from '@/lib/company-service'
 import { CreditsService } from '@/lib/credits-service'
+import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { InvoiceTemplate } from './invoice-template'
 
 interface SaleDetailModalProps {
@@ -50,6 +52,7 @@ export default function SaleDetailModal({
   const [isFinalizing, setIsFinalizing] = useState(false)
   const cancelFormRef = useRef<HTMLDivElement>(null)
   const [credit, setCredit] = useState<Credit | null>(null)
+  const [transfer, setTransfer] = useState<StoreStockTransfer | null>(null)
 
   // Cargar crédito si la venta es de tipo crédito
   useEffect(() => {
@@ -71,6 +74,27 @@ export default function SaleDetailModal({
     }
   }, [isOpen, sale])
 
+  // Cargar transferencia si la venta es de tipo transferencia
+  useEffect(() => {
+    const loadTransfer = async () => {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      if (sale && (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && sale.storeId === MAIN_STORE_ID) {
+        try {
+          const transferData = await StoreStockTransferService.getTransferBySaleId(sale.id)
+          setTransfer(transferData)
+        } catch (error) {
+          setTransfer(null)
+        }
+      } else {
+        setTransfer(null)
+      }
+    }
+    
+    if (isOpen && sale) {
+      loadTransfer()
+    }
+  }, [isOpen, sale])
+
   // Función helper para generar ID del crédito
   const getCreditId = (credit: Credit): string => {
     const clientInitials = credit.clientName
@@ -82,6 +106,15 @@ export default function SaleDetailModal({
     
     const creditSuffix = credit.id.substring(credit.id.length - 6).toLowerCase()
     return `${clientInitials}${creditSuffix}`
+  }
+
+  // Función helper para generar ID de la transferencia
+  const getTransferId = (transfer: StoreStockTransfer): string => {
+    if (transfer.transferNumber) {
+      return transfer.transferNumber.replace('TRF-', '')
+    }
+    // Si no hay transferNumber, usar las últimas 8 letras del ID
+    return transfer.id.substring(transfer.id.length - 8).toUpperCase()
   }
 
   useEffect(() => {
@@ -679,9 +712,15 @@ export default function SaleDetailModal({
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-3">
-                {/* Factura e ID Crédito - Estilo exacto a créditos pero invertido */}
+                {/* Factura e ID Crédito/Transferencia - Estilo exacto a créditos pero invertido */}
                 <div className="flex items-center gap-4 mb-2">
-                  <Receipt className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  {sale.paymentMethod === 'credit' ? (
+                    <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                  ) : transfer ? (
+                    <Truck className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
+                  ) : (
+                    <Receipt className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  )}
                   <div className="flex-1">
                     <div className="flex items-center gap-3">
                       <div className="flex-1">
@@ -695,6 +734,14 @@ export default function SaleDetailModal({
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
                           <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                             #{getCreditId(credit)}
+                          </div>
+                        </div>
+                      )}
+                      {transfer && (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && (
+                        <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Transferencia</div>
+                          <div className="text-sm font-mono font-semibold text-cyan-600 dark:text-cyan-400">
+                            {transfer.transferNumber || `#${getTransferId(transfer)}`}
                           </div>
                         </div>
                       )}

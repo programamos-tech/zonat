@@ -1817,42 +1817,59 @@ export class SalesService {
         return []
       }
 
-      // Mapear las ventas al formato Sale
-      const sales = await Promise.all(
-        allSalesData.map(async (sale: any) => {
-          // Obtener referencias de productos si no están en sale_items
-          const itemsWithReferences = await Promise.all(
-            (sale.sale_items || []).map(async (item: any) => {
-              let productReference = item.product_reference_code
-              
-              if (!productReference || productReference === 'N/A' || productReference === null) {
-                try {
-                  const { data: product } = await supabase
-                    .from('products')
-                    .select('reference')
-                    .eq('id', item.product_id)
-                    .single()
-                  
-                  productReference = product?.reference || 'N/A'
-                } catch (error) {
-                  productReference = 'N/A'
-                }
-              }
-              
-              return {
-                id: item.id,
-                productId: item.product_id,
-                productName: item.product_name,
-                productReferenceCode: productReference,
-                quantity: item.quantity,
-                unitPrice: item.unit_price,
-                discount: item.discount || 0,
-                discountType: item.discount_type || 'amount',
-                tax: item.tax || 0,
-                total: item.total
-              }
+      // Obtener todas las referencias de productos de una vez (optimización)
+      const allProductIds = new Set<string>()
+      allSalesData.forEach((sale: any) => {
+        (sale.sale_items || []).forEach((item: any) => {
+          if (item.product_id && (!item.product_reference_code || item.product_reference_code === 'N/A' || item.product_reference_code === null)) {
+            allProductIds.add(item.product_id)
+          }
+        })
+      })
+
+      // Obtener todas las referencias de productos en una sola consulta
+      const productReferencesMap = new Map<string, string>()
+      if (allProductIds.size > 0) {
+        const productIdsArray = Array.from(allProductIds)
+        const batchSize = 100
+        for (let i = 0; i < productIdsArray.length; i += batchSize) {
+          const batch = productIdsArray.slice(i, i + batchSize)
+          const { data: products } = await supabase
+            .from('products')
+            .select('id, reference')
+            .in('id', batch)
+          
+          if (products) {
+            products.forEach((product: any) => {
+              productReferencesMap.set(product.id, product.reference || 'N/A')
             })
-          )
+          }
+        }
+      }
+
+      // Mapear las ventas al formato Sale
+      const sales = allSalesData.map((sale: any) => {
+        // Obtener referencias de productos del mapa
+        const itemsWithReferences = (sale.sale_items || []).map((item: any) => {
+          let productReference = item.product_reference_code
+          
+          if (!productReference || productReference === 'N/A' || productReference === null) {
+            productReference = productReferencesMap.get(item.product_id) || 'N/A'
+          }
+          
+          return {
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: productReference,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
+          }
+        })
 
           return {
             id: sale.id,
@@ -1882,7 +1899,6 @@ export class SalesService {
             })) || []
           }
         })
-      )
 
       // Filtrar solo las ventas que tienen el producto
       const salesWithProduct = sales.filter(sale => {

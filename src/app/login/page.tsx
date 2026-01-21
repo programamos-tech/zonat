@@ -38,7 +38,8 @@ export default function LoginPage() {
     const success = await login(data.email, data.password)
     
     if (success) {
-      router.push('/')
+      // Redirigir directamente al dashboard después de login exitoso
+      router.push('/dashboard')
     } else {
       setError('Credenciales inválidas. Verifica tu email y contraseña.')
     }

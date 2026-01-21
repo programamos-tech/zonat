@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X, Plus, Trash2, Package, Store as StoreIcon, Warehouse, ArrowRightLeft, AlertTriangle, Search, CheckCircle } from 'lucide-react'
+import { X, Plus, Trash2, Package, Store as StoreIcon, Warehouse, ArrowRightLeft, AlertTriangle, Search, CheckCircle, CreditCard } from 'lucide-react'
 import { Store, Product, TransferItem } from '@/types'
 import { ProductsService } from '@/lib/products-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
@@ -25,6 +25,8 @@ interface TransferItemForm {
   productReference: string
   fromLocation: 'warehouse' | 'store'
   quantity: number
+  unitPrice: number // Precio de venta por unidad
+  productCost: number // Costo del producto (solo lectura, como referencia)
 }
 
 export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: TransferModalProps) {
@@ -36,6 +38,10 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   const [isSaving, setIsSaving] = useState(false)
   const [globalProductSearch, setGlobalProductSearch] = useState<string>('')
   const [stockAlerts, setStockAlerts] = useState<Record<number, string>>({})
+  const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mixed'>('transfer')
+  const [cashAmount, setCashAmount] = useState<string>('')
+  const [transferAmount, setTransferAmount] = useState<string>('')
+  const [paymentError, setPaymentError] = useState<string>('')
 
   useEffect(() => {
     if (isOpen && fromStoreId) {
@@ -46,6 +52,10 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       setDescription('')
       setGlobalProductSearch('')
       setStockAlerts({})
+      setPaymentMethod('transfer')
+      setCashAmount('')
+      setTransferAmount('')
+      setPaymentError('')
     }
   }, [isOpen, fromStoreId])
 
@@ -96,7 +106,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       productName: '', 
       productReference: '',
       fromLocation: 'warehouse',
-      quantity: 0 
+      quantity: 0,
+      unitPrice: 0,
+      productCost: 0
     }])
   }
 
@@ -117,7 +129,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       productName: product.name || '',
       productReference: product.reference || '',
       fromLocation: 'warehouse',
-      quantity: 0
+      quantity: 0,
+      unitPrice: product.price || 0, // Precio por defecto del producto
+      productCost: product.cost || 0 // Costo como referencia
     }])
 
     // Limpiar el buscador global
@@ -134,7 +148,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         productName: product?.name || '',
         productReference: product?.reference || '',
         fromLocation: newItems[index].fromLocation,
-        quantity: newItems[index].quantity
+        quantity: newItems[index].quantity,
+        unitPrice: product?.price || 0, // Precio por defecto del producto
+        productCost: product?.cost || 0 // Costo como referencia
       }
       // Limpiar alerta cuando cambia el producto
       setStockAlerts(prev => {
@@ -170,7 +186,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       return
     }
 
-    // Validar que todos los items completos tengan stock suficiente
+    // Validar que todos los items completos tengan stock suficiente y precio
     for (const item of completeItems) {
 
       const product = availableProducts.find(p => p.id === item.productId)
@@ -187,6 +203,41 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         toast.error(`No hay suficiente stock en ${item.fromLocation === 'warehouse' ? 'Bodega' : 'Local'} para ${item.productName}. Disponible: ${availableStock}`)
         return
       }
+
+      // Validar que tenga precio
+      if (!item.unitPrice || item.unitPrice <= 0) {
+        toast.error(`Debes ingresar un precio de venta para ${item.productName}`)
+        return
+      }
+    }
+
+    // Validar método de pago
+    const total = calculateTotal()
+    if (paymentMethod === 'mixed') {
+      const cashValue = parseFloat(cashAmount.replace(/[^\d.]/g, '')) || 0
+      const transferValue = parseFloat(transferAmount.replace(/[^\d.]/g, '')) || 0
+      const totalMixed = cashValue + transferValue
+      
+      if (cashValue <= 0 || transferValue <= 0) {
+        toast.error('Debes ingresar montos válidos para ambos métodos de pago')
+        setPaymentError('Debes ingresar montos válidos para ambos métodos de pago')
+        setIsSaving(false)
+        return
+      }
+      
+      if (Math.abs(totalMixed - total) > 1) { // Permitir diferencia de 1 peso por redondeo
+        const difference = total - totalMixed
+        if (difference > 0) {
+          toast.error(`Faltan ${formatCurrency(difference)} para completar el total`)
+          setPaymentError(`Faltan ${formatCurrency(difference)} para completar el total`)
+        } else {
+          toast.error(`Sobran ${formatCurrency(Math.abs(difference))} del total`)
+          setPaymentError(`Sobran ${formatCurrency(Math.abs(difference))} del total`)
+        }
+        setIsSaving(false)
+        return
+      }
+      setPaymentError('')
     }
 
     setIsSaving(true)
@@ -205,8 +256,23 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         productName: item.productName,
         productReference: item.productReference,
         quantity: item.quantity,
-        fromLocation: item.fromLocation
+        fromLocation: item.fromLocation,
+        unitPrice: item.unitPrice // Incluir precio en la transferencia
       }))
+
+      // Preparar información de pago
+      const total = calculateTotal()
+      const paymentInfo = {
+        method: paymentMethod as 'cash' | 'transfer' | 'mixed',
+        cashAmount: paymentMethod === 'mixed' ? (parseFloat(cashAmount.replace(/[^\d.]/g, '')) || 0) : (paymentMethod === 'cash' ? total : 0),
+        transferAmount: paymentMethod === 'mixed' ? (parseFloat(transferAmount.replace(/[^\d.]/g, '')) || 0) : (paymentMethod === 'transfer' ? total : 0)
+      }
+
+      console.log('[TRANSFER MODAL] Creating transfer with payment info:', {
+        paymentInfo,
+        total,
+        paymentMethod
+      })
 
       const transfer = await StoreStockTransferService.createTransfer(
         fromStoreId!,
@@ -215,17 +281,32 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         description || undefined,
         undefined,
         undefined,
-        undefined
+        undefined,
+        paymentInfo
       )
 
       if (transfer) {
+        console.log('[TRANSFER MODAL] Transfer created successfully:', {
+          transferId: transfer.id,
+          fromStore: transfer.from_store?.name,
+          toStore: transfer.to_store?.name,
+          status: transfer.status
+        })
         toast.success('Transferencia creada exitosamente')
         setItems([])
         setToStoreId('')
         setDescription('')
         setStockAlerts({})
+        setPaymentMethod('transfer')
+        setCashAmount('')
+        setTransferAmount('')
+        setPaymentError('')
         await loadAvailableProducts() // Recargar productos para actualizar stock
-        onSave()
+        onClose() // Cerrar el modal primero
+        // Luego recargar las transferencias
+        setTimeout(() => {
+          onSave() // Esto debería recargar las transferencias
+        }, 100)
       } else {
         toast.error('Error al crear la transferencia. Verifica que haya stock disponible.')
       }
@@ -256,6 +337,21 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     })
+  }
+
+  const formatCurrency = (amount: number): string => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
+  // Calcular total de la transferencia
+  const calculateTotal = (): number => {
+    return items.reduce((sum, item) => {
+      return sum + (item.unitPrice * item.quantity)
+    }, 0)
   }
 
   if (!isOpen) return null
@@ -381,15 +477,13 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               const hasStock = totalStock > 0
                               
                               return (
-                                <button
+                                <div
                                   key={product.id}
-                                  type="button"
-                                  onClick={() => handleSelectProductFromSearch(product)}
-                                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 dark:hover:bg-gray-700 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors ${
+                                  className={`w-full px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors flex items-center justify-between gap-3 ${
                                     !hasStock ? 'opacity-60' : ''
                                   }`}
                                 >
-                                  <div className="flex flex-col">
+                                  <div className="flex flex-col flex-1 min-w-0">
                                     <span className={`font-medium ${hasStock ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
                                       {product.name}
                                     </span>
@@ -401,7 +495,17 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                       </span>
                                     </div>
                                   </div>
-                                </button>
+                                  <Button
+                                    type="button"
+                                    onClick={() => handleSelectProductFromSearch(product)}
+                                    size="sm"
+                                    className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-1.5 h-auto flex-shrink-0"
+                                    disabled={!hasStock}
+                                  >
+                                    <Plus className="h-3.5 w-3.5 mr-1" />
+                                    Agregar
+                                  </Button>
+                                </div>
                               )
                             })}
                           {availableProducts.filter(p => {
@@ -471,9 +575,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
                           {/* Controles cuando hay producto seleccionado */}
                           {item.productId && (
-                            <div className="grid grid-cols-3 gap-3">
+                            <div className="space-y-3">
                               {/* Stock y Selección de Ubicación */}
-                              <div className="col-span-2">
+                              <div>
                                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                                   Transferir desde
                                 </label>
@@ -514,8 +618,11 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                   })}
                                 </div>
                               </div>
-                              {/* Cantidad */}
-                              <div>
+                              
+                              {/* Cantidad, Costo y Precio */}
+                              <div className="grid grid-cols-3 gap-3">
+                                {/* Cantidad */}
+                                <div>
                                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                                   Cantidad
                                 </label>
@@ -567,7 +674,60 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                   </p>
                                 )}
                               </div>
+                              
+                              {/* Costo (solo lectura, como referencia) */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  Costo (Ref.)
+                                </label>
+                                <Input
+                                  type="text"
+                                  value={formatCurrency(item.productCost || 0)}
+                                  disabled
+                                  readOnly
+                                  className="w-full h-10 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  Precio de compra
+                                </p>
+                              </div>
+                              
+                              {/* Precio de venta */}
+                              <div>
+                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                  Precio Venta <span className="text-red-500">*</span>
+                                </label>
+                                <Input
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={item.unitPrice || ''}
+                                  onChange={(e) => {
+                                    // Permitir números y punto decimal
+                                    const value = e.target.value.replace(/[^\d.]/g, '')
+                                    // Permitir solo un punto decimal
+                                    const parts = value.split('.')
+                                    const cleanValue = parts.length > 2 
+                                      ? parts[0] + '.' + parts.slice(1).join('')
+                                      : value
+                                    const price = cleanValue === '' ? 0 : parseFloat(cleanValue) || 0
+                                    handleItemChange(index, 'unitPrice', price)
+                                  }}
+                                  onBlur={(e) => {
+                                    const value = e.target.value.replace(/^0+/, '') || '0'
+                                    const price = parseFloat(value) || 0
+                                    if (price !== item.unitPrice) {
+                                      handleItemChange(index, 'unitPrice', price)
+                                    }
+                                  }}
+                                  className="w-full h-10 text-sm"
+                                  placeholder="0"
+                                />
+                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  Subtotal: {formatCurrency((item.unitPrice || 0) * item.quantity)}
+                                </p>
+                              </div>
                             </div>
+                          </div>
                           )}
                         </div>
                       )
@@ -579,10 +739,106 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               </div>
             </div>
 
+            {/* Método de Pago */}
+            {items.length > 0 && calculateTotal() > 0 && (
+              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+                <div className="flex items-center gap-2 mb-3">
+                  <CreditCard className="h-4 w-4 text-cyan-400" />
+                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+                    Método de Pago
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Método de Pago <span className="text-red-500">*</span>
+                    </label>
+                    <Select value={paymentMethod} onValueChange={(value: 'cash' | 'transfer' | 'mixed') => {
+                      setPaymentMethod(value)
+                      setPaymentError('')
+                      if (value !== 'mixed') {
+                        setCashAmount('')
+                        setTransferAmount('')
+                      }
+                    }}>
+                      <SelectTrigger className="w-full h-10 text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="cash">Efectivo</SelectItem>
+                        <SelectItem value="transfer">Transferencia</SelectItem>
+                        <SelectItem value="mixed">Mixto</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {/* Campos para pago mixto */}
+                  {paymentMethod === 'mixed' && (
+                    <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Efectivo
+                        </label>
+                        <Input
+                          type="text"
+                          value={cashAmount ? parseFloat(cashAmount.replace(/[^\d]/g, '') || '0').toLocaleString('es-CO') : ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d]/g, '')
+                            setCashAmount(value)
+                            setPaymentError('')
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          placeholder="0"
+                          className="w-full h-10 text-sm"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Transferencia
+                        </label>
+                        <Input
+                          type="text"
+                          value={transferAmount ? parseFloat(transferAmount.replace(/[^\d]/g, '') || '0').toLocaleString('es-CO') : ''}
+                          onChange={(e) => {
+                            const value = e.target.value.replace(/[^\d]/g, '')
+                            setTransferAmount(value)
+                            setPaymentError('')
+                          }}
+                          onFocus={(e) => e.target.select()}
+                          placeholder="0"
+                          className="w-full h-10 text-sm"
+                        />
+                      </div>
+                      <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex justify-between items-center text-sm">
+                          <span className="text-gray-600 dark:text-gray-400">Total ingresado:</span>
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {formatCurrency((parseFloat(cashAmount.replace(/[^\d.]/g, '')) || 0) + (parseFloat(transferAmount.replace(/[^\d.]/g, '')) || 0))}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center text-sm mt-1">
+                          <span className="text-gray-600 dark:text-gray-400">Total requerido:</span>
+                          <span className="font-semibold text-cyan-700 dark:text-cyan-400">
+                            {formatCurrency(calculateTotal())}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {paymentError && (
+                    <div className="p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-600 dark:text-red-400">
+                      {paymentError}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Resumen compacto */}
             {items.length > 0 && (
               <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3">
-                <div className="grid grid-cols-3 gap-3 text-center">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
                   <div>
                     <div className="text-xs text-gray-600 dark:text-gray-300">Productos</div>
                     <div className="text-sm font-semibold text-gray-900 dark:text-white">{items.length}</div>
@@ -599,35 +855,53 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                       {stores.find(s => s.id === toStoreId)?.name || '-'}
                     </div>
                   </div>
+                  <div>
+                    <div className="text-xs text-gray-600 dark:text-gray-300">Total Ingreso</div>
+                    <div className="text-lg font-bold text-cyan-700 dark:text-cyan-400">
+                      {formatCurrency(calculateTotal())}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
           </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            disabled={isSaving}
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
-          >
-            Cancelar
-          </Button>
-          <Button
-            onClick={handleSave}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white disabled:bg-gray-400"
-            disabled={isSaving || !toStoreId || items.length === 0}
-          >
-            {isSaving ? (
-              <div className="flex items-center gap-2">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                Creando...
-              </div>
-            ) : (
-              'Crear Transferencia'
-            )}
-          </Button>
+        <div className="flex flex-col gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+          {/* Alerta si no hay tienda seleccionada */}
+          {!toStoreId && (
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
+              <span className="text-sm text-yellow-700 dark:text-yellow-300">
+                Debes seleccionar una tienda destino para crear la transferencia
+              </span>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-end gap-3">
+            <Button
+              onClick={onClose}
+              variant="outline"
+              disabled={isSaving}
+              className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleSave}
+              className="bg-cyan-600 hover:bg-cyan-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
+              disabled={isSaving || !toStoreId || items.length === 0}
+            >
+              {isSaving ? (
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  Creando...
+                </div>
+              ) : (
+                'Crear Transferencia'
+              )}
+            </Button>
+          </div>
         </div>
         </div>
       </div>

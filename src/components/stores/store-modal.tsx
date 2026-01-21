@@ -183,12 +183,10 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                     size="sm"
                     className="flex items-center gap-2"
                     disabled={isUploading}
-                    asChild
+                    onClick={() => document.getElementById('logo-upload')?.click()}
                   >
-                    <span>
-                      <Upload className="h-4 w-4" />
-                      {isUploading ? 'Subiendo...' : formData.logo ? 'Cambiar Logo' : 'Subir Logo'}
-                    </span>
+                    <Upload className="h-4 w-4" />
+                    {isUploading ? 'Subiendo...' : formData.logo ? 'Cambiar Logo' : 'Subir Logo'}
                   </Button>
                 </label>
                 {errors.logo && (

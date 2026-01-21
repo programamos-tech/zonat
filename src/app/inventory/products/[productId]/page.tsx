@@ -42,6 +42,9 @@ export default function ProductDetailPage() {
   const { categories } = useCategories()
   const { user } = useAuth()
   
+  console.log('[PRODUCT DETAIL] Component mounted, productId:', productId)
+  console.log('[PRODUCT DETAIL] Params:', params)
+  
   // Verificar si el usuario es Super Admin
   const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
   
@@ -54,38 +57,60 @@ export default function ProductDetailPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   useEffect(() => {
+    console.log('[PRODUCT DETAIL] useEffect triggered, productId:', productId)
     if (productId) {
+      console.log('[PRODUCT DETAIL] Calling loadProduct...')
       loadProduct()
+    } else {
+      console.warn('[PRODUCT DETAIL] No productId provided!')
+      setIsLoading(false)
     }
   }, [productId])
 
   const loadProduct = async () => {
     try {
       setIsLoading(true)
-      const productData = await ProductsService.getProductById(productId)
+      console.log('[PRODUCT DETAIL] Loading product:', productId)
+      
+      // Agregar timeout de seguridad
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout loading product')), 10000) // 10 segundos
+      })
+      
+      const productData = await Promise.race([
+        ProductsService.getProductById(productId),
+        timeoutPromise
+      ]) as Product | null
+      
+      console.log('[PRODUCT DETAIL] Product data received:', productData ? 'OK' : 'NULL')
       
       if (productData) {
         setProduct(productData)
+        setIsLoading(false) // Dejar de mostrar el loading una vez que el producto está cargado
+        console.log('[PRODUCT DETAIL] Product set, loading sales in background...')
         
-        // Cargar todas las ventas del producto desde su creación
-        try {
-          const allSalesData = await SalesService.getSalesByProductId(productId)
-          console.log('Todas las ventas cargadas para producto:', productId, allSalesData.length)
-          setSales(allSalesData)
-        } catch (salesError) {
-          console.error('Error cargando ventas:', salesError)
-          setSales([])
-        }
+        // Cargar todas las ventas del producto desde su creación de forma asíncrona (no bloquea)
+        // Esto se hace después de mostrar el producto para que no bloquee la UI
+        SalesService.getSalesByProductId(productId)
+          .then((allSalesData) => {
+            console.log('[PRODUCT DETAIL] Sales loaded:', productId, allSalesData.length)
+            setSales(allSalesData)
+          })
+          .catch((salesError) => {
+            console.error('[PRODUCT DETAIL] Error loading sales:', salesError)
+            setSales([])
+          })
       } else {
+        console.error('[PRODUCT DETAIL] Product not found:', productId)
+        setIsLoading(false)
         toast.error('Producto no encontrado')
         router.push('/inventory/products')
       }
     } catch (error) {
-      console.error('Error al cargar el producto:', error)
-      toast.error('Error al cargar el producto')
-      router.push('/products')
-    } finally {
+      console.error('[PRODUCT DETAIL] Exception loading product:', error)
       setIsLoading(false)
+      toast.error('Error al cargar el producto. Por favor, intenta de nuevo.')
+      // No redirigir automáticamente, dejar que el usuario intente de nuevo
     }
   }
 
