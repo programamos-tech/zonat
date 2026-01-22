@@ -222,20 +222,23 @@ export class ProductsService {
         // Si hay error, todos los productos tendrán stock 0 (se rellenará más abajo)
       }
 
-      console.log('[PRODUCTS SERVICE] Fetched store_stock:', storeStocks.length || 0, 'stocks:', storeStocks.slice(0, 3))
+      console.log('[PRODUCTS SERVICE] Fetched store_stock for storeId:', storeId, 'count:', storeStocks.length || 0, 'stocks:', storeStocks.slice(0, 3))
 
       if (storeStocks.length > 0) {
         storeStocks.forEach((stock: any) => {
-          const quantity = stock.quantity || 0
-          stockMap.set(stock.product_id, { warehouse: 0, store: quantity, total: quantity })
-          if (productIds.indexOf(stock.product_id) < 3) {
-            console.log('[PRODUCTS SERVICE] Set stock for product from store_stock:', stock.product_id, { warehouse: 0, store: quantity, total: quantity })
+          const quantity = Number(stock.quantity) || 0
+          // Solo agregar al mapa si la cantidad es > 0, para evitar mostrar stock 0 innecesariamente
+          if (quantity > 0) {
+            stockMap.set(stock.product_id, { warehouse: 0, store: quantity, total: quantity })
+            if (productIds.indexOf(stock.product_id) < 3) {
+              console.log('[PRODUCTS SERVICE] Set stock for product from store_stock:', stock.product_id, { warehouse: 0, store: quantity, total: quantity })
+            }
           }
         })
       }
     }
 
-    // Rellenar con 0 para productos que no tienen stock
+    // Rellenar con 0 para productos que no tienen stock (o que tienen stock 0)
     productIds.forEach(id => {
       if (!stockMap.has(id)) {
         stockMap.set(id, { warehouse: 0, store: 0, total: 0 })

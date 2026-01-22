@@ -330,7 +330,7 @@ export default function DashboardPage() {
           withTimeout(WarrantyService.getWarrantiesByDateRange(startDate, endDate), 20000),
           withTimeout(CreditsService.getAllCredits(), 20000), // SIEMPRE cargar TODOS los créditos para mostrar el total adeudado hasta hoy
           withTimeout(ClientsService.getAllClients(), 15000),
-          withTimeout(ProductsService.getAllProductsLegacy(), 15000),
+          withTimeout(ProductsService.getAllProductsLegacy(getCurrentUserStoreId()), 15000), // Pasar storeId para filtrar por tienda
           withTimeout(CreditsService.getPaymentRecordsByDateRange(startDate, endDate), 20000)
         ])
         
@@ -1054,25 +1054,34 @@ export default function DashboardPage() {
       return status !== 'discontinued'
     })
     
-    // Total de unidades en stock (local + bodega) - todos los productos excepto discontinuados
-    const totalStockUnits = productsForCalculation.reduce((sum, p) => {
+    // Filtrar solo productos con stock > 0 para el cálculo de métricas
+    // Para una tienda nueva, todos los productos deberían tener stock 0
+    const productsWithStock = productsForCalculation.filter(p => {
+      const storeStock = Number(p.stock?.store) || 0;
+      const warehouseStock = Number(p.stock?.warehouse) || 0;
+      const totalStock = storeStock + warehouseStock;
+      return totalStock > 0;
+    })
+    
+    // Total de unidades en stock (local + bodega) - solo productos con stock > 0
+    const totalStockUnits = productsWithStock.reduce((sum, p) => {
       const storeStock = Number(p.stock?.store) || 0;
       const warehouseStock = Number(p.stock?.warehouse) || 0;
       const productTotal = storeStock + warehouseStock;
       return sum + productTotal;
     }, 0)
     
-    // Productos con stock bajo - todos los productos excepto discontinuados
+    // Productos con stock bajo - solo productos con stock > 0
     // Stock bajo = total <= 5 unidades y > 0
-    const lowStockProducts = productsForCalculation.filter(p => {
+    const lowStockProducts = productsWithStock.filter(p => {
       const storeStock = Number(p.stock?.store) || 0;
       const warehouseStock = Number(p.stock?.warehouse) || 0;
       const totalStock = storeStock + warehouseStock;
       return totalStock > 0 && totalStock <= 5;
     }).length
 
-    // Calcular inversión total en stock (precio de compra * stock actual) - todos los productos excepto discontinuados
-    const totalStockInvestment = productsForCalculation.reduce((sum, product) => {
+    // Calcular inversión total en stock (precio de compra * stock actual) - solo productos con stock > 0
+    const totalStockInvestment = productsWithStock.reduce((sum, product) => {
       const localStock = product.stock?.store || 0;
       const warehouseStock = product.stock?.warehouse || 0;
       const totalStock = localStock + warehouseStock;
@@ -1081,13 +1090,14 @@ export default function DashboardPage() {
     }, 0)
     
     // Calcular inversión potencial (costo total de todos los productos, asumiendo 1 unidad de cada uno)
-    const potentialInvestment = productsForCalculation.reduce((sum, product) => {
+    // Solo para productos con stock > 0
+    const potentialInvestment = productsWithStock.reduce((sum, product) => {
       const costPrice = product.cost || 0;
       return sum + costPrice;
     }, 0)
 
-    // Calcular valor estimado de ventas (precio de venta * stock actual) - todos los productos excepto discontinuados
-    const estimatedSalesValue = productsForCalculation.reduce((sum, product) => {
+    // Calcular valor estimado de ventas (precio de venta * stock actual) - solo productos con stock > 0
+    const estimatedSalesValue = productsWithStock.reduce((sum, product) => {
       const localStock = product.stock?.store || 0;
       const warehouseStock = product.stock?.warehouse || 0;
       const totalStock = localStock + warehouseStock;
