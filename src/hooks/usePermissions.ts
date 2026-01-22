@@ -15,6 +15,17 @@ export function usePermissions() {
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
+    // Restricción especial para vendedores en productos: solo pueden ver, no editar/eliminar/crear
+    const userRole = currentUser.role?.toLowerCase() || ''
+    if (userRole === 'vendedor') {
+      if (module === 'products') {
+        return action === 'view' // Solo permitir ver productos
+      }
+      if (module === 'transfers') {
+        return false // Vendedores no pueden transferir
+      }
+    }
+    
     // Verificar que el usuario tenga permisos explícitos
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions) || currentUser.permissions.length === 0) {
       // Si no hay permisos explícitos, NO dar permisos por defecto
@@ -58,8 +69,8 @@ export function usePermissions() {
     if (!currentUser) return []
     
     // Super admin tiene acceso a todos los módulos
-    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
-      return ['dashboard', 'products', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs']
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin' || currentUser.role === 'Super Administrador') {
+      return ['dashboard', 'products', 'transfers', 'receptions', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs', 'stores']
     }
     
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []

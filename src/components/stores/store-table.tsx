@@ -4,17 +4,13 @@ import { Store } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { 
   Plus, 
   Edit, 
-  Trash2, 
   Store as StoreIcon,
-  Power,
-  PowerOff,
-  MapPin,
-  Building2,
-  FileText,
-  Calendar
+  Crown,
+  Circle
 } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -30,6 +26,123 @@ interface StoreTableProps {
   onRefresh: () => void
 }
 
+interface StoreCardProps {
+  store: Store
+  isMainStore: boolean
+  isCurrentStore: boolean
+  isSuperAdmin: boolean
+  onStoreClick: (e: React.MouseEvent) => void
+  onEdit: () => void
+  onToggleStatus: () => void
+}
+
+function StoreCard({ 
+  store, 
+  isMainStore, 
+  isCurrentStore, 
+  isSuperAdmin,
+  onStoreClick,
+  onEdit,
+  onToggleStatus
+}: StoreCardProps) {
+
+  return (
+    <Card
+      onClick={onStoreClick}
+      className={`bg-white dark:bg-gray-800 transition-all duration-200 overflow-visible group relative ${
+        isCurrentStore 
+          ? 'ring-2 ring-emerald-400 dark:ring-emerald-500 shadow-md' 
+          : 'border border-gray-200 dark:border-gray-700'
+      } ${
+        isSuperAdmin 
+          ? 'cursor-pointer hover:shadow-lg' 
+          : ''
+      }`}
+      title={isSuperAdmin ? `Haz click para ver el dashboard de ${store.name}` : undefined}
+    >
+      <CardContent className="p-6">
+        <div className="flex flex-col items-center text-center space-y-3">
+          {/* Indicador de Tienda Actual - Sutil */}
+          {isCurrentStore && (
+            <div className="absolute top-2 right-2">
+              <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" />
+            </div>
+          )}
+          
+          {/* Logo - Protagonista, Circular */}
+          <div className="relative">
+            {store.logo ? (
+              <div className={`relative w-20 h-20 rounded-full overflow-hidden transition-transform ${
+                isCurrentStore ? 'ring-2 ring-emerald-400 dark:ring-emerald-500' : ''
+              }`}>
+                <Image
+                  src={store.logo}
+                  alt={store.name}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            ) : (
+              <div className={`w-20 h-20 rounded-full bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 flex items-center justify-center overflow-hidden ${
+                isCurrentStore ? 'ring-2 ring-emerald-400 dark:ring-emerald-500' : ''
+              }`}>
+                <Image
+                  src="/zonat-logo.png"
+                  alt="Zona T Logo"
+                  width={56}
+                  height={56}
+                  className="object-contain"
+                  unoptimized
+                />
+              </div>
+            )}
+            {/* Icono de Tienda Principal - Corona */}
+            {isMainStore && (
+              <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 dark:bg-emerald-400 text-white rounded-full p-1 shadow-sm border-2 border-white dark:border-gray-800">
+                <Crown className="h-2.5 w-2.5" />
+              </div>
+            )}
+          </div>
+          
+          {/* Nombre de la Tienda */}
+          <div className="w-full">
+            <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
+              {store.name}
+            </h3>
+          </div>
+
+          {/* Botones de Acción - Visibles */}
+          <div className="w-full flex items-center justify-center gap-3 pt-2">
+            <Button
+              onClick={(e) => {
+                e.stopPropagation()
+                onEdit()
+              }}
+              variant="ghost"
+              size="sm"
+              className="h-8 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              title="Editar"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <div 
+              onClick={(e) => e.stopPropagation()}
+              className="flex items-center gap-2"
+            >
+              <Switch
+                checked={store.isActive}
+                onCheckedChange={() => onToggleStatus()}
+                title={store.isActive ? 'Desactivar' : 'Activar'}
+              />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
+
 export function StoreTable({
   stores,
   onEdit,
@@ -42,6 +155,15 @@ export function StoreTable({
   const { user, switchStore } = useAuth()
   const isSuperAdmin = user && canAccessAllStores(user)
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+  
+  // Determinar cuál es la tienda actualmente seleccionada
+  const getCurrentStoreId = (): string | undefined => {
+    if (!user) return undefined
+    // Si storeId es undefined o MAIN_STORE_ID, entonces está en la tienda principal
+    return user.storeId || MAIN_STORE_ID
+  }
+  
+  const currentStoreId = getCurrentStoreId()
 
   const handleStoreClick = (store: Store, e: React.MouseEvent) => {
     // Solo permitir click si es super admin y no se hizo click en los botones de acción
@@ -109,159 +231,24 @@ export function StoreTable({
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-                {stores.map((store) => (
-              <Card
-                key={store.id}
-                onClick={(e) => handleStoreClick(store, e)}
-                className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 transition-all duration-200 overflow-hidden group ${
-                  isSuperAdmin 
-                    ? 'cursor-pointer hover:shadow-xl hover:border-emerald-300 dark:hover:border-emerald-600 hover:-translate-y-1' 
-                    : ''
-                }`}
-                title={isSuperAdmin ? `Haz click para ver el dashboard de ${store.name}` : undefined}
-              >
-                <CardContent className="p-0">
-                  {/* Header con Logo y Estado */}
-                  <div className="relative bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 p-6">
-                    <div className="flex items-start justify-between mb-4">
-                      {/* Logo */}
-                      <div className="relative">
-                        {store.logo ? (
-                          <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800">
-                            <Image
-                            src={store.logo}
-                            alt={store.name}
-                              fill
-                              className="object-cover"
-                              unoptimized
-                          />
-                          </div>
-                        ) : (
-                          <div className="w-20 h-20 rounded-xl bg-white dark:bg-gray-800 shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800 flex items-center justify-center overflow-hidden">
-                            <Image
-                              src="/zonat-logo.png"
-                              alt="Zona T Logo"
-                              width={64}
-                              height={64}
-                              className="object-contain"
-                              unoptimized
-                            />
-                          </div>
-                        )}
-                      </div>
-                      
-                      {/* Estado */}
-                      <Badge
-                        variant={store.isActive ? 'default' : 'secondary'}
-                        className={`${
-                          store.isActive 
-                            ? 'bg-green-500 hover:bg-green-600 text-white' 
-                            : 'bg-gray-400 hover:bg-gray-500 text-white'
-                        }`}
-                      >
-                        {store.isActive ? 'Activa' : 'Inactiva'}
-                      </Badge>
-                    </div>
-
-                    {/* Nombre de la Tienda */}
-                    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1 line-clamp-2">
-                      {store.name}
-                    </h3>
-                  </div>
-
-                  {/* Información */}
-                  <div className="p-6 space-y-4">
-                    {/* NIT */}
-                    {store.nit && (
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5">
-                          <FileText className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">NIT</div>
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {store.nit}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Ubicación */}
-                    {(store.city || store.address) && (
-                      <div className="flex items-start gap-3">
-                        <div className="mt-0.5">
-                          <MapPin className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Ubicación</div>
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {store.city || 'N/A'}
-                          </div>
-                          {store.address && (
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                              {store.address}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Fecha de Creación */}
-                    <div className="flex items-start gap-3">
-                      <div className="mt-0.5">
-                        <Calendar className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                        </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha Creación</div>
-                        <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                          {new Date(store.createdAt).toLocaleDateString('es-CO', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                  </div>
-                      </div>
-                    </div>
-
-                    {/* Acciones */}
-                    <div className="pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-2">
-                      <Button
-                        onClick={() => onToggleStatus(store)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-3"
-                        title={store.isActive ? 'Desactivar' : 'Activar'}
-                      >
-                        {store.isActive ? (
-                          <PowerOff className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                        ) : (
-                          <Power className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        )}
-                      </Button>
-                      <Button
-                        onClick={() => onEdit(store)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-3"
-                        title="Editar"
-                      >
-                        <Edit className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                      </Button>
-                      <Button
-                        onClick={() => onDelete(store)}
-                        variant="ghost"
-                        size="sm"
-                        className="h-9 px-3"
-                        title="Eliminar"
-                      >
-                        <Trash2 className="h-4 w-4 text-red-600 dark:text-red-400" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              ))}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+                {stores.map((store) => {
+                  const isMainStore = store.id === MAIN_STORE_ID
+                  const isCurrentStore = store.id === currentStoreId
+                  
+                  return (
+                    <StoreCard
+                      key={store.id}
+                      store={store}
+                      isMainStore={isMainStore}
+                      isCurrentStore={isCurrentStore}
+                      isSuperAdmin={isSuperAdmin || false}
+                      onStoreClick={(e) => handleStoreClick(store, e)}
+                      onEdit={() => onEdit(store)}
+                      onToggleStatus={() => onToggleStatus(store)}
+                    />
+                  )
+                })}
           </div>
         )}
       </CardContent>

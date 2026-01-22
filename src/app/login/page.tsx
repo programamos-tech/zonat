@@ -38,8 +38,24 @@ export default function LoginPage() {
     const success = await login(data.email, data.password)
     
     if (success) {
-      // Redirigir directamente al dashboard después de login exitoso
-      router.push('/dashboard')
+      // Verificar si el usuario es superadmin y redirigir a /select-store
+      if (typeof window !== 'undefined') {
+        const savedUser = localStorage.getItem('zonat_user')
+        if (savedUser) {
+          const userData = JSON.parse(savedUser)
+          const isSuperAdmin = userData.role === 'superadmin' || userData.role === 'Super Admin' || userData.role === 'Super Administrador'
+          
+          if (isSuperAdmin) {
+            router.push('/select-store')
+          } else {
+            router.push('/dashboard')
+          }
+        } else {
+          router.push('/dashboard')
+        }
+      } else {
+        router.push('/dashboard')
+      }
     } else {
       setError('Credenciales inválidas. Verifica tu email y contraseña.')
     }

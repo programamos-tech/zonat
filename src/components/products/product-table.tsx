@@ -30,6 +30,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { usePermissions } from '@/hooks/usePermissions'
+import { useAuth } from '@/contexts/auth-context'
 
 interface ProductTableProps {
   products: Product[]
@@ -76,6 +78,30 @@ export function ProductTable({
   onView
 }: ProductTableProps) {
   const router = useRouter()
+  const { hasPermission } = usePermissions()
+  const { user } = useAuth()
+  
+  // Verificación adicional: si es vendedor, no puede editar/eliminar productos
+  // Verificar múltiples variaciones del nombre del rol
+  const isVendedor = user?.role?.toLowerCase() === 'vendedor' || 
+                     user?.role === 'vendedor' || 
+                     user?.role === 'Vendedor'
+  
+  // Si es vendedor, forzar que no tenga permisos de edición/eliminación
+  const canEdit = isVendedor ? false : hasPermission('products', 'edit')
+  const canDelete = isVendedor ? false : hasPermission('products', 'delete')
+  const canCreate = isVendedor ? false : hasPermission('products', 'create')
+  const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
+  const canTransfer = isVendedor ? false : hasPermission('transfers', 'create') // Transferir requiere crear transferencias
+  
+  // Debug: verificar valores
+  useEffect(() => {
+    if (user) {
+      console.log('[PRODUCT TABLE] User role:', user.role)
+      console.log('[PRODUCT TABLE] Is vendedor:', isVendedor)
+      console.log('[PRODUCT TABLE] Permissions:', { canEdit, canDelete, canCreate, canAdjust, canTransfer })
+    }
+  }, [user, isVendedor, canEdit, canDelete, canCreate, canAdjust, canTransfer])
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStockStatus, setFilterStockStatus] = useState('all')
 
@@ -263,18 +289,22 @@ export function ProductTable({
                 </p>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
-                  <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
-                    <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
-                  <span className="hidden sm:inline">Nuevo Producto</span>
-                  <span className="sm:hidden">Nuevo</span>
-                </Button>
-                <Button 
-                  onClick={onManageCategories} 
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
-                >
-                    <Tag className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
-                    <span className="hidden md:inline">Categorías</span>
-                </Button>
+                  {canCreate && (
+                    <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
+                      <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
+                      <span className="hidden sm:inline">Nuevo Producto</span>
+                      <span className="sm:hidden">Nuevo</span>
+                    </Button>
+                  )}
+                  {canEdit && (
+                    <Button 
+                      onClick={onManageCategories} 
+                        className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
+                    >
+                        <Tag className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
+                        <span className="hidden md:inline">Categorías</span>
+                    </Button>
+                  )}
                 {onRefresh && (
                   <Button 
                     onClick={onRefresh}
@@ -374,12 +404,14 @@ export function ProductTable({
                 <p className="text-gray-500 dark:text-gray-400 mb-4">
                   Comienza creando un nuevo producto
                 </p>
-                <Button 
-                  onClick={onCreate}
-                  className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                >
-                  Nuevo Producto
-                </Button>
+                {canCreate && (
+                  <Button 
+                    onClick={onCreate}
+                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
+                  >
+                    Nuevo Producto
+                  </Button>
+                )}
               </div>
             ) : (
               <>
@@ -434,15 +466,17 @@ export function ProductTable({
                             {getStockStatusLabel(product)}
                           </Badge>
                           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onEdit(product)}
-                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            {onStockAdjustment && (
+                            {canEdit && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onEdit(product)}
+                                className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {canAdjust && onStockAdjustment && (
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -452,7 +486,7 @@ export function ProductTable({
                                 <Package className="h-4 w-4" />
                               </Button>
                             )}
-                            {onStockTransfer && (
+                            {canTransfer && onStockTransfer && (
                               <Button
                                 size="sm"
                                 variant="ghost"
@@ -462,14 +496,16 @@ export function ProductTable({
                                 <ArrowRightLeft className="h-4 w-4" />
                               </Button>
                             )}
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onDelete(product)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {canDelete && (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => onDelete(product)}
+                                className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -548,29 +584,31 @@ export function ProductTable({
                             </div>
                             
                             <div className="flex items-center gap-2 ml-4">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onEdit(product)
-                                    }}
-                                    className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
-                                  <div className="text-center">
-                                    <p className="font-medium text-white">Editar Producto</p>
-                                    <p className="text-xs text-cyan-100">Modificar datos del producto</p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
+                              {canEdit && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onEdit(product)
+                                      }}
+                                      className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                                    >
+                                      <Edit className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
+                                    <div className="text-center">
+                                      <p className="font-medium text-white">Editar Producto</p>
+                                      <p className="text-xs text-cyan-100">Modificar datos del producto</p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
 
-                              {onStockAdjustment && (
+                              {canAdjust && onStockAdjustment && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -594,7 +632,7 @@ export function ProductTable({
                                 </Tooltip>
                               )}
 
-                              {onStockTransfer && (
+                              {canTransfer && onStockTransfer && (
                                 <Tooltip>
                                   <TooltipTrigger asChild>
                                     <Button
@@ -618,27 +656,29 @@ export function ProductTable({
                                 </Tooltip>
                               )}
 
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    size="sm"
-                                    variant="ghost"
-                                    onClick={(e) => {
-                                      e.stopPropagation()
-                                      onDelete(product)
-                                    }}
-                                    className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
-                                  <div className="text-center">
-                                    <p className="font-medium text-white">Eliminar Producto</p>
-                                    <p className="text-xs text-cyan-100">Borrar producto permanentemente</p>
-                                  </div>
-                                </TooltipContent>
-                              </Tooltip>
+                              {canDelete && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        onDelete(product)
+                                      }}
+                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
+                                    <div className="text-center">
+                                      <p className="font-medium text-white">Eliminar Producto</p>
+                                      <p className="text-xs text-cyan-100">Borrar producto permanentemente</p>
+                                    </div>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
                             </div>
                           </div>
                         </CardContent>

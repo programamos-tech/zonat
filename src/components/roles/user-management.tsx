@@ -26,42 +26,52 @@ const roleOptions = [
 const moduleOptions = [
   { value: 'dashboard', label: 'Dashboard' },
   { value: 'products', label: 'Productos' },
+  { value: 'transfers', label: 'Transferencias' },
+  { value: 'receptions', label: 'Recepciones' },
   { value: 'clients', label: 'Clientes' },
   { value: 'sales', label: 'Ventas' },
-  { value: 'payments', label: 'Abonos' },
+  { value: 'payments', label: 'Créditos' },
   { value: 'warranties', label: 'Garantías' },
   { value: 'roles', label: 'Roles' },
-  { value: 'logs', label: 'Logs' }
+  { value: 'logs', label: 'Actividades' }
 ]
 
 const actionOptions = [
-  { value: 'view', label: 'Ver' }
+  { value: 'view', label: 'Ver' },
+  { value: 'create', label: 'Crear' },
+  { value: 'edit', label: 'Editar' },
+  { value: 'delete', label: 'Eliminar' },
+  { value: 'cancel', label: 'Cancelar' }
 ]
 
-// Permisos predefinidos por rol
+// Permisos predefinidos por rol - todas las acciones se asignan automáticamente
+const allActions = ['view', 'create', 'edit', 'delete', 'cancel']
+
 const rolePermissions = {
   'superadmin': [
-    { module: 'dashboard', actions: ['view'] },
-    { module: 'products', actions: ['view'] },
-    { module: 'clients', actions: ['view'] },
-    { module: 'sales', actions: ['view'] },
-    { module: 'payments', actions: ['view'] },
-    { module: 'roles', actions: ['view'] },
-    { module: 'logs', actions: ['view'] }
+    { module: 'dashboard', actions: allActions },
+    { module: 'products', actions: allActions },
+    { module: 'clients', actions: allActions },
+    { module: 'sales', actions: allActions },
+    { module: 'payments', actions: allActions },
+    { module: 'warranties', actions: allActions },
+    { module: 'roles', actions: allActions },
+    { module: 'logs', actions: allActions }
   ],
   'admin': [
-    { module: 'dashboard', actions: ['view'] },
-    { module: 'sales', actions: ['view'] },
-    { module: 'payments', actions: ['view'] }
+    { module: 'dashboard', actions: allActions },
+    { module: 'sales', actions: allActions },
+    { module: 'payments', actions: allActions }
   ],
   'vendedor': [
-    { module: 'dashboard', actions: ['view'] },
-    { module: 'sales', actions: ['view'] },
-    { module: 'payments', actions: ['view'] },
-    { module: 'warranties', actions: ['view'] }
+    { module: 'dashboard', actions: allActions },
+    { module: 'products', actions: ['view'] }, // Solo ver productos, no editar/eliminar
+    { module: 'clients', actions: allActions },
+    { module: 'sales', actions: allActions },
+    { module: 'payments', actions: allActions }
   ],
   'inventario': [
-    { module: 'products', actions: ['view'] }
+    { module: 'products', actions: allActions }
   ]
 }
 
@@ -69,7 +79,7 @@ const rolePermissions = {
 const roleDescriptions = {
   'superadmin': 'Acceso completo a todos los módulos del sistema (Diego)',
   'admin': 'Acceso al dashboard, ventas y créditos',
-  'vendedor': 'Acceso a ventas, créditos y garantías',
+  'vendedor': 'Acceso a dashboard, productos, clientes, ventas y créditos',
   'inventario': 'Acceso únicamente a productos'
 }
 
@@ -77,6 +87,7 @@ export function UserManagement() {
   const { user: currentUser, getAllUsers, createUser, updateUser, deleteUser } = useAuth()
   const [users, setUsers] = useState<User[]>([])
   const [stores, setStores] = useState<Store[]>([])
+  const [mainStore, setMainStore] = useState<Store | null>(null)
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [roleFilter, setRoleFilter] = useState('all')
@@ -103,12 +114,20 @@ export function UserManagement() {
 
   // Aplicar permisos cuando se cambia el rol (solo al crear, no al editar)
   useEffect(() => {
-    // Solo aplicar permisos del rol si estamos creando un usuario nuevo (no hay selectedUser)
-    if (formData.role && !selectedUser && isCreateModalOpen) {
+    // Solo aplicar permisos del rol si estamos creando un usuario nuevo (no hay selectedUser y estamos en modal de creación)
+    if (formData.role && !selectedUser && isCreateModalOpen && !isEditModalOpen) {
       const permissions = rolePermissions[formData.role as keyof typeof rolePermissions] || []
-      setFormData(prev => ({ ...prev, permissions }))
+      setFormData(prev => {
+        // Solo actualizar si los permisos son diferentes para evitar loops
+        const currentModules = prev.permissions.map(p => p.module).sort().join(',')
+        const newModules = permissions.map(p => p.module).sort().join(',')
+        if (currentModules !== newModules) {
+          return { ...prev, permissions }
+        }
+        return prev
+      })
     }
-  }, [formData.role, selectedUser, isCreateModalOpen])
+  }, [formData.role, selectedUser, isCreateModalOpen, isEditModalOpen])
 
   // Cargar usuarios y tiendas
   useEffect(() => {
@@ -121,7 +140,10 @@ export function UserManagement() {
   const loadStores = async () => {
     try {
       const storesData = await StoresService.getAllStores(true) // Incluir inactivas
+      // Obtener la tienda principal
+      const mainStoreData = await StoresService.getMainStore()
       setStores(storesData)
+      setMainStore(mainStoreData)
     } catch (error) {
       console.error('Error loading stores:', error)
     }
@@ -300,23 +322,45 @@ export function UserManagement() {
 
   // Resetear formulario
   const resetForm = () => {
+    const defaultRole = 'vendedor'
+    const defaultPermissions = rolePermissions[defaultRole as keyof typeof rolePermissions] || []
     setFormData({
       name: '',
       email: '',
       password: '',
       storeId: '',
-      role: 'vendedor',
-      permissions: [],
+      role: defaultRole,
+      permissions: defaultPermissions,
       isActive: true
     })
+    setSelectedUser(null)
+  }
+  
+  // Abrir modal de creación
+  const openCreateModal = () => {
+    const defaultRole = 'vendedor'
+    const defaultPermissions = rolePermissions[defaultRole as keyof typeof rolePermissions] || []
+    setFormData({
+      name: '',
+      email: '',
+      password: '',
+      storeId: '',
+      role: defaultRole,
+      permissions: defaultPermissions,
+      isActive: true
+    })
+    setSelectedUser(null)
+    setIsCreateModalOpen(true)
   }
 
-  // Toggle permiso
-  // Normaliza a formato 'actions' (código) al guardar
-  const togglePermission = (module: string, action: string) => {
+  // Toggle permiso de módulo completo
+  // Cuando se activa un módulo, se le dan todas las acciones automáticamente
+  const toggleModule = (module: string) => {
     try {
       if (!formData.permissions || !Array.isArray(formData.permissions)) {
-        setFormData({ ...formData, permissions: [{ module, actions: [action] }] })
+        // Si no hay permisos, crear uno nuevo con todas las acciones
+        const allActions = ['view', 'create', 'edit', 'delete', 'cancel']
+        setFormData({ ...formData, permissions: [{ module, actions: allActions }] })
         return
       }
       
@@ -326,45 +370,26 @@ export function UserManagement() {
       )
       
       if (existingPermission) {
-        // Normalizar: usar 'actions' (eliminar 'permissions' si existe)
-        const currentActions = existingPermission.actions || existingPermission.permissions || []
-        const actionsArray = Array.isArray(currentActions) ? [...currentActions] : []
-        
-        if (actionsArray.includes(action)) {
-          // Remover acción
-          const filteredActions = actionsArray.filter(a => a !== action)
-          if (filteredActions.length === 0) {
-            // Eliminar permiso completo si no quedan acciones
-            const index = newPermissions.indexOf(existingPermission)
-            if (index > -1) {
-              newPermissions.splice(index, 1)
-            }
-          } else {
-            // Actualizar acciones (normalizar a formato 'actions')
-            existingPermission.actions = filteredActions
-            delete existingPermission.permissions // Eliminar formato antiguo si existe
-          }
-        } else {
-          // Agregar acción
-          actionsArray.push(action)
-          existingPermission.actions = actionsArray
-          delete existingPermission.permissions // Eliminar formato antiguo si existe
+        // Si existe, eliminar el módulo (desactivar)
+        const index = newPermissions.indexOf(existingPermission)
+        if (index > -1) {
+          newPermissions.splice(index, 1)
         }
       } else {
-        // Crear nuevo permiso en formato normalizado
-        newPermissions.push({ module, actions: [action] })
+        // Si no existe, agregar el módulo con todas las acciones
+        const allActions = ['view', 'create', 'edit', 'delete', 'cancel']
+        newPermissions.push({ module, actions: allActions })
       }
       
       setFormData({ ...formData, permissions: newPermissions })
     } catch (error: any) {
-      console.error('[UserManagement] Error toggling permission:', error)
+      console.error('[UserManagement] Error toggling module:', error)
       toast.error('Error al modificar el permiso')
     }
   }
 
-  // Verificar si tiene permiso
-  // Soporta ambos formatos: actions (código) y permissions (DB)
-  const hasPermission = (module: string, action: string) => {
+  // Verificar si tiene acceso al módulo (cualquier acción significa que tiene acceso)
+  const hasModuleAccess = (module: string) => {
     try {
       if (!formData.permissions || !Array.isArray(formData.permissions)) {
         return false
@@ -386,10 +411,10 @@ export function UserManagement() {
         return false
       }
       
-      const hasAccess = actionsArray.includes(action) || false
-      return hasAccess
+      // Si tiene al menos una acción, tiene acceso al módulo
+      return actionsArray.length > 0
     } catch (error: any) {
-      console.error('[UserManagement] Error checking permission:', error)
+      console.error('[UserManagement] Error checking module access:', error)
       return false
     }
   }
@@ -397,17 +422,15 @@ export function UserManagement() {
   // Aplicar permisos predefinidos del rol
   // Solo aplica permisos cuando se está creando un usuario nuevo, no al editar
   const applyRolePermissions = (role: string) => {
-    const permissions = rolePermissions[role as keyof typeof rolePermissions] || []
+    // Si estamos editando, solo cambiar el rol sin tocar los permisos
+    if (selectedUser || isEditModalOpen) {
+      setFormData(prev => ({ ...prev, role }))
+      return
+    }
     
-    setFormData(prev => {
-      // Si estamos editando (hay selectedUser), mantener los permisos existentes
-      // Solo cambiar el rol, no los permisos
-      if (selectedUser) {
-        return { ...prev, role }
-      }
-      // Si estamos creando, aplicar permisos del rol
-      return { ...prev, role, permissions }
-    })
+    // Si estamos creando, aplicar permisos del rol inmediatamente
+    const permissions = rolePermissions[role as keyof typeof rolePermissions] || []
+    setFormData(prev => ({ ...prev, role, permissions }))
   }
 
   if (loading) {
@@ -438,7 +461,7 @@ export function UserManagement() {
                 </p>
               </div>
               <Button 
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={openCreateModal}
                 className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
               >
                 <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
@@ -468,7 +491,10 @@ export function UserManagement() {
                 </div>
               </div>
               <Button
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => {
+                  setIsCreateModalOpen(false)
+                  resetForm()
+                }}
                 variant="ghost"
                 size="sm"
                 className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
@@ -554,17 +580,28 @@ export function UserManagement() {
                                 Tienda (Opcional)
                               </label>
                               <Select 
-                                value={formData.storeId || 'main'} 
-                                onValueChange={(value) => setFormData({ ...formData, storeId: value === 'main' ? '' : value })}
+                                value={formData.storeId || (mainStore?.id || '')} 
+                                onValueChange={(value) => {
+                                  const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+                                  // Si selecciona la tienda principal, usar string vacío (que se convertirá a MAIN_STORE_ID)
+                                  setFormData({ ...formData, storeId: value === MAIN_STORE_ID ? '' : value })
+                                }}
                               >
                                 <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
                                   <SelectValue placeholder="Seleccionar tienda (opcional)" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                  <SelectItem value="main">Sin tienda (Tienda Principal)</SelectItem>
-                                  {stores.map(store => (
+                                  {mainStore && (
+                                    <SelectItem value={mainStore.id}>
+                                      {mainStore.name} {mainStore.city && `(${mainStore.city})`} - Principal
+                                    </SelectItem>
+                                  )}
+                                  {stores.filter(store => {
+                                    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+                                    return store.id !== MAIN_STORE_ID
+                                  }).map(store => (
                                     <SelectItem key={store.id} value={store.id}>
-                                      {store.name} {!store.isActive && '(Inactiva)'}
+                                      {store.name} {store.city && `(${store.city})`} {!store.isActive && '(Inactiva)'}
                                     </SelectItem>
                                   ))}
                                 </SelectContent>
@@ -636,13 +673,13 @@ export function UserManagement() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                           {moduleOptions.map(module => (
-                            <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                              <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                            <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                              <label className="flex items-center space-x-3 cursor-pointer">
                                 <input
                                   type="checkbox"
-                                  checked={hasPermission(module.value, 'view')}
-                                  onChange={() => togglePermission(module.value, 'view')}
-                                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                  checked={hasModuleAccess(module.value)}
+                                  onChange={() => toggleModule(module.value)}
+                                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                                 />
                                 <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                               </label>
@@ -663,7 +700,10 @@ export function UserManagement() {
             >
               <Button 
                 variant="outline" 
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => {
+                  setIsCreateModalOpen(false)
+                  resetForm()
+                }}
                 className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
               >
                 Cancelar
@@ -743,7 +783,7 @@ export function UserManagement() {
                 Comienza creando un nuevo usuario
               </p>
               <Button 
-                onClick={() => setIsCreateModalOpen(true)}
+                onClick={openCreateModal}
                 className="bg-blue-600 hover:bg-blue-700 text-white"
               >
                 <Plus className="h-4 w-4 mr-2" />
@@ -1023,17 +1063,28 @@ export function UserManagement() {
                             Tienda
                           </Label>
                           <Select 
-                            value={formData.storeId || 'main'} 
-                            onValueChange={(value) => setFormData({ ...formData, storeId: value === 'main' ? '' : value })}
+                            value={formData.storeId || (mainStore?.id || '')} 
+                            onValueChange={(value) => {
+                              const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+                              // Si selecciona la tienda principal, usar string vacío (que se convertirá a MAIN_STORE_ID)
+                              setFormData({ ...formData, storeId: value === MAIN_STORE_ID ? '' : value })
+                            }}
                           >
                             <SelectTrigger className="mt-1">
                               <SelectValue placeholder="Seleccionar tienda" />
                             </SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="main">Sin tienda (Tienda Principal)</SelectItem>
-                              {stores.map(store => (
+                              {mainStore && (
+                                <SelectItem value={mainStore.id}>
+                                  {mainStore.name} {mainStore.city && `(${mainStore.city})`} - Principal
+                                </SelectItem>
+                              )}
+                              {stores.filter(store => {
+                                const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+                                return store.id !== MAIN_STORE_ID
+                              }).map(store => (
                                 <SelectItem key={store.id} value={store.id}>
-                                  {store.name} {!store.isActive && '(Inactiva)'}
+                                  {store.name} {store.city && `(${store.city})`} {!store.isActive && '(Inactiva)'}
                                 </SelectItem>
                               ))}
                             </SelectContent>
@@ -1055,13 +1106,13 @@ export function UserManagement() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {moduleOptions.map(module => (
-                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700">
-                          <label className="flex items-center space-x-3 text-sm cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition-colors">
+                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                          <label className="flex items-center space-x-3 cursor-pointer">
                             <input
                               type="checkbox"
-                              checked={hasPermission(module.value, 'view')}
-                              onChange={() => togglePermission(module.value, 'view')}
-                              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                              checked={hasModuleAccess(module.value)}
+                              onChange={() => toggleModule(module.value)}
+                              className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
                             />
                             <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                           </label>

@@ -18,8 +18,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Actualizar URL con el identificador de la tienda
   useStoreUrl()
   
-  // Si es la página de login, no mostrar sidebar ni protección
-  if (pathname === '/login') {
+  // Si es la página de login o select-store, no mostrar sidebar ni protección
+  if (pathname === '/login' || pathname === '/select-store') {
     return <>{children}</>
   }
   

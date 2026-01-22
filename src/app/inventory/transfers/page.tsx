@@ -324,7 +324,7 @@ export default function TransfersPage() {
   }
 
   return (
-    <RoleProtectedRoute module="products" requiredAction="view">
+    <RoleProtectedRoute module="transfers" requiredAction="view">
       <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>

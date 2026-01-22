@@ -29,6 +29,7 @@ import { ProductsService } from '@/lib/products-service'
 import { SalesService } from '@/lib/sales-service'
 import { useCategories } from '@/contexts/categories-context'
 import { useAuth } from '@/contexts/auth-context'
+import { usePermissions } from '@/hooks/usePermissions'
 import { StockAdjustmentModal } from '@/components/products/stock-adjustment-modal'
 import { StockTransferModal } from '@/components/products/stock-transfer-modal'
 import { ProductModal } from '@/components/products/product-modal'
@@ -41,6 +42,16 @@ export default function ProductDetailPage() {
   const productId = params.productId as string
   const { categories } = useCategories()
   const { user } = useAuth()
+  const { hasPermission } = usePermissions()
+  
+  // Verificación adicional: si es vendedor, no puede editar/eliminar productos
+  const userRole = user?.role?.toLowerCase() || ''
+  const isVendedor = userRole === 'vendedor'
+  
+  const canEdit = isVendedor ? false : hasPermission('products', 'edit')
+  const canDelete = isVendedor ? false : hasPermission('products', 'delete')
+  const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
+  const canTransfer = isVendedor ? false : hasPermission('transfers', 'create') // Transferir requiere crear transferencias
   
   console.log('[PRODUCT DETAIL] Component mounted, productId:', productId)
   console.log('[PRODUCT DETAIL] Params:', params)
@@ -486,7 +497,7 @@ export default function ProductDetailPage() {
                         </div>
                         <Button
                           variant="outline"
-                          onClick={() => router.push('/products')}
+                          onClick={() => router.push('/inventory/products')}
                           className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 h-auto flex-shrink-0"
                         >
                           <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
@@ -536,43 +547,53 @@ export default function ProductDetailPage() {
                     </div>
                     
                     {/* Botones en grid para mobile */}
-                    <div className="grid grid-cols-2 md:flex md:items-center md:gap-2 gap-2 md:mt-0">
-                      <Button
-                        onClick={handleEdit}
-                        className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                      >
-                        <Edit className="h-3.5 w-3.5 md:mr-1.5" />
-                        <span className="hidden md:inline">Editar</span>
-                        <span className="md:hidden">Editar</span>
-                      </Button>
-                      <Button
-                        onClick={handleStockAdjustment}
-                        variant="outline"
-                        className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                      >
-                        <Package className="h-3.5 w-3.5 md:mr-1.5" />
-                        <span className="hidden md:inline">Ajustar</span>
-                        <span className="md:hidden">Ajustar</span>
-                      </Button>
-                      <Button
-                        onClick={handleStockTransfer}
-                        variant="outline"
-                        className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                      >
-                        <ArrowRightLeft className="h-3.5 w-3.5 md:mr-1.5" />
-                        <span className="hidden md:inline">Transferir</span>
-                        <span className="md:hidden">Transferir</span>
-                      </Button>
-                      <Button
-                        onClick={handleDelete}
-                        variant="outline"
-                        className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 md:mr-1.5" />
-                        <span className="hidden md:inline">Eliminar</span>
-                        <span className="md:hidden">Eliminar</span>
-                      </Button>
-                    </div>
+                    {(canEdit || canAdjust || canTransfer || canDelete) && (
+                      <div className="grid grid-cols-2 md:flex md:items-center md:gap-2 gap-2 md:mt-0">
+                        {canEdit && (
+                          <Button
+                            onClick={handleEdit}
+                            className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                          >
+                            <Edit className="h-3.5 w-3.5 md:mr-1.5" />
+                            <span className="hidden md:inline">Editar</span>
+                            <span className="md:hidden">Editar</span>
+                          </Button>
+                        )}
+                        {canAdjust && (
+                          <Button
+                            onClick={handleStockAdjustment}
+                            variant="outline"
+                            className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                          >
+                            <Package className="h-3.5 w-3.5 md:mr-1.5" />
+                            <span className="hidden md:inline">Ajustar</span>
+                            <span className="md:hidden">Ajustar</span>
+                          </Button>
+                        )}
+                        {canTransfer && (
+                          <Button
+                            onClick={handleStockTransfer}
+                            variant="outline"
+                            className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                          >
+                            <ArrowRightLeft className="h-3.5 w-3.5 md:mr-1.5" />
+                            <span className="hidden md:inline">Transferir</span>
+                            <span className="md:hidden">Transferir</span>
+                          </Button>
+                        )}
+                        {canDelete && (
+                          <Button
+                            onClick={handleDelete}
+                            variant="outline"
+                            className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 md:mr-1.5" />
+                            <span className="hidden md:inline">Eliminar</span>
+                            <span className="md:hidden">Eliminar</span>
+                          </Button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

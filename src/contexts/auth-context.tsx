@@ -35,15 +35,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           // Obtener el usuario actualizado (que incluye sincronización de permisos del rol)
           const currentUser = await AuthService.getCurrentUser()
           if (currentUser) {
-            // Preservar el storeId si estaba guardado en localStorage
+            // Preservar el storeId si estaba guardado en localStorage (incluso si es null para tienda principal)
             // Esto permite mantener la tienda seleccionada al recargar
-            if (savedStoreId) {
-              currentUser.storeId = savedStoreId
+            if (savedStoreId !== undefined) {
+              currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
             }
             
             setUser(currentUser)
             // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados y storeId preservado)
-            localStorage.setItem('zonat_user', JSON.stringify(currentUser))
+            // Convertir undefined a null para que se guarde correctamente en JSON
+            const userToSave = {
+              ...currentUser,
+              storeId: currentUser.storeId === undefined ? null : currentUser.storeId
+            }
+            localStorage.setItem('zonat_user', JSON.stringify(userToSave))
           } else {
             localStorage.removeItem('zonat_user')
           }
@@ -153,7 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     
     setUser(updatedUser)
     if (typeof window !== 'undefined') {
-      localStorage.setItem('zonat_user', JSON.stringify(updatedUser))
+      // Guardar con storeId explícito (incluso si es undefined) para que se preserve
+      const userToSave = {
+        ...updatedUser,
+        storeId: storeId === undefined ? null : storeId // Convertir undefined a null para que se guarde en JSON
+      }
+      localStorage.setItem('zonat_user', JSON.stringify(userToSave))
     }
   }
 

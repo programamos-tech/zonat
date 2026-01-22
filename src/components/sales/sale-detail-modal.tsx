@@ -22,6 +22,8 @@ import { CompanyService } from '@/lib/company-service'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { InvoiceTemplate } from './invoice-template'
+import { StoresService } from '@/lib/stores-service'
+import { getCurrentUserStoreId } from '@/lib/store-helper'
 
 interface SaleDetailModalProps {
   isOpen: boolean
@@ -316,15 +318,28 @@ export default function SaleDetailModal({
       return
     }
 
-    // Usar valores por defecto si no hay configuración de empresa
+    // Obtener información de la tienda actual
+    const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    
+    let currentStore
+    if (!storeId || storeId === MAIN_STORE_ID) {
+      // Obtener tienda principal
+      currentStore = await StoresService.getMainStore()
+    } else {
+      // Obtener micro tienda
+      currentStore = await StoresService.getStoreById(storeId)
+    }
+
+    // Usar valores por defecto si no hay configuración de empresa o tienda
     const defaultCompanyConfig = {
       id: 'default',
-      name: 'Zona T',
-      nit: '1035770226-9',
-      address: 'Carrera 20 #22-02, Sincelejo, Sucre',
+      name: currentStore?.name || 'Zona T',
+      nit: currentStore?.nit || '1035770226-9',
+      address: currentStore?.address ? `${currentStore.address}${currentStore.city ? `, ${currentStore.city}` : ''}` : 'Carrera 20 #22-02, Sincelejo, Sucre',
       phone: '3135206736',
       email: 'info@zonat.com',
-      logo: '/zonat-logo.png',
+      logo: currentStore?.logo || '/zonat-logo.png',
       dianResolution: undefined,
       numberingRange: undefined,
       createdAt: new Date().toISOString(),
@@ -482,11 +497,12 @@ export default function SaleDetailModal({
             <!-- Header -->
             <div class="header">
               <div class="company-info">
+                ${config.logo ? `<img src="${config.logo}" alt="${config.name}" style="max-width: 100px; max-height: 100px; margin-bottom: 10px;" />` : ''}
                 <h1>${config.name}</h1>
-                <p><strong>NIT:</strong> ${config.nit}</p>
-                <p><strong>Dirección:</strong> ${config.address}</p>
-                <p><strong>Teléfono:</strong> ${config.phone}</p>
-                <p><strong>Email:</strong> ${config.email}</p>
+                ${config.nit ? `<p><strong>NIT:</strong> ${config.nit}</p>` : ''}
+                ${config.address ? `<p><strong>Dirección:</strong> ${config.address}</p>` : ''}
+                ${config.phone ? `<p><strong>Teléfono:</strong> ${config.phone}</p>` : ''}
+                ${config.email ? `<p><strong>Email:</strong> ${config.email}</p>` : ''}
                 ${config.dianResolution ? `<p><strong>${config.dianResolution}</strong></p>` : ''}
                 ${config.numberingRange ? `<p><strong>Rango autorizado:</strong> ${config.numberingRange}</p>` : ''}
               </div>

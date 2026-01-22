@@ -11,8 +11,8 @@ import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
 const items = [
   { href: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, module: 'dashboard', alwaysVisible: true },
   { href: '/inventory/products', label: 'Productos', icon: Package, module: 'products' },
-  { href: '/inventory/transfers', label: 'Transferencias', icon: ArrowRightLeft, module: 'products', requiresMainStore: true },
-  { href: '/inventory/receptions', label: 'Recepciones', icon: CheckCircle, module: 'products' },
+  { href: '/inventory/transfers', label: 'Transferencias', icon: ArrowRightLeft, module: 'transfers', requiresMainStore: true },
+  { href: '/inventory/receptions', label: 'Recepciones', icon: CheckCircle, module: 'receptions' },
   { href: '/clients', label: 'Clientes', icon: Users, module: 'clients' },
   { href: '/sales', label: 'Ventas', icon: Receipt, module: 'sales' },
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
