@@ -346,8 +346,9 @@ export class CreditsService {
 
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
-    // Verificar que el crédito pertenece a la tienda actual (si hay storeId)
-    if (storeId && existingCredit.storeId !== storeId) {
+    
+    // Verificar que el crédito pertenece a la tienda actual (si hay storeId y no es admin)
+    if (storeId && existingCredit.storeId !== storeId && !canAccessAllStores(user)) {
       throw new Error('No tienes permiso para actualizar este crédito')
     }
 
@@ -360,7 +361,7 @@ export class CreditsService {
     if (updates.lastPaymentDate !== undefined) updateData.last_payment_date = updates.lastPaymentDate
     if (updates.lastPaymentUser !== undefined) updateData.last_payment_user = updates.lastPaymentUser
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('credits')
       .update(updateData)
       .eq('id', id)
@@ -426,7 +427,7 @@ export class CreditsService {
       status: (credit.pendingAmount - paymentData.amount! <= 0) ? 'completed' : 'partial'
     }
 
-    const { data: paymentDataResult, error: paymentError } = await supabase
+    const { data: paymentDataResult, error: paymentError } = await supabaseAdmin
       .from('payments')
       .insert([paymentInsertData])
       .select()
