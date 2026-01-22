@@ -358,17 +358,17 @@ export class StoreStockTransferService {
               const saleData: any = {
                 client_id: storeClientId, // Usar el ID del cliente de la tienda
                 client_name: toStore.name || 'Tienda sin nombre', // Nombre de la tienda como cliente
-                total: subtotal,
-                subtotal: subtotal,
-                tax: 0,
-                discount: 0,
-                status: 'completed', // Venta completada automáticamente
-                payment_method: paymentInfo?.method || 'transfer', // Método de pago
-                invoice_number: invoiceNumber,
+                  total: subtotal,
+                  subtotal: subtotal,
+                  tax: 0,
+                  discount: 0,
+                  status: 'completed', // Venta completada automáticamente
+                  payment_method: paymentInfo?.method || 'transfer', // Método de pago
+                  invoice_number: invoiceNumber,
                 seller_id: currentUserId || createdBy || null,
-                seller_name: currentUser?.name || createdByName || 'Sistema',
-                seller_email: currentUser?.email || '',
-                store_id: MAIN_STORE_ID // La venta es de la tienda principal
+                  seller_name: currentUser?.name || createdByName || 'Sistema',
+                  seller_email: currentUser?.email || '',
+                  store_id: MAIN_STORE_ID // La venta es de la tienda principal
               }
 
               // Remover campos null o undefined que puedan causar problemas
@@ -1706,7 +1706,7 @@ export class StoreStockTransferService {
             const clientIds = clientsByName.map(c => c.id)
             
             // Buscar la venta asociada usando los IDs de clientes encontrados
-            const transferDate = new Date(transfer.createdAt)
+      const transferDate = new Date(transfer.createdAt)
             const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
             const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
             
@@ -1921,7 +1921,7 @@ export class StoreStockTransferService {
           console.log('[TRANSFER SALE] Transfer product IDs:', Array.from(transferProductIds))
           
           for (const sale of salesWithoutDate) {
-            const saleProductIds = new Set(sale.sale_items?.map((item: any) => item.product_id) || [])
+          const saleProductIds = new Set(sale.sale_items?.map((item: any) => item.product_id) || [])
             console.log('[TRANSFER SALE] Checking sale:', {
               saleId: sale.id,
               saleProductIds: Array.from(saleProductIds),
@@ -1929,16 +1929,16 @@ export class StoreStockTransferService {
             })
             
             // Verificar que los productos coincidan
-            const productsMatch = transferProductIds.size === saleProductIds.size && 
+          const productsMatch = transferProductIds.size === saleProductIds.size && 
               transferProductIds.size > 0 &&
-              [...transferProductIds].every(id => saleProductIds.has(id))
-            
-            if (productsMatch) {
-              console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
-              return this.mapSaleToType(sale)
-            }
-          }
+            [...transferProductIds].every(id => saleProductIds.has(id))
           
+          if (productsMatch) {
+              console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
+            return this.mapSaleToType(sale)
+          }
+        }
+        
           // Si no encontramos por productos, devolver la más reciente
           console.log('[TRANSFER SALE] No matching sale by products, returning most recent:', salesWithoutDate[0].id)
           return this.mapSaleToType(salesWithoutDate[0])
@@ -1973,39 +1973,39 @@ export class StoreStockTransferService {
 
   // Método auxiliar para mapear una venta a formato Sale
   private static mapSaleToType(sale: any): Sale {
-    return {
-      id: sale.id,
-      clientId: sale.client_id,
-      clientName: sale.client_name,
-      total: sale.total,
-      subtotal: sale.subtotal,
-      tax: sale.tax || 0,
-      discount: sale.discount || 0,
-      status: sale.status,
-      paymentMethod: sale.payment_method,
-      invoiceNumber: sale.invoice_number,
-      sellerId: sale.seller_id,
-      sellerName: sale.seller_name,
-      sellerEmail: sale.seller_email,
-      storeId: sale.store_id,
-      createdAt: sale.created_at,
-      items: sale.sale_items?.map((item: any) => ({
-        id: item.id,
-        productId: item.product_id,
-        productName: item.product_name,
-        productReferenceCode: item.product_reference_code,
-        quantity: item.quantity,
-        unitPrice: item.unit_price,
-        discount: item.discount || 0,
-        total: item.total
-      })) || [],
-      payments: sale.sale_payments?.map((payment: any) => ({
-        id: payment.id,
-        saleId: payment.sale_id,
-        paymentType: payment.payment_type,
-        amount: payment.amount,
-        createdAt: payment.created_at
-      })) || []
+      return {
+        id: sale.id,
+        clientId: sale.client_id,
+        clientName: sale.client_name,
+        total: sale.total,
+        subtotal: sale.subtotal,
+        tax: sale.tax || 0,
+        discount: sale.discount || 0,
+        status: sale.status,
+        paymentMethod: sale.payment_method,
+        invoiceNumber: sale.invoice_number,
+        sellerId: sale.seller_id,
+        sellerName: sale.seller_name,
+        sellerEmail: sale.seller_email,
+        storeId: sale.store_id,
+        createdAt: sale.created_at,
+        items: sale.sale_items?.map((item: any) => ({
+          id: item.id,
+          productId: item.product_id,
+          productName: item.product_name,
+          productReferenceCode: item.product_reference_code,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          discount: item.discount || 0,
+          total: item.total
+        })) || [],
+        payments: sale.sale_payments?.map((payment: any) => ({
+          id: payment.id,
+          saleId: payment.sale_id,
+          paymentType: payment.payment_type,
+          amount: payment.amount,
+          createdAt: payment.created_at
+        })) || []
     }
   }
 

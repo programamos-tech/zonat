@@ -185,7 +185,7 @@ export default function ReceptionsPage() {
 
         {/* Lista de Transferencias Pendientes */}
         {filter !== 'received' && (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
             <CardContent className="p-4 md:p-6">
               {pendingTransfers.length === 0 ? (
                 <div className="p-12">
@@ -471,9 +471,9 @@ export default function ReceptionsPage() {
                           )}
                         </div>
                       )}
-                    </CardContent>
-                  </Card>
-                )
+                </CardContent>
+              </Card>
+            )
               })}
                   </div>
 
@@ -558,7 +558,7 @@ export default function ReceptionsPage() {
                 </div>
               ) : (
                 <>
-                  <div className="space-y-4">
+            <div className="space-y-4">
                     {receivedTransfers.map((transfer) => {
                 const isExpanded = expandedTransfers.has(transfer.id)
                 const totalQuantity = transfer.items && transfer.items.length > 0
@@ -832,7 +832,7 @@ export default function ReceptionsPage() {
                   </Card>
                 )
               })}
-                  </div>
+            </div>
 
                   {/* Paginación - Recibidas */}
                   {receivedTotal > 10 && (

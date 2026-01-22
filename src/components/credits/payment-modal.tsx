@@ -215,8 +215,8 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
   if (!isOpen || !credit) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-0 md:p-4 pb-20 md:pb-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none md:rounded-lg xl:rounded-xl shadow-2xl w-full h-full md:h-auto md:max-h-[90vh] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-0 md:p-4 pb-20 md:pb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-none md:rounded-lg xl:rounded-xl shadow-2xl w-full h-full md:h-auto md:max-h-[90vh] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700 relative z-[10000]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
           <div className="flex items-center space-x-3">

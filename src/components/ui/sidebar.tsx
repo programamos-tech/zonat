@@ -151,22 +151,22 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           )}>
             <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity flex flex-col items-center relative">
               <div className="relative">
-                {currentStore?.logo ? (
-                  <img 
-                    src={currentStore.logo} 
-                    alt={currentStore.name}
-                    className="h-12 w-12 rounded-lg object-cover mb-2"
-                  />
-                ) : (
+              {currentStore?.logo ? (
+                <img 
+                  src={currentStore.logo} 
+                  alt={currentStore.name}
+                  className="h-12 w-12 rounded-lg object-cover mb-2"
+                />
+              ) : (
                   <div className="mb-2">
-                    <Logo size="lg" />
+                <Logo size="lg" />
                   </div>
                 )}
                 {isMainStoreUser(user) && (
                   <div className="absolute -top-1 -right-1 bg-emerald-400 dark:bg-emerald-500 rounded-full p-1 shadow-md">
                     <Crown className="h-3 w-3 text-white" />
                   </div>
-                )}
+              )}
               </div>
               {currentStore && (
                 <div className="mt-2 text-center">
@@ -325,25 +325,25 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                           <item.icon className="h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3" />
                           <span className="flex-1 truncate">{item.name}</span>
                         </div>
-                      ) : (
-                        <Link
-                          href={item.href}
-                          onClick={() => setIsMobileMenuOpen(false)}
-                          className={cn(
-                            "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                            isActive
-                              ? getActiveColor()
-                              : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
-                          )}
-                        >
-                          <item.icon className={cn(
-                            "h-5 w-5 transition-all duration-200 flex-shrink-0",
-                            isActive
-                              ? "mr-3" 
-                              : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
-                          )} />
-                          <span className="flex-1 truncate">{item.name}</span>
-                        </Link>
+                  ) : (
+                    <Link
+                      href={item.href}
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className={cn(
+                        "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
+                        isActive
+                          ? getActiveColor()
+                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                      )}
+                    >
+                      <item.icon className={cn(
+                        "h-5 w-5 transition-all duration-200 flex-shrink-0",
+                        isActive 
+                          ? "mr-3" 
+                          : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                      )} />
+                      <span className="flex-1 truncate">{item.name}</span>
+                    </Link>
                       )}
                     </>
                   )}

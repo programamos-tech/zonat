@@ -9,12 +9,20 @@ export class ClientsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
       let query = supabase
         .from('clients')
         .select('*')
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar clientes de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar clientes de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo clientes de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo clientes de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -319,13 +327,21 @@ export class ClientsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
       let dbQuery = supabase
         .from('clients')
         .select('*')
         .or(`name.ilike.%${query}%,email.ilike.%${query}%,document.ilike.%${query}%`)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar clientes de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar clientes de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo clientes de la tienda principal (store_id = MAIN_STORE_ID o null)
+        dbQuery = dbQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo clientes de esa microtienda
         dbQuery = dbQuery.eq('store_id', storeId)
       }
 

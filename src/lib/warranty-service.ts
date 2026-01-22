@@ -70,8 +70,16 @@ export class WarrantyService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar garantías de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+        warrantiesQuery = warrantiesQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo garantías de esa microtienda
         warrantiesQuery = warrantiesQuery.eq('store_id', storeId)
       }
 
@@ -88,8 +96,14 @@ export class WarrantyService {
         .from('warranties')
         .select('*', { count: 'exact', head: true })
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo contar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo contar garantías de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo contar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+        countQuery = countQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo contar garantías de esa microtienda
         countQuery = countQuery.eq('store_id', storeId)
       }
 
@@ -169,6 +183,7 @@ export class WarrantyService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
       let query = supabase
         .from('warranties')
@@ -224,8 +239,14 @@ export class WarrantyService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar garantías de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo garantías de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -412,8 +433,16 @@ export class WarrantyService {
         `)
         .eq('id', id)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar garantías de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo garantías de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -836,7 +865,11 @@ export class WarrantyService {
   // Buscar garantías
   static async searchWarranties(searchTerm: string): Promise<Warranty[]> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      let query = supabase
         .from('warranties')
         .select(`
           *,
@@ -859,9 +892,25 @@ export class WarrantyService {
             price
           )
         `)
-        .or(`client_name.ilike.%${searchTerm}%,product_received_name.ilike.%${searchTerm}%,reason.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id primero:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar garantías de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo garantías de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      // Luego aplicar el filtro de búsqueda
+      query = query.or(`client_name.ilike.%${searchTerm}%,product_received_name.ilike.%${searchTerm}%,reason.ilike.%${searchTerm}%`)
+
+      query = query.order('created_at', { ascending: false })
         .limit(50)
+
+      const { data, error } = await query
 
       if (error) {
         throw error
@@ -905,9 +954,26 @@ export class WarrantyService {
     discarded: number
   }> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      let query = supabase
         .from('warranties')
         .select('status')
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar garantías de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo garantías de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo garantías de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         throw error

@@ -110,7 +110,7 @@ export function StoreTable({
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-            {stores.map((store) => (
+                {stores.map((store) => (
               <Card
                 key={store.id}
                 onClick={(e) => handleStoreClick(store, e)}
@@ -130,12 +130,12 @@ export function StoreTable({
                         {store.logo ? (
                           <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-white dark:bg-gray-800 shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800">
                             <Image
-                              src={store.logo}
-                              alt={store.name}
+                            src={store.logo}
+                            alt={store.name}
                               fill
                               className="object-cover"
                               unoptimized
-                            />
+                          />
                           </div>
                         ) : (
                           <div className="w-20 h-20 rounded-xl bg-white dark:bg-gray-800 shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800 flex items-center justify-center overflow-hidden">
@@ -211,7 +211,7 @@ export function StoreTable({
                     <div className="flex items-start gap-3">
                       <div className="mt-0.5">
                         <Calendar className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                      </div>
+                        </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Fecha Creación</div>
                         <div className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -220,7 +220,7 @@ export function StoreTable({
                             month: 'long',
                             day: 'numeric'
                           })}
-                        </div>
+                  </div>
                       </div>
                     </div>
 
@@ -261,7 +261,7 @@ export function StoreTable({
                   </div>
                 </CardContent>
               </Card>
-            ))}
+              ))}
           </div>
         )}
       </CardContent>

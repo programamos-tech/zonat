@@ -34,7 +34,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [user?.storeId])
 
   const getClientById = async (id: string): Promise<Client | null> => {
     try {
@@ -102,7 +102,7 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
   // Cargar clientes al inicializar
   useEffect(() => {
     getAllClients()
-  }, [getAllClients])
+  }, [getAllClients, user?.storeId])
 
   return (
     <ClientsContext.Provider value={{

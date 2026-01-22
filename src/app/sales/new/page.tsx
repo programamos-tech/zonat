@@ -148,13 +148,26 @@ export default function NewSalePage() {
     }
   }, [highlightedProductIndex])
 
+  // Función helper para identificar si un cliente es una tienda
+  const isStoreClient = (client: Client): boolean => {
+    if (!client || !client.name) return false
+    const nameLower = client.name.toLowerCase()
+    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
+    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
+    return storeKeywords.some(keyword => nameLower.includes(keyword))
+  }
+
+  // Filtrar clientes (excluir clientes de tiendas)
   const filteredClients = useMemo(() => {
+    // Primero filtrar clientes de tiendas
+    const nonStoreClients = clients.filter(client => !isStoreClient(client))
+    
     if (!clientSearch.trim()) {
       // Si no hay búsqueda, mostrar todos los clientes (limitado)
-      return clients.slice(0, 10)
+      return nonStoreClients.slice(0, 10)
     }
     const searchLower = clientSearch.toLowerCase().trim()
-    return clients.filter(client =>
+    return nonStoreClients.filter(client =>
       client && (
         (client.name && client.name.toLowerCase().includes(searchLower)) ||
         (client.email && client.email.toLowerCase().includes(searchLower)) ||
@@ -309,6 +322,11 @@ export default function NewSalePage() {
   }
 
   const handleRemoveProduct = (itemId: string) => {
+    const item = selectedProducts.find(i => i.id === itemId)
+    // Si el producto que se está quitando tiene una alerta activa, ocultarla
+    if (item && stockAlert.show && stockAlert.productId === item.productId) {
+      setStockAlert({ show: false, message: '', productId: undefined })
+    }
     setSelectedProducts(selectedProducts.filter(item => item.id !== itemId))
   }
 
@@ -348,6 +366,17 @@ export default function NewSalePage() {
     handleUpdateQuantity(itemId, numValue)
   }
 
+  const formatNumber = (value: number): string => {
+    if (!value && value !== 0) return ''
+    return value.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  }
+
+  const parseNumber = (value: string): number => {
+    // Remover puntos y espacios, luego parsear
+    const cleaned = value.replace(/[^\d]/g, '')
+    return cleaned === '' ? 0 : parseFloat(cleaned) || 0
+  }
+
   const handleUpdatePrice = (itemId: string, newPrice: number) => {
     if (newPrice < 0) return
     
@@ -361,16 +390,28 @@ export default function NewSalePage() {
   }
 
   const handlePriceBlur = (itemId: string) => {
+    // Validar precio al perder el foco y mostrar alerta si es inválido
     const item = selectedProducts.find(i => i.id === itemId)
     if (!item) return
     const product = products.find(p => p.id === item.productId)
-    const productCost = product?.cost || 0
-    if (item.unitPrice < productCost) {
+    if (!product) return
+    
+    // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
+    const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+    const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+    
+    // Si el precio es menor al mínimo, mostrar alerta
+    if (item.unitPrice < minPrice) {
       setStockAlert({
         show: true,
-        message: `El precio debe ser mayor o igual al costo: ${formatCurrency(productCost)}`,
+        message: `${item.productName} no puede ser vendido por menos de ${formatCurrency(minPrice)} (${priceType})`,
         productId: item.productId
       })
+    } else {
+      // Si el precio es válido, ocultar la alerta para este producto
+      if (stockAlert.show && stockAlert.productId === item.productId) {
+        setStockAlert({ show: false, message: '', productId: undefined })
+      }
     }
   }
 
@@ -534,22 +575,37 @@ export default function NewSalePage() {
     })
 
     if (productsWithoutPrice.length > 0) {
-      alert(`Los siguientes productos no tienen precio asignado:\n${productsWithoutPrice.join(', ')}\n\nPor favor, asigna un precio a todos los productos antes de crear la venta.`)
+      setStockAlert({
+        show: true,
+        message: `Los siguientes productos no tienen precio asignado: ${productsWithoutPrice.join(', ')}. Por favor, asigna un precio a todos los productos antes de crear la venta.`,
+        productId: undefined
+      })
       return
     }
 
-    // Verificar que los precios sean mayores o iguales al costo
+    // Verificar que los precios sean mayores o iguales al precio mínimo
+    // Si tiene precio de venta, debe ser >= precio de venta
+    // Si no tiene precio de venta, debe ser >= precio de compra
     const invalidProducts: string[] = []
     validProducts.forEach(item => {
       const product = findProductById(item.productId)
-      const productCost = product?.cost || 0
-      if (item.unitPrice < productCost) {
-        invalidProducts.push(`${item.productName} (Costo: ${formatCurrency(productCost)})`)
+      if (!product) return
+      
+      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
+      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      
+      if (item.unitPrice < minPrice) {
+        invalidProducts.push(`${item.productName} no puede ser vendido por menos de ${formatCurrency(minPrice)} (${priceType})`)
       }
     })
 
     if (invalidProducts.length > 0) {
-      alert(`El precio debe ser mayor o igual al costo. ${invalidProducts.join(', ')}`)
+      setStockAlert({
+        show: true,
+        message: invalidProducts.join(' • '),
+        productId: undefined
+      })
       return
     }
 
@@ -776,12 +832,13 @@ export default function NewSalePage() {
                                       Precio:
                                     </label>
                                     <input
-                                      type="number"
-                                      value={item.unitPrice || ''}
+                                      type="text"
+                                      inputMode="numeric"
+                                      value={formatNumber(item.unitPrice)}
                                       onChange={(e) => {
-                                        const value = parseFloat(e.target.value) || 0
-                                        if (value >= 0) {
-                                          handleUpdatePrice(item.id, value)
+                                        const numericValue = parseNumber(e.target.value)
+                                        if (numericValue >= 0) {
+                                          handleUpdatePrice(item.id, numericValue)
                                         }
                                       }}
                                       onBlur={() => handlePriceBlur(item.id)}

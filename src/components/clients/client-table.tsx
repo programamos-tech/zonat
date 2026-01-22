@@ -34,6 +34,15 @@ export function ClientTable({
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
 
+  // Función helper para identificar si un cliente es una tienda
+  const isStoreClient = (client: Client): boolean => {
+    if (!client || !client.name) return false
+    const nameLower = client.name.toLowerCase()
+    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
+    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
+    return storeKeywords.some(keyword => nameLower.includes(keyword))
+  }
+
   const getStatusColor = (status: string) => {
     return status === 'active' 
       ? 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300' 
@@ -233,24 +242,31 @@ export function ClientTable({
                         <Badge className={`${getTypeColor(client.type)} text-xs`} title={getTypeLabel(client.type)}>
                           {getTypeLabel(client.type)}
                         </Badge>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onEdit(client)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => onDelete(client)}
-                            className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
+                        {!isStoreClient(client) && (
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onEdit(client)}
+                              className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => onDelete(client)}
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        )}
+                        {isStoreClient(client) && (
+                          <div className="text-xs text-gray-500 dark:text-gray-400 italic">
+                            Editar desde Microtiendas
+                          </div>
+                        )}
                       </div>
                     </div>
                   )
@@ -314,32 +330,41 @@ export function ClientTable({
                             </div>
                           </div>
                           
-                          <div className="flex items-center gap-2 ml-4">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onEdit(client)
-                              }}
-                              className="h-10 w-10 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
-                              title="Editar cliente"
-                            >
-                              <Edit className="h-5 w-5" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                onDelete(client)
-                              }}
-                              className="h-10 w-10 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 hover:bg-red-50 dark:hover:bg-red-900/20"
-                              title="Eliminar cliente"
-                            >
-                              <Trash2 className="h-5 w-5" />
-                            </Button>
-                          </div>
+                          {!isStoreClient(client) && (
+                            <div className="flex items-center gap-2 ml-4">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onEdit(client)
+                                }}
+                                className="h-10 w-10 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                title="Editar cliente"
+                              >
+                                <Edit className="h-5 w-5" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  onDelete(client)
+                                }}
+                                className="h-10 w-10 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 hover:bg-red-50 dark:hover:bg-red-900/20"
+                                title="Eliminar cliente"
+                              >
+                                <Trash2 className="h-5 w-5" />
+                              </Button>
+                            </div>
+                          )}
+                          {isStoreClient(client) && (
+                            <div className="flex items-center ml-4">
+                              <span className="text-sm text-gray-500 dark:text-gray-400 italic">
+                                Editar desde Microtiendas
+                              </span>
+                            </div>
+                          )}
                         </div>
                       </CardContent>
                     </Card>

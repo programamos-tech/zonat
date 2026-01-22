@@ -29,11 +29,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const savedUser = localStorage.getItem('zonat_user')
         if (savedUser) {
           const userData = JSON.parse(savedUser)
+          // Preservar el storeId del localStorage (puede haber sido cambiado por switchStore)
+          const savedStoreId = userData.storeId
+          
           // Obtener el usuario actualizado (que incluye sincronización de permisos del rol)
           const currentUser = await AuthService.getCurrentUser()
           if (currentUser) {
+            // Preservar el storeId si estaba guardado en localStorage
+            // Esto permite mantener la tienda seleccionada al recargar
+            if (savedStoreId) {
+              currentUser.storeId = savedStoreId
+            }
+            
             setUser(currentUser)
-            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados)
+            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados y storeId preservado)
             localStorage.setItem('zonat_user', JSON.stringify(currentUser))
           } else {
             localStorage.removeItem('zonat_user')

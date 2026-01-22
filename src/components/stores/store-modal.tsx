@@ -185,8 +185,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                     disabled={isUploading}
                     onClick={() => document.getElementById('logo-upload')?.click()}
                   >
-                    <Upload className="h-4 w-4" />
-                    {isUploading ? 'Subiendo...' : formData.logo ? 'Cambiar Logo' : 'Subir Logo'}
+                      <Upload className="h-4 w-4" />
+                      {isUploading ? 'Subiendo...' : formData.logo ? 'Cambiar Logo' : 'Subir Logo'}
                   </Button>
                 </label>
                 {errors.logo && (

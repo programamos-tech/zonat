@@ -8,10 +8,12 @@ import { PaymentModal } from '@/components/credits/payment-modal'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
+import { useAuth } from '@/contexts/auth-context'
 
 export default function CreditsPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const { user } = useAuth()
   const [credits, setCredits] = useState<Credit[]>([])
   const [isCreditModalOpen, setIsCreditModalOpen] = useState(false)
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
@@ -23,6 +25,13 @@ export default function CreditsPage() {
   useEffect(() => {
     loadCredits()
   }, [])
+  
+  // Escuchar cambios en el storeId del usuario y recargar créditos
+  useEffect(() => {
+    if (user) {
+      loadCredits()
+    }
+  }, [user?.storeId])
 
   // Manejar parámetros de búsqueda de la URL
   useEffect(() => {

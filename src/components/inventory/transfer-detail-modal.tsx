@@ -223,20 +223,20 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
             }
             
             return (
-              <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
-                  <DollarSign className="h-3 w-3" />
-                  Valor de la Transferencia
-                </p>
-                <Card className="dark:bg-gray-800 dark:border-gray-700 border-2 border-cyan-500">
-                  <CardContent className="p-4">
-                    <div className="space-y-3">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total de la venta:</span>
-                        <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
-                          {formatCurrency(sale.total)}
-                        </span>
-                      </div>
+            <div>
+              <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2 flex items-center gap-1">
+                <DollarSign className="h-3 w-3" />
+                Valor de la Transferencia
+              </p>
+              <Card className="dark:bg-gray-800 dark:border-gray-700 border-2 border-cyan-500">
+                <CardContent className="p-4">
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Total de la venta:</span>
+                      <span className="text-lg font-bold text-cyan-600 dark:text-cyan-400">
+                        {formatCurrency(sale.total)}
+                      </span>
+                    </div>
                     
                     {sale.payments && sale.payments.length > 0 ? (
                       <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2">

@@ -94,11 +94,11 @@ export default function ProductDetailPage() {
         SalesService.getSalesByProductId(productId)
           .then((allSalesData) => {
             console.log('[PRODUCT DETAIL] Sales loaded:', productId, allSalesData.length)
-            setSales(allSalesData)
+          setSales(allSalesData)
           })
           .catch((salesError) => {
             console.error('[PRODUCT DETAIL] Error loading sales:', salesError)
-            setSales([])
+          setSales([])
           })
       } else {
         console.error('[PRODUCT DETAIL] Product not found:', productId)

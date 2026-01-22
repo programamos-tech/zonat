@@ -525,7 +525,7 @@ export function SalesTable({
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                              {sale.paymentMethod === 'credit' ? (
+                            {sale.paymentMethod === 'credit' ? (
                               <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
                             ) : isTransferSale(sale) ? (
                               <Truck className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />

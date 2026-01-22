@@ -199,17 +199,17 @@ export function BottomNav() {
                     <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
                   </div>
                 ) : (
-                  <Link
-                    href={href}
-                    className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg touch-manipulation ${
-                      active 
-                        ? `${getActiveColor()} shadow-sm font-semibold` 
-                        : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
-                    }`}
-                  >
-                    <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
-                    <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
-                  </Link>
+                <Link
+                  href={href}
+                  className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg touch-manipulation ${
+                    active 
+                      ? `${getActiveColor()} shadow-sm font-semibold` 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
+                  }`}
+                >
+                  <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
+                  <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
+                </Link>
                 )}
               </li>
             )

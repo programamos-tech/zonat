@@ -85,7 +85,7 @@ export default function DashboardPage() {
   const [currentStoreName, setCurrentStoreName] = useState<string | null>(null)
   const [currentStoreCity, setCurrentStoreCity] = useState<string | null>(null)
 
-  // Cargar información de la tienda actual
+  // Cargar información de la tienda actual y recargar datos cuando cambie el storeId
   useEffect(() => {
     const loadStoreInfo = async () => {
       const storeId = getCurrentUserStoreId()
@@ -110,11 +110,15 @@ export default function DashboardPage() {
         setCurrentStoreName(null)
         setCurrentStoreCity(null)
       }
+      
+      // Recargar datos del dashboard cuando cambia el storeId
+      console.log('[DASHBOARD] StoreId changed, reloading dashboard data')
+      loadDashboardData()
     }
     if (user) {
       loadStoreInfo()
     }
-  }, [user])
+  }, [user, user?.storeId])
 
   // Detectar modo oscuro directamente desde el DOM
   useEffect(() => {
@@ -259,6 +263,9 @@ export default function DashboardPage() {
         const products = productsResult.status === 'fulfilled' ? productsResult.value : []
         const payments = paymentRecordsResult.status === 'fulfilled' ? paymentRecordsResult.value : []
         
+        const currentStoreId = getCurrentUserStoreId()
+        const userFromStorage = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('zonat_user') || '{}') : null
+        
         console.log('✅ [DASHBOARD] Datos cargados con filtro:', {
           ventas: sales.length,
           garantias: warranties.length,
@@ -266,7 +273,9 @@ export default function DashboardPage() {
           abonos: payments.length,
           fechaInicio: startDate.toISOString(),
           fechaFin: endDate.toISOString(),
-          storeId: getCurrentUserStoreId(),
+          storeId: currentStoreId,
+          userStoreId: user?.storeId,
+          localStorageStoreId: userFromStorage?.storeId,
           ventasDetalle: sales.slice(0, 5).map(s => ({
             id: s.id,
             invoice: s.invoiceNumber,
@@ -275,7 +284,9 @@ export default function DashboardPage() {
             createdAt: s.createdAt,
             paymentMethod: s.paymentMethod,
             status: s.status
-          }))
+          })),
+          todasLasVentasStoreIds: sales.map(s => s.storeId).filter(Boolean),
+          ventasUnicasStoreIds: [...new Set(sales.map(s => s.storeId).filter(Boolean))]
         })
         
         setAllSales(sales)
@@ -432,6 +443,32 @@ export default function DashboardPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Solo ejecutar una vez al montar
+
+  // Escuchar cambios en el storeId del usuario y recargar datos
+  useEffect(() => {
+    if (!user) return
+    
+    const currentStoreId = getCurrentUserStoreId()
+    console.log('[DASHBOARD] Monitoring storeId changes:', {
+      userStoreId: user.storeId,
+      currentStoreId,
+      shouldReload: currentStoreId !== user.storeId
+    })
+    
+    // Si el storeId cambió, limpiar y recargar datos
+    if (currentStoreId !== user.storeId) {
+      console.log('[DASHBOARD] StoreId changed, reloading data')
+      // Limpiar datos anteriores
+      setAllSales([])
+      setAllWarranties([])
+      setAllCredits([])
+      setAllClients([])
+      setAllProducts([])
+      setAllPaymentRecords([])
+      // Recargar datos
+      loadDashboardData()
+    }
+  }, [user?.storeId])
 
   // Escuchar cambios en las ventas del contexto para actualizar el dashboard
   useEffect(() => {

@@ -10,12 +10,20 @@ export class SalesService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
       let query = supabase
         .from('sales')
         .select('*', { count: 'exact', head: true })
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo contar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo contar ventas de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo contar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo contar ventas de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -39,14 +47,21 @@ export class SalesService {
       const offset = (page - 1) * limit
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       
       // Obtener el total de ventas
       let countQuery = supabase
         .from('sales')
         .select('*', { count: 'exact', head: true })
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar ventas de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+        countQuery = countQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo ventas de esa microtienda
         countQuery = countQuery.eq('store_id', storeId)
       }
 
@@ -81,8 +96,14 @@ export class SalesService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar ventas de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+        dataQuery = dataQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo ventas de esa microtienda
         dataQuery = dataQuery.eq('store_id', storeId)
       }
 
@@ -191,17 +212,18 @@ export class SalesService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
-      const canAccessAll = canAccessAllStores(user)
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
       console.log('[SALES SERVICE] getDashboardSales - Initial:', {
         storeId,
-        canAccessAll,
+        userStoreId: user?.storeId,
         userRole: user?.role,
         userId: user?.id,
         userName: user?.name,
-        isMainStore: storeId === '00000000-0000-0000-0000-000000000001' || !storeId,
+        isMainStore: storeId === MAIN_STORE_ID || !storeId,
         startDate: startDate?.toISOString(),
-        endDate: endDate?.toISOString()
+        endDate: endDate?.toISOString(),
+        localStorageStoreId: typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('zonat_user') || '{}')?.storeId || null) : null
       })
 
       // Construir query base
@@ -228,12 +250,17 @@ export class SalesService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAll) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar ventas de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        console.log('[SALES SERVICE] Filtering by main store (store_id = null or MAIN_STORE_ID)')
+      } else {
+        // Microtienda: solo ventas de esa microtienda
         query = query.eq('store_id', storeId)
         console.log('[SALES SERVICE] Filtering by store_id:', storeId)
-      } else {
-        console.log('[SALES SERVICE] NOT filtering by store_id (showing all stores)')
       }
 
       query = query.order('created_at', { ascending: false })
@@ -304,9 +331,15 @@ export class SalesService {
             )
           `)
 
-        // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-        const canAccessAll = canAccessAllStores(user)
-        if (storeId && !canAccessAll) {
+        // Filtrar por store_id:
+        // - Si storeId es null o MAIN_STORE_ID, solo mostrar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+        // - Si storeId es una microtienda, solo mostrar ventas de esa microtienda
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
+          paginatedQuery = paginatedQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+          console.log('[SALES SERVICE] Paginated query filtering by main store (store_id = null or MAIN_STORE_ID)')
+        } else {
+          // Microtienda: solo ventas de esa microtienda
           paginatedQuery = paginatedQuery.eq('store_id', storeId)
           console.log('[SALES SERVICE] Paginated query filtering by store_id:', storeId)
         }

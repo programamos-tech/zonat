@@ -132,10 +132,10 @@ export function WarrantyProvider({ children }: { children: ReactNode }) {
     }
   }, [])
 
-  // Cargar garantías al inicializar
+  // Cargar garantías al inicializar y cuando cambie el storeId
   useEffect(() => {
     fetchWarranties(1, false)
-  }, [fetchWarranties])
+  }, [fetchWarranties, currentUser?.storeId])
 
   const value: WarrantyContextType = {
     warranties,

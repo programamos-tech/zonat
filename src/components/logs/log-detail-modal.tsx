@@ -446,8 +446,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
   const TypeIcon = getTypeIcon(logType)
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative my-4 xl:my-0">
+    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000] my-4 xl:my-0">
         {/* Header */}
         <div className="relative flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">

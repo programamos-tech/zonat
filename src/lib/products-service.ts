@@ -9,47 +9,47 @@ export class ProductsService {
   // Helper para obtener stock según el tipo de tienda
   private static async getProductStockForStore(productId: string, storeId: string | null): Promise<{ warehouse: number, store: number, total: number }> {
     try {
-      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      const isMainStore = !storeId || storeId === MAIN_STORE_ID
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
-      if (isMainStore) {
-        // Para tienda principal, obtener stock de products
+    if (isMainStore) {
+      // Para tienda principal, obtener stock de products
         const { data: product, error } = await supabaseAdmin
-          .from('products')
-          .select('stock_warehouse, stock_store')
-          .eq('id', productId)
-          .single()
+        .from('products')
+        .select('stock_warehouse, stock_store')
+        .eq('id', productId)
+        .single()
 
         if (error) {
           console.error('[PRODUCTS SERVICE] Error fetching stock for main store:', error)
           return { warehouse: 0, store: 0, total: 0 }
         }
 
-        if (!product) {
+      if (!product) {
           console.warn('[PRODUCTS SERVICE] Product not found for stock:', productId)
-          return { warehouse: 0, store: 0, total: 0 }
-        }
+        return { warehouse: 0, store: 0, total: 0 }
+      }
 
-        const warehouse = product.stock_warehouse || 0
-        const store = product.stock_store || 0
-        return { warehouse, store, total: warehouse + store }
-      } else {
-        // Para micro tiendas, obtener stock de store_stock
+      const warehouse = product.stock_warehouse || 0
+      const store = product.stock_store || 0
+      return { warehouse, store, total: warehouse + store }
+    } else {
+      // Para micro tiendas, obtener stock de store_stock
         const { data: storeStock, error } = await supabaseAdmin
-          .from('store_stock')
-          .select('quantity')
-          .eq('store_id', storeId)
-          .eq('product_id', productId)
-          .maybeSingle()
+        .from('store_stock')
+        .select('quantity')
+        .eq('store_id', storeId)
+        .eq('product_id', productId)
+        .maybeSingle()
 
         if (error) {
           console.error('[PRODUCTS SERVICE] Error fetching stock for micro store:', error)
           return { warehouse: 0, store: 0, total: 0 }
         }
 
-        const storeStockQuantity = storeStock?.quantity || 0
-        // En micro tiendas, todo el stock es "local" (store), no hay warehouse
-        return { warehouse: 0, store: storeStockQuantity, total: storeStockQuantity }
+      const storeStockQuantity = storeStock?.quantity || 0
+      // En micro tiendas, todo el stock es "local" (store), no hay warehouse
+      return { warehouse: 0, store: storeStockQuantity, total: storeStockQuantity }
       }
     } catch (error) {
       console.error('[PRODUCTS SERVICE] Exception in getProductStockForStore:', error)
@@ -542,7 +542,7 @@ export class ProductsService {
       }
 
       console.log('[PRODUCTS SERVICE] Product data fetched, getting stock...')
-      
+
       // Obtener stock correcto según el tipo de tienda
       const currentStoreId = getCurrentUserStoreId()
       console.log('[PRODUCTS SERVICE] Current store ID:', currentStoreId)

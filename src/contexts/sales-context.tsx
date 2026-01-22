@@ -52,11 +52,11 @@ export function SalesProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [currentUser?.storeId])
 
   useEffect(() => {
     fetchSales()
-  }, [fetchSales])
+  }, [fetchSales, currentUser?.storeId])
 
   const createSale = async (saleData: Omit<Sale, 'id' | 'createdAt'>) => {
     if (!currentUser?.id) {

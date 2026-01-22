@@ -719,7 +719,7 @@ export default function SaleDetailModal({
                   ) : transfer ? (
                     <Truck className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                   ) : (
-                    <Receipt className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
+                  <Receipt className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                   )}
                   <div className="flex-1">
                     <div className="flex items-center gap-3">

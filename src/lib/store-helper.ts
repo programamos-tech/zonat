@@ -54,11 +54,14 @@ export function isMainStoreUser(user: User | null): boolean {
 }
 
 /**
- * Verifica si el usuario puede acceder a todas las tiendas (superadmin de tienda principal)
+ * Verifica si el usuario puede acceder a todas las tiendas (superadmin o admin)
+ * Un superadmin puede acceder a todas las tiendas independientemente del storeId actual
  * @param user - Usuario a verificar
  * @returns true si puede acceder a todas las tiendas
  */
 export function canAccessAllStores(user: User | null): boolean {
   if (!user) return false
-  return isMainStoreUser(user) && (user.role === 'superadmin' || user.role === 'admin')
+  // Un superadmin o admin puede acceder a todas las tiendas, sin importar el storeId actual
+  // Esto permite que un superadmin pueda cambiar entre tiendas y seguir teniendo acceso al módulo de Tiendas
+  return user.role === 'superadmin' || user.role === 'admin' || user.role === 'Super Admin' || user.role === 'Super Administrador'
 }

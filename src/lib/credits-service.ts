@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 import { Credit, PaymentRecord } from '@/types'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
@@ -82,14 +82,21 @@ export class CreditsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
       // Obtener todos los créditos
       let query = supabase
         .from('credits')
         .select('*')
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo créditos de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -122,8 +129,9 @@ export class CreditsService {
         .from('credits')
         .select('*')
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // SIEMPRE filtrar por store_id si hay uno especificado
+      // Incluso para super admins, si están viendo una microtienda específica, solo mostrar sus créditos
+      if (storeId) {
         query = query.eq('store_id', storeId)
       }
 
@@ -217,8 +225,9 @@ export class CreditsService {
       .select('*')
       .eq('id', id)
 
-    // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-    if (storeId && !canAccessAllStores(user)) {
+    // SIEMPRE filtrar por store_id si hay uno especificado
+    // Incluso para super admins, si están viendo una microtienda específica, solo mostrar sus créditos
+    if (storeId) {
       query = query.eq('store_id', storeId)
     }
 
@@ -266,13 +275,21 @@ export class CreditsService {
   static async getCreditsByClientId(clientId: string): Promise<Credit[]> {
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    
     let query = supabase
       .from('credits')
       .select('*')
       .eq('client_id', clientId)
 
-    // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-    if (storeId && !canAccessAllStores(user)) {
+    // Filtrar por store_id:
+    // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+    // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
+    if (!storeId || storeId === MAIN_STORE_ID) {
+      // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+    } else {
+      // Microtienda: solo créditos de esa microtienda
       query = query.eq('store_id', storeId)
     }
 
@@ -329,7 +346,8 @@ export class CreditsService {
 
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
-    if (storeId && !canAccessAllStores(user) && existingCredit.storeId !== storeId) {
+    // Verificar que el crédito pertenece a la tienda actual (si hay storeId)
+    if (storeId && existingCredit.storeId !== storeId) {
       throw new Error('No tienes permiso para actualizar este crédito')
     }
 
@@ -451,7 +469,7 @@ export class CreditsService {
       }
       
       // Insertar ambos registros
-      const { data: cashData, error: cashError } = await supabase
+      const { data: cashData, error: cashError } = await supabaseAdmin
         .from('payment_records')
         .insert([cashRecord])
         .select()
@@ -459,7 +477,7 @@ export class CreditsService {
       
       if (cashError) throw cashError
       
-      const { data: transferData, error: transferError } = await supabase
+      const { data: transferData, error: transferError } = await supabaseAdmin
         .from('payment_records')
         .insert([transferRecord])
         .select()
@@ -488,7 +506,7 @@ export class CreditsService {
         insertData.description = paymentData.description
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('payment_records')
         .insert([insertData])
         .select()
@@ -699,7 +717,7 @@ export class CreditsService {
 
       // Anular todos los abonos en payment_records
       for (const payment of paymentHistory) {
-        const { error: cancelError } = await supabase
+        const { error: cancelError } = await supabaseAdmin
           .from('payment_records')
           .update({ 
             status: 'cancelled',
@@ -878,10 +896,24 @@ export class CreditsService {
   // Método optimizado para dashboard con filtrado por fecha de pago
   static async getPaymentRecordsByDateRange(startDate?: Date, endDate?: Date): Promise<PaymentRecord[]> {
     try {
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
       let query = supabase
         .from('payment_records')
         .select('*')
         .order('payment_date', { ascending: false })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar pagos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar pagos de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo pagos de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo pagos de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
 
       // Aplicar filtros de fecha si existen (usar payment_date, no created_at)
       if (startDate) {
@@ -936,13 +968,21 @@ export class CreditsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
       let query = supabase
         .from('credits')
         .select('*')
         .eq('invoice_number', invoiceNumber)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo créditos de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
