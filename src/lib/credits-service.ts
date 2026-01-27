@@ -1,10 +1,14 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 import { Credit, PaymentRecord } from '@/types'
 import { AuthService } from './auth-service'
+import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export class CreditsService {
   // Crear un nuevo crédito
   static async createCredit(creditData: Omit<Credit, 'id' | 'createdAt' | 'updatedAt'>): Promise<Credit> {
+    // Obtener store_id del usuario actual o de la venta asociada
+    const storeId = creditData.storeId || getCurrentUserStoreId() || '00000000-0000-0000-0000-000000000001'
+
     const { data, error } = await supabase
       .from('credits')
       .insert([{
@@ -21,7 +25,8 @@ export class CreditsService {
         last_payment_date: creditData.lastPaymentDate,
         last_payment_user: creditData.lastPaymentUser,
         created_by: creditData.createdBy,
-        created_by_name: creditData.createdByName
+        created_by_name: creditData.createdByName,
+        store_id: storeId
       }])
       .select('*')
       .single()
@@ -44,6 +49,7 @@ export class CreditsService {
       lastPaymentUser: data.last_payment_user,
       createdBy: data.created_by,
       createdByName: data.created_by_name,
+      storeId: data.store_id || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
@@ -74,12 +80,27 @@ export class CreditsService {
   // Obtener todos los créditos
   static async getAllCredits(): Promise<Credit[]> {
     try {
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
       // Obtener todos los créditos
-      const { data: creditsData, error: creditsError } = await supabase
+      let query = supabase
         .from('credits')
         .select('*')
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo créditos de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: creditsData, error: creditsError } = await query.order('created_at', { ascending: false })
 
       if (creditsError) {
       // Error silencioso en producción
@@ -91,8 +112,6 @@ export class CreditsService {
         return []
       }
 
-      // Por ahora, devolver todos los créditos sin filtrado
-      // TODO: Implementar filtrado por ventas activas más adelante
       return await this.mapCreditsData(creditsData)
     } catch (error) {
       // Error silencioso en producción
@@ -103,10 +122,18 @@ export class CreditsService {
   // Método optimizado para dashboard con filtrado por fecha
   static async getCreditsByDateRange(startDate?: Date, endDate?: Date): Promise<Credit[]> {
     try {
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+
       let query = supabase
         .from('credits')
         .select('*')
-        .order('created_at', { ascending: false })
+
+      // SIEMPRE filtrar por store_id si hay uno especificado
+      // Incluso para super admins, si están viendo una microtienda específica, solo mostrar sus créditos
+      if (storeId) {
+        query = query.eq('store_id', storeId)
+      }
 
       // Aplicar filtros de fecha si existen
       if (startDate) {
@@ -127,6 +154,8 @@ export class CreditsService {
         ))
         query = query.lte('created_at', endUTC.toISOString())
       }
+
+      query = query.order('created_at', { ascending: false })
 
       const { data: creditsData, error: creditsError } = await query.limit(10000)
 
@@ -181,6 +210,7 @@ export class CreditsService {
       lastPaymentUser: credit.last_payment_user ? (userEmails[credit.last_payment_user] || credit.last_payment_user) : null,
       createdBy: credit.created_by,
       createdByName: credit.created_by_name,
+      storeId: credit.store_id || undefined,
       createdAt: credit.created_at,
       updatedAt: credit.updated_at
     }))
@@ -188,11 +218,20 @@ export class CreditsService {
 
   // Obtener crédito por ID
   static async getCreditById(id: string): Promise<Credit | null> {
-    const { data, error } = await supabase
+    const user = getCurrentUser()
+    const storeId = getCurrentUserStoreId()
+    let query = supabase
       .from('credits')
       .select('*')
       .eq('id', id)
-      .single()
+
+    // SIEMPRE filtrar por store_id si hay uno especificado
+    // Incluso para super admins, si están viendo una microtienda específica, solo mostrar sus créditos
+    if (storeId) {
+      query = query.eq('store_id', storeId)
+    }
+
+    const { data, error } = await query.single()
 
     if (error) {
       if (error.code === 'PGRST116') return null
@@ -234,11 +273,27 @@ export class CreditsService {
 
   // Obtener todos los créditos de un cliente
   static async getCreditsByClientId(clientId: string): Promise<Credit[]> {
-    const { data, error } = await supabase
+    const user = getCurrentUser()
+    const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    
+    let query = supabase
       .from('credits')
       .select('*')
       .eq('client_id', clientId)
-      .order('created_at', { ascending: false })
+
+    // Filtrar por store_id:
+    // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+    // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
+    if (!storeId || storeId === MAIN_STORE_ID) {
+      // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+    } else {
+      // Microtienda: solo créditos de esa microtienda
+      query = query.eq('store_id', storeId)
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false })
 
     if (error) throw error
 
@@ -275,6 +330,7 @@ export class CreditsService {
       lastPaymentUser: credit.last_payment_user ? (userEmails[credit.last_payment_user] || credit.last_payment_user) : null,
       createdBy: credit.created_by,
       createdByName: credit.created_by_name,
+      storeId: credit.store_id || undefined,
       createdAt: credit.created_at,
       updatedAt: credit.updated_at
     }))
@@ -282,6 +338,20 @@ export class CreditsService {
 
   // Actualizar crédito
   static async updateCredit(id: string, updates: Partial<Credit>): Promise<Credit> {
+    // Verificar que el crédito pertenece a la tienda del usuario (si no es admin principal)
+    const existingCredit = await this.getCreditById(id)
+    if (!existingCredit) {
+      throw new Error('Crédito no encontrado')
+    }
+
+    const user = getCurrentUser()
+    const storeId = getCurrentUserStoreId()
+    
+    // Verificar que el crédito pertenece a la tienda actual (si hay storeId y no es admin)
+    if (storeId && existingCredit.storeId !== storeId && !canAccessAllStores(user)) {
+      throw new Error('No tienes permiso para actualizar este crédito')
+    }
+
     const updateData: any = {}
     
     if (updates.paidAmount !== undefined) updateData.paid_amount = updates.paidAmount
@@ -291,7 +361,7 @@ export class CreditsService {
     if (updates.lastPaymentDate !== undefined) updateData.last_payment_date = updates.lastPaymentDate
     if (updates.lastPaymentUser !== undefined) updateData.last_payment_user = updates.lastPaymentUser
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('credits')
       .update(updateData)
       .eq('id', id)
@@ -328,6 +398,7 @@ export class CreditsService {
       lastPaymentAmount: data.last_payment_amount,
       lastPaymentDate: data.last_payment_date,
       lastPaymentUser: userEmail,
+      storeId: data.store_id || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
@@ -356,7 +427,7 @@ export class CreditsService {
       status: (credit.pendingAmount - paymentData.amount! <= 0) ? 'completed' : 'partial'
     }
 
-    const { data: paymentDataResult, error: paymentError } = await supabase
+    const { data: paymentDataResult, error: paymentError } = await supabaseAdmin
       .from('payments')
       .insert([paymentInsertData])
       .select()
@@ -371,6 +442,9 @@ export class CreditsService {
       // Para pagos mixtos, crear DOS registros separados
       const baseDescription = paymentData.description || ''
       
+      // Obtener store_id del crédito
+      const storeId = credit.storeId || getCurrentUserStoreId() || '00000000-0000-0000-0000-000000000001'
+
       // Registro para efectivo
       const cashRecord = {
         payment_id: paymentDataResult.id,
@@ -379,6 +453,7 @@ export class CreditsService {
         payment_method: 'cash',
         user_id: paymentData.userId,
         user_name: paymentData.userName,
+        store_id: storeId,
         description: baseDescription ? `${baseDescription} (Parte en efectivo)` : 'Pago mixto - Parte en efectivo'
       }
       
@@ -390,11 +465,12 @@ export class CreditsService {
         payment_method: 'transfer',
         user_id: paymentData.userId,
         user_name: paymentData.userName,
+        store_id: storeId,
         description: baseDescription ? `${baseDescription} (Parte por transferencia)` : 'Pago mixto - Parte por transferencia'
       }
       
       // Insertar ambos registros
-      const { data: cashData, error: cashError } = await supabase
+      const { data: cashData, error: cashError } = await supabaseAdmin
         .from('payment_records')
         .insert([cashRecord])
         .select()
@@ -402,7 +478,7 @@ export class CreditsService {
       
       if (cashError) throw cashError
       
-      const { data: transferData, error: transferError } = await supabase
+      const { data: transferData, error: transferError } = await supabaseAdmin
         .from('payment_records')
         .insert([transferRecord])
         .select()
@@ -414,20 +490,24 @@ export class CreditsService {
       
     } else {
       // Para pagos simples (cash o transfer), crear un solo registro
+      // Obtener store_id del crédito
+      const storeId = credit.storeId || getCurrentUserStoreId() || '00000000-0000-0000-0000-000000000001'
+
       const insertData: any = {
         payment_id: paymentDataResult.id,
         amount: paymentData.amount,
         payment_date: paymentData.paymentDate,
         payment_method: paymentData.paymentMethod,
         user_id: paymentData.userId,
-        user_name: paymentData.userName
+        user_name: paymentData.userName,
+        store_id: storeId
       }
       
       if (paymentData.description) {
         insertData.description = paymentData.description
       }
       
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('payment_records')
         .insert([insertData])
         .select()
@@ -517,6 +597,7 @@ export class CreditsService {
       description: paymentData.description,
       userId: firstRecord.user_id,
       userName: firstRecord.user_name,
+      storeId: firstRecord.store_id || credit.storeId || undefined,
       createdAt: firstRecord.created_at
     }
   }
@@ -637,7 +718,7 @@ export class CreditsService {
 
       // Anular todos los abonos en payment_records
       for (const payment of paymentHistory) {
-        const { error: cancelError } = await supabase
+        const { error: cancelError } = await supabaseAdmin
           .from('payment_records')
           .update({ 
             status: 'cancelled',
@@ -773,10 +854,18 @@ export class CreditsService {
   // Obtener todos los registros de pago (abonos)
   static async getAllPaymentRecords(): Promise<PaymentRecord[]> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      let query = supabase
         .from('payment_records')
         .select('*')
-        .order('payment_date', { ascending: false })
+
+      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
+      if (storeId && !canAccessAllStores(user)) {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query.order('payment_date', { ascending: false })
 
       if (error) throw error
 
@@ -791,6 +880,7 @@ export class CreditsService {
         description: payment.description,
         userId: payment.user_id,
         userName: payment.user_name,
+        storeId: payment.store_id || undefined,
         status: payment.status || 'active', // Incluir status, por defecto 'active'
         cancelledAt: payment.cancelled_at,
         cancelledBy: payment.cancelled_by,
@@ -807,10 +897,24 @@ export class CreditsService {
   // Método optimizado para dashboard con filtrado por fecha de pago
   static async getPaymentRecordsByDateRange(startDate?: Date, endDate?: Date): Promise<PaymentRecord[]> {
     try {
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
       let query = supabase
         .from('payment_records')
         .select('*')
         .order('payment_date', { ascending: false })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar pagos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar pagos de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo pagos de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo pagos de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
 
       // Aplicar filtros de fecha si existen (usar payment_date, no created_at)
       if (startDate) {
@@ -863,11 +967,27 @@ export class CreditsService {
   // Obtener crédito por número de factura
   static async getCreditByInvoiceNumber(invoiceNumber: string): Promise<Credit | null> {
     try {
-      const { data, error } = await supabase
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
+      let query = supabase
         .from('credits')
         .select('*')
         .eq('invoice_number', invoiceNumber)
-        .single()
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo créditos de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query.single()
 
       if (error) {
         if (error.code === 'PGRST116') {
@@ -892,6 +1012,7 @@ export class CreditsService {
         lastPaymentUser: data.last_payment_user,
         createdBy: data.created_by,
         createdByName: data.created_by_name,
+        storeId: data.store_id || undefined,
         createdAt: data.created_at,
         updatedAt: data.updated_at
       }

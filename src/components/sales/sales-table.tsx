@@ -24,11 +24,13 @@ import {
   Calendar,
   User,
   AlertTriangle,
-  X
+  X,
+  Truck
 } from 'lucide-react'
-import { Sale, Credit } from '@/types'
+import { Sale, Credit, StoreStockTransfer } from '@/types'
 import { usePermissions } from '@/hooks/usePermissions'
 import { CreditsService } from '@/lib/credits-service'
+import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 
 interface SalesTableProps {
   sales: Sale[]
@@ -78,6 +80,7 @@ export function SalesTable({
   const [isCancelling, setIsCancelling] = useState<Record<string, boolean>>({})
   const [cancelSuccessMessage, setCancelSuccessMessage] = useState<Record<string, string>>({})
   const [credits, setCredits] = useState<Record<string, Credit>>({})
+  const [transfers, setTransfers] = useState<Record<string, StoreStockTransfer>>({})
 
   // Cargar créditos para ventas de tipo crédito
   useEffect(() => {
@@ -110,6 +113,42 @@ export function SalesTable({
     }
   }, [sales])
 
+  // Cargar transferencias para ventas de tipo transferencia
+  useEffect(() => {
+    const loadTransfers = async () => {
+      // Identificar ventas de transferencia: paymentMethod es 'transfer' o 'mixed' y store_id es MAIN_STORE_ID
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const transferSales = sales.filter(sale => 
+        (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && 
+        sale.storeId === MAIN_STORE_ID
+      )
+      const transfersToLoad: Record<string, StoreStockTransfer> = {}
+      
+      await Promise.all(
+        transferSales.map(async (sale) => {
+          if (!transfers[sale.id]) {
+            try {
+              const transfer = await StoreStockTransferService.getTransferBySaleId(sale.id)
+              if (transfer) {
+                transfersToLoad[sale.id] = transfer
+              }
+            } catch (error) {
+              // Error silencioso
+            }
+          }
+        })
+      )
+      
+      if (Object.keys(transfersToLoad).length > 0) {
+        setTransfers(prev => ({ ...prev, ...transfersToLoad }))
+      }
+    }
+    
+    if (sales.length > 0) {
+      loadTransfers()
+    }
+  }, [sales])
+
   // Función helper para generar ID del crédito
   const getCreditId = (credit: Credit): string => {
     const clientInitials = credit.clientName
@@ -121,6 +160,26 @@ export function SalesTable({
     
     const creditSuffix = credit.id.substring(credit.id.length - 6).toLowerCase()
     return `${clientInitials}${creditSuffix}`
+  }
+
+  // Función helper para generar ID de la transferencia
+  const getTransferId = (transfer: StoreStockTransfer): string => {
+    if (transfer.transferNumber) {
+      return transfer.transferNumber.replace('TRF-', '')
+    }
+    // Si no hay transferNumber, usar las últimas 8 letras del ID
+    return transfer.id.substring(transfer.id.length - 8).toUpperCase()
+  }
+
+  // Verificar si una venta es de transferencia
+  const isTransferSale = (sale: Sale): boolean => {
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    // Una venta es de transferencia si:
+    // 1. El paymentMethod es 'transfer' o 'mixed'
+    // 2. El storeId es MAIN_STORE_ID (se creó desde la tienda principal)
+    // 3. Opcionalmente, si ya tenemos la transferencia cargada, mejor
+    return (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && 
+           sale.storeId === MAIN_STORE_ID
   }
 
   // Efecto para manejar la búsqueda
@@ -468,10 +527,22 @@ export function SalesTable({
                             <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
                             {sale.paymentMethod === 'credit' ? (
                               <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                            ) : isTransferSale(sale) ? (
+                              <Truck className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                             ) : (
                               <FileText className="h-3.5 w-3.5 text-green-600 dark:text-green-400 flex-shrink-0" />
                             )}
                             <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">{generateInvoiceNumber(sale)}</span>
+                            {sale.paymentMethod === 'credit' && credits[sale.id] && (
+                              <span className="text-xs font-mono text-orange-600 dark:text-orange-400">
+                                Crédito #{getCreditId(credits[sale.id])}
+                              </span>
+                            )}
+                            {isTransferSale(sale) && transfers[sale.id] && (
+                              <span className="text-xs font-mono text-cyan-600 dark:text-cyan-400">
+                                TRF {transfers[sale.id].transferNumber || `#${getTransferId(transfers[sale.id])}`}
+                              </span>
+                            )}
                           </div>
                           <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={sale.clientName}>
                             {sale.clientName}
@@ -867,6 +938,8 @@ export function SalesTable({
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             {sale.paymentMethod === 'credit' ? (
                               <CreditCard className="h-5 w-5 text-orange-600 dark:text-orange-400 flex-shrink-0" />
+                            ) : isTransferSale(sale) ? (
+                              <Truck className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                             ) : (
                               <FileText className="h-5 w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                             )}
@@ -885,6 +958,14 @@ export function SalesTable({
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
                                         <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                                           #{getCreditId(credits[sale.id])}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {isTransferSale(sale) && transfers[sale.id] && (
+                                      <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                                        <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Transferencia</div>
+                                        <div className="text-sm font-mono font-semibold text-cyan-600 dark:text-cyan-400">
+                                          {transfers[sale.id].transferNumber || `#${getTransferId(transfers[sale.id])}`}
                                         </div>
                                       </div>
                                     )}

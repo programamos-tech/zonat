@@ -56,11 +56,11 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [currentUser?.storeId]) // Recargar cuando cambie el storeId
 
   useEffect(() => {
     refreshProducts()
-  }, [refreshProducts]) // refreshProducts is now memoized with useCallback
+  }, [refreshProducts, currentUser?.storeId]) // Recargar cuando cambie el storeId
 
   const createProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     const newProduct = await ProductsService.createProduct(productData, currentUser?.id)

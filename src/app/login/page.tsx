@@ -38,7 +38,24 @@ export default function LoginPage() {
     const success = await login(data.email, data.password)
     
     if (success) {
-      router.push('/')
+      // Verificar si el usuario es superadmin y redirigir a /select-store
+      if (typeof window !== 'undefined') {
+        const savedUser = localStorage.getItem('zonat_user')
+        if (savedUser) {
+          const userData = JSON.parse(savedUser)
+          const isSuperAdmin = userData.role === 'superadmin' || userData.role === 'Super Admin' || userData.role === 'Super Administrador'
+          
+          if (isSuperAdmin) {
+            router.push('/select-store')
+          } else {
+            router.push('/dashboard')
+          }
+        } else {
+          router.push('/dashboard')
+        }
+      } else {
+        router.push('/dashboard')
+      }
     } else {
       setError('Credenciales inválidas. Verifica tu email y contraseña.')
     }
@@ -63,6 +80,17 @@ export default function LoginPage() {
           {/* Panel Derecho con Formulario */}
           <div className="w-full md:w-1/2 bg-white dark:bg-gray-800 flex items-center justify-center p-6 md:p-16">
             <div className="w-full max-w-md">
+              {/* Logo en Mobile */}
+              <div className="md:hidden text-center mb-6">
+                <div className="flex justify-center mb-4">
+                  <img
+                    src="/zonat-logo.png"
+                    alt="ZONA T Logo"
+                    className="w-20 h-20 object-contain rounded-xl"
+                  />
+                </div>
+              </div>
+
               <div className="text-center mb-8 md:mb-12">
                 <h2 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">Bienvenido</h2>
                 <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg">
@@ -151,19 +179,27 @@ export default function LoginPage() {
               {/* Footer */}
               <div className="text-center mt-8 md:mt-12">
                 <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">
-                  © 2025 ZONA T. Todos los derechos reservados.
+                  © 2026 ZONA T. Todos los derechos reservados.
                 </p>
                 <p className="text-gray-400 dark:text-gray-500 text-xs">
                   Desarrollado por{' '}
                   <a 
-                    href="https://programamos.st" 
+                    href="https://www.programamos.studio/" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
                   >
                     programamos.st
                   </a>
-                  {' '}• Descubre más aquí
+                  {' '}•{' '}
+                  <a 
+                    href="https://www.programamos.studio/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
+                  >
+                    Descubre más aquí
+                  </a>
                 </p>
               </div>
             </div>

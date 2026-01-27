@@ -9,6 +9,7 @@ export function middleware(request: NextRequest) {
   // Permitir archivos estáticos (imágenes, fuentes, etc.) y rutas públicas específicas
   if (
     pathname === '/login' ||
+    pathname === '/select-store' ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/api/') ||
     pathname === '/favicon.ico' ||

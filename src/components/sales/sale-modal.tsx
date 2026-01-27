@@ -142,9 +142,21 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     return () => clearTimeout(timer)
   }, [productSearch])
 
+  // Función helper para identificar si un cliente es una tienda
+  const isStoreClient = (client: Client): boolean => {
+    if (!client || !client.name) return false
+    const nameLower = client.name.toLowerCase()
+    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
+    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
+    return storeKeywords.some(keyword => nameLower.includes(keyword))
+  }
+
   const filteredClients = useMemo(() => {
-    if (!clientSearch.trim()) return clients
-    return clients.filter(client =>
+    // Primero filtrar clientes de tiendas
+    const nonStoreClients = clients.filter(client => !isStoreClient(client))
+    
+    if (!clientSearch.trim()) return nonStoreClients
+    return nonStoreClients.filter(client =>
       client && client.name && client.name.toLowerCase().includes(clientSearch.toLowerCase())
     )
   }, [clients, clientSearch])
@@ -493,6 +505,17 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     setProductSearch('')
   }
 
+  const formatNumber = (value: number): string => {
+    if (!value && value !== 0) return ''
+    return value.toLocaleString('es-CO', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+  }
+
+  const parseNumber = (value: string): number => {
+    // Remover puntos y espacios, luego parsear
+    const cleaned = value.replace(/[^\d]/g, '')
+    return cleaned === '' ? 0 : parseFloat(cleaned) || 0
+  }
+
   const handleUpdatePrice = (itemId: string, newPrice: number) => {
     if (newPrice < 0) return
 
@@ -510,23 +533,43 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     )
   }
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0
+    }).format(amount)
+  }
+
   const handlePriceBlur = (itemId: string) => {
-    // Validar solo cuando el campo pierde el foco
+    // Validar precio al perder el foco y mostrar alerta si es inválido
     const item = selectedProducts.find(i => i.id === itemId)
     if (item) {
       const product = findProductById(item.productId)
-      const productCost = product?.cost || 0
+      if (!product) return
       
-      // Si el precio es menor al costo, mostrar alerta y ajustar al costo mínimo
-      if (item.unitPrice < productCost) {
-        showStockAlert(`El precio debe ser mayor.`, item.productId)
-        // Ajustar al costo mínimo
-        handleUpdatePrice(itemId, productCost)
+      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
+      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      
+      // Si el precio es menor al mínimo, mostrar alerta
+      if (item.unitPrice < minPrice) {
+        showStockAlert(`${item.productName} no puede ser vendido por menos de ${formatCurrency(minPrice)} (${priceType})`, item.productId)
+      } else {
+        // Si el precio es válido, ocultar la alerta para este producto
+        if (stockAlert.show && stockAlert.productId === item.productId) {
+          setStockAlert({ show: false, message: '', productId: undefined })
+        }
       }
     }
   }
 
   const handleRemoveProduct = (itemId: string) => {
+    const item = selectedProducts.find(i => i.id === itemId)
+    // Si el producto que se está quitando tiene una alerta activa, ocultarla
+    if (item && stockAlert.show && stockAlert.productId === item.productId) {
+      setStockAlert({ show: false, message: '', productId: undefined })
+    }
     setSelectedProducts(prev => prev.filter(item => item.id !== itemId))
   }
 
@@ -607,18 +650,25 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     // Validar que hay cliente, productos, método de pago y que todos tengan cantidad > 0
     if (!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod) return
 
-    // Validar que todos los precios de venta sean >= costo base
+    // Validar que todos los precios de venta sean >= precio mínimo
+    // Si tiene precio de venta, debe ser >= precio de venta
+    // Si no tiene precio de venta, debe ser >= precio de compra
     const invalidProducts: string[] = []
     validProducts.forEach(item => {
       const product = findProductById(item.productId)
-      const productCost = product?.cost || 0
-      if (item.unitPrice < productCost) {
-        invalidProducts.push(`${item.productName} (Costo: $${productCost.toLocaleString('es-CO')})`)
+      if (!product) return
+      
+      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
+      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      
+      if (item.unitPrice < minPrice) {
+        invalidProducts.push(`${item.productName} no puede ser vendido por menos de ${formatCurrency(minPrice)} (${priceType})`)
       }
     })
 
     if (invalidProducts.length > 0) {
-      showStockAlert(`El precio debe ser mayor.`, undefined)
+      showStockAlert(invalidProducts.join(' • '), undefined)
       return
     }
 
@@ -1046,16 +1096,24 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                                     Precio:
                                   </label>
                                   <input
-                                    type="number"
-                                    value={item.unitPrice || ''}
-                                    onChange={(e) => handleUpdatePrice(item.id, parseFloat(e.target.value) || 0)}
+                                    type="text"
+                                    inputMode="numeric"
+                                    value={formatNumber(item.unitPrice)}
+                                    onChange={(e) => {
+                                      const numericValue = parseNumber(e.target.value)
+                                      handleUpdatePrice(item.id, numericValue)
+                                    }}
                                     onBlur={() => handlePriceBlur(item.id)}
                                     className={`w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 px-2 ${
-                                      item.unitPrice && findProductById(item.productId)?.cost && item.unitPrice < (findProductById(item.productId)?.cost || 0)
+                                      (() => {
+                                        const product = findProductById(item.productId)
+                                        if (!product) return false
+                                        const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+                                        return item.unitPrice && item.unitPrice < minPrice
+                                      })()
                                         ? 'border-red-500 dark:border-red-500'
                                         : 'border-gray-300 dark:border-gray-500'
                                     }`}
-                                    min={findProductById(item.productId)?.cost || 0}
                                     step="100"
                                     placeholder="0"
                                   />

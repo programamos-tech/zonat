@@ -36,6 +36,18 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const { products, searchProducts } = useProducts()
   const { user } = useAuth()
   
+  // Función helper para identificar si un cliente es una tienda
+  const isStoreClient = (client: Client): boolean => {
+    if (!client || !client.name) return false
+    const nameLower = client.name.toLowerCase()
+    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
+    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
+    return storeKeywords.some(keyword => nameLower.includes(keyword))
+  }
+
+  // Filtrar clientes para excluir tiendas
+  const filteredClients = clients.filter(client => !isStoreClient(client))
+  
   const [formData, setFormData] = useState({
     clientId: '',
     dueDate: '',
@@ -75,10 +87,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
   useEffect(() => {
     if (formData.clientId) {
-      const client = clients.find(c => c.id === formData.clientId)
+      const client = filteredClients.find(c => c.id === formData.clientId) || clients.find(c => c.id === formData.clientId)
       setSelectedClient(client || null)
     }
-  }, [formData.clientId, clients])
+  }, [formData.clientId, clients, filteredClients])
 
   // Sincronizar selectedDate con formData.dueDate
   useEffect(() => {
@@ -234,6 +246,10 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   }
 
   const removeProduct = (productId: string) => {
+    // Si el producto que se está quitando tiene una alerta activa, ocultarla
+    if (stockAlert.show && stockAlert.productId === productId) {
+      setStockAlert({ show: false, message: '', productId: undefined })
+    }
     setSelectedProducts(prev => prev.filter(item => item.productId !== productId))
   }
 
@@ -344,17 +360,24 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   }
 
   const handlePriceBlur = (productId: string) => {
-    // Validar solo cuando el campo pierde el foco
+    // Validar precio al perder el foco y mostrar alerta si es inválido
     const item = selectedProducts.find(i => i.productId === productId)
     if (item) {
       const product = products.find(p => p.id === productId)
-      const productCost = product?.cost || 0
+      if (!product) return
       
-      // Si el precio es menor al costo, mostrar alerta y ajustar al costo mínimo
-      if (item.unitPrice < productCost) {
-        showStockAlert(`El precio de venta no puede ser menor al costo base ($${productCost.toLocaleString('es-CO')}). Se ajustó al costo mínimo.`, productId)
-        // Ajustar al costo mínimo
-        updatePrice(productId, productCost)
+      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
+      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      
+      // Si el precio es menor al mínimo, mostrar alerta
+      if (item.unitPrice < minPrice) {
+        showStockAlert(`${item.productName} no puede ser vendido por menos de $${minPrice.toLocaleString('es-CO')} (${priceType})`, productId)
+      } else {
+        // Si el precio es válido, ocultar la alerta para este producto
+        if (stockAlert.show && stockAlert.productId === productId) {
+          setStockAlert({ show: false, message: '', productId: undefined })
+        }
       }
     }
   }
@@ -377,18 +400,40 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     e.preventDefault()
     
     if (!formData.clientId) {
-      alert('❌ Por favor selecciona un cliente')
+      showStockAlert('❌ Por favor selecciona un cliente')
       return
     }
     
     // Solo validar fecha de vencimiento si NO es borrador
     if (!isDraft && !formData.dueDate) {
-      alert('❌ Por favor selecciona una fecha de vencimiento')
+      showStockAlert('❌ Por favor selecciona una fecha de vencimiento')
       return
     }
     
     if (selectedProducts.length === 0) {
-      alert('❌ Por favor agrega al menos un producto')
+      showStockAlert('❌ Por favor agrega al menos un producto')
+      return
+    }
+    
+    // Validar que todos los precios de venta sean >= precio mínimo
+    // Si tiene precio de venta, debe ser >= precio de venta
+    // Si no tiene precio de venta, debe ser >= precio de compra
+    const invalidProducts: string[] = []
+    selectedProducts.forEach(item => {
+      const product = products.find(p => p.id === item.productId)
+      if (!product) return
+      
+      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
+      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      
+      if (item.unitPrice < minPrice) {
+        invalidProducts.push(`${item.productName} no puede ser vendido por menos de $${minPrice.toLocaleString('es-CO')} (${priceType})`)
+      }
+    })
+
+    if (invalidProducts.length > 0) {
+      showStockAlert(invalidProducts.join(' • '))
       return
     }
     
@@ -396,7 +441,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
     
     try {
       // Obtener información del cliente
-      const client = clients.find(c => c.id === formData.clientId)
+      const client = filteredClients.find(c => c.id === formData.clientId) || clients.find(c => c.id === formData.clientId)
       if (!client) {
         alert('❌ Cliente no encontrado')
         return
@@ -491,8 +536,8 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700 relative z-[10000]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-orange-50 dark:bg-orange-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
@@ -841,7 +886,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                     className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   >
                     <option value="">Selecciona un cliente...</option>
-                    {clients.map((client) => (
+                    {filteredClients.map((client) => (
                       <option key={client.id} value={client.id}>
                         {client.name}{client.email ? ` - ${client.email}` : ''}
                       </option>

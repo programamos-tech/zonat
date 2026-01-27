@@ -113,6 +113,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         return Package
       case 'transfer':
       case 'stock_transfer':
+      case 'transfer_created':
+      case 'transfer_received':
         return ArrowRightLeft
       case 'client_create':
         return Plus
@@ -182,6 +184,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       case 'stock_adjustment':
       case 'transfer':
       case 'stock_transfer':
+      case 'transfer_created':
+      case 'transfer_received':
         return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
       case 'client_create':
       case 'client_edit':
@@ -321,6 +325,18 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       }
     }
     
+    // Manejar acciones específicas de transferencias
+    if (module === 'transfers') {
+      switch (action) {
+        case 'transfer_created':
+          return 'Transferencia Creada'
+        case 'transfer_received':
+          return 'Recepción de Transferencia'
+        default:
+          return action
+      }
+    }
+    
     // Manejar otras acciones
     switch (action) {
       case 'Usuario Creado':
@@ -346,6 +362,10 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     switch (type) {
       case 'transfer':
         return 'Transferencia de Stock'
+      case 'transfer_created':
+        return 'Transferencia Creada'
+      case 'transfer_received':
+        return 'Recepción de Transferencia'
       case 'sale':
       case 'sale_create':
         return 'Venta'
@@ -380,6 +400,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         return 'Categoría Eliminada'
       case 'roles':
         return 'Gestión de Usuarios'
+      case 'transfers':
+        return 'Gestión de Transferencias'
       case 'user_create':
         return 'Usuario Creado'
       case 'user_edit':
@@ -446,8 +468,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
   const TypeIcon = getTypeIcon(logType)
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative my-4 xl:my-0">
+    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6 overflow-y-auto">
+      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000] my-4 xl:my-0">
         {/* Header */}
         <div className="relative flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
@@ -1540,11 +1562,11 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   {log.action === 'stock_transfer' && log.details && (
                     <div>
                       <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Transferencia de stock:</span>
-                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-gray-700 p-4 rounded-lg">
+                      <div className="text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
-                            <ArrowRightLeft className="h-4 w-4" />
-                            <span>Transferencia de Stock</span>
+                          <div className="flex items-center space-x-2 font-medium text-gray-900 dark:text-white mb-3">
+                            <ArrowRightLeft className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                            <span className="text-gray-900 dark:text-white">Transferencia de Stock</span>
                           </div>
                           
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
@@ -1601,6 +1623,170 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                               </div>
                             </div>
                           </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {log.action === 'transfer_created' && log.details && (
+                    <div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Transferencia creada:</span>
+                      <div className="text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-900 dark:text-white mb-3">
+                            <ArrowRightLeft className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                            <span className="text-gray-900 dark:text-white">Transferencia Creada</span>
+                          </div>
+                          
+                          {log.details.transferNumber && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Número de Transferencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono font-medium">{log.details.transferNumber}</div>
+                            </div>
+                          )}
+                          
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Tiendas:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-orange-400 text-xs">Desde:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromStoreName || 'N/A'}</div>
+                              </div>
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-green-600 text-xs">Hacia:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.toStoreName || 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Resumen:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-gray-400 text-xs">Productos:</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{log.details.itemsCount || 0}</div>
+                              </div>
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-gray-400 text-xs">Total Unidades:</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{log.details.totalQuantity || 0}</div>
+                              </div>
+                              {log.details.totalAmount > 0 && (
+                                <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                                  <div className="text-green-600 text-xs">Total:</div>
+                                  <div className="text-gray-900 dark:text-white font-bold">${(log.details.totalAmount || 0).toLocaleString('es-CO')}</div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {log.details.products && Array.isArray(log.details.products) && log.details.products.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Productos:</span>
+                              <div className="space-y-2">
+                                {log.details.products.map((product: any, index: number) => (
+                                  <div key={index} className="bg-gray-200 dark:bg-gray-600 p-2 rounded text-xs">
+                                    <div className="font-medium text-gray-900 dark:text-white">{product.productName || 'N/A'}</div>
+                                    <div className="text-gray-600 dark:text-gray-300">
+                                      {product.quantity || 0} unidades
+                                      {product.productReference && ` • Ref: ${product.productReference}`}
+                                      {product.unitPrice > 0 && ` • $${product.unitPrice.toLocaleString('es-CO')} c/u`}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {log.details.paymentMethod && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Método de Pago:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">
+                                {log.details.paymentMethod === 'cash' ? 'Efectivo' :
+                                 log.details.paymentMethod === 'transfer' ? 'Transferencia' :
+                                 log.details.paymentMethod === 'mixed' ? 'Mixto' :
+                                 log.details.paymentMethod}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {log.details.transferDescription && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Descripción:</span>
+                              <div className="text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 p-2 rounded">{log.details.transferDescription}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {log.action === 'transfer_received' && log.details && (
+                    <div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Recepción de transferencia:</span>
+                      <div className="text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-900 dark:text-white mb-3">
+                            <CheckCircle className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
+                            <span className="text-gray-900 dark:text-white">Recepción de Transferencia</span>
+                          </div>
+                          
+                          {log.details.transferNumber && (
+                            <div className="bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg border border-blue-200 dark:border-blue-800">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Número de Transferencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono font-medium">{log.details.transferNumber}</div>
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                            <div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Producto:</span>
+                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Detalles de la Recepción:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-orange-400 text-xs">Desde Tienda:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromStoreName || 'N/A'}</div>
+                              </div>
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-green-600 text-xs">Hacia Tienda:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.toStoreName || 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Cantidades:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                                <div className="text-green-600 text-xs">Recibidas:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.quantityReceived || 0} unidades</div>
+                              </div>
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-gray-400 text-xs">Esperadas:</div>
+                                <div className="text-gray-900 dark:text-white font-medium">{log.details.quantityExpected || 0} unidades</div>
+                              </div>
+                            </div>
+                            {log.details.isPartial && (
+                              <div className="mt-2 bg-yellow-50 dark:bg-yellow-900/20 p-2 rounded border border-yellow-200 dark:border-yellow-800">
+                                <span className="text-yellow-600 dark:text-yellow-400 text-xs">⚠️ Recepción parcial</span>
+                              </div>
+                            )}
+                          </div>
+                          
+                          {log.details.note && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Nota:</span>
+                              <div className="text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 p-2 rounded">{log.details.note}</div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -15,25 +15,23 @@ export function usePermissions() {
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
-    // Verificar permisos basados en rol si no hay permisos explícitos
-    const normalizedRole = (currentUser.role || '').toLowerCase().trim()
-    
-    // Vendedores tienen permisos específicos por defecto
-    if (normalizedRole === 'vendedor' || normalizedRole === 'vendedora') {
-      if (module === 'sales' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'payments' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'clients' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'products' && action === 'view') return true
-    }
-    
-    // Admin tiene permisos específicos
-    if (normalizedRole === 'admin' || normalizedRole === 'administrador') {
-      if (module === 'sales' && (action === 'view' || action === 'create' || action === 'edit')) return true
-      if (module === 'payments' && (action === 'view' || action === 'create' || action === 'edit')) return true
+    // Restricción especial para vendedores en productos: solo pueden ver, no editar/eliminar/crear
+    const userRole = currentUser.role?.toLowerCase() || ''
+    if (userRole === 'vendedor') {
+      if (module === 'products') {
+        return action === 'view' // Solo permitir ver productos
+      }
+      if (module === 'transfers') {
+        return false // Vendedores no pueden transferir
+      }
     }
     
     // Verificar que el usuario tenga permisos explícitos
-    if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return false
+    if (!currentUser.permissions || !Array.isArray(currentUser.permissions) || currentUser.permissions.length === 0) {
+      // Si no hay permisos explícitos, NO dar permisos por defecto
+      // Esto asegura que los permisos deben ser explícitamente configurados
+      return false
+    }
     
     // Buscar el módulo en los permisos del usuario
     const modulePermission = currentUser.permissions.find(p => p.module === module)
@@ -71,8 +69,8 @@ export function usePermissions() {
     if (!currentUser) return []
     
     // Super admin tiene acceso a todos los módulos
-    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
-      return ['dashboard', 'products', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs']
+    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin' || currentUser.role === 'Super Administrador') {
+      return ['dashboard', 'products', 'transfers', 'receptions', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs', 'stores']
     }
     
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []

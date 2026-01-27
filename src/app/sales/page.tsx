@@ -8,6 +8,9 @@ import SaleDetailModal from '@/components/sales/sale-detail-modal'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { useSales } from '@/contexts/sales-context'
 import { Sale } from '@/types'
+import { StoresService } from '@/lib/stores-service'
+import { getCurrentUserStoreId } from '@/lib/store-helper'
+import { useAuth } from '@/contexts/auth-context'
 
 export default function SalesPage() {
   const router = useRouter()
@@ -124,8 +127,33 @@ export default function SalesPage() {
 
   const handlePrint = async (sale: Sale) => {
     try {
-      // Los datos de la empresa están hardcodeados en el HTML generado
-      // No necesitamos cargar la configuración de la base de datos
+      // Obtener información de la tienda actual
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
+      let currentStore
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Obtener tienda principal
+        currentStore = await StoresService.getMainStore()
+      } else {
+        // Obtener micro tienda
+        currentStore = await StoresService.getStoreById(storeId)
+      }
+
+      // Si no se encuentra la tienda, usar valores por defecto
+      if (!currentStore) {
+        currentStore = {
+          id: MAIN_STORE_ID,
+          name: 'ZONA T',
+          nit: '1035770226-9',
+          logo: '/zonat-logo.png',
+          address: 'Carrera 20#22-02, Sincelejo, Colombia.',
+          city: 'Sincelejo',
+          isActive: true,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        }
+      }
 
       // Crear datos del cliente (usar datos de la venta o valores por defecto)
       const client = {
@@ -388,12 +416,11 @@ export default function SalesPage() {
           <div class="ticket">
             <!-- Header -->
             <div class="header">
-              <img src="/zonat-logo.png" class="logo" alt="ZONA T" />
-              <div class="company-name">ZONA T</div>
+              <img src="${currentStore.logo || '/zonat-logo.png'}" class="logo" alt="${currentStore.name}" />
+              <div class="company-name">${currentStore.name}</div>
               <div class="company-info">
-                <strong>NIT 1035770226 - 9</strong><br>
-                <strong>Carrera 20#22-02, Sincelejo, Colombia.</strong><br>
-                <strong>3135206736</strong>
+                ${currentStore.nit ? `<strong>NIT ${currentStore.nit}</strong><br>` : ''}
+                ${currentStore.address ? `<strong>${currentStore.address}${currentStore.city ? `, ${currentStore.city}` : ''}</strong><br>` : ''}
               </div>
             </div>
 

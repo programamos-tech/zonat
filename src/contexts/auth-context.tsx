@@ -13,6 +13,7 @@ interface AuthContextType {
   getAllUsers: () => Promise<User[]>
   updateUser: (id: string, updates: Partial<User>) => Promise<boolean>
   deleteUser: (id: string) => Promise<boolean>
+  switchStore: (storeId: string | undefined) => void
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -28,12 +29,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const savedUser = localStorage.getItem('zonat_user')
         if (savedUser) {
           const userData = JSON.parse(savedUser)
+          // Preservar el storeId del localStorage (puede haber sido cambiado por switchStore)
+          const savedStoreId = userData.storeId
+          
           // Obtener el usuario actualizado (que incluye sincronización de permisos del rol)
           const currentUser = await AuthService.getCurrentUser()
           if (currentUser) {
+            // Preservar el storeId si estaba guardado en localStorage (incluso si es null para tienda principal)
+            // Esto permite mantener la tienda seleccionada al recargar
+            if (savedStoreId !== undefined) {
+              currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
+            }
+            
             setUser(currentUser)
-            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados)
-            localStorage.setItem('zonat_user', JSON.stringify(currentUser))
+            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados y storeId preservado)
+            // Convertir undefined a null para que se guarde correctamente en JSON
+            const userToSave = {
+              ...currentUser,
+              storeId: currentUser.storeId === undefined ? null : currentUser.storeId
+            }
+            localStorage.setItem('zonat_user', JSON.stringify(userToSave))
           } else {
             localStorage.removeItem('zonat_user')
           }
@@ -133,6 +148,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const switchStore = (storeId: string | undefined) => {
+    if (!user) return
+    
+    const updatedUser = {
+      ...user,
+      storeId: storeId
+    }
+    
+    setUser(updatedUser)
+    if (typeof window !== 'undefined') {
+      // Guardar con storeId explícito (incluso si es undefined) para que se preserve
+      const userToSave = {
+        ...updatedUser,
+        storeId: storeId === undefined ? null : storeId // Convertir undefined a null para que se guarde en JSON
+      }
+      localStorage.setItem('zonat_user', JSON.stringify(userToSave))
+    }
+  }
+
   return (
     <AuthContext.Provider value={{ 
       user, 
@@ -142,7 +176,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       createUser, 
       getAllUsers, 
       updateUser, 
-      deleteUser 
+      deleteUser,
+      switchStore
     }}>
       {children}
     </AuthContext.Provider>

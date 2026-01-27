@@ -1,4 +1,5 @@
 import { supabase, supabaseAdmin } from './supabase'
+import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export interface LogEntry {
   id: string
@@ -8,6 +9,7 @@ export interface LogEntry {
   details: any
   ip_address?: string
   user_agent?: string
+  store_id?: string | null
   created_at: string
   user_name?: string
 }
@@ -17,11 +19,27 @@ export class LogsService {
   static async getLogsByPage(page: number = 1, limit: number = 20): Promise<{ logs: LogEntry[], total: number, hasMore: boolean }> {
     try {
       const offset = (page - 1) * limit
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       
       // Obtener total de logs (usar supabaseAdmin para evitar problemas de RLS)
-      const { count: totalCount, error: countError } = await supabaseAdmin
+      let countQuery = supabaseAdmin
         .from('logs')
         .select('*', { count: 'exact', head: true })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        countQuery = countQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
+        countQuery = countQuery.eq('store_id', storeId)
+      }
+
+      const { count: totalCount, error: countError } = await countQuery
 
       if (countError) {
         console.error('[LogsService] Error counting logs:', countError)
@@ -31,7 +49,7 @@ export class LogsService {
       // Obtener logs de la página (usar supabaseAdmin para evitar problemas de RLS)
       // Intentar primero con el JOIN, si falla se hará consulta separada
       // Usar el nombre correcto de la foreign key: fk_logs_user_id
-      const { data: logs, error } = await supabaseAdmin
+      let logsQuery = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -40,6 +58,19 @@ export class LogsService {
             name
           )
         `)
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        logsQuery = logsQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
+        logsQuery = logsQuery.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await logsQuery
         .order('created_at', { ascending: false })
         .range(offset, offset + limit - 1)
 
@@ -59,9 +90,22 @@ export class LogsService {
           console.error('[LogsService] Error fetching logs:', error)
         }
         // Si hay error con el join, intentar sin el join y luego obtener usuarios por separado
-        const { data: logsWithoutJoin, error: errorWithoutJoin } = await supabaseAdmin
+        let logsWithoutJoinQuery = supabaseAdmin
           .from('logs')
           .select('*')
+
+        // Filtrar por store_id:
+        // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+          logsWithoutJoinQuery = logsWithoutJoinQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        } else {
+          // Microtienda: solo logs de esa microtienda
+          logsWithoutJoinQuery = logsWithoutJoinQuery.eq('store_id', storeId)
+        }
+
+        const { data: logsWithoutJoin, error: errorWithoutJoin } = await logsWithoutJoinQuery
           .order('created_at', { ascending: false })
           .range(offset, offset + limit - 1)
         
@@ -204,7 +248,10 @@ export class LogsService {
   // Obtener todos los logs (método legacy para compatibilidad)
   static async getAllLogs(): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -212,7 +259,19 @@ export class LogsService {
             name
           )
         `)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error fetching all logs:', error)
@@ -254,7 +313,10 @@ export class LogsService {
   // Obtener logs por módulo
   static async getLogsByModule(module: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -263,7 +325,19 @@ export class LogsService {
           )
         `)
         .eq('module', module)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error fetching logs by module:', error)
@@ -303,7 +377,10 @@ export class LogsService {
   // Obtener logs por usuario
   static async getLogsByUser(userId: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      let query = supabaseAdmin
         .from('logs')
         .select(`
           *,
@@ -312,7 +389,19 @@ export class LogsService {
           )
         `)
         .eq('user_id', userId)
-        .order('created_at', { ascending: false })
+
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error fetching logs by user:', error)
@@ -352,16 +441,27 @@ export class LogsService {
   // Buscar logs por término
   static async searchLogs(searchTerm: string): Promise<LogEntry[]> {
     try {
-      const { data: logs, error } = await supabaseAdmin
-        .from('logs')
-        .select(`
-          *,
-          users!fk_logs_user_id (
-            name
-          )
-        `)
-        .or(`action.ilike.%${searchTerm}%,module.ilike.%${searchTerm}%,details::text.ilike.%${searchTerm}%`)
-        .order('created_at', { ascending: false })
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
+      // Obtener todos los logs filtrados por store_id primero
+      const allLogs = await this.getLogsByPage(1, 10000) // Obtener muchos logs para buscar
+      
+      // Filtrar por término de búsqueda en memoria
+      const searchLower = searchTerm.toLowerCase()
+      const filteredLogs = allLogs.logs.filter(log => {
+        return (
+          log.action?.toLowerCase().includes(searchLower) ||
+          log.module?.toLowerCase().includes(searchLower) ||
+          log.user_name?.toLowerCase().includes(searchLower) ||
+          JSON.stringify(log.details || {}).toLowerCase().includes(searchLower)
+        )
+      })
+      
+      return filteredLogs
+
+      const { data: logs, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
         console.error('[LogsService] Error searching logs:', error)
