@@ -9,7 +9,7 @@ import { Product } from '@/types'
 interface StockAdjustmentModalProps {
   isOpen: boolean
   onClose: () => void
-  onAdjust: (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => void
+  onAdjust: (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => Promise<void>
   product?: Product | null
 }
 
@@ -65,7 +65,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
     }
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!product) return
@@ -87,8 +87,14 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
       return
     }
 
-    onAdjust(product.id, formData.location, formData.newQuantity, formData.reason)
-    onClose()
+    // Llamar a onAdjust pero no cerrar el modal automáticamente
+    // El modal se cerrará desde el componente padre si la operación es exitosa
+    try {
+      await onAdjust(product.id, formData.location, formData.newQuantity, formData.reason)
+    } catch (error) {
+      console.error('Error in stock adjustment:', error)
+      // No cerrar el modal si hay error, dejar que el usuario vea el mensaje de error
+    }
   }
 
   const getCurrentStock = () => {

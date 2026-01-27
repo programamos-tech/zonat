@@ -9,6 +9,7 @@ export interface LogEntry {
   details: any
   ip_address?: string
   user_agent?: string
+  store_id?: string | null
   created_at: string
   user_name?: string
 }
@@ -20,14 +21,21 @@ export class LogsService {
       const offset = (page - 1) * limit
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       
       // Obtener total de logs (usar supabaseAdmin para evitar problemas de RLS)
       let countQuery = supabaseAdmin
         .from('logs')
         .select('*', { count: 'exact', head: true })
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        countQuery = countQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
         countQuery = countQuery.eq('store_id', storeId)
       }
 
@@ -51,8 +59,14 @@ export class LogsService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        logsQuery = logsQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
         logsQuery = logsQuery.eq('store_id', storeId)
       }
 
@@ -80,8 +94,14 @@ export class LogsService {
           .from('logs')
           .select('*')
 
-        // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-        if (storeId && !canAccessAllStores(user)) {
+        // Filtrar por store_id:
+        // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+          logsWithoutJoinQuery = logsWithoutJoinQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        } else {
+          // Microtienda: solo logs de esa microtienda
           logsWithoutJoinQuery = logsWithoutJoinQuery.eq('store_id', storeId)
         }
 
@@ -230,6 +250,7 @@ export class LogsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       let query = supabaseAdmin
         .from('logs')
         .select(`
@@ -239,8 +260,14 @@ export class LogsService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -288,6 +315,7 @@ export class LogsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       let query = supabaseAdmin
         .from('logs')
         .select(`
@@ -298,8 +326,14 @@ export class LogsService {
         `)
         .eq('module', module)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -345,6 +379,7 @@ export class LogsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       let query = supabaseAdmin
         .from('logs')
         .select(`
@@ -355,8 +390,14 @@ export class LogsService {
         `)
         .eq('user_id', userId)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
+      // Filtrar por store_id:
+      // - Si storeId es null o MAIN_STORE_ID, solo mostrar logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+      // - Si storeId es una microtienda, solo mostrar logs de esa microtienda
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        // Tienda principal: solo logs de la tienda principal (store_id = MAIN_STORE_ID o null)
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        // Microtienda: solo logs de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
@@ -402,20 +443,23 @@ export class LogsService {
     try {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
-      let query = supabaseAdmin
-        .from('logs')
-        .select(`
-          *,
-          users!fk_logs_user_id (
-            name
-          )
-        `)
-        .or(`action.ilike.%${searchTerm}%,module.ilike.%${searchTerm}%,details::text.ilike.%${searchTerm}%`)
-
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
-        query = query.eq('store_id', storeId)
-      }
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      
+      // Obtener todos los logs filtrados por store_id primero
+      const allLogs = await this.getLogsByPage(1, 10000) // Obtener muchos logs para buscar
+      
+      // Filtrar por término de búsqueda en memoria
+      const searchLower = searchTerm.toLowerCase()
+      const filteredLogs = allLogs.logs.filter(log => {
+        return (
+          log.action?.toLowerCase().includes(searchLower) ||
+          log.module?.toLowerCase().includes(searchLower) ||
+          log.user_name?.toLowerCase().includes(searchLower) ||
+          JSON.stringify(log.details || {}).toLowerCase().includes(searchLower)
+        )
+      })
+      
+      return filteredLogs
 
       const { data: logs, error } = await query.order('created_at', { ascending: false })
 

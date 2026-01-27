@@ -1145,20 +1145,86 @@ export class ProductsService {
       const product = await this.getProductById(productId)
       if (!product) return false
 
-      const field = location === 'warehouse' ? 'stock_warehouse' : 'stock_store'
-      const currentQuantity = location === 'warehouse' ? product.stock.warehouse : product.stock.store
-      const difference = newQuantity - currentQuantity
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
-      const { error } = await supabase
-        .from('products')
-        .update({
-          [field]: newQuantity
+      let currentQuantity: number
+      let difference: number
+
+      if (isMainStore) {
+        // Tienda principal: actualizar en tabla products
+        const field = location === 'warehouse' ? 'stock_warehouse' : 'stock_store'
+        currentQuantity = location === 'warehouse' ? product.stock.warehouse : product.stock.store
+        difference = newQuantity - currentQuantity
+
+        const { error } = await supabase
+          .from('products')
+          .update({
+            [field]: newQuantity
+          })
+          .eq('id', productId)
+
+        if (error) {
+          console.error('[PRODUCTS SERVICE] Error adjusting stock for main store:', error)
+          return false
+        }
+      } else {
+        // Microtienda: actualizar en tabla store_stock
+        // En microtiendas solo hay stock "local" (store), no warehouse
+        if (location === 'warehouse') {
+          console.error('[PRODUCTS SERVICE] Cannot adjust warehouse stock in micro store')
+          return false
+        }
+
+        console.log('[PRODUCTS SERVICE] Adjusting stock for micro store:', {
+          storeId,
+          productId,
+          newQuantity,
+          location
         })
-        .eq('id', productId)
 
-      if (error) {
-      // Error silencioso en producción
-        return false
+        // Obtener stock actual de la microtienda
+        const { data: storeStock, error: fetchError } = await supabaseAdmin
+          .from('store_stock')
+          .select('quantity')
+          .eq('store_id', storeId)
+          .eq('product_id', productId)
+          .maybeSingle()
+
+        if (fetchError) {
+          console.error('[PRODUCTS SERVICE] Error fetching stock for micro store:', fetchError)
+          return false
+        }
+
+        currentQuantity = storeStock?.quantity || 0
+        difference = newQuantity - currentQuantity
+
+        console.log('[PRODUCTS SERVICE] Stock calculation for micro store:', {
+          currentQuantity,
+          newQuantity,
+          difference
+        })
+
+        // Upsert en store_stock
+        const { data: updatedStock, error: updateError } = await supabaseAdmin
+          .from('store_stock')
+          .upsert({
+            store_id: storeId,
+            product_id: productId,
+            quantity: newQuantity,
+            location: 'local'
+          }, {
+            onConflict: 'store_id,product_id'
+          })
+          .select()
+
+        if (updateError) {
+          console.error('[PRODUCTS SERVICE] Error adjusting stock for micro store:', updateError)
+          return false
+        }
+
+        console.log('[PRODUCTS SERVICE] Stock updated successfully for micro store:', updatedStock)
       }
 
       // Registrar la actividad
@@ -1181,14 +1247,15 @@ export class ProductsService {
             newQuantity: newQuantity,
             difference: difference,
             reason: reason,
-            actionType: actionType
+            actionType: actionType,
+            storeId: storeId || MAIN_STORE_ID
           }
         )
       }
 
       return true
     } catch (error) {
-      // Error silencioso en producción
+      console.error('[PRODUCTS SERVICE] Exception in adjustStock:', error)
       return false
     }
   }

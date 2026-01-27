@@ -104,6 +104,7 @@ export interface Database {
           details: any
           ip_address: string | null
           user_agent: string | null
+          store_id: string | null
           created_at: string
         }
         Insert: {
@@ -114,6 +115,7 @@ export interface Database {
           details?: any
           ip_address?: string | null
           user_agent?: string | null
+          store_id?: string | null
           created_at?: string
         }
         Update: {
@@ -124,6 +126,7 @@ export interface Database {
           details?: any
           ip_address?: string | null
           user_agent?: string | null
+          store_id?: string | null
           created_at?: string
         }
       }

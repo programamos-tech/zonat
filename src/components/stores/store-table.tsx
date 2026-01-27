@@ -113,11 +113,24 @@ function StoreCard({
           </div>
 
           {/* Botones de Acción - Visibles */}
-          <div className="w-full flex items-center justify-center gap-3 pt-2">
+          <div 
+            className="w-full flex items-center justify-center gap-3 pt-2"
+            onClick={(e) => {
+              e.stopPropagation()
+              e.preventDefault()
+            }}
+            onMouseDown={(e) => {
+              e.stopPropagation()
+            }}
+          >
             <Button
               onClick={(e) => {
                 e.stopPropagation()
+                e.preventDefault()
                 onEdit()
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation()
               }}
               variant="ghost"
               size="sm"
@@ -127,12 +140,27 @@ function StoreCard({
               <Edit className="h-4 w-4" />
             </Button>
             <div 
-              onClick={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation()
+                e.preventDefault()
+              }}
+              onMouseDown={(e) => {
+                e.stopPropagation()
+              }}
               className="flex items-center gap-2"
             >
               <Switch
                 checked={store.isActive}
-                onCheckedChange={() => onToggleStatus()}
+                onCheckedChange={(checked) => {
+                  onToggleStatus()
+                }}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  e.preventDefault()
+                }}
+                onMouseDown={(e) => {
+                  e.stopPropagation()
+                }}
                 title={store.isActive ? 'Desactivar' : 'Activar'}
               />
             </div>
@@ -170,10 +198,25 @@ export function StoreTable({
     if (!isSuperAdmin || !switchStore) return
     
     const target = e.target as HTMLElement
-    // Si se hizo click en un botón o en sus hijos, no cambiar de tienda
-    if (target.closest('button') || target.closest('[role="button"]')) {
+    const currentTarget = e.currentTarget as HTMLElement
+    
+    // Si se hizo click en un botón, switch, o en sus hijos, no cambiar de tienda
+    if (
+      target.closest('button') || 
+      target.closest('[role="button"]') ||
+      target.closest('[role="switch"]') ||
+      target.closest('label') ||
+      target.tagName === 'BUTTON' ||
+      target.tagName === 'LABEL' ||
+      // Verificar si el click fue en el área de botones
+      (currentTarget.querySelector('.w-full.flex.items-center.justify-center.gap-3')?.contains(target))
+    ) {
       return
     }
+
+    // Prevenir propagación adicional
+    e.stopPropagation()
+    e.preventDefault()
 
     // Cambiar de tienda
     const newStoreId = store.id === MAIN_STORE_ID ? undefined : store.id
@@ -189,8 +232,10 @@ export function StoreTable({
       .replace(/^-|-$/g, '')
       .substring(0, 30)
     
-    // Redirigir al dashboard con el storeId en la URL
-    router.push(`/dashboard?store=${storeSlug}`)
+    // Usar setTimeout para asegurar que el estado se actualice antes de navegar
+    setTimeout(() => {
+      router.push(`/dashboard?store=${storeSlug}`)
+    }, 0)
   }
 
   return (

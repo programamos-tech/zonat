@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase'
 import { User } from '@/types'
+import { getCurrentUserStoreId } from './store-helper'
 
 export class AuthService {
   // Login de usuario
@@ -396,14 +397,25 @@ export class AuthService {
     details: any
   ): Promise<void> {
     try {
-      // Obtener store_id del usuario actual
+      // Obtener store_id del usuario actual desde localStorage (donde se guarda cuando se cambia de tienda)
+      // Usar getCurrentUserStoreId() en lugar de getCurrentUser() para obtener el storeId actualizado
       let storeId: string | null = null
       try {
-        const currentUser = await this.getCurrentUser()
-        storeId = currentUser?.storeId || null
+        storeId = getCurrentUserStoreId()
       } catch (error) {
+        console.error('[AUTH SERVICE] Error getting storeId for log:', error)
         // Error silencioso - continuar sin store_id
       }
+
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const finalStoreId = storeId || MAIN_STORE_ID
+
+      console.log('[AUTH SERVICE] Logging activity:', {
+        userId,
+        action,
+        module,
+        storeId: finalStoreId
+      })
 
       const { data, error } = await supabaseAdmin
         .from('logs')
@@ -412,7 +424,7 @@ export class AuthService {
           action,
           module,
           details,
-          store_id: storeId || '00000000-0000-0000-0000-000000000001', // Tienda principal por defecto
+          store_id: finalStoreId,
           ip_address: null, // Se puede obtener del request
           user_agent: null, // Se puede obtener del request
           created_at: new Date().toISOString()
@@ -420,10 +432,12 @@ export class AuthService {
         .select()
         
       if (error) {
-      // Error silencioso en producción
+        console.error('[AUTH SERVICE] Error inserting log:', error)
+      } else {
+        console.log('[AUTH SERVICE] Log inserted successfully:', data?.[0]?.id)
       }
     } catch (error) {
-      // Error silencioso en producción
+      console.error('[AUTH SERVICE] Exception in logActivity:', error)
     }
   }
 

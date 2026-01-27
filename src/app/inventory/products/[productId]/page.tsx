@@ -172,16 +172,38 @@ export default function ProductDetailPage() {
 
   const handleAdjustStock = async (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => {
     try {
-      const success = await ProductsService.adjustStock(productId, location, newQuantity, reason)
+      console.log('[PRODUCT DETAIL] Starting stock adjustment:', {
+        productId,
+        location,
+        newQuantity,
+        reason,
+        userId: user?.id
+      })
+      
+      const success = await ProductsService.adjustStock(productId, location, newQuantity, reason, user?.id)
+      
+      console.log('[PRODUCT DETAIL] Stock adjustment result:', success)
+      
       if (success) {
         toast.success('Stock ajustado exitosamente')
         setIsAdjustmentModalOpen(false)
-        await loadProduct()
+        // Esperar un momento antes de recargar para asegurar que la actualización se complete
+        setTimeout(async () => {
+          try {
+            await loadProduct()
+          } catch (loadError) {
+            console.error('[PRODUCT DETAIL] Error reloading product after adjustment:', loadError)
+            toast.error('Stock actualizado pero hubo un error al recargar. Por favor, recarga la página.')
+          }
+        }, 500)
       } else {
-        toast.error('Error ajustando stock')
+        toast.error('Error ajustando stock. Por favor, verifica los datos e intenta nuevamente.')
+        // No cerrar el modal si hay error para que el usuario pueda intentar de nuevo
       }
     } catch (error) {
-      toast.error('Error ajustando stock')
+      console.error('[PRODUCT DETAIL] Exception adjusting stock:', error)
+      toast.error('Error ajustando stock. Por favor, intenta nuevamente.')
+      // No cerrar el modal si hay error
     }
   }
 
