@@ -18,8 +18,20 @@ CREATE INDEX IF NOT EXISTS "idx_transfer_items_product" ON "public"."transfer_it
 
 -- Agregar campos adicionales a stock_transfers si no existen
 ALTER TABLE "public"."stock_transfers" 
-ADD COLUMN IF NOT EXISTS "transfer_number" VARCHAR(50) UNIQUE,
+ADD COLUMN IF NOT EXISTS "transfer_number" VARCHAR(50),
 ADD COLUMN IF NOT EXISTS "description" TEXT;
+
+-- Agregar constraint UNIQUE a transfer_number si no existe
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint 
+        WHERE conname = 'stock_transfers_transfer_number_key'
+    ) THEN
+        ALTER TABLE "public"."stock_transfers" 
+        ADD CONSTRAINT "stock_transfers_transfer_number_key" UNIQUE ("transfer_number");
+    END IF;
+END $$;
 
 -- Crear función para generar número de transferencia único
 CREATE OR REPLACE FUNCTION generate_transfer_number()

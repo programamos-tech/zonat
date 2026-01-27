@@ -104,16 +104,19 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- Triggers para actualizar updated_at
+DROP TRIGGER IF EXISTS update_stores_updated_at ON "public"."stores";
 CREATE TRIGGER update_stores_updated_at
     BEFORE UPDATE ON "public"."stores"
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_stock_transfers_updated_at ON "public"."stock_transfers";
 CREATE TRIGGER update_stock_transfers_updated_at
     BEFORE UPDATE ON "public"."stock_transfers"
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_store_stock_updated_at ON "public"."store_stock";
 CREATE TRIGGER update_store_stock_updated_at
     BEFORE UPDATE ON "public"."store_stock"
     FOR EACH ROW

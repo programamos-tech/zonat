@@ -4,6 +4,7 @@ import { SalesService } from './sales-service'
 import { StoresService } from './stores-service'
 import { ProductsService } from './products-service'
 import { AuthService } from './auth-service'
+import { getCurrentUserStoreId } from './store-helper'
 
 export class StoreStockTransferService {
   // Crear transferencia con múltiples productos
@@ -479,34 +480,6 @@ export class StoreStockTransferService {
                     } else {
                       console.log('[TRANSFER INVOICE] sale_payments created successfully:', salePaymentsData)
                     }
-                    
-                    // También crear registros en payments (para compatibilidad)
-                    const { error: paymentsError } = await supabaseAdmin
-                      .from('payments')
-                      .insert([
-                        {
-                          sale_id: sale.id,
-                          amount: paymentInfo.cashAmount,
-                          payment_method: 'cash',
-                          payment_date: new Date().toISOString(),
-                          status: 'completed',
-                          notes: `Factura generada automáticamente por transferencia a ${toStore.name} - Parte en efectivo`
-                        },
-                        {
-                          sale_id: sale.id,
-                          amount: paymentInfo.transferAmount,
-                          payment_method: 'transfer',
-                          payment_date: new Date().toISOString(),
-                          status: 'completed',
-                          notes: `Factura generada automáticamente por transferencia a ${toStore.name} - Parte por transferencia`
-                        }
-                      ])
-                    
-                    if (paymentsError) {
-                      console.error('[TRANSFER INVOICE] Error creating payments:', paymentsError)
-                    } else {
-                      console.log('[TRANSFER INVOICE] payments created successfully')
-                    }
                   } else {
                     // Pago único
                     const method = paymentInfo?.method || 'transfer'
@@ -531,24 +504,6 @@ export class StoreStockTransferService {
                       // No fallar la transferencia si hay error, pero loguear
                     } else {
                       console.log('[TRANSFER INVOICE] sale_payments created successfully:', salePaymentsData)
-                    }
-                    
-                    // También crear registro en payments (para compatibilidad)
-                    const { error: paymentsError } = await supabaseAdmin
-                      .from('payments')
-                      .insert({
-                        sale_id: sale.id,
-                        amount: subtotal,
-                        payment_method: method,
-                        payment_date: new Date().toISOString(),
-                        status: 'completed',
-                        notes: `Factura generada automáticamente por transferencia a ${toStore.name}`
-                      })
-                    
-                    if (paymentsError) {
-                      console.error('[TRANSFER INVOICE] Error creating payment:', paymentsError)
-                    } else {
-                      console.log('[TRANSFER INVOICE] payment created successfully')
                     }
                   }
 
@@ -576,6 +531,57 @@ export class StoreStockTransferService {
           console.error('[TRANSFER INVOICE] Error creating invoice:', invoiceError)
           console.error('[TRANSFER INVOICE] Error stack:', invoiceError instanceof Error ? invoiceError.stack : 'No stack trace')
           console.error('[TRANSFER INVOICE] Error details:', JSON.stringify(invoiceError, null, 2))
+        }
+      }
+
+      // Registrar log de transferencia generada
+      if (createdBy) {
+        try {
+          // Obtener información de las tiendas
+          const fromStore = await StoresService.getStoreById(fromStoreId)
+          const toStore = await StoresService.getStoreById(toStoreId)
+          
+          // Obtener número de transferencia si existe
+          const transferWithNumber = await this.getTransferById(transfer.id)
+          
+          // Crear descripción con todos los productos
+          const productsList = items.map(item => 
+            `${item.quantity} unidades de "${item.productName}"${item.productReference ? ` (Ref: ${item.productReference})` : ''}`
+          ).join(', ')
+          
+          const totalQuantity = items.reduce((sum, item) => sum + item.quantity, 0)
+          const totalAmount = items.reduce((sum, item) => sum + ((item.unitPrice || 0) * item.quantity), 0)
+          
+          await AuthService.logActivity(
+            createdBy,
+            'transfer_created',
+            'transfers',
+            {
+              description: `Se creó una transferencia de ${totalQuantity} unidades (${items.length} producto${items.length > 1 ? 's' : ''}) desde "${fromStore?.name || 'Tienda origen'}" hacia "${toStore?.name || 'Tienda destino'}"`,
+              transferId: transfer.id,
+              transferNumber: transferWithNumber?.transferNumber,
+              fromStoreId: fromStoreId,
+              fromStoreName: fromStore?.name,
+              toStoreId: toStoreId,
+              toStoreName: toStore?.name,
+              itemsCount: items.length,
+              totalQuantity: totalQuantity,
+              totalAmount: totalAmount,
+              products: items.map(item => ({
+                productId: item.productId,
+                productName: item.productName,
+                productReference: item.productReference,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice || 0,
+                fromLocation: item.fromLocation
+              })),
+              paymentMethod: paymentInfo?.method,
+              transferDescription: description || null
+            }
+          )
+        } catch (logError) {
+          console.error('[STORE STOCK TRANSFER] Error logging transfer creation:', logError)
+          // No fallar la transferencia si hay error en el log
         }
       }
 
@@ -1267,6 +1273,32 @@ export class StoreStockTransferService {
                 console.error('[STORE STOCK TRANSFER] Failed to update stock for product:', originalItem.productId)
               } else {
                 console.log('[STORE STOCK TRANSFER] Stock updated successfully')
+                
+                // Registrar log de recepción
+                if (receivedBy) {
+                  const storeId = getCurrentUserStoreId()
+                  await AuthService.logActivity(
+                    receivedBy,
+                    'transfer_received',
+                    'transfers',
+                    {
+                      description: `Se recibieron ${receivedItem.quantityReceived} unidades del producto "${originalItem.productName}" (Ref: ${originalItem.productReference || 'N/A'}) en la transferencia ${transfer.transferNumber || transferId}`,
+                      transferId: transferId,
+                      transferNumber: transfer.transferNumber,
+                      productId: originalItem.productId,
+                      productName: originalItem.productName,
+                      productReference: originalItem.productReference,
+                      quantityReceived: receivedItem.quantityReceived,
+                      quantityExpected: originalItem.quantity,
+                      fromStoreId: transfer.fromStoreId,
+                      fromStoreName: transfer.fromStoreName,
+                      toStoreId: transfer.toStoreId,
+                      toStoreName: transfer.toStoreName,
+                      isPartial: receivedItem.quantityReceived < originalItem.quantity,
+                      note: receivedItem.note || null
+                    }
+                  )
+                }
               }
             }
           }
@@ -1285,6 +1317,30 @@ export class StoreStockTransferService {
           const stockUpdated = await this.updateStoreStock(transfer.toStoreId, transfer.productId, quantityToReceive)
           if (!stockUpdated) {
             console.error('[STORE STOCK TRANSFER] Failed to update stock for legacy transfer')
+          } else {
+            // Registrar log de recepción para transferencia legacy
+            if (receivedBy && quantityToReceive > 0) {
+              const storeId = getCurrentUserStoreId()
+              await AuthService.logActivity(
+                receivedBy,
+                'transfer_received',
+                'transfers',
+                {
+                  description: `Se recibieron ${quantityToReceive} unidades del producto "${transfer.productName || 'N/A'}" en la transferencia ${transfer.transferNumber || transferId}`,
+                  transferId: transferId,
+                  transferNumber: transfer.transferNumber,
+                  productId: transfer.productId,
+                  productName: transfer.productName,
+                  quantityReceived: quantityToReceive,
+                  quantityExpected: transfer.quantity,
+                  fromStoreId: transfer.fromStoreId,
+                  fromStoreName: transfer.fromStoreName,
+                  toStoreId: transfer.toStoreId,
+                  toStoreName: transfer.toStoreName,
+                  isPartial: quantityToReceive < transfer.quantity
+                }
+              )
+            }
           }
         }
       }

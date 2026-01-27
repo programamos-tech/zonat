@@ -276,6 +276,8 @@ export function LogsTable({
         return 'Crédito Cancelado'
       case 'roles':
         return 'Gestión de Usuarios'
+      case 'transfers':
+        return 'Gestión de Transferencias'
       case 'user_create':
         return 'Usuario Creado'
       case 'user_edit':
@@ -340,6 +342,7 @@ export function LogsTable({
     { value: 'sales', label: 'Ventas' },
     { value: 'credits', label: 'Créditos' },
     { value: 'warranties', label: 'Garantías' },
+    { value: 'transfers', label: 'Transferencias' },
     { value: 'roles', label: 'Roles' }
   ]
 
@@ -732,6 +735,11 @@ export function LogsTable({
                       if (log.module === 'auth') {
                         return 'login' // Tipo específico para login
                       }
+                      if (log.module === 'transfers') {
+                        if (log.action === 'transfer_created') return 'transfer'
+                        if (log.action === 'transfer_received') return 'transfer'
+                        return 'transfer'
+                      }
                       return 'roles' // Default
                     }
                     
@@ -765,6 +773,7 @@ export function LogsTable({
                                  log.module === 'warranties' ? 'Garantías' :
                                  log.module === 'sales' ? 'Ventas' :
                                  log.module === 'payments' ? 'Abonos' :
+                                 log.module === 'transfers' ? 'Transferencias' :
                                  log.module === 'logs' ? 'Logs' :
                                  log.module === 'auth' ? 'Login' :
                                  log.module || 'Sistema'}
@@ -793,6 +802,10 @@ export function LogsTable({
                                  log.action === 'stock_adjustment' ? 'Ajustar' :
                                  log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
                                  log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
+                                 log.action) :
+                              log.module === 'transfers' ?
+                                (log.action === 'transfer_created' ? 'Transferencia Creada' :
+                                 log.action === 'transfer_received' ? 'Transferencia Recibida' :
                                  log.action) :
                               log.module === 'categories' ?
                                 (log.action === 'category_create' ? 'Crear' :
@@ -835,6 +848,10 @@ export function LogsTable({
                                 log.action === 'stock_adjustment' ? 'Ajustar' :
                                 log.action === 'sale_cancellation_stock_return' ? 'Devolver Stock' :
                                 log.action === 'sale_cancellation_stock_return_batch' ? 'Devolver Stock Masivo' :
+                                log.action) :
+                             log.module === 'transfers' ?
+                               (log.action === 'transfer_created' ? 'Transferencia' :
+                                log.action === 'transfer_received' ? 'Transferencia' :
                                 log.action) :
                              log.module === 'categories' ?
                                (log.action === 'category_create' ? 'Crear' :
@@ -880,6 +897,19 @@ export function LogsTable({
                                    log.action === 'Usuario Eliminado' ? `Usuario eliminado: ${log.details.deletedUser?.name || 'Usuario'}` :
                                    log.action === 'Permisos Asignados' ? `${log.details.description || 'Permisos asignados'}` :
                                    log.action) :
+                                  log.module === 'transfers' ?
+                                    (log.action === 'transfer_created' || log.action === 'transfer_received' ?
+                                      (() => {
+                                        const products = (log.details as any)?.products
+                                        if (products && Array.isArray(products) && products.length > 0) {
+                                          const productsList = products.map((p: any) => 
+                                            `${p.quantity || 0} ${p.productName || 'Producto'}${p.productReference ? ` (${p.productReference})` : ''}`
+                                          ).join(', ')
+                                          return productsList
+                                        }
+                                        return log.details.description || 'Transferencia de productos'
+                                      })() :
+                                      log.details.description || 'Transferencia') :
                                   log.module === 'products' ?
                                     (log.details.description || log.action) :
                                   log.module === 'categories' ?
@@ -929,6 +959,19 @@ export function LogsTable({
                                  log.action === 'Usuario Eliminado' ? `Usuario eliminado: ${log.details.deletedUser?.name || 'Usuario'}` :
                                  log.action === 'Permisos Asignados' ? `${log.details.description || 'Permisos asignados'}` :
                                  log.action) :
+                                log.module === 'transfers' ?
+                                  (log.action === 'transfer_created' || log.action === 'transfer_received' ?
+                                    (() => {
+                                      const products = (log.details as any)?.products
+                                      if (products && Array.isArray(products) && products.length > 0) {
+                                        const productsList = products.map((p: any) => 
+                                          `${p.quantity || 0} ${p.productName || 'Producto'}${p.productReference ? ` (${p.productReference})` : ''}`
+                                        ).join(', ')
+                                        return productsList
+                                      }
+                                      return log.details.description || 'Transferencia de productos'
+                                    })() :
+                                    log.details.description || 'Transferencia') :
                                 log.module === 'products' ?
                                   (log.details.description || log.action) :
                                 log.module === 'categories' ?

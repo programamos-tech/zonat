@@ -9,6 +9,7 @@ import { X, Plus, Trash2, Package, Store as StoreIcon, Warehouse, ArrowRightLeft
 import { Store, Product, TransferItem } from '@/types'
 import { ProductsService } from '@/lib/products-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
+import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
 
 interface TransferModalProps {
@@ -30,6 +31,7 @@ interface TransferItemForm {
 }
 
 export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: TransferModalProps) {
+  const { user } = useAuth()
   const [toStoreId, setToStoreId] = useState<string>('')
   const [description, setDescription] = useState<string>('')
   const [items, setItems] = useState<TransferItemForm[]>([])
@@ -280,8 +282,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         transferItems,
         description || undefined,
         undefined,
-        undefined,
-        undefined,
+        user?.id,
+        user?.name,
         paymentInfo
       )
 
@@ -675,20 +677,20 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                 )}
                               </div>
                               
-                              {/* Costo (solo lectura, como referencia) */}
+                              {/* Precio de venta (solo lectura, como referencia) */}
                               <div>
                                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                  Costo (Ref.)
+                                  Precio Venta (Ref.)
                                 </label>
                                 <Input
                                   type="text"
-                                  value={formatCurrency(item.productCost || 0)}
+                                  value={formatCurrency(item.unitPrice || 0)}
                                   disabled
                                   readOnly
                                   className="w-full h-10 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed"
                                 />
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                                  Precio de compra
+                                  Precio de venta
                                 </p>
                               </div>
                               
@@ -699,28 +701,42 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                 </label>
                                 <Input
                                   type="text"
-                                  inputMode="numeric"
-                                  value={item.unitPrice || ''}
+                                  inputMode="decimal"
+                                  value={item.unitPrice !== undefined && item.unitPrice !== null 
+                                    ? (item.unitPrice % 1 === 0 ? item.unitPrice.toString() : item.unitPrice.toFixed(2))
+                                    : ''}
                                   onChange={(e) => {
                                     // Permitir números y punto decimal
-                                    const value = e.target.value.replace(/[^\d.]/g, '')
+                                    let value = e.target.value.replace(/[^\d.]/g, '')
                                     // Permitir solo un punto decimal
                                     const parts = value.split('.')
-                                    const cleanValue = parts.length > 2 
-                                      ? parts[0] + '.' + parts.slice(1).join('')
-                                      : value
-                                    const price = cleanValue === '' ? 0 : parseFloat(cleanValue) || 0
+                                    if (parts.length > 2) {
+                                      value = parts[0] + '.' + parts.slice(1).join('')
+                                    }
+                                    // Limitar a 2 decimales después del punto
+                                    if (parts.length === 2 && parts[1].length > 2) {
+                                      value = parts[0] + '.' + parts[1].substring(0, 2)
+                                    }
+                                    // Convertir a número, permitir vacío para edición
+                                    const price = value === '' || value === '.' ? 0 : parseFloat(value) || 0
                                     handleItemChange(index, 'unitPrice', price)
                                   }}
                                   onBlur={(e) => {
-                                    const value = e.target.value.replace(/^0+/, '') || '0'
-                                    const price = parseFloat(value) || 0
-                                    if (price !== item.unitPrice) {
-                                      handleItemChange(index, 'unitPrice', price)
+                                    // Asegurar que tenga formato decimal si es necesario
+                                    const value = e.target.value.trim()
+                                    if (value === '' || value === '.') {
+                                      handleItemChange(index, 'unitPrice', 0)
+                                    } else {
+                                      const price = parseFloat(value) || 0
+                                      // Mantener hasta 2 decimales
+                                      const roundedPrice = Math.round(price * 100) / 100
+                                      if (roundedPrice !== item.unitPrice) {
+                                        handleItemChange(index, 'unitPrice', roundedPrice)
+                                      }
                                     }
                                   }}
                                   className="w-full h-10 text-sm"
-                                  placeholder="0"
+                                  placeholder="0.00"
                                 />
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                   Subtotal: {formatCurrency((item.unitPrice || 0) * item.quantity)}

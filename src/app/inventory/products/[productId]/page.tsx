@@ -133,16 +133,34 @@ export default function ProductDetailPage() {
     if (!product) return
     
     try {
-      const success = await ProductsService.updateProduct(product.id, productData)
+      console.log('[PRODUCT DETAIL] Starting product update:', {
+        productId: product.id,
+        updates: productData,
+        userId: user?.id
+      })
+      
+      const success = await ProductsService.updateProduct(product.id, productData, user?.id)
+      
+      console.log('[PRODUCT DETAIL] Product update result:', success)
+      
       if (success) {
         toast.success('Producto actualizado exitosamente')
         setIsEditModalOpen(false)
-        await loadProduct()
+        // Esperar un momento antes de recargar para asegurar que la actualización se complete
+        setTimeout(async () => {
+          try {
+            await loadProduct()
+          } catch (loadError) {
+            console.error('[PRODUCT DETAIL] Error reloading product after update:', loadError)
+            toast.error('Producto actualizado pero hubo un error al recargar. Por favor, recarga la página.')
+          }
+        }, 500)
       } else {
-        toast.error('Error actualizando producto')
+        toast.error('Error actualizando producto. Por favor, verifica los datos e intenta nuevamente.')
       }
     } catch (error) {
-      toast.error('Error actualizando producto')
+      console.error('[PRODUCT DETAIL] Exception updating product:', error)
+      toast.error('Error actualizando producto. Por favor, intenta nuevamente.')
     }
   }
 
@@ -154,15 +172,24 @@ export default function ProductDetailPage() {
     if (!product) return
     
     try {
-      const success = await ProductsService.deleteProduct(product.id)
-      if (success) {
+      console.log('[PRODUCT DETAIL] Starting product deletion:', {
+        productId: product.id,
+        userId: user?.id
+      })
+      
+      const result = await ProductsService.deleteProduct(product.id, user?.id)
+      
+      console.log('[PRODUCT DETAIL] Product deletion result:', result)
+      
+      if (result.success) {
         toast.success('Producto eliminado exitosamente')
         router.push('/inventory/products')
       } else {
-        toast.error('Error eliminando producto')
+        toast.error(result.error || 'Error eliminando producto')
       }
     } catch (error) {
-      toast.error('Error eliminando producto')
+      console.error('[PRODUCT DETAIL] Exception deleting product:', error)
+      toast.error('Error eliminando producto. Por favor, intenta nuevamente.')
     }
   }
 
@@ -213,21 +240,42 @@ export default function ProductDetailPage() {
 
   const handleTransferStock = async (transferData: Omit<any, 'id' | 'createdAt' | 'userId' | 'userName'>) => {
     try {
+      console.log('[PRODUCT DETAIL] Starting stock transfer:', {
+        productId: transferData.productId,
+        fromLocation: transferData.fromLocation,
+        toLocation: transferData.toLocation,
+        quantity: transferData.quantity,
+        userId: user?.id
+      })
+      
       const success = await ProductsService.transferStock(
         transferData.productId,
         transferData.fromLocation,
         transferData.toLocation,
-        transferData.quantity
+        transferData.quantity,
+        user?.id
       )
+      
+      console.log('[PRODUCT DETAIL] Stock transfer result:', success)
+      
       if (success) {
         toast.success('Stock transferido exitosamente')
         setIsTransferModalOpen(false)
-        await loadProduct()
+        // Esperar un momento antes de recargar para asegurar que la actualización se complete
+        setTimeout(async () => {
+          try {
+            await loadProduct()
+          } catch (loadError) {
+            console.error('[PRODUCT DETAIL] Error reloading product after transfer:', loadError)
+            toast.error('Stock transferido pero hubo un error al recargar. Por favor, recarga la página.')
+          }
+        }, 500)
       } else {
-        toast.error('Error transfiriendo stock')
+        toast.error('Error transfiriendo stock. Por favor, verifica los datos e intenta nuevamente.')
       }
     } catch (error) {
-      toast.error('Error transfiriendo stock')
+      console.error('[PRODUCT DETAIL] Exception transferring stock:', error)
+      toast.error('Error transfiriendo stock. Por favor, intenta nuevamente.')
     }
   }
 

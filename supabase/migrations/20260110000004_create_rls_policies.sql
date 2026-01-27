@@ -214,6 +214,25 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- ============================================
+-- ELIMINAR POLÍTICAS EXISTENTES (si las hay)
+-- ============================================
+-- Esto permite ejecutar esta migración múltiples veces sin errores
+
+DO $$
+DECLARE
+  r RECORD;
+BEGIN
+  -- Eliminar todas las políticas existentes de todas las tablas
+  FOR r IN 
+    SELECT schemaname, tablename, policyname 
+    FROM pg_policies 
+    WHERE schemaname = 'public'
+  LOOP
+    EXECUTE format('DROP POLICY IF EXISTS %I ON %I.%I', r.policyname, r.schemaname, r.tablename);
+  END LOOP;
+END $$;
+
+-- ============================================
 -- HABILITAR RLS EN TODAS LAS TABLAS
 -- ============================================
 
