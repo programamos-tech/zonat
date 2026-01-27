@@ -15,7 +15,7 @@ import { toast } from 'sonner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { TransferModal } from '@/components/inventory/transfer-modal'
-import { ConfirmModal } from '@/components/ui/confirm-modal'
+import { CancelTransferModal } from '@/components/ui/cancel-transfer-modal'
 import { PDFService } from '@/lib/pdf-service'
 import { DollarSign, CreditCard } from 'lucide-react'
 
@@ -27,6 +27,7 @@ export default function TransfersPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [transferToCancel, setTransferToCancel] = useState<StoreStockTransfer | null>(null)
+  const [isCancelling, setIsCancelling] = useState(false)
   const [filter, setFilter] = useState<'all' | 'sent' | 'received'>('all')
   const [expandedTransfers, setExpandedTransfers] = useState<Set<string>>(new Set())
   const [transferSales, setTransferSales] = useState<Map<string, Sale>>(new Map())
@@ -250,22 +251,33 @@ export default function TransfersPage() {
     setIsCancelModalOpen(true)
   }
 
-  const confirmCancel = async () => {
-    if (!transferToCancel) return
+  const confirmCancel = async (reason: string) => {
+    if (!transferToCancel || !user?.id) return
 
+    setIsCancelling(true)
     try {
-      const success = await StoreStockTransferService.cancelTransfer(transferToCancel.id)
-      if (success) {
-        toast.success('Transferencia cancelada exitosamente')
+      const result = await StoreStockTransferService.cancelTransfer(
+        transferToCancel.id,
+        reason,
+        user.id
+      )
+      
+      if (result.success) {
+        const refundMessage = result.totalRefund && result.totalRefund > 0
+          ? ` Se reembolsó ${formatCurrency(result.totalRefund)}.`
+          : ''
+        toast.success(`Transferencia cancelada exitosamente.${refundMessage}`)
         setIsCancelModalOpen(false)
         setTransferToCancel(null)
-        loadTransfers()
+        await loadTransfers()
       } else {
         toast.error('Error al cancelar la transferencia')
       }
     } catch (error) {
       toast.error('Error al cancelar la transferencia')
       console.error('Error cancelling transfer:', error)
+    } finally {
+      setIsCancelling(false)
     }
   }
 
@@ -795,8 +807,10 @@ export default function TransfersPage() {
                             <Download className="h-4 w-4 mr-2" />
                             Descargar PDF
                           </Button>
-                          {transfer.status === 'pending' && 
-                           transfer.fromStoreId === currentStoreId && (
+                          {(transfer.status === 'pending' || transfer.status === 'in_transit') && 
+                           transfer.status !== 'received' && 
+                           transfer.status !== 'partially_received' &&
+                           (transfer.fromStoreId === currentStoreId || canManageAllStores) && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -887,18 +901,15 @@ export default function TransfersPage() {
         {isCreateModalOpen && console.log('[TRANSFERS PAGE] Opening modal with fromStoreId:', fromStoreIdForTransfer, 'isMainStore:', isMainStore, 'currentStoreId:', currentStoreId)}
 
 
-        <ConfirmModal
+        <CancelTransferModal
           isOpen={isCancelModalOpen}
           onClose={() => {
             setIsCancelModalOpen(false)
             setTransferToCancel(null)
           }}
           onConfirm={confirmCancel}
-          title="Cancelar Transferencia"
-          message={`¿Estás seguro de que quieres cancelar la transferencia ${transferToCancel?.transferNumber || transferToCancel?.id.substring(0, 8)}? El stock será devuelto a la tienda origen.`}
-          confirmText="Cancelar Transferencia"
-          cancelText="No Cancelar"
-          type="danger"
+          transferNumber={transferToCancel?.transferNumber || transferToCancel?.id.substring(0, 8)}
+          isLoading={isCancelling}
         />
       </div>
     </RoleProtectedRoute>

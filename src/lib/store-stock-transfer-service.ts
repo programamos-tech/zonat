@@ -1353,30 +1353,144 @@ export class StoreStockTransferService {
   }
 
   // Cancelar transferencia
-  static async cancelTransfer(transferId: string): Promise<boolean> {
+  static async cancelTransfer(transferId: string, reason: string, currentUserId?: string): Promise<{ success: boolean; totalRefund?: number }> {
     try {
+      console.log('[CANCEL TRANSFER] Starting cancellation:', {
+        transferId,
+        reason,
+        userId: currentUserId
+      })
+
       // Obtener la transferencia con sus items
       const transfer = await this.getTransferById(transferId)
-      if (!transfer || transfer.status !== 'pending') {
-        console.error('Cannot cancel non-pending transfer')
-        return false
+      if (!transfer) {
+        console.error('[CANCEL TRANSFER] Transfer not found:', transferId)
+        return { success: false }
       }
 
-      // Actualizar estado
-      const { error: updateError } = await supabaseAdmin
-        .from('stock_transfers')
-        .update({
-          status: 'cancelled'
-        })
-        .eq('id', transferId)
+      // Verificar que la transferencia se puede cancelar (solo pending o in_transit)
+      if (transfer.status === 'received' || transfer.status === 'partially_received') {
+        console.error('[CANCEL TRANSFER] Cannot cancel received or partially received transfer')
+        return { success: false }
+      }
 
-      if (updateError) {
-        console.error('Error cancelling transfer:', updateError)
-        return false
+      if (transfer.status === 'cancelled') {
+        console.error('[CANCEL TRANSFER] Transfer already cancelled')
+        return { success: false }
       }
 
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID || !transfer.fromStoreId
+
+      // Obtener la venta asociada si existe (solo para transferencias desde la tienda principal)
+      let sale: Sale | null = null
+      let totalRefund = 0
+
+      if (isFromMainStore) {
+        try {
+          sale = await this.getTransferSale(transferId)
+          console.log('[CANCEL TRANSFER] Sale found:', sale ? {
+            id: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+            total: sale.total,
+            paymentMethod: sale.paymentMethod
+          } : null)
+
+          // Si hay una venta asociada, cancelarla y devolver el dinero
+          // IMPORTANTE: No usar cancelSale porque también devuelve stock, y nosotros ya lo estamos haciendo
+          if (sale && sale.status !== 'cancelled' && currentUserId) {
+            console.log('[CANCEL TRANSFER] Cancelling associated sale manually:', sale.id)
+            
+            try {
+              // Calcular el reembolso según el método de pago
+              if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
+                totalRefund = sale.total
+              } else if (sale.paymentMethod === 'mixed' && sale.payments) {
+                totalRefund = sale.payments
+                  .filter(payment => payment.paymentType === 'cash' || payment.paymentType === 'transfer')
+                  .reduce((sum, payment) => sum + payment.amount, 0)
+              } else if (sale.paymentMethod === 'credit') {
+                // Para créditos, cancelar los payment_records
+                const { data: paymentData } = await supabaseAdmin
+                  .from('payments')
+                  .select('id')
+                  .eq('invoice_number', sale.invoiceNumber)
+                  .eq('client_id', sale.clientId)
+                  .maybeSingle()
+                
+                if (paymentData) {
+                  const { data: paymentRecords } = await supabaseAdmin
+                    .from('payment_records')
+                    .select('id, amount, status')
+                    .eq('payment_id', paymentData.id)
+                    .neq('status', 'cancelled')
+                  
+                  if (paymentRecords && paymentRecords.length > 0) {
+                    totalRefund = paymentRecords.reduce((sum, payment) => sum + (payment.amount || 0), 0)
+                    
+                    // Cancelar todos los abonos
+                    const { AuthService } = await import('./auth-service')
+                    const user = await AuthService.getCurrentUser()
+                    const userName = user?.name || 'Usuario'
+                    
+                    for (const paymentRecord of paymentRecords) {
+                      await supabaseAdmin
+                        .from('payment_records')
+                        .update({ 
+                          status: 'cancelled',
+                          cancelled_at: new Date().toISOString(),
+                          cancelled_by: currentUserId,
+                          cancelled_by_name: userName,
+                          cancellation_reason: `Cancelación de transferencia: ${reason}`
+                        })
+                        .eq('id', paymentRecord.id)
+                    }
+                  }
+                }
+              }
+              
+              // Actualizar estado de la venta a cancelled (sin devolver stock, ya lo hacemos nosotros)
+              const { error: saleUpdateError } = await supabaseAdmin
+                .from('sales')
+                .update({
+                  status: 'cancelled',
+                  cancellation_reason: `Cancelación de transferencia: ${reason}`,
+                  updated_at: new Date().toISOString()
+                })
+                .eq('id', sale.id)
+              
+              if (saleUpdateError) {
+                console.error('[CANCEL TRANSFER] Error updating sale status:', saleUpdateError)
+              } else {
+                console.log('[CANCEL TRANSFER] Sale cancelled successfully, refund:', totalRefund)
+                
+                // Registrar log de cancelación de venta
+                const { AuthService } = await import('./auth-service')
+                await AuthService.logActivity(
+                  currentUserId,
+                  'sale_cancel',
+                  'sales',
+                  {
+                    description: `Venta cancelada por cancelación de transferencia: ${sale.invoiceNumber || sale.id} - Motivo: ${reason}${totalRefund > 0 ? ` - Reembolso: $${totalRefund.toLocaleString()}` : ''}`,
+                    saleId: sale.id,
+                    invoiceNumber: sale.invoiceNumber,
+                    reason: `Cancelación de transferencia: ${reason}`,
+                    totalRefund: totalRefund,
+                    isCreditSale: sale.paymentMethod === 'credit',
+                    clientName: sale.clientName || null
+                  }
+                )
+              }
+            } catch (saleCancelError) {
+              console.error('[CANCEL TRANSFER] Error cancelling sale:', saleCancelError)
+              // Continuar con la cancelación de la transferencia aunque falle la venta
+            }
+          }
+        } catch (saleError) {
+          console.error('[CANCEL TRANSFER] Error handling sale cancellation:', saleError)
+          // Continuar con la cancelación de la transferencia aunque falle la venta
+        }
+      }
 
       // Devolver stock a la tienda origen para cada producto
       if (transfer.items && transfer.items.length > 0) {
@@ -1402,12 +1516,27 @@ export class StoreStockTransferService {
                 .eq('id', item.productId)
 
               if (updateStockError) {
-                console.error('Error returning stock to product:', updateStockError)
+                console.error('[CANCEL TRANSFER] Error returning stock to product:', updateStockError)
+              } else {
+                console.log('[CANCEL TRANSFER] Stock returned:', {
+                  productId: item.productId,
+                  quantity: item.quantity,
+                  fromLocation: item.fromLocation,
+                  previousStock: currentStock,
+                  newStock
+                })
               }
             }
           } else {
             // Para micro tiendas, devolver a store_stock
-            await this.updateStoreStock(transfer.fromStoreId, item.productId, item.quantity)
+            const stockUpdated = await this.updateStoreStock(transfer.fromStoreId, item.productId, item.quantity)
+            if (stockUpdated) {
+              console.log('[CANCEL TRANSFER] Stock returned to microstore:', {
+                storeId: transfer.fromStoreId,
+                productId: item.productId,
+                quantity: item.quantity
+              })
+            }
           }
         }
       } else {
@@ -1434,10 +1563,79 @@ export class StoreStockTransferService {
         }
       }
 
-      return true
+      // Actualizar estado de la transferencia a cancelled
+      const { error: updateError } = await supabaseAdmin
+        .from('stock_transfers')
+        .update({
+          status: 'cancelled',
+          notes: transfer.notes ? `${transfer.notes}\n\n[CANCELADA] ${reason}` : `[CANCELADA] ${reason}`
+        })
+        .eq('id', transferId)
+
+      if (updateError) {
+        console.error('[CANCEL TRANSFER] Error updating transfer status:', updateError)
+        return { success: false }
+      }
+
+      // Registrar log de cancelación
+      if (currentUserId) {
+        try {
+          const fromStore = await StoresService.getStoreById(transfer.fromStoreId)
+          const toStore = await StoresService.getStoreById(transfer.toStoreId)
+          
+          const productsList = transfer.items && transfer.items.length > 0
+            ? transfer.items.map(item => 
+                `${item.quantity} unidades de "${item.productName}"${item.productReference ? ` (Ref: ${item.productReference})` : ''}`
+              ).join(', ')
+            : `${transfer.quantity} unidades de "${transfer.productName || 'Producto'}"`
+
+          await AuthService.logActivity(
+            currentUserId,
+            'transfer_cancelled',
+            'transfers',
+            {
+              description: `Transferencia cancelada: ${transfer.transferNumber || transferId.substring(0, 8)} - Motivo: ${reason}. Se devolvieron los productos a "${fromStore?.name || 'Tienda origen'}"${totalRefund > 0 ? ` y se reembolsó $${totalRefund.toLocaleString()}` : ''}`,
+              transferId: transferId,
+              transferNumber: transfer.transferNumber,
+              fromStoreId: transfer.fromStoreId,
+              fromStoreName: fromStore?.name,
+              toStoreId: transfer.toStoreId,
+              toStoreName: toStore?.name,
+              reason: reason,
+              totalRefund: totalRefund,
+              saleId: sale?.id || null,
+              invoiceNumber: sale?.invoiceNumber || null,
+              products: transfer.items && transfer.items.length > 0
+                ? transfer.items.map(item => ({
+                    productId: item.productId,
+                    productName: item.productName,
+                    productReference: item.productReference,
+                    quantity: item.quantity,
+                    fromLocation: item.fromLocation
+                  }))
+                : [{
+                    productId: transfer.productId || '',
+                    productName: transfer.productName || 'Producto',
+                    quantity: transfer.quantity || 0,
+                    fromLocation: 'warehouse' as const
+                  }]
+            }
+          )
+        } catch (logError) {
+          console.error('[CANCEL TRANSFER] Error logging cancellation:', logError)
+          // No fallar la cancelación si hay error en el log
+        }
+      }
+
+      console.log('[CANCEL TRANSFER] Transfer cancelled successfully:', {
+        transferId,
+        totalRefund
+      })
+
+      return { success: true, totalRefund }
     } catch (error) {
-      console.error('Error in cancelTransfer:', error)
-      return false
+      console.error('[CANCEL TRANSFER] Error in cancelTransfer:', error)
+      return { success: false }
     }
   }
 

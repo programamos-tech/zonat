@@ -738,6 +738,7 @@ export function LogsTable({
                       if (log.module === 'transfers') {
                         if (log.action === 'transfer_created') return 'transfer'
                         if (log.action === 'transfer_received') return 'transfer'
+                        if (log.action === 'transfer_cancelled') return 'transfer'
                         return 'transfer'
                       }
                       return 'roles' // Default
@@ -806,6 +807,7 @@ export function LogsTable({
                               log.module === 'transfers' ?
                                 (log.action === 'transfer_created' ? 'Transferencia Creada' :
                                  log.action === 'transfer_received' ? 'Transferencia Recibida' :
+                                 log.action === 'transfer_cancelled' ? 'Transferencia Cancelada' :
                                  log.action) :
                               log.module === 'categories' ?
                                 (log.action === 'category_create' ? 'Crear' :
@@ -852,6 +854,7 @@ export function LogsTable({
                              log.module === 'transfers' ?
                                (log.action === 'transfer_created' ? 'Transferencia' :
                                 log.action === 'transfer_received' ? 'Transferencia' :
+                                log.action === 'transfer_cancelled' ? 'Cancelar Transferencia' :
                                 log.action) :
                              log.module === 'categories' ?
                                (log.action === 'category_create' ? 'Crear' :
@@ -898,8 +901,11 @@ export function LogsTable({
                                    log.action === 'Permisos Asignados' ? `${log.details.description || 'Permisos asignados'}` :
                                    log.action) :
                                   log.module === 'transfers' ?
-                                    (log.action === 'transfer_created' || log.action === 'transfer_received' ?
+                                    (log.action === 'transfer_created' || log.action === 'transfer_received' || log.action === 'transfer_cancelled' ?
                                       (() => {
+                                        if (log.action === 'transfer_cancelled') {
+                                          return log.details.description || 'Transferencia cancelada'
+                                        }
                                         const products = (log.details as any)?.products
                                         if (products && Array.isArray(products) && products.length > 0) {
                                           const productsList = products.map((p: any) => 
@@ -960,8 +966,11 @@ export function LogsTable({
                                  log.action === 'Permisos Asignados' ? `${log.details.description || 'Permisos asignados'}` :
                                  log.action) :
                                 log.module === 'transfers' ?
-                                  (log.action === 'transfer_created' || log.action === 'transfer_received' ?
+                                  (log.action === 'transfer_created' || log.action === 'transfer_received' || log.action === 'transfer_cancelled' ?
                                     (() => {
+                                      if (log.action === 'transfer_cancelled') {
+                                        return log.details.description || 'Transferencia cancelada'
+                                      }
                                       const products = (log.details as any)?.products
                                       if (products && Array.isArray(products) && products.length > 0) {
                                         const productsList = products.map((p: any) => 

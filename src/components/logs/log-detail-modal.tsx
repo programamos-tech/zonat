@@ -87,6 +87,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'transfer':
+      case 'transfer_cancelled':
         return ArrowRightLeft
       case 'sale':
       case 'sale_create':
@@ -332,6 +333,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
           return 'Transferencia Creada'
         case 'transfer_received':
           return 'Recepción de Transferencia'
+        case 'transfer_cancelled':
+          return 'Cancelar Transferencia'
         default:
           return action
       }
@@ -366,6 +369,8 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         return 'Transferencia Creada'
       case 'transfer_received':
         return 'Recepción de Transferencia'
+      case 'transfer_cancelled':
+        return 'Transferencia Cancelada'
       case 'sale':
       case 'sale_create':
         return 'Venta'
@@ -1785,6 +1790,87 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
                               <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Nota:</span>
                               <div className="text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-600 p-2 rounded">{log.details.note}</div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {log.action === 'transfer_cancelled' && log.details && (
+                    <div>
+                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Transferencia cancelada:</span>
+                      <div className="text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
+                        <div className="space-y-3">
+                          <div className="flex items-center space-x-2 font-medium text-gray-900 dark:text-white mb-3">
+                            <X className="h-4 w-4 text-red-600 dark:text-red-400" />
+                            <span className="text-gray-900 dark:text-white">Transferencia Cancelada</span>
+                          </div>
+                          
+                          {log.details.transferNumber && (
+                            <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs">Número de Transferencia:</span>
+                              <div className="text-gray-900 dark:text-white font-mono font-medium">{log.details.transferNumber}</div>
+                            </div>
+                          )}
+                          
+                          <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Tiendas:</span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-orange-400 text-xs">Desde:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromStoreName || 'N/A'}</div>
+                              </div>
+                              <div className="bg-gray-200 dark:bg-gray-600 p-3 rounded-lg">
+                                <div className="text-green-600 text-xs">Hacia:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.toStoreName || 'N/A'}</div>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {log.details.reason && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Motivo de cancelación:</span>
+                              <div className="bg-red-50 dark:bg-red-900/20 p-3 rounded-lg border border-red-200 dark:border-red-800">
+                                <div className="text-gray-900 dark:text-white">{log.details.reason}</div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {log.details.totalRefund && log.details.totalRefund > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Reembolso:</span>
+                              <div className="bg-green-50 dark:bg-green-900/20 p-3 rounded-lg border border-green-200 dark:border-green-800">
+                                <div className="text-green-600 dark:text-green-400 text-xs">Dinero devuelto:</div>
+                                <div className="text-gray-900 dark:text-white font-bold text-lg">
+                                  ${log.details.totalRefund.toLocaleString('es-CO')}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {log.details.invoiceNumber && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Factura cancelada:</span>
+                              <div className="text-gray-900 dark:text-white font-mono">{log.details.invoiceNumber}</div>
+                            </div>
+                          )}
+                          
+                          {log.details.products && Array.isArray(log.details.products) && log.details.products.length > 0 && (
+                            <div className="border-t border-gray-200 dark:border-gray-600 pt-3">
+                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Productos devueltos:</span>
+                              <div className="space-y-2">
+                                {log.details.products.map((product: any, index: number) => (
+                                  <div key={index} className="bg-gray-200 dark:bg-gray-600 p-2 rounded text-xs">
+                                    <div className="font-medium text-gray-900 dark:text-white">{product.productName || 'N/A'}</div>
+                                    <div className="text-gray-600 dark:text-gray-300">
+                                      {product.quantity || 0} unidades
+                                      {product.productReference && ` • Ref: ${product.productReference}`}
+                                      {product.fromLocation && ` • Origen: ${product.fromLocation === 'warehouse' ? 'Bodega' : 'Local'}`}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             </div>
                           )}
                         </div>
