@@ -3,20 +3,62 @@ import { Product } from '@/types'
 import { v4 as uuidv4 } from 'uuid'
 import { AuthService } from './auth-service'
 
+export type StockFilter =
+  | 'all'
+  | 'Sin Stock'
+  | 'Disponible Local'
+  | 'Stock Local Bajo'
+  | 'Stock Local Muy Bajo'
+  | 'Solo Bodega'
+  | 'Solo Bodega (Bajo)'
+  | 'Solo Bodega (Muy Bajo)'
+
 export class ProductsService {
+  private static applyStockFilter(query: any, stockFilter?: StockFilter) {
+    if (!stockFilter || stockFilter === 'all') {
+      return query
+    }
+
+    switch (stockFilter) {
+      case 'Sin Stock':
+        return query.eq('stock_store', 0).eq('stock_warehouse', 0)
+      case 'Disponible Local':
+        return query.gte('stock_store', 10)
+      case 'Stock Local Bajo':
+        return query.gte('stock_store', 5).lte('stock_store', 9)
+      case 'Stock Local Muy Bajo':
+        return query.gte('stock_store', 1).lte('stock_store', 4)
+      case 'Solo Bodega':
+        return query.eq('stock_store', 0).gte('stock_warehouse', 20)
+      case 'Solo Bodega (Bajo)':
+        return query.eq('stock_store', 0).gte('stock_warehouse', 10).lte('stock_warehouse', 19)
+      case 'Solo Bodega (Muy Bajo)':
+        return query.eq('stock_store', 0).gte('stock_warehouse', 1).lte('stock_warehouse', 9)
+      default:
+        return query
+    }
+  }
   // Obtener todos los productos con paginación
-  static async getAllProducts(page: number = 1, limit: number = 10): Promise<{ products: Product[], total: number, hasMore: boolean }> {
+  static async getAllProducts(
+    page: number = 1,
+    limit: number = 10,
+    stockFilter?: StockFilter
+  ): Promise<{ products: Product[], total: number, hasMore: boolean }> {
     try {
       const from = (page - 1) * limit
       const to = from + limit - 1
 
       // Obtener productos paginados
       // Ordenar por created_at (más recientes primero)
-      const { data, error } = await supabase
+      let productsQuery = supabase
         .from('products')
         .select('*')
         .order('created_at', { ascending: false })
         .range(from, to)
+      
+      productsQuery = this.applyStockFilter(productsQuery, stockFilter)
+      
+      const { data, error } = await productsQuery
 
       if (error) {
       // Error silencioso en producción
@@ -24,9 +66,13 @@ export class ProductsService {
       }
 
       // Obtener el total de productos
-      const { count, error: countError } = await supabase
+      let countQuery = supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
+      
+      countQuery = this.applyStockFilter(countQuery, stockFilter)
+      
+      const { count, error: countError } = await countQuery
 
       if (countError) {
       // Error silencioso en producción
@@ -453,7 +499,7 @@ export class ProductsService {
   }
 
   // Buscar productos
-  static async searchProducts(query: string): Promise<Product[]> {
+  static async searchProducts(query: string, stockFilter?: StockFilter): Promise<Product[]> {
     try {
       const cleanQuery = query.trim()
       
@@ -462,12 +508,16 @@ export class ProductsService {
       }
 
       // Búsqueda simplificada sin timeout - buscar en referencia y nombre
-      const { data, error } = await supabase
+      let searchQuery = supabase
         .from('products')
         .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, created_at')
         .or(`reference.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
         .order('created_at', { ascending: false })
         .limit(100)
+      
+      searchQuery = this.applyStockFilter(searchQuery, stockFilter)
+      
+      const { data, error } = await searchQuery
 
       if (error) {
       // Error silencioso en producción

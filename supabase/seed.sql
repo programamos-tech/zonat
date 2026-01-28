@@ -176,11 +176,6 @@ ON CONFLICT (reference) DO NOTHING;
 -- ============================================
 -- 5. CREAR CLIENTES DE PRUEBA
 -- ============================================
-INSERT INTO clients (name, email, phone, address, city, type) VALUES
-('Juan Pérez', 'juan.perez@test.com', '809-555-0001', 'Calle Principal #123', 'Santo Domingo', 'regular'),
-('María García', 'maria.garcia@test.com', '809-555-0002', 'Av. Kennedy #456', 'Santo Domingo', 'vip'),
-('Carlos Rodríguez', 'carlos.rodriguez@test.com', '809-555-0003', 'Calle Duarte #789', 'Santiago', 'regular')
-ON CONFLICT DO NOTHING;
 
 -- ============================================
 -- MENSAJE DE CONFIRMACIÓN
@@ -190,3 +185,12 @@ SELECT 'Seed completado exitosamente! 🌱' as message,
        (SELECT COUNT(*) FROM categories) as categorias_creadas,
        (SELECT COUNT(*) FROM users) as usuarios_creados,
        (SELECT COUNT(*) FROM clients) as clientes_creados;
+-- ============================================
+-- 5. CREAR CLIENTES DE PRUEBA
+-- ============================================
+INSERT INTO clients (name, email, phone, address, city, type, document) VALUES 
+('Cliente Individual', 'individual@test.com', '3001234567', 'Calle 10 #20-30', 'Sincelejo', 'individual', 'CLI-IND-001'),
+('Tienda El Ahorro', 'minorista@test.com', '3009876543', 'Carrera 15 #25-40', 'Sincelejo', 'minorista', 'CLI-MIN-001'),
+('Distribuidora XYZ', 'mayorista@test.com', '3005555555', 'Av Principal #50-60', 'Sincelejo', 'mayorista', 'CLI-MAY-001'),
+('Cliente Final', 'consumidor@test.com', '3007777777', 'Calle 5 #10-15', 'Sincelejo', 'consumidor_final', 'CLI-CON-001')
+ON CONFLICT DO NOTHING;

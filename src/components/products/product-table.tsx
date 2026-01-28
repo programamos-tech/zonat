@@ -24,6 +24,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { Product, Category } from '@/types'
+import type { StockFilter } from '@/lib/products-service'
 import {
   Tooltip,
   TooltipContent,
@@ -39,6 +40,8 @@ interface ProductTableProps {
   totalProducts: number
   hasMore: boolean
   isSearching: boolean
+  stockFilter: StockFilter
+  onFilterChange: (filter: StockFilter) => void
   onEdit: (product: Product) => void
   onDelete: (product: Product) => void
   onCreate: () => void
@@ -63,6 +66,8 @@ export function ProductTable({
   totalProducts,
   hasMore,
   isSearching,
+  stockFilter,
+  onFilterChange,
   onEdit,
   onDelete,
   onCreate,
@@ -77,7 +82,6 @@ export function ProductTable({
 }: ProductTableProps) {
   const router = useRouter()
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStockStatus, setFilterStockStatus] = useState('all')
 
   // Función simple para manejar búsqueda
   const handleSearch = (term: string) => {
@@ -202,14 +206,6 @@ export function ProductTable({
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
   }
 
-  // Para búsqueda, usar todos los productos (ya vienen filtrados del contexto)
-  // Para filtro de estado de stock, aplicar localmente
-  const filteredProducts = products.filter(product => {
-    if (filterStockStatus === 'all') return true
-    const stockStatus = getStockStatusLabel(product)
-    return stockStatus === filterStockStatus
-  })
-
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency',
@@ -257,7 +253,7 @@ export function ProductTable({
                   )}
                   <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   {isSearching 
-                    ? `Mostrando resultados de búsqueda (${filteredProducts.length} productos)`
+                    ? `Mostrando resultados de búsqueda (${products.length} productos)`
                     : 'Administra tu inventario de productos'
                   }
                 </p>
@@ -290,7 +286,7 @@ export function ProductTable({
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
                 {isSearching 
-                  ? `${filteredProducts.length} resultados`
+                  ? `${products.length} resultados`
                   : 'Administra tu inventario'
                 }
               </p>
@@ -342,8 +338,8 @@ export function ProductTable({
                 </button>
               </div>
               <select
-                value={filterStockStatus}
-                onChange={(e) => setFilterStockStatus(e.target.value)}
+                value={stockFilter}
+                onChange={(e) => onFilterChange(e.target.value as StockFilter)}
                 className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 {stockStatusOptions.map(status => (
@@ -365,7 +361,7 @@ export function ProductTable({
             </div>
           )}
           <CardContent className="p-0 m-0">
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -385,7 +381,7 @@ export function ProductTable({
               <>
                 {/* Vista de Tarjetas para Mobile */}
                 <div className="md:hidden space-y-3 p-3">
-                  {filteredProducts.map((product, index) => {
+                  {products.map((product, index) => {
                     const StatusIcon = getStatusIcon(product.status)
                     return (
                       <div
@@ -479,7 +475,7 @@ export function ProductTable({
 
                 {/* Vista de Cards para Desktop */}
                 <div className="hidden md:block space-y-4 p-4 md:p-6">
-                  {filteredProducts.map((product, index) => {
+                  {products.map((product, index) => {
                     const StatusIcon = getStatusIcon(product.status)
                     const globalIndex = ((currentPage - 1) * ITEMS_PER_PAGE) + index + 1
                     return (
