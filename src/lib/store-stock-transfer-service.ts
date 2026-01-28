@@ -105,14 +105,15 @@ export class StoreStockTransferService {
         return null
       }
 
-      // Crear los items de la transferencia con from_location
+      // Crear los items de la transferencia con from_location y unit_price
       const transferItems = items.map(item => ({
         transfer_id: transfer.id,
         product_id: item.productId,
         product_name: item.productName,
         product_reference: item.productReference || null,
         quantity: item.quantity,
-        from_location: item.fromLocation
+        from_location: item.fromLocation,
+        unit_price: item.unitPrice || null
       }))
 
       const { error: itemsError } = await supabaseAdmin
@@ -1263,12 +1264,28 @@ export class StoreStockTransferService {
             // Aumentar stock en la tienda destino solo con la cantidad recibida (si es mayor a 0)
             // Permitir 0 para recepciones parciales sin stock
             if (receivedItem.quantityReceived > 0) {
+              const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+              const isToMicroStore = transfer.toStoreId !== MAIN_STORE_ID
+              
               console.log('[STORE STOCK TRANSFER] Updating stock for micro store:', {
                 storeId: transfer.toStoreId,
                 productId: originalItem.productId,
-                quantityReceived: receivedItem.quantityReceived
+                quantityReceived: receivedItem.quantityReceived,
+                unitPrice: originalItem.unitPrice,
+                isToMicroStore
               })
-              const stockUpdated = await this.updateStoreStock(transfer.toStoreId, originalItem.productId, receivedItem.quantityReceived)
+              
+              // Si es microtienda, establecer cost = unitPrice y price = 0
+              const costToSet = isToMicroStore && originalItem.unitPrice ? originalItem.unitPrice : undefined
+              const priceToSet = isToMicroStore ? 0 : undefined
+              
+              const stockUpdated = await this.updateStoreStock(
+                transfer.toStoreId, 
+                originalItem.productId, 
+                receivedItem.quantityReceived,
+                costToSet,
+                priceToSet
+              )
               if (!stockUpdated) {
                 console.error('[STORE STOCK TRANSFER] Failed to update stock for product:', originalItem.productId)
               } else {
@@ -1731,11 +1748,13 @@ export class StoreStockTransferService {
     }
   }
 
-  // Actualizar stock de una tienda
+  // Actualizar stock de una tienda (y opcionalmente cost/price para microtiendas)
   static async updateStoreStock(
     storeId: string,
     productId: string,
-    quantityChange: number
+    quantityChange: number,
+    cost?: number | null,
+    price?: number | null
   ): Promise<boolean> {
     try {
       console.log('[STORE STOCK TRANSFER] updateStoreStock called:', {
@@ -1777,6 +1796,13 @@ export class StoreStockTransferService {
       // Solo establecer location para micro tiendas (siempre 'local')
       if (!isMainStore) {
         upsertData.location = 'local'
+        // Para microtiendas, actualizar cost y price si se proporcionan
+        if (cost !== undefined) {
+          upsertData.cost = cost
+        }
+        if (price !== undefined) {
+          upsertData.price = price
+        }
       }
 
       console.log('[STORE STOCK TRANSFER] Upserting stock:', {
@@ -2273,6 +2299,7 @@ export class StoreStockTransferService {
       quantity: item.quantity, // Cantidad original/enviada
       quantityReceived: item.quantity_received || undefined, // Cantidad recibida (si aplica)
       fromLocation: item.from_location || undefined,
+      unitPrice: item.unit_price || undefined, // Precio unitario de transferencia
       notes: item.notes || undefined, // Nota del item
       createdAt: item.created_at,
       updatedAt: item.updated_at || item.created_at

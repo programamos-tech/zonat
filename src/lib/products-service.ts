@@ -283,8 +283,42 @@ export class ProductsService {
       const productIds = data.map((p: any) => p.id)
       const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
       
+      // Para microtiendas, obtener cost/price de store_stock
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+      let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
+      
+      if (!isMainStore && currentStoreId) {
+        const { data: storeStockData } = await supabaseAdmin
+          .from('store_stock')
+          .select('product_id, cost, price')
+          .eq('store_id', currentStoreId)
+          .in('product_id', productIds)
+        
+        if (storeStockData) {
+          storeStockData.forEach((item: any) => {
+            costPriceMap.set(item.product_id, {
+              cost: item.cost,
+              price: item.price
+            })
+          })
+        }
+      }
+      
       const mappedProducts = data.map((product: any) => {
         const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
+        
+        // Para microtiendas, usar cost/price de store_stock si existe, sino usar los de products como fallback
+        let productCost = product.cost
+        let productPrice = product.price
+        
+        if (!isMainStore) {
+          const storeStockCostPrice = costPriceMap.get(product.id)
+          if (storeStockCostPrice) {
+            productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : product.cost
+            productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : product.price
+          }
+        }
         
         return {
           id: product.id,
@@ -293,8 +327,8 @@ export class ProductsService {
           categoryId: product.category_id,
           brand: product.brand,
           reference: product.reference,
-          price: product.price,
-          cost: product.cost,
+          price: productPrice,
+          cost: productCost,
           stock: stock,
           status: product.status,
           createdAt: product.created_at,
@@ -360,9 +394,30 @@ export class ProductsService {
         // Obtener stock correcto según el tipo de tienda (optimizado)
         // Usar el storeId pasado como parámetro, o el del usuario actual si no se pasa
         const currentStoreId = storeId !== null ? storeId : getCurrentUserStoreId()
-        console.log('[PRODUCTS SERVICE] getAllProductsLegacy - storeId:', storeId, 'currentStoreId:', currentStoreId)
+        const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+        const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+        console.log('[PRODUCTS SERVICE] getAllProductsLegacy - storeId:', storeId, 'currentStoreId:', currentStoreId, 'isMainStore:', isMainStore)
         const productIds = data.map((p: any) => p.id)
         const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
+        
+        // Para microtiendas, obtener cost/price de store_stock
+        let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
+        if (!isMainStore && currentStoreId) {
+          const { data: storeStockData } = await supabaseAdmin
+            .from('store_stock')
+            .select('product_id, cost, price')
+            .eq('store_id', currentStoreId)
+            .in('product_id', productIds)
+          
+          if (storeStockData) {
+            storeStockData.forEach((item: any) => {
+              costPriceMap.set(item.product_id, {
+                cost: item.cost,
+                price: item.price
+              })
+            })
+          }
+        }
         
         // Log para depuración
         if (productIds.length > 0) {
@@ -379,6 +434,18 @@ export class ProductsService {
           // Si no está en el stockMap, usar valores por defecto
           const stockFromMap = stockMap.get(product.id)
           const stock = stockFromMap || { warehouse: 0, store: 0, total: 0 }
+          
+          // Para microtiendas, usar cost/price de store_stock si existe, sino usar los de products como fallback
+          let productCost = product.cost
+          let productPrice = product.price
+          
+          if (!isMainStore) {
+            const storeStockCostPrice = costPriceMap.get(product.id)
+            if (storeStockCostPrice) {
+              productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : product.cost
+              productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : product.price
+            }
+          }
           
           // Log para depuración
           if (productIds.indexOf(product.id) < 3) {
@@ -400,8 +467,8 @@ export class ProductsService {
             categoryId: product.category_id,
             brand: product.brand,
             reference: product.reference,
-            price: product.price,
-            cost: product.cost,
+            price: productPrice,
+            cost: productCost,
             stock: stock,
             status: product.status,
             createdAt: product.created_at,
@@ -548,10 +615,34 @@ export class ProductsService {
 
       // Obtener stock correcto según el tipo de tienda
       const currentStoreId = getCurrentUserStoreId()
-      console.log('[PRODUCTS SERVICE] Current store ID:', currentStoreId)
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+      console.log('[PRODUCTS SERVICE] Current store ID:', currentStoreId, 'isMainStore:', isMainStore)
       
       const stock = await this.getProductStockForStore(id, currentStoreId)
       console.log('[PRODUCTS SERVICE] Stock retrieved:', stock)
+
+      // Para microtiendas, obtener cost y price de store_stock
+      let productCost = data.cost
+      let productPrice = data.price
+      
+      if (!isMainStore && currentStoreId) {
+        const { data: storeStock } = await supabaseAdmin
+          .from('store_stock')
+          .select('cost, price')
+          .eq('store_id', currentStoreId)
+          .eq('product_id', id)
+          .single()
+        
+        if (storeStock) {
+          // Si existe store_stock con cost/price, usarlos; si son null, usar los de products como fallback
+          productCost = storeStock.cost !== null ? storeStock.cost : data.cost
+          productPrice = storeStock.price !== null ? storeStock.price : data.price
+          console.log('[PRODUCTS SERVICE] Using store_stock cost/price:', { cost: productCost, price: productPrice })
+        } else {
+          console.log('[PRODUCTS SERVICE] No store_stock entry, using products cost/price as fallback')
+        }
+      }
 
       const product = {
         id: data.id,
@@ -560,8 +651,8 @@ export class ProductsService {
         categoryId: data.category_id,
         brand: data.brand,
         reference: data.reference,
-        price: data.price,
-        cost: data.cost,
+        price: productPrice,
+        cost: productCost,
         stock: stock,
         status: data.status,
         createdAt: data.created_at,
@@ -674,29 +765,73 @@ export class ProductsService {
   // Actualizar producto
   static async updateProduct(id: string, updates: Partial<Product>, currentUserId?: string): Promise<boolean> {
     try {
+      const currentStoreId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+      
       const updateData: any = {}
       
+      // Campos que siempre se actualizan en products (información general)
       if (updates.name) updateData.name = updates.name
-      if (updates.description !== undefined) updateData.description = updates.description || null // Manejar string vacío
-      if (updates.categoryId !== undefined) updateData.category_id = updates.categoryId || null // Manejar string vacío
-      if (updates.brand !== undefined) updateData.brand = updates.brand || null // Manejar string vacío
+      if (updates.description !== undefined) updateData.description = updates.description || null
+      if (updates.categoryId !== undefined) updateData.category_id = updates.categoryId || null
+      if (updates.brand !== undefined) updateData.brand = updates.brand || null
       if (updates.reference) updateData.reference = updates.reference
-      if (updates.price !== undefined) updateData.price = updates.price
-      if (updates.cost !== undefined) updateData.cost = updates.cost
-      if (updates.stock) {
-        updateData.stock_warehouse = updates.stock.warehouse
-        updateData.stock_store = updates.stock.store
-      }
       if (updates.status) updateData.status = updates.status
+      
+      // Cost y Price: en microtiendas se actualizan en store_stock, en tienda principal en products
+      if (isMainStore) {
+        // Tienda principal: actualizar en products
+        if (updates.price !== undefined) updateData.price = updates.price
+        if (updates.cost !== undefined) updateData.cost = updates.cost
+        if (updates.stock) {
+          updateData.stock_warehouse = updates.stock.warehouse
+          updateData.stock_store = updates.stock.store
+        }
+      } else {
+        // Microtienda: actualizar cost/price en store_stock, stock también en store_stock
+        if (updates.price !== undefined || updates.cost !== undefined || updates.stock) {
+          const storeStockUpdate: any = {}
+          
+          if (updates.price !== undefined) storeStockUpdate.price = updates.price
+          if (updates.cost !== undefined) storeStockUpdate.cost = updates.cost
+          
+          // Para stock en microtiendas, actualizar quantity en store_stock
+          if (updates.stock) {
+            // En microtiendas, el stock total es solo "local" (quantity en store_stock)
+            const totalStock = (updates.stock.store || 0) + (updates.stock.warehouse || 0)
+            storeStockUpdate.quantity = totalStock
+          }
+          
+          // Upsert en store_stock para la microtienda actual
+          const { error: storeStockError } = await supabaseAdmin
+            .from('store_stock')
+            .upsert({
+              store_id: currentStoreId,
+              product_id: id,
+              ...storeStockUpdate
+            }, {
+              onConflict: 'store_id,product_id'
+            })
+          
+          if (storeStockError) {
+            console.error('[PRODUCTS SERVICE] Error updating store_stock:', storeStockError)
+            return false
+          }
+        }
+      }
 
-      const { error } = await supabase
-        .from('products')
-        .update(updateData)
-        .eq('id', id)
+      // Actualizar products solo si hay campos que actualizar (excluyendo cost/price/stock para microtiendas)
+      if (Object.keys(updateData).length > 0) {
+        const { error } = await supabaseAdmin
+          .from('products')
+          .update(updateData)
+          .eq('id', id)
 
-      if (error) {
-      // Error silencioso en producción
-        return false
+        if (error) {
+          console.error('[PRODUCTS SERVICE] Error updating product:', error)
+          return false
+        }
       }
 
       // Registrar la actividad

@@ -1795,7 +1795,6 @@ export class SalesService {
       // Obtener todas las ventas en lotes
       const allSalesData: any[] = []
       for (const batch of batches) {
-        const user = getCurrentUser()
         const storeId = getCurrentUserStoreId()
 
         let salesQuery = supabase
@@ -1823,8 +1822,11 @@ export class SalesService {
           `)
           .in('id', batch)
         
-        // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-        if (storeId && !canAccessAllStores(user)) {
+        // Siempre filtrar por la tienda actual: análisis de rotación y márgenes es por tienda
+        const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          salesQuery = salesQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        } else {
           salesQuery = salesQuery.eq('store_id', storeId)
         }
         

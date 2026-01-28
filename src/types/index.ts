@@ -70,6 +70,7 @@ export interface TransferItem {
   quantity: number // Cantidad esperada/enviada
   quantityReceived?: number // Cantidad recibida (solo para recepciones)
   fromLocation?: 'warehouse' | 'store' // Ubicación de origen (bodega o local)
+  unitPrice?: number // Precio unitario de transferencia (se convierte en cost para la microtienda)
   notes?: string // Nota específica del item (para recepciones)
   createdAt: string
   updatedAt: string
