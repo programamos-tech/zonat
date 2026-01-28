@@ -46,6 +46,7 @@ export default function NewSalePage() {
   const [highlightedProductIndex, setHighlightedProductIndex] = useState<number>(-1)
   const [searchedProducts, setSearchedProducts] = useState<Product[]>([])
   const [isSearchingProducts, setIsSearchingProducts] = useState(false)
+  const [isCreating, setIsCreating] = useState(false)
   const productRefs = useRef<(HTMLDivElement | null)[]>([])
   const lastSearchTermRef = useRef<string>('')
   // Cache de productos agregados a la venta para mantener su información de stock
@@ -671,6 +672,7 @@ export default function NewSalePage() {
     }
 
     try {
+      setIsCreating(true)
       setInvoiceNumber('Generando...')
       await createSale(saleData)
       setTimeout(() => {
@@ -679,6 +681,7 @@ export default function NewSalePage() {
     } catch (error) {
       console.error('Error creating sale:', error)
       setInvoiceNumber('Pendiente')
+      setIsCreating(false)
       alert('Error al crear la venta. Por favor intenta de nuevo.')
     }
   }
@@ -1259,6 +1262,7 @@ export default function NewSalePage() {
                         <Button
                           onClick={handleSave}
                           disabled={
+                            isCreating ||
                             !selectedClient || 
                             selectedProducts.length === 0 || 
                             validProducts.length === 0 || 
@@ -1268,8 +1272,17 @@ export default function NewSalePage() {
                           className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                           size="lg"
                         >
-                          <ShoppingCart className="h-5 w-5 mr-2" />
-                          Crear Venta
+                          {isCreating ? (
+                            <>
+                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                              Creando Venta...
+                            </>
+                          ) : (
+                            <>
+                              <ShoppingCart className="h-5 w-5 mr-2" />
+                              Crear Venta
+                            </>
+                          )}
                         </Button>
                         {validProducts.some(item => !item.unitPrice || item.unitPrice <= 0) && (
                           <div className="flex items-center justify-center gap-2 text-xs text-orange-600 dark:text-orange-400 mt-2">

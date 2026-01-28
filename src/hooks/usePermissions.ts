@@ -15,21 +15,36 @@ export function usePermissions() {
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
-    // Restricción especial para vendedores en productos: solo pueden ver, no editar/eliminar/crear
+    // Restricción especial para vendedores
     const userRole = currentUser.role?.toLowerCase() || ''
-    if (userRole === 'vendedor') {
+    if (userRole === 'vendedor' || userRole === 'vendedora') {
       if (module === 'products') {
         return action === 'view' // Solo permitir ver productos
       }
       if (module === 'transfers') {
         return false // Vendedores no pueden transferir
       }
+      
+      // Para otros módulos, si no tiene permisos explícitos, usar permisos por defecto del rol vendedor
+      const hasExplicitPermissions = currentUser.permissions && Array.isArray(currentUser.permissions) && currentUser.permissions.length > 0
+      
+      if (!hasExplicitPermissions) {
+        // Permisos por defecto para vendedores (según rolePermissions en user-management.tsx)
+        const defaultVendedorPermissions: { [key: string]: string[] } = {
+          'dashboard': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'clients': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'sales': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'payments': ['view', 'create', 'edit', 'delete', 'cancel']
+        }
+        
+        const allowedActions = defaultVendedorPermissions[module] || []
+        return allowedActions.includes(action)
+      }
     }
     
     // Verificar que el usuario tenga permisos explícitos
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions) || currentUser.permissions.length === 0) {
-      // Si no hay permisos explícitos, NO dar permisos por defecto
-      // Esto asegura que los permisos deben ser explícitamente configurados
+      // Si no hay permisos explícitos, NO dar permisos por defecto (excepto para vendedores que ya se manejó arriba)
       return false
     }
     
