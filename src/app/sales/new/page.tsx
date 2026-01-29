@@ -26,6 +26,7 @@ import { useClients } from '@/contexts/clients-context'
 import { useProducts } from '@/contexts/products-context'
 import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -749,10 +750,11 @@ export default function NewSalePage() {
               <div className="h-8 w-8 rounded-lg bg-green-600 dark:bg-green-700 flex items-center justify-center flex-shrink-0">
                 <Calculator className="h-4 w-4 text-white" />
               </div>
-              <div className="flex-1 min-w-0">
+              <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
                 <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
                   Factura de Venta
                 </h1>
+                <StoreBadge />
               </div>
               {invoiceNumber !== 'Pendiente' && invoiceNumber !== 'Generando...' && (
                 <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">

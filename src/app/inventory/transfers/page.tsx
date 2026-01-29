@@ -18,6 +18,7 @@ import { TransferModal } from '@/components/inventory/transfer-modal'
 import { CancelTransferModal } from '@/components/ui/cancel-transfer-modal'
 import { PDFService } from '@/lib/pdf-service'
 import { DollarSign, CreditCard } from 'lucide-react'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 export default function TransfersPage() {
   const { user } = useAuth()
@@ -352,7 +353,10 @@ export default function TransfersPage() {
       <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Transferencias de Inventario</h1>
+            <div className="flex items-center gap-3 flex-wrap">
+              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Transferencias de Inventario</h1>
+              <StoreBadge />
+            </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Gestiona las transferencias de productos entre tiendas
             </p>

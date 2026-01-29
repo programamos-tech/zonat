@@ -28,6 +28,7 @@ import {
   TrendingUp
 } from 'lucide-react'
 import { LogEntry } from '@/types/logs'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 interface LogsTableProps {
   logs: LogEntry[]
@@ -357,6 +358,7 @@ export function LogsTable({
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <RefreshCw className="h-5 w-5 md:h-6 md:w-6 text-gray-600 flex-shrink-0" />
                   <span className="flex-shrink-0">Registro de Actividades</span>
+                  <StoreBadge />
                 </CardTitle>
                 <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   Historial completo de todas las operaciones del sistema

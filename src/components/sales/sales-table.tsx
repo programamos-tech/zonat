@@ -28,6 +28,7 @@ import {
   Truck
 } from 'lucide-react'
 import { Sale, Credit, StoreStockTransfer } from '@/types'
+import { StoreBadge } from '@/components/ui/store-badge'
 import { usePermissions } from '@/hooks/usePermissions'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
@@ -399,6 +400,7 @@ export function SalesTable({
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <Receipt className="h-5 w-5 md:h-6 md:w-6 text-green-600 flex-shrink-0" />
                   <span className="flex-shrink-0">Gestión de Ventas</span>
+                  <StoreBadge />
                   {todaySalesTotal !== undefined && (
                     <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
                       <span className="hidden md:inline">• Ventas directas hoy: </span>

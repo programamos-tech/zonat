@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { Credit } from '@/types'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 // Funciones para manejar estados
 
@@ -218,6 +219,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <CreditCard className="h-5 w-5 md:h-6 md:w-6 text-orange-600 flex-shrink-0" />
                   <span className="flex-shrink-0">Gestión de Créditos</span>
+                  <StoreBadge />
                   {todayPaymentsTotal !== undefined && (
                     <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
                       <span className="hidden md:inline">• Hoy: </span>

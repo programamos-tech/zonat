@@ -17,6 +17,7 @@ import {
   RefreshCcw
 } from 'lucide-react'
 import { Warranty } from '@/types'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 interface WarrantyTableProps {
   warranties: Warranty[]
@@ -122,6 +123,7 @@ export function WarrantyTable({
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <Shield className="h-5 w-5 md:h-6 md:w-6 text-purple-600 flex-shrink-0" />
                   <span className="flex-shrink-0">Gestión de Garantías</span>
+                  <StoreBadge />
                   {todayWarrantiesCount !== undefined && (
                     <span className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 ml-2">
                       <span className="hidden md:inline">• Hoy: </span>

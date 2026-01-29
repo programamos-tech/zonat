@@ -1638,23 +1638,26 @@ export default function DashboardPage() {
                     </span>
                   </div>
                 )}
-                <Button 
-                  onClick={() => setHideNumbers(!hideNumbers)}
-                  variant="outline"
-                  className="w-auto justify-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 text-xs md:text-sm px-3 md:px-3 py-2 md:py-2"
-                  title={hideNumbers ? 'Mostrar números' : 'Ocultar números'}
-                >
-                  {hideNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                </Button>
-                <Button 
-                  onClick={handleRefresh}
-                  disabled={isRefreshing}
-                  variant="outline"
-                  className="w-full sm:w-auto justify-center sm:justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-3 md:px-4 py-2 md:py-2"
-                >
-                  <RefreshCw className={`h-4 w-4 md:h-4 md:w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-                  <span className="hidden md:inline">Actualizar</span>
-                </Button>
+                {/* Botones de acción agrupados */}
+                <div className="flex items-center gap-2">
+                  <Button 
+                    onClick={() => setHideNumbers(!hideNumbers)}
+                    variant="outline"
+                    className="justify-center text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 text-xs md:text-sm px-2.5 md:px-3 py-2"
+                    title={hideNumbers ? 'Mostrar números' : 'Ocultar números'}
+                  >
+                    {hideNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                  <Button 
+                    onClick={handleRefresh}
+                    disabled={isRefreshing}
+                    variant="outline"
+                    className="justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2.5 md:px-4 py-2"
+                  >
+                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                    <span className="hidden md:inline">Actualizar</span>
+                  </Button>
+                </div>
               </div>
             </div>
           </div>

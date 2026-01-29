@@ -15,6 +15,7 @@ import {
   RefreshCcw
 } from 'lucide-react'
 import { Client } from '@/types'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 interface ClientTableProps {
   clients: Client[]
@@ -112,6 +113,7 @@ export function ClientTable({
                 <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                   <Users className="h-5 w-5 md:h-6 md:w-6 text-red-600 flex-shrink-0" />
                   <span className="flex-shrink-0">Gestión de Clientes</span>
+                  <StoreBadge />
                 </CardTitle>
                 <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   Administra tus clientes minoristas, mayoristas y consumidores finales

@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/tooltip'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
+import { StoreBadge } from '@/components/ui/store-badge'
 
 interface ProductTableProps {
   products: Product[]
@@ -277,6 +278,7 @@ export function ProductTable({
                   <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
                     <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 flex-shrink-0" />
                     <span className="flex-shrink-0">Gestión de Productos</span>
+                    <StoreBadge />
                   {isSearching && (
                       <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200 text-xs flex-shrink-0">
                       Búsqueda activa
