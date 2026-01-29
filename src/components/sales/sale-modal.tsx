@@ -24,8 +24,14 @@ import {
 import { Sale, SaleItem, Product, Client, SalePayment } from '@/types'
 import { useClients } from '@/contexts/clients-context'
 import { useProducts } from '@/contexts/products-context'
+import { useAuth } from '@/contexts/auth-context'
 import { ProductsService } from '@/lib/products-service'
 import { ClientModal } from '@/components/clients/client-modal'
+
+// Constante para identificar la tienda principal
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+// Margen mínimo de ganancia para microtiendas (10%)
+const MIN_PROFIT_MARGIN = 0.10
 
 interface SaleModalProps {
   isOpen: boolean
@@ -38,6 +44,10 @@ interface SaleModalProps {
 export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModalProps) {
   const { clients, createClient, getAllClients } = useClients()
   const { products, refreshProducts } = useProducts()
+  const { user } = useAuth()
+  
+  // Detectar si es tienda principal o microtienda
+  const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
@@ -193,7 +203,8 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
       if (debouncedProductSearch.trim().length >= 2) {
         setIsSearchingProducts(true)
         try {
-          const results = await ProductsService.searchProducts(debouncedProductSearch)
+          // Pasar el storeId del usuario para obtener precios correctos de store_stock
+          const results = await ProductsService.searchProducts(debouncedProductSearch, undefined, user?.storeId)
           if (!cancelled) {
             updateProductCache(results)
             setSearchedProducts(results)
@@ -219,7 +230,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     return () => {
       cancelled = true
     }
-  }, [debouncedProductSearch])
+  }, [debouncedProductSearch, user?.storeId])
 
   const filteredProducts = useMemo(() => {
     // Si no hay búsqueda, mostrar solo los primeros 5 productos como sugerencias
@@ -454,6 +465,16 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
   }
 
   const handleAddProduct = (product: Product) => {
+    // Debug: ver qué valores tiene el producto cuando se agrega
+    console.log('[SALE MODAL] handleAddProduct - product:', {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      cost: product.cost,
+      isMainStore: isMainStore,
+      userStoreId: user?.storeId
+    })
+    
     const availableStock = getAvailableStock(product.id)
     const selectedQuantity = getSelectedQuantity(product.id)
     
@@ -499,6 +520,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
         total: product.price,
         addedAt: now
       }
+      console.log('[SALE MODAL] handleAddProduct - newItem unitPrice:', newItem.unitPrice)
       setSelectedProducts(prev => [newItem, ...prev])
     }
     setShowProductDropdown(false)
@@ -548,9 +570,41 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
       const product = findProductById(item.productId)
       if (!product) return
       
-      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
-      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
-      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      // Debug: ver qué valores tiene el producto
+      console.log('[SALE MODAL] handlePriceBlur - product:', {
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        cost: product.cost,
+        isMainStore: isMainStore,
+        userStoreId: user?.storeId
+      })
+      
+      let minPrice: number
+      let priceType: string
+      
+      if (isMainStore) {
+        // Tienda principal: lógica original
+        minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+        priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      } else {
+        // Microtiendas: si tiene precio de venta, usar ese; si no, costo + 10% de margen
+        if (product.price && product.price > 0) {
+          minPrice = product.price
+          priceType = 'precio de venta'
+        } else {
+          const cost = product.cost || 0
+          minPrice = Math.ceil(cost * (1 + MIN_PROFIT_MARGIN))
+          priceType = 'costo + 10% margen mínimo'
+        }
+      }
+      
+      console.log('[SALE MODAL] handlePriceBlur - validation:', {
+        itemUnitPrice: item.unitPrice,
+        minPrice: minPrice,
+        priceType: priceType,
+        shouldShowAlert: item.unitPrice < minPrice
+      })
       
       // Si el precio es menor al mínimo, mostrar alerta
       if (item.unitPrice < minPrice) {
@@ -651,16 +705,31 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     if (!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod) return
 
     // Validar que todos los precios de venta sean >= precio mínimo
-    // Si tiene precio de venta, debe ser >= precio de venta
-    // Si no tiene precio de venta, debe ser >= precio de compra
+    // Tienda principal: si tiene precio de venta, usar ese; si no, usar costo
+    // Microtiendas: si tiene precio de venta, usar ese; si no, costo + 10% margen mínimo
     const invalidProducts: string[] = []
     validProducts.forEach(item => {
       const product = findProductById(item.productId)
       if (!product) return
       
-      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
-      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
-      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      let minPrice: number
+      let priceType: string
+      
+      if (isMainStore) {
+        // Tienda principal: lógica original
+        minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+        priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      } else {
+        // Microtiendas: si tiene precio de venta, usar ese; si no, costo + 10% de margen
+        if (product.price && product.price > 0) {
+          minPrice = product.price
+          priceType = 'precio de venta'
+        } else {
+          const cost = product.cost || 0
+          minPrice = Math.ceil(cost * (1 + MIN_PROFIT_MARGIN))
+          priceType = 'costo + 10% margen mínimo'
+        }
+      }
       
       if (item.unitPrice < minPrice) {
         invalidProducts.push(`${item.productName} no puede ser vendido por menos de ${formatCurrency(minPrice)} (${priceType})`)
@@ -1108,7 +1177,17 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
                                       (() => {
                                         const product = findProductById(item.productId)
                                         if (!product) return false
-                                        const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+                                        let minPrice: number
+                                        if (isMainStore) {
+                                          minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+                                        } else {
+                                          if (product.price && product.price > 0) {
+                                            minPrice = product.price
+                                          } else {
+                                            const cost = product.cost || 0
+                                            minPrice = Math.ceil(cost * (1 + MIN_PROFIT_MARGIN))
+                                          }
+                                        }
                                         return item.unitPrice && item.unitPrice < minPrice
                                       })()
                                         ? 'border-red-500 dark:border-red-500'

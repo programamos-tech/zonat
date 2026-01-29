@@ -48,10 +48,16 @@ export default function ProductDetailPage() {
   const userRole = user?.role?.toLowerCase() || ''
   const isVendedor = userRole === 'vendedor'
   
+  // Detectar si es tienda principal o microtienda
+  const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+  const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
+  
   const canEdit = isVendedor ? false : hasPermission('products', 'edit')
-  const canDelete = isVendedor ? false : hasPermission('products', 'delete')
+  // Solo se puede eliminar desde la tienda principal
+  const canDelete = isVendedor ? false : (isMainStore && hasPermission('products', 'delete'))
   const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
-  const canTransfer = isVendedor ? false : hasPermission('transfers', 'create') // Transferir requiere crear transferencias
+  // Solo se puede transferir desde la tienda principal
+  const canTransfer = isVendedor ? false : (isMainStore && hasPermission('transfers', 'create'))
   
   console.log('[PRODUCT DETAIL] Component mounted, productId:', productId)
   console.log('[PRODUCT DETAIL] Params:', params)
@@ -580,26 +586,37 @@ export default function ProductDetailPage() {
                     </div>
                   </div>
 
-                  {/* Resumen */}
-                  <div className="grid grid-cols-3 gap-2 md:gap-4 mt-3 md:mt-4">
-                    <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
-                      <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatNumber(product.stock.warehouse)}
+                  {/* Resumen - En microtiendas solo Stock */}
+                  <div className={`grid ${isMainStore ? 'grid-cols-3' : 'grid-cols-1'} gap-2 md:gap-4 mt-3 md:mt-4`}>
+                    {isMainStore ? (
+                      <>
+                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
+                          <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                            {formatNumber(product.stock.warehouse)}
+                          </div>
+                        </div>
+                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
+                          <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                            {formatNumber(product.stock.store)}
+                          </div>
+                        </div>
+                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                          <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                            {formatNumber(product.stock.total)}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Stock</div>
+                        <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
+                          {formatNumber(product.stock.store)}
+                        </div>
                       </div>
-                    </div>
-                    <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
-                      <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatNumber(product.stock.store)}
-                      </div>
-                    </div>
-                    <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
-                      <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                        {formatNumber(product.stock.total)}
-                      </div>
-                    </div>
+                    )}
                   </div>
 
                   {/* Estados y Botones de Acción */}

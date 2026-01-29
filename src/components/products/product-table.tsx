@@ -24,6 +24,7 @@ import {
   ChevronRight
 } from 'lucide-react'
 import { Product, Category } from '@/types'
+import type { StockFilter } from '@/lib/products-service'
 import {
   Tooltip,
   TooltipContent,
@@ -41,6 +42,8 @@ interface ProductTableProps {
   totalProducts: number
   hasMore: boolean
   isSearching: boolean
+  stockFilter: StockFilter
+  onFilterChange: (filter: StockFilter) => void
   onEdit: (product: Product) => void
   onDelete: (product: Product) => void
   onCreate: () => void
@@ -65,6 +68,8 @@ export function ProductTable({
   totalProducts,
   hasMore,
   isSearching,
+  stockFilter,
+  onFilterChange,
   onEdit,
   onDelete,
   onCreate,
@@ -87,23 +92,30 @@ export function ProductTable({
                      user?.role === 'vendedor' || 
                      user?.role === 'Vendedor'
   
+  // Verificar si estamos en la tienda principal
+  const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+  const isMainStore = !user?.storeId || user?.storeId === MAIN_STORE_ID
+  
   // Si es vendedor, forzar que no tenga permisos de edición/eliminación
   const canEdit = isVendedor ? false : hasPermission('products', 'edit')
-  const canDelete = isVendedor ? false : hasPermission('products', 'delete')
-  const canCreate = isVendedor ? false : hasPermission('products', 'create')
+  // Solo se puede eliminar desde la tienda principal
+  const canDelete = isVendedor ? false : (isMainStore && hasPermission('products', 'delete'))
+  // Solo se pueden crear productos desde la tienda principal
+  const canCreate = isVendedor ? false : (isMainStore && hasPermission('products', 'create'))
   const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
-  const canTransfer = isVendedor ? false : hasPermission('transfers', 'create') // Transferir requiere crear transferencias
+  // Solo se puede transferir desde la tienda principal
+  const canTransfer = isVendedor ? false : (isMainStore && hasPermission('transfers', 'create'))
   
   // Debug: verificar valores
   useEffect(() => {
     if (user) {
       console.log('[PRODUCT TABLE] User role:', user.role)
       console.log('[PRODUCT TABLE] Is vendedor:', isVendedor)
+      console.log('[PRODUCT TABLE] Is main store:', isMainStore)
       console.log('[PRODUCT TABLE] Permissions:', { canEdit, canDelete, canCreate, canAdjust, canTransfer })
     }
-  }, [user, isVendedor, canEdit, canDelete, canCreate, canAdjust, canTransfer])
+  }, [user, isVendedor, isMainStore, canEdit, canDelete, canCreate, canAdjust, canTransfer])
   const [searchTerm, setSearchTerm] = useState('')
-  const [filterStockStatus, setFilterStockStatus] = useState('all')
 
   // Función simple para manejar búsqueda
   const handleSearch = (term: string) => {
@@ -228,13 +240,7 @@ export function ProductTable({
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
   }
 
-  // Para búsqueda, usar todos los productos (ya vienen filtrados del contexto)
-  // Para filtro de estado de stock, aplicar localmente
-  const filteredProducts = products.filter(product => {
-    if (filterStockStatus === 'all') return true
-    const stockStatus = getStockStatusLabel(product)
-    return stockStatus === filterStockStatus
-  })
+  // Los productos ya vienen filtrados desde el contexto (filtro aplicado en backend)
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -244,15 +250,19 @@ export function ProductTable({
     }).format(amount)
   }
 
+  // Opciones de estado de stock - las de bodega solo para tienda principal
   const stockStatusOptions = [
     { value: 'all', label: 'Todos los estados' },
     { value: 'Sin Stock', label: 'Sin Stock' },
     { value: 'Disponible Local', label: 'Disponible Local' },
     { value: 'Stock Local Bajo', label: 'Stock Local Bajo' },
     { value: 'Stock Local Muy Bajo', label: 'Stock Local Muy Bajo' },
-    { value: 'Solo Bodega', label: 'Solo Bodega' },
-    { value: 'Solo Bodega (Bajo)', label: 'Solo Bodega (Bajo)' },
-    { value: 'Solo Bodega (Muy Bajo)', label: 'Solo Bodega (Muy Bajo)' }
+    // Solo mostrar opciones de bodega en tienda principal
+    ...(isMainStore ? [
+      { value: 'Solo Bodega', label: 'Solo Bodega' },
+      { value: 'Solo Bodega (Bajo)', label: 'Solo Bodega (Bajo)' },
+      { value: 'Solo Bodega (Muy Bajo)', label: 'Solo Bodega (Muy Bajo)' }
+    ] : [])
   ]
 
   return (
@@ -283,7 +293,7 @@ export function ProductTable({
                   )}
                   <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   {isSearching 
-                    ? `Mostrando resultados de búsqueda (${filteredProducts.length} productos)`
+                    ? `Mostrando resultados de búsqueda (${products.length} productos)`
                     : 'Administra tu inventario de productos'
                   }
                 </p>
@@ -295,6 +305,11 @@ export function ProductTable({
                       <span className="hidden sm:inline">Nuevo Producto</span>
                       <span className="sm:hidden">Nuevo</span>
                     </Button>
+                  )}
+                  {!isMainStore && hasPermission('products', 'create') && (
+                    <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">
+                      Solo puedes crear productos desde la tienda principal
+                    </span>
                   )}
                   {canEdit && (
                     <Button 
@@ -320,7 +335,7 @@ export function ProductTable({
               </div>
               <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
                 {isSearching 
-                  ? `${filteredProducts.length} resultados`
+                  ? `${products.length} resultados`
                   : 'Administra tu inventario'
                 }
               </p>
@@ -372,8 +387,8 @@ export function ProductTable({
                 </button>
               </div>
               <select
-                value={filterStockStatus}
-                onChange={(e) => setFilterStockStatus(e.target.value)}
+                value={stockFilter}
+                onChange={(e) => onFilterChange(e.target.value as StockFilter)}
                 className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
               >
                 {stockStatusOptions.map(status => (
@@ -395,7 +410,7 @@ export function ProductTable({
             </div>
           )}
           <CardContent className="p-0 m-0">
-            {filteredProducts.length === 0 ? (
+            {products.length === 0 ? (
               <div className="text-center py-12">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -417,7 +432,7 @@ export function ProductTable({
               <>
                 {/* Vista de Tarjetas para Mobile */}
                 <div className="md:hidden space-y-3 p-3">
-                  {filteredProducts.map((product, index) => {
+                  {products.map((product, index) => {
                     const StatusIcon = getStatusIcon(product.status)
                     return (
                       <div
@@ -446,20 +461,29 @@ export function ProductTable({
                           </Badge>
                         </div>
                         
-                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <div className="text-center">
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Bodega</div>
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.warehouse}</div>
+                        {isMainStore ? (
+                          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Bodega</div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.warehouse}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Local</div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.total}</div>
+                            </div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Local</div>
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
+                        ) : (
+                          <div className="flex justify-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <div className="text-center">
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Stock</div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
+                            </div>
                           </div>
-                          <div className="text-center">
-                            <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
-                            <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.total}</div>
-                          </div>
-                        </div>
+                        )}
                         
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
                           <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
@@ -515,7 +539,7 @@ export function ProductTable({
 
                 {/* Vista de Cards para Desktop */}
                 <div className="hidden md:block space-y-4 p-4 md:p-6">
-                  {filteredProducts.map((product, index) => {
+                  {products.map((product, index) => {
                     const StatusIcon = getStatusIcon(product.status)
                     const globalIndex = ((currentPage - 1) * ITEMS_PER_PAGE) + index + 1
                     return (
@@ -546,32 +570,49 @@ export function ProductTable({
                                 </div>
                               </div>
                               
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                <div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
-                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                    {product.stock.warehouse}
+                              {isMainStore ? (
+                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
+                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                      {product.stock.warehouse}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
+                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                      {product.stock.store}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                      {product.stock.total}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado Stock</div>
+                                    <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                      {getStockStatusLabel(product)}
+                                    </Badge>
                                   </div>
                                 </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
-                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                    {product.stock.store}
+                              ) : (
+                                <div className="grid grid-cols-2 gap-4 mt-4">
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Stock</div>
+                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
+                                      {product.stock.store}
+                                    </div>
+                                  </div>
+                                  <div>
+                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado Stock</div>
+                                    <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                      {getStockStatusLabel(product)}
+                                    </Badge>
                                   </div>
                                 </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
-                                  <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                    {product.stock.total}
-                                  </div>
-                                </div>
-                                <div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado Stock</div>
-                                  <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
-                                    {getStockStatusLabel(product)}
-                                  </Badge>
-                                </div>
-                              </div>
+                              )}
                               
                               {product.status !== 'active' && (
                                 <div className="mt-4 flex items-center gap-2">

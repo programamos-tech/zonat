@@ -5,6 +5,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { X, Package, AlertTriangle, Warehouse, Store, TrendingUp, TrendingDown, FileText } from 'lucide-react'
 import { Product } from '@/types'
+import { useAuth } from '@/contexts/auth-context'
+
+// Constante para identificar la tienda principal
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 interface StockAdjustmentModalProps {
   isOpen: boolean
@@ -14,6 +18,10 @@ interface StockAdjustmentModalProps {
 }
 
 export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: StockAdjustmentModalProps) {
+  const { user } = useAuth()
+  
+  // Detectar si es tienda principal o microtienda
+  const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   const [formData, setFormData] = useState({
     location: 'store' as 'warehouse' | 'store',
     newQuantity: 0,
@@ -163,11 +171,13 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                     <div className="text-gray-900 dark:text-white font-mono text-sm">{product.reference}</div>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Stock Actual - Bodega:</span>
-                    <div className="text-gray-900 dark:text-white font-medium">{formatNumber(product.stock.warehouse)} unidades</div>
-                  </div>
+                <div className={`grid ${isMainStore ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
+                  {isMainStore && (
+                    <div>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Stock Actual - Bodega:</span>
+                      <div className="text-gray-900 dark:text-white font-medium">{formatNumber(product.stock.warehouse)} unidades</div>
+                    </div>
+                  )}
                   <div>
                     <span className="text-sm text-gray-500 dark:text-gray-400">Stock Actual - Local:</span>
                     <div className="text-gray-900 dark:text-white font-medium">{formatNumber(product.stock.store)} unidades</div>
@@ -190,7 +200,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
                     Ubicación a Ajustar *
                   </label>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className={`grid ${isMainStore ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
                     <button
                       type="button"
                       onClick={() => handleInputChange('location', 'store')}
@@ -213,27 +223,30 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       </div>
                     </button>
                     
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('location', 'warehouse')}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            formData.location === 'warehouse'
-                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
-                          }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
-                        <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Bodega
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Stock actual: {formatNumber(product.stock.warehouse)}
+                    {/* Bodega solo visible en tienda principal */}
+                    {isMainStore && (
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('location', 'warehouse')}
+                            className={`p-4 rounded-lg border-2 transition-all ${
+                              formData.location === 'warehouse'
+                                ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
+                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                            }`}
+                      >
+                        <div className="flex items-center space-x-3">
+                          <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
+                          <div className="text-left">
+                            <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                              Bodega
+                            </div>
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              Stock actual: {formatNumber(product.stock.warehouse)}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </button>
+                      </button>
+                    )}
                   </div>
                 </div>
 

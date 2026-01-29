@@ -5,7 +5,48 @@ import { AuthService } from './auth-service'
 import { StoresService } from './stores-service'
 import { getCurrentUserStoreId, isMainStoreUser } from './store-helper'
 
+// Tipo para filtros de stock (funciona tanto para tienda principal como microtiendas)
+export type StockFilter =
+  | 'all'
+  | 'Sin Stock'
+  | 'Disponible Local'
+  | 'Stock Local Bajo'
+  | 'Stock Local Muy Bajo'
+  | 'Solo Bodega'
+  | 'Solo Bodega (Bajo)'
+  | 'Solo Bodega (Muy Bajo)'
+
 export class ProductsService {
+  // Helper para aplicar filtro de stock a productos ya mapeados (funciona para tienda principal y microtiendas)
+  private static applyStockFilterToProducts(products: Product[], stockFilter?: StockFilter): Product[] {
+    if (!stockFilter || stockFilter === 'all') {
+      return products
+    }
+
+    return products.filter(product => {
+      const storeStock = product.stock?.store || 0
+      const warehouseStock = product.stock?.warehouse || 0
+
+      switch (stockFilter) {
+        case 'Sin Stock':
+          return storeStock === 0 && warehouseStock === 0
+        case 'Disponible Local':
+          return storeStock >= 10
+        case 'Stock Local Bajo':
+          return storeStock >= 5 && storeStock <= 9
+        case 'Stock Local Muy Bajo':
+          return storeStock >= 1 && storeStock <= 4
+        case 'Solo Bodega':
+          return storeStock === 0 && warehouseStock >= 20
+        case 'Solo Bodega (Bajo)':
+          return storeStock === 0 && warehouseStock >= 10 && warehouseStock <= 19
+        case 'Solo Bodega (Muy Bajo)':
+          return storeStock === 0 && warehouseStock >= 1 && warehouseStock <= 9
+        default:
+          return true
+      }
+    })
+  }
   // Helper para obtener stock según el tipo de tienda
   private static async getProductStockForStore(productId: string, storeId: string | null): Promise<{ warehouse: number, store: number, total: number }> {
     try {
@@ -249,12 +290,23 @@ export class ProductsService {
     return stockMap
   }
 
-  // Obtener todos los productos con paginación
-  static async getAllProducts(page: number = 1, limit: number = 10): Promise<{ products: Product[], total: number, hasMore: boolean }> {
+  // Obtener todos los productos con paginación y filtro de stock
+  static async getAllProducts(
+    page: number = 1, 
+    limit: number = 10,
+    stockFilter?: StockFilter
+  ): Promise<{ products: Product[], total: number, hasMore: boolean }> {
     try {
-      const from = (page - 1) * limit
-      const to = from + limit - 1
       const currentStoreId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+      
+      // Para filtros de stock, necesitamos obtener más productos y filtrar después
+      // porque el stock real puede venir de store_stock (microtiendas)
+      const needsStockFilter = stockFilter && stockFilter !== 'all'
+      const fetchLimit = needsStockFilter ? limit * 5 : limit // Obtener más si hay filtro
+      const from = (page - 1) * (needsStockFilter ? fetchLimit : limit)
+      const to = from + fetchLimit - 1
 
       // Obtener productos paginados
       // Ordenar por created_at (más recientes primero)
@@ -284,8 +336,6 @@ export class ProductsService {
       const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
       
       // Para microtiendas, obtener cost/price de store_stock
-      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
       let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
       
       if (!isMainStore && currentStoreId) {
@@ -308,15 +358,24 @@ export class ProductsService {
       const mappedProducts = data.map((product: any) => {
         const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
         
-        // Para microtiendas, usar cost/price de store_stock si existe, sino usar los de products como fallback
+        // Para microtiendas, usar cost/price de store_stock si existe
+        // Si el costo en store_stock es 0 o null, usar el costo original del producto como respaldo
+        // (esto cubre transferencias anteriores a la implementación de costos por tienda)
         let productCost = product.cost
         let productPrice = product.price
         
         if (!isMainStore) {
           const storeStockCostPrice = costPriceMap.get(product.id)
+          
           if (storeStockCostPrice) {
-            productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : product.cost
-            productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : product.price
+            // Si hay registro en store_stock con cost/price, usar esos valores
+            // Si son null, usar 0 (no se ha configurado el precio aún)
+            productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : 0
+            productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
+          } else {
+            // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
+            productCost = 0
+            productPrice = 0
           }
         }
         
@@ -336,8 +395,11 @@ export class ProductsService {
         }
       })
 
-      // Ordenar en el cliente: productos con stock primero, luego por fecha más reciente
-      const products = mappedProducts.sort((a, b) => {
+      // Aplicar filtro de stock si se especificó
+      const filteredProducts = this.applyStockFilterToProducts(mappedProducts, stockFilter)
+
+      // Ordenar: productos con stock primero, luego por fecha más reciente
+      const sortedProducts = filteredProducts.sort((a, b) => {
         const aHasStock = a.stock.total > 0
         const bHasStock = b.stock.total > 0
         
@@ -351,10 +413,17 @@ export class ProductsService {
         return new Date(bDate).getTime() - new Date(aDate).getTime()
       })
 
+      // Paginar los resultados filtrados
+      const paginatedProducts = needsStockFilter 
+        ? sortedProducts.slice(0, limit) 
+        : sortedProducts
+
       return {
-        products,
-        total: count || 0,
-        hasMore: to < (count || 0) - 1
+        products: paginatedProducts,
+        total: needsStockFilter ? filteredProducts.length : (count || 0),
+        hasMore: needsStockFilter 
+          ? sortedProducts.length > limit 
+          : to < (count || 0) - 1
       }
     } catch (error) {
       // Error silencioso en producción
@@ -401,22 +470,48 @@ export class ProductsService {
         const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
         
         // Para microtiendas, obtener cost/price de store_stock
+        // Solo filtrar por store_id para evitar URLs muy largas con muchos product_ids
+        // IMPORTANTE: Usar limit alto para traer todos los registros (Supabase tiene límite de 1000 por defecto)
         let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
         if (!isMainStore && currentStoreId) {
-          const { data: storeStockData } = await supabaseAdmin
-            .from('store_stock')
-            .select('product_id, cost, price')
-            .eq('store_id', currentStoreId)
-            .in('product_id', productIds)
+          // Obtener todos los registros en lotes para evitar el límite de 1000
+          let allStoreStockData: any[] = []
+          let page = 0
+          const pageSize = 1000
+          let hasMore = true
           
-          if (storeStockData) {
-            storeStockData.forEach((item: any) => {
-              costPriceMap.set(item.product_id, {
-                cost: item.cost,
-                price: item.price
-              })
-            })
+          while (hasMore) {
+            const from = page * pageSize
+            const to = from + pageSize - 1
+            
+            const { data: storeStockData, error: storeStockError } = await supabaseAdmin
+              .from('store_stock')
+              .select('product_id, cost, price')
+              .eq('store_id', currentStoreId)
+              .range(from, to)
+            
+            if (storeStockError || !storeStockData || storeStockData.length === 0) {
+              hasMore = false
+            } else {
+              allStoreStockData = [...allStoreStockData, ...storeStockData]
+              hasMore = storeStockData.length === pageSize
+              page++
+            }
           }
+          
+          console.log('[PRODUCTS SERVICE] store_stock query result:', {
+            currentStoreId,
+            storeStockDataCount: allStoreStockData.length,
+            sampleData: allStoreStockData.slice(0, 3),
+            sampleWithCost: allStoreStockData.filter(d => d.cost !== null && d.cost > 0).slice(0, 3)
+          })
+          
+          allStoreStockData.forEach((item: any) => {
+            costPriceMap.set(item.product_id, {
+              cost: item.cost,
+              price: item.price
+            })
+          })
         }
         
         // Log para depuración
@@ -435,28 +530,42 @@ export class ProductsService {
           const stockFromMap = stockMap.get(product.id)
           const stock = stockFromMap || { warehouse: 0, store: 0, total: 0 }
           
-          // Para microtiendas, usar cost/price de store_stock si existe, sino usar los de products como fallback
+          // Para microtiendas, usar cost/price de store_stock si existe
+          // Si el costo en store_stock es 0 o null, usar el costo original del producto como respaldo
+          // (esto cubre transferencias anteriores a la implementación de costos por tienda)
           let productCost = product.cost
           let productPrice = product.price
           
           if (!isMainStore) {
             const storeStockCostPrice = costPriceMap.get(product.id)
+            
             if (storeStockCostPrice) {
-              productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : product.cost
-              productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : product.price
+              // Si hay registro en store_stock con cost/price, usar esos valores
+              // Si son null, usar 0 (no se ha configurado el precio aún)
+              productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : 0
+              productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
+            } else {
+              // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
+              productCost = 0
+              productPrice = 0
             }
           }
           
           // Log para depuración
           if (productIds.indexOf(product.id) < 3) {
-            console.log('[PRODUCTS SERVICE] Mapped product stock:', {
+            const storeStockCostPriceDebug = costPriceMap.get(product.id)
+            console.log('[PRODUCTS SERVICE] Mapped product:', {
               productId: product.id,
               productName: product.name,
-              stockFromMap: stockFromMap,
-              stock_warehouse_from_db: product.stock_warehouse,
-              stock_store_from_db: product.stock_store,
-              finalStock: stock,
-              currentStoreId: currentStoreId
+              isMainStore: isMainStore,
+              originalCost: product.cost,
+              originalPrice: product.price,
+              storeStockCostPrice: storeStockCostPriceDebug,
+              finalCost: productCost,
+              finalPrice: productPrice,
+              hasStoreStockEntry: !!storeStockCostPriceDebug,
+              costPriceMapSize: costPriceMap.size,
+              finalStock: stock
             })
           }
           
@@ -635,12 +744,16 @@ export class ProductsService {
           .single()
         
         if (storeStock) {
-          // Si existe store_stock con cost/price, usarlos; si son null, usar los de products como fallback
-          productCost = storeStock.cost !== null ? storeStock.cost : data.cost
-          productPrice = storeStock.price !== null ? storeStock.price : data.price
+          // Si existe store_stock con cost/price, usarlos
+          // Si son null, usar 0 (no se ha configurado el precio aún)
+          productCost = storeStock.cost !== null ? storeStock.cost : 0
+          productPrice = storeStock.price !== null ? storeStock.price : 0
           console.log('[PRODUCTS SERVICE] Using store_stock cost/price:', { cost: productCost, price: productPrice })
         } else {
-          console.log('[PRODUCTS SERVICE] No store_stock entry, using products cost/price as fallback')
+          // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
+          productCost = 0
+          productPrice = 0
+          console.log('[PRODUCTS SERVICE] No store_stock entry, using 0 for cost/price')
         }
       }
 
@@ -927,7 +1040,8 @@ export class ProductsService {
   }
 
   // Buscar productos
-  static async searchProducts(query: string): Promise<Product[]> {
+  // storeId: opcional, si se pasa se usa ese, si no se intenta obtener del localStorage
+  static async searchProducts(query: string, stockFilter?: StockFilter, storeId?: string | null): Promise<Product[]> {
     try {
       const cleanQuery = query.trim()
       
@@ -949,12 +1063,56 @@ export class ProductsService {
       }
 
       // Obtener stock correcto según el tipo de tienda
-      const currentStoreId = getCurrentUserStoreId()
+      // Usar storeId pasado como parámetro, o intentar obtener del localStorage
+      const currentStoreId = storeId !== undefined ? storeId : getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+      
+      console.log('[PRODUCTS SERVICE] searchProducts - storeId param:', storeId, 'currentStoreId:', currentStoreId, 'isMainStore:', isMainStore)
       const productIds = data.map((p: any) => p.id)
       const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
       
+      // Para microtiendas, obtener cost/price de store_stock
+      let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
+      
+      if (!isMainStore && currentStoreId) {
+        const { data: storeStockData } = await supabaseAdmin
+          .from('store_stock')
+          .select('product_id, cost, price')
+          .eq('store_id', currentStoreId)
+          .in('product_id', productIds)
+        
+        if (storeStockData) {
+          storeStockData.forEach((item: any) => {
+            costPriceMap.set(item.product_id, {
+              cost: item.cost,
+              price: item.price
+            })
+          })
+        }
+      }
+      
       const mappedProducts = data.map((product: any) => {
         const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
+        
+        // Para microtiendas, usar cost/price de store_stock si existe
+        let productCost = product.cost
+        let productPrice = product.price
+        
+        if (!isMainStore) {
+          const storeStockCostPrice = costPriceMap.get(product.id)
+          
+          if (storeStockCostPrice) {
+            // Si hay registro en store_stock con cost/price, usar esos valores
+            // Si son null, usar 0 (no se ha configurado el precio aún)
+            productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : 0
+            productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
+          } else {
+            // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
+            productCost = 0
+            productPrice = 0
+          }
+        }
         
         return {
           id: product.id,
@@ -963,8 +1121,8 @@ export class ProductsService {
           categoryId: product.category_id,
           brand: product.brand,
           reference: product.reference,
-          price: product.price,
-          cost: product.cost,
+          price: productPrice,
+          cost: productCost,
           stock: stock,
           status: product.status,
           createdAt: product.created_at,
@@ -972,8 +1130,11 @@ export class ProductsService {
         }
       })
 
+      // Aplicar filtro de stock si se especificó
+      const filteredProducts = this.applyStockFilterToProducts(mappedProducts, stockFilter)
+
       // Ordenar: productos con stock primero, luego por fecha más reciente
-      return mappedProducts.sort((a, b) => {
+      return filteredProducts.sort((a, b) => {
         const aHasStock = a.stock.total > 0
         const bHasStock = b.stock.total > 0
         

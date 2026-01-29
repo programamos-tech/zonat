@@ -16,6 +16,7 @@ import {
 import { Warranty, Product, Client } from '@/types'
 import { ProductsService } from '@/lib/products-service'
 import { ClientsService } from '@/lib/clients-service'
+import { useAuth } from '@/contexts/auth-context'
 
 interface WarrantyModalProps {
   isOpen: boolean
@@ -39,6 +40,7 @@ const getProductStock = (product?: Product | null) => {
 }
 
 export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyModalProps) {
+  const { user } = useAuth()
   const [loading, setLoading] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   
@@ -121,7 +123,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       }
       setDefectiveLoading(true)
       try {
-        const results = await ProductsService.searchProducts(defectiveSearch.trim())
+        const results = await ProductsService.searchProducts(defectiveSearch.trim(), undefined, user?.storeId)
         setDefectiveResults(results.slice(0, 10))
       } catch (error) {
         setDefectiveResults([])
@@ -146,7 +148,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
       }
       setReplacementLoading(true)
       try {
-        const results = await ProductsService.searchProducts(replacementSearch.trim())
+        const results = await ProductsService.searchProducts(replacementSearch.trim(), undefined, user?.storeId)
         setReplacementResults(results.slice(0, 10))
     } catch (error) {
         setReplacementResults([])

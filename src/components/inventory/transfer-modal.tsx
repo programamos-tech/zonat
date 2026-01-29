@@ -44,6 +44,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   const [cashAmount, setCashAmount] = useState<string>('')
   const [transferAmount, setTransferAmount] = useState<string>('')
   const [paymentError, setPaymentError] = useState<string>('')
+  const [showStoreError, setShowStoreError] = useState(false)
 
   useEffect(() => {
     if (isOpen && fromStoreId) {
@@ -56,6 +57,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       setStockAlerts({})
       setPaymentMethod('transfer')
       setCashAmount('')
+      setShowStoreError(false)
       setTransferAmount('')
       setPaymentError('')
     }
@@ -176,7 +178,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
   const handleSave = async () => {
     if (!fromStoreId || !toStoreId) {
-      toast.error('Debes seleccionar la tienda destino')
+      setShowStoreError(true)
       return
     }
 
@@ -361,8 +363,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   const destinationStores = stores.filter(s => s.id !== fromStoreId && s.isActive)
 
   return (
-    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 xl:pb-4">
+      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -390,7 +392,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                   Tienda Destino <span className="text-red-500">*</span>
                 </label>
-                <Select value={toStoreId} onValueChange={setToStoreId}>
+                <Select value={toStoreId} onValueChange={(value) => { setToStoreId(value); setShowStoreError(false); }}>
                   <SelectTrigger className="w-full h-10 text-sm">
                     <SelectValue placeholder="Seleccionar tienda destino" />
                   </SelectTrigger>
@@ -424,33 +426,32 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                   Productos a Transferir
                 </h3>
               </div>
-              <div>
-                {loadingProducts ? (
-                  <div className="text-center py-4">
-                    <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-cyan-600 mx-auto"></div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Cargando productos...</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {/* Buscador global - siempre visible */}
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Buscar Producto para Agregar
-                      </label>
-                      <div className="relative">
-                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                        <Input
-                          type="text"
-                          placeholder="Buscar por referencia o nombre..."
-                          value={globalProductSearch}
-                          onChange={(e) => setGlobalProductSearch(e.target.value)}
-                          className="pl-10 h-10 text-sm"
-                        />
+              <div className="space-y-4">
+                {/* Buscador global - siempre visible */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Buscar Producto para Agregar
+                  </label>
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Input
+                      type="text"
+                      placeholder="Buscar por referencia o nombre..."
+                      value={globalProductSearch}
+                      onChange={(e) => setGlobalProductSearch(e.target.value)}
+                      className="pl-10 h-10 text-sm"
+                      disabled={loadingProducts}
+                    />
+                    {loadingProducts && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-600"></div>
                       </div>
-                      
-                      {/* Resultados de búsqueda */}
-                      {globalProductSearch && (
-                        <div className="mt-2 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+                    )}
+                  </div>
+                  
+                  {/* Resultados de búsqueda */}
+                  {globalProductSearch && !loadingProducts && (
+                    <div className="mt-2 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
                           {availableProducts
                             .filter(p => {
                               // Filtrar productos ya seleccionados
@@ -751,7 +752,6 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                       </div>
                     )}
                   </div>
-                )}
               </div>
             </div>
 
@@ -884,8 +884,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
         {/* Footer */}
         <div className="flex flex-col gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
-          {/* Alerta si no hay tienda seleccionada */}
-          {!toStoreId && (
+          {/* Alerta si no hay tienda seleccionada (solo mostrar después de intentar guardar) */}
+          {showStoreError && !toStoreId && (
             <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
               <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
               <span className="text-sm text-yellow-700 dark:text-yellow-300">
@@ -906,7 +906,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
             <Button
               onClick={handleSave}
               className="bg-cyan-600 hover:bg-cyan-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={isSaving || !toStoreId || items.length === 0}
+              disabled={isSaving}
             >
               {isSaving ? (
                 <div className="flex items-center gap-2">
@@ -918,7 +918,6 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               )}
             </Button>
           </div>
-        </div>
         </div>
       </div>
     </div>

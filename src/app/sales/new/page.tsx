@@ -25,12 +25,22 @@ import { Sale, SaleItem, Product, Client, SalePayment } from '@/types'
 import { useClients } from '@/contexts/clients-context'
 import { useProducts } from '@/contexts/products-context'
 import { useSales } from '@/contexts/sales-context'
+import { useAuth } from '@/contexts/auth-context'
+
+// Constante para identificar la tienda principal
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+// Margen mínimo de ganancia para microtiendas (10%)
+const MIN_PROFIT_MARGIN = 0.10
 
 export default function NewSalePage() {
   const router = useRouter()
   const { clients, getAllClients } = useClients()
   const { products, refreshProducts, searchProducts } = useProducts()
   const { createSale } = useSales()
+  const { user } = useAuth()
+  
+  // Detectar si es tienda principal o microtienda
+  const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [selectedProducts, setSelectedProducts] = useState<SaleItem[]>([])
@@ -156,7 +166,7 @@ export default function NewSalePage() {
     if (!client || !client.name) return false
     const nameLower = client.name.toLowerCase()
     // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
-    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
+    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo', 'store', 'tienda', 'microtienda', 'micro tienda', 'sucursal']
     return storeKeywords.some(keyword => nameLower.includes(keyword))
   }
 
@@ -420,9 +430,24 @@ export default function NewSalePage() {
     const product = findProductById(item.productId)
     if (!product) return
     
-    // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
-    const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
-    const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+    let minPrice: number
+    let priceType: string
+    
+    if (isMainStore) {
+      // Tienda principal: lógica original
+      minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+      priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+    } else {
+      // Microtiendas: si tiene precio de venta, usar ese; si no, costo + 10% de margen
+      if (product.price && product.price > 0) {
+        minPrice = product.price
+        priceType = 'precio de venta'
+      } else {
+        const cost = product.cost || 0
+        minPrice = Math.ceil(cost * (1 + MIN_PROFIT_MARGIN))
+        priceType = 'costo + 10% margen mínimo'
+      }
+    }
     
     // Si el precio es menor al mínimo, mostrar alerta
     if (item.unitPrice < minPrice) {
@@ -616,16 +641,31 @@ export default function NewSalePage() {
     }
 
     // Verificar que los precios sean mayores o iguales al precio mínimo
-    // Si tiene precio de venta, debe ser >= precio de venta
-    // Si no tiene precio de venta, debe ser >= precio de compra
+    // Tienda principal: si tiene precio de venta, usar ese; si no, usar costo
+    // Microtiendas: si tiene precio de venta, usar ese; si no, costo + 10% margen mínimo
     const invalidProducts: string[] = []
     validProducts.forEach(item => {
       const product = findProductById(item.productId)
       if (!product) return
       
-      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
-      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
-      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      let minPrice: number
+      let priceType: string
+      
+      if (isMainStore) {
+        // Tienda principal: lógica original
+        minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
+        priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      } else {
+        // Microtiendas: si tiene precio de venta, usar ese; si no, costo + 10% de margen
+        if (product.price && product.price > 0) {
+          minPrice = product.price
+          priceType = 'precio de venta'
+        } else {
+          const cost = product.cost || 0
+          minPrice = Math.ceil(cost * (1 + MIN_PROFIT_MARGIN))
+          priceType = 'costo + 10% margen mínimo'
+        }
+      }
       
       if (item.unitPrice < minPrice) {
         invalidProducts.push(`${item.productName} no puede ser vendido por menos de ${formatCurrency(minPrice)} (${priceType})`)

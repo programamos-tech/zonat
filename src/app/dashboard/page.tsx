@@ -23,7 +23,9 @@ import {
   RefreshCw,
   Store as StoreIcon,
   Home,
-  Crown
+  Crown,
+  Eye,
+  EyeOff
 } from 'lucide-react'
 import { 
   BarChart, 
@@ -82,6 +84,7 @@ export default function DashboardPage() {
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
   const [showCancelledModal, setShowCancelledModal] = useState(false)
   const [isDarkMode, setIsDarkMode] = useState(false)
+  const [hideNumbers, setHideNumbers] = useState(false)
   const [currentStoreName, setCurrentStoreName] = useState<string | null>(null)
   const [currentStoreCity, setCurrentStoreCity] = useState<string | null>(null)
 
@@ -1063,6 +1066,34 @@ export default function DashboardPage() {
       return totalStock > 0;
     })
     
+    // DEBUG: Log para verificar productos con stock y sus costos
+    const sampleWithCost = productsWithStock.filter(p => p.cost > 0).slice(0, 5)
+    const totalInvestmentCalc = productsWithStock.reduce((sum, p) => {
+      const localStock = p.stock?.store || 0
+      const warehouseStock = p.stock?.warehouse || 0
+      const totalStock = localStock + warehouseStock
+      return sum + ((p.cost || 0) * totalStock)
+    }, 0)
+    
+    console.log('[DASHBOARD] Products debug:', {
+      totalProducts: allProducts.length,
+      productsForCalculation: productsForCalculation.length,
+      productsWithStock: productsWithStock.length,
+      productsWithCostGreaterThan0: productsWithStock.filter(p => p.cost > 0).length,
+      totalInvestmentCalc: totalInvestmentCalc,
+      sampleProductsWithStock: productsWithStock.slice(0, 3).map(p => ({
+        name: p.name,
+        cost: p.cost,
+        price: p.price,
+        stock: p.stock
+      })),
+      sampleProductsWithCost: sampleWithCost.map(p => ({
+        name: p.name,
+        cost: p.cost,
+        stock: p.stock
+      }))
+    })
+    
     // Total de unidades en stock (local + bodega) - solo productos con stock > 0
     const totalStockUnits = productsWithStock.reduce((sum, p) => {
       const storeStock = Number(p.stock?.store) || 0;
@@ -1348,6 +1379,26 @@ export default function DashboardPage() {
     }
   }, [filteredData, allProducts, allClients, allWarranties, allCredits])
 
+  // Función helper para formatear moneda con opción de ocultar
+  const formatCurrency = (amount: number): string => {
+    if (hideNumbers) {
+      return '$ ••••••'
+    }
+    return new Intl.NumberFormat('es-CO', { 
+      style: 'currency', 
+      currency: 'COP',
+      minimumFractionDigits: 0 
+    }).format(amount)
+  }
+
+  // Función helper para formatear números sin símbolo de moneda
+  const formatNumber = (num: number): string => {
+    if (hideNumbers) {
+      return '••••'
+    }
+    return num.toLocaleString('es-CO')
+  }
+
   // Obtener etiqueta del filtro de fecha
   const getDateFilterLabel = (filter: DateFilter) => {
     const labels: { [key: string]: string } = {
@@ -1588,6 +1639,14 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <Button 
+                  onClick={() => setHideNumbers(!hideNumbers)}
+                  variant="outline"
+                  className="w-auto justify-center gap-2 text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 text-xs md:text-sm px-3 md:px-3 py-2 md:py-2"
+                  title={hideNumbers ? 'Mostrar números' : 'Ocultar números'}
+                >
+                  {hideNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </Button>
+                <Button 
                   onClick={handleRefresh}
                   disabled={isRefreshing}
                   variant="outline"
@@ -1623,11 +1682,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.totalRevenue)}
+            {formatCurrency(metrics.totalRevenue)}
           </p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             {metrics.totalSales} ventas realizadas
@@ -1653,11 +1708,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.cashRevenue)}
+            {formatCurrency(metrics.cashRevenue)}
           </p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
@@ -1683,11 +1734,7 @@ export default function DashboardPage() {
             </div>
           </div>
           <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-            {new Intl.NumberFormat('es-CO', { 
-              style: 'currency', 
-              currency: 'COP',
-              minimumFractionDigits: 0 
-            }).format(metrics.transferRevenue)}
+            {formatCurrency(metrics.transferRevenue)}
           </p>
           <p className="text-xs text-gray-600 dark:text-gray-400">
             {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
@@ -1742,11 +1789,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {new Intl.NumberFormat('es-CO', { 
-                  style: 'currency', 
-                  currency: 'COP',
-                  minimumFractionDigits: 0 
-                }).format(metrics.creditRevenue)}
+                {formatCurrency(metrics.creditRevenue)}
               </p>
               <p className="text-xs text-gray-600 dark:text-gray-400">
                 {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
@@ -1780,11 +1823,7 @@ export default function DashboardPage() {
               <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
             </div>
             <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {new Intl.NumberFormat('es-CO', { 
-                style: 'currency', 
-                currency: 'COP',
-                minimumFractionDigits: 0 
-              }).format(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
+              {formatCurrency(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
               {isSuperAdmin 
@@ -1836,11 +1875,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {new Intl.NumberFormat('es-CO', { 
-                style: 'currency', 
-                currency: 'COP',
-                minimumFractionDigits: 0 
-              }).format(metrics.grossProfit)}
+              {formatCurrency(metrics.grossProfit)}
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
               Beneficio por ventas realizadas
@@ -1864,7 +1899,7 @@ export default function DashboardPage() {
               </div>
             </div>
             <p className="text-xl md:text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
-              ${metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment.toLocaleString('es-CO') : metrics.potentialInvestment.toLocaleString('es-CO')}
+              {formatCurrency(metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment : metrics.potentialInvestment)}
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
               {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
@@ -1900,7 +1935,7 @@ export default function DashboardPage() {
               créditos pendientes/parciales
             </p>
             <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
-              ${(metrics.totalDebt || 0).toLocaleString('es-CO')}
+              {formatCurrency(metrics.totalDebt || 0)}
             </p>
             <p className="text-xs text-gray-600 dark:text-gray-400">
               Total a hoy
@@ -1936,7 +1971,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between text-xs md:text-sm">
                 <span className="text-gray-600 dark:text-gray-400">Valor perdido:</span>
                 <span className="font-semibold text-orange-600 dark:text-orange-400">
-                  ${metrics.lostValue.toLocaleString('es-CO')}
+                  {formatCurrency(metrics.lostValue)}
                 </span>
               </div>
               <div className="text-center pt-1 md:pt-2">

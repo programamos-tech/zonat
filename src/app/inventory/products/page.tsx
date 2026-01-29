@@ -15,7 +15,7 @@ import { Product, Category, StockTransfer } from '@/types'
 import { toast } from 'sonner'
 
 export default function ProductsPage() {
-  const { products, loading, currentPage, totalProducts, hasMore, isSearching, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, refreshProducts, goToPage, searchProducts, productsLastUpdated } = useProducts()
+  const { products, loading, currentPage, totalProducts, hasMore, isSearching, stockFilter, setStockFilter, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, refreshProducts, goToPage, searchProducts, productsLastUpdated } = useProducts()
   const { categories, createCategory, toggleCategoryStatus, deleteCategory } = useCategories()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -184,6 +184,8 @@ export default function ProductsPage() {
         totalProducts={totalProducts}
         hasMore={hasMore}
         isSearching={isSearching}
+        stockFilter={stockFilter}
+        onFilterChange={setStockFilter}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onCreate={handleCreate}

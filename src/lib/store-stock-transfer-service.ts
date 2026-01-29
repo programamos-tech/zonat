@@ -241,11 +241,11 @@ export class StoreStockTransferService {
                 .from('clients')
                 .insert({
                   name: toStore.name,
-                  email: null,
-                  phone: null,
-                  document: `STORE-${toStoreId.substring(0, 8)}`, // Documento único basado en el ID de la tienda
-                  address: toStore.address || null,
-                  city: toStore.city || null,
+                  email: `${toStore.name.toLowerCase().replace(/\s+/g, '')}@tienda.local`,
+                  phone: '0000000000',
+                  document: `STORE-${toStoreId.substring(0, 8)}`,
+                  address: toStore.address || 'Sin dirección',
+                  city: toStore.city || 'Sin ciudad',
                   state: null,
                   type: 'mayorista',
                   credit_limit: 0,
@@ -257,7 +257,13 @@ export class StoreStockTransferService {
                 .single()
               
               if (clientError) {
-                console.error('[TRANSFER INVOICE] Error creating client for store:', clientError)
+                console.error('[TRANSFER INVOICE] Error creating client for store:', JSON.stringify(clientError, null, 2))
+                console.error('[TRANSFER INVOICE] Error details:', {
+                  code: clientError.code,
+                  message: clientError.message,
+                  details: clientError.details,
+                  hint: clientError.hint
+                })
                 // Intentar buscar de nuevo por nombre en caso de error
                 const { data: retryClients } = await supabaseAdmin
                   .from('clients')
@@ -1267,17 +1273,20 @@ export class StoreStockTransferService {
               const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
               const isToMicroStore = transfer.toStoreId !== MAIN_STORE_ID
               
+              // Si es microtienda, establecer cost = unitPrice y price = 0
+              // IMPORTANTE: Si unitPrice es 0, también guardarlo (es un precio válido)
+              const costToSet = isToMicroStore ? (originalItem.unitPrice ?? 0) : undefined
+              const priceToSet = isToMicroStore ? 0 : undefined
+              
               console.log('[STORE STOCK TRANSFER] Updating stock for micro store:', {
                 storeId: transfer.toStoreId,
                 productId: originalItem.productId,
                 quantityReceived: receivedItem.quantityReceived,
                 unitPrice: originalItem.unitPrice,
-                isToMicroStore
+                isToMicroStore,
+                costToSet,
+                priceToSet
               })
-              
-              // Si es microtienda, establecer cost = unitPrice y price = 0
-              const costToSet = isToMicroStore && originalItem.unitPrice ? originalItem.unitPrice : undefined
-              const priceToSet = isToMicroStore ? 0 : undefined
               
               const stockUpdated = await this.updateStoreStock(
                 transfer.toStoreId, 

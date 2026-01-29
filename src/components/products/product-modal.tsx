@@ -7,6 +7,10 @@ import { Badge } from '@/components/ui/badge'
 import { X, Package, Tag, DollarSign, BarChart3, AlertTriangle, Store } from 'lucide-react'
 import { Product, Category } from '@/types'
 import { useProducts } from '@/contexts/products-context'
+import { useAuth } from '@/contexts/auth-context'
+
+// Constante para identificar la tienda principal
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 interface ProductModalProps {
   isOpen: boolean
@@ -18,6 +22,10 @@ interface ProductModalProps {
 
 export function ProductModal({ isOpen, onClose, onSave, product, categories }: ProductModalProps) {
   const { products } = useProducts()
+  const { user } = useAuth()
+  
+  // Detectar si es tienda principal o microtienda
+  const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   const [formData, setFormData] = useState({
     name: product?.name || '',
     reference: product?.reference || '',
@@ -452,8 +460,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 )}
               </CardHeader>
               <CardContent className="space-y-6">
-                {/* Ubicación inicial para nuevos productos */}
-                {!product && (
+                {/* Ubicación inicial para nuevos productos - Solo tienda principal tiene opción de bodega */}
+                {!product && isMainStore && (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                       Ubicación Inicial
@@ -488,7 +496,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 )}
 
                 {/* Stock por ubicación */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className={`grid grid-cols-1 ${isMainStore ? 'md:grid-cols-2' : ''} gap-6`}>
                   {/* Local */}
                   <div className="space-y-4">
                     <div className="flex items-center space-x-2">
@@ -527,43 +535,45 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                   </div>
 
-                  {/* Bodega */}
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-2">
-                      <Package className="h-5 w-5 text-cyan-400" />
-                      <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Bodega</h4>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Stock Actual
-                      </label>
-                      {product ? (
-                        // Solo lectura para productos existentes
-                        <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-gray-600/50 text-gray-600 dark:text-gray-300 cursor-not-allowed opacity-75">
-                          {formatNumber(formData.stock.warehouse)} unidades
-                        </div>
-                      ) : (
-                        // Editable solo para nuevos productos
-                        <input
-                          type="text"
-                          value={formatNumber(formData.stock.warehouse)}
-                          onChange={(e) => {
-                            const numericValue = parseFormattedNumber(e.target.value)
-                            handleInputChange('stock.warehouse', numericValue)
-                          }}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                            errors.stockWarehouse ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
-                          }`}
-                          placeholder="0"
-                        />
-                      )}
-                      {errors.stockWarehouse && (
-                        <p className="mt-1 text-sm text-red-400">{errors.stockWarehouse}</p>
-                      )}
-                    </div>
+                  {/* Bodega - Solo visible en tienda principal */}
+                  {isMainStore && (
+                    <div className="space-y-4">
+                      <div className="flex items-center space-x-2">
+                        <Package className="h-5 w-5 text-cyan-400" />
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">Bodega</h4>
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                          Stock Actual
+                        </label>
+                        {product ? (
+                          // Solo lectura para productos existentes
+                          <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-gray-600/50 text-gray-600 dark:text-gray-300 cursor-not-allowed opacity-75">
+                            {formatNumber(formData.stock.warehouse)} unidades
+                          </div>
+                        ) : (
+                          // Editable solo para nuevos productos
+                          <input
+                            type="text"
+                            value={formatNumber(formData.stock.warehouse)}
+                            onChange={(e) => {
+                              const numericValue = parseFormattedNumber(e.target.value)
+                              handleInputChange('stock.warehouse', numericValue)
+                            }}
+                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
+                              errors.stockWarehouse ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                            }`}
+                            placeholder="0"
+                          />
+                        )}
+                        {errors.stockWarehouse && (
+                          <p className="mt-1 text-sm text-red-400">{errors.stockWarehouse}</p>
+                        )}
+                      </div>
 
-                  </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Total del stock */}
@@ -571,7 +581,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Stock Total:</span>
                     <span className="text-lg font-bold text-cyan-400">
-                      {formatNumber(formData.stock.warehouse + formData.stock.store)} unidades
+                      {formatNumber(isMainStore ? (formData.stock.warehouse + formData.stock.store) : formData.stock.store)} unidades
                     </span>
                   </div>
                 </div>

@@ -80,7 +80,9 @@ export default function SaleDetailModal({
   useEffect(() => {
     const loadTransfer = async () => {
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      if (sale && (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && sale.storeId === MAIN_STORE_ID) {
+      // Solo buscar transferencia asociada para ventas de la tienda principal
+      // La transferencia se identifica por tener un registro en stock_transfers, no por método de pago
+      if (sale && sale.storeId === MAIN_STORE_ID) {
         try {
           const transferData = await StoreStockTransferService.getTransferBySaleId(sale.id)
           setTransfer(transferData)
@@ -1037,7 +1039,8 @@ export default function SaleDetailModal({
               </Button>
             )}
             */}
-            {sale.status !== 'cancelled' && sale.status !== 'draft' && (
+            {/* No mostrar botón Anular para facturas de transferencias entre tiendas */}
+            {sale.status !== 'cancelled' && sale.status !== 'draft' && !transfer && (
               <Button
                 onClick={handleShowCancelForm}
                 disabled={isCancelling}
@@ -1046,6 +1049,13 @@ export default function SaleDetailModal({
                 <AlertTriangle className="h-4 w-4 mr-2" />
                 Anular Factura
               </Button>
+            )}
+            {/* Mensaje informativo para facturas de transferencias */}
+            {sale.status !== 'cancelled' && transfer && (
+              <div className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1">
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Esta factura solo puede anularse desde Transferencias
+              </div>
             )}
           </div>
           

@@ -2,7 +2,7 @@
 
 import React, { createContext, useState, useContext, useEffect, useCallback, ReactNode } from 'react'
 import { Product } from '@/types'
-import { ProductsService } from '@/lib/products-service'
+import { ProductsService, StockFilter } from '@/lib/products-service'
 import { useAuth } from './auth-context'
 
 interface ProductsContextType {
@@ -12,7 +12,9 @@ interface ProductsContextType {
   totalProducts: number
   hasMore: boolean
   isSearching: boolean
+  stockFilter: StockFilter
   productsLastUpdated: number
+  setStockFilter: (filter: StockFilter) => void
   createProduct: (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => Promise<boolean>
   updateProduct: (id: string, updates: Partial<Product>) => Promise<boolean>
   deleteProduct: (id: string) => Promise<{ success: boolean, error?: string }>
@@ -39,13 +41,15 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [totalProducts, setTotalProducts] = useState(0)
   const [hasMore, setHasMore] = useState(false)
   const [isSearching, setIsSearching] = useState(false)
+  const [stockFilter, setStockFilterState] = useState<StockFilter>('all')
   const [productsLastUpdated, setProductsLastUpdated] = useState(Date.now()) // Timestamp para notificar cambios
   const { user: currentUser } = useAuth()
 
-  const refreshProducts = useCallback(async () => {
+  const refreshProducts = useCallback(async (filter?: StockFilter) => {
+    const activeFilter = filter ?? stockFilter
     setLoading(true)
     try {
-      const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE)
+      const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE, activeFilter)
       setProducts(result.products)
       setCurrentPage(1)
       setTotalProducts(result.total)
@@ -56,11 +60,15 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     } finally {
       setLoading(false)
     }
-  }, [currentUser?.storeId]) // Recargar cuando cambie el storeId
+  }, [currentUser?.storeId, stockFilter]) // Recargar cuando cambie el storeId o el filtro
 
   useEffect(() => {
     refreshProducts()
-  }, [refreshProducts, currentUser?.storeId]) // Recargar cuando cambie el storeId
+  }, [refreshProducts, currentUser?.storeId, stockFilter]) // Recargar cuando cambie el storeId o filtro
+  
+  const setStockFilter = (filter: StockFilter) => {
+    setStockFilterState(filter)
+  }
 
   const createProduct = async (productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>): Promise<boolean> => {
     const newProduct = await ProductsService.createProduct(productData, currentUser?.id)
@@ -110,7 +118,8 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     setIsSearching(true)
     
     try {
-      const results = await ProductsService.searchProducts(searchTerm)
+      // Pasar el storeId del usuario para obtener precios correctos de store_stock
+      const results = await ProductsService.searchProducts(searchTerm, stockFilter, currentUser?.storeId)
       setProducts(results)
       setCurrentPage(1) // Resetear a página 1 en búsquedas
       setLoading(false)
@@ -126,7 +135,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     setIsSearching(false)
     try {
       setLoading(true)
-      const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE)
+      const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE, stockFilter)
       setProducts(result.products)
       setCurrentPage(1)
       setTotalProducts(result.total)
@@ -142,7 +151,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     if (page >= 1 && page <= Math.ceil(totalProducts / ITEMS_PER_PAGE) && !loading) {
       try {
         setLoading(true)
-        const result = await ProductsService.getAllProducts(page, ITEMS_PER_PAGE)
+        const result = await ProductsService.getAllProducts(page, ITEMS_PER_PAGE, stockFilter)
         setProducts(result.products)
         setCurrentPage(page)
         setTotalProducts(result.total)
@@ -238,7 +247,9 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     totalProducts,
     hasMore,
     isSearching,
+    stockFilter,
     productsLastUpdated,
+    setStockFilter,
     createProduct, 
     updateProduct, 
     deleteProduct, 

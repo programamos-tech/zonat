@@ -113,19 +113,17 @@ export function SalesTable({
     }
   }, [sales])
 
-  // Cargar transferencias para ventas de tipo transferencia
+  // Cargar transferencias para ventas de la tienda principal que puedan ser de transferencia entre tiendas
   useEffect(() => {
     const loadTransfers = async () => {
-      // Identificar ventas de transferencia: paymentMethod es 'transfer' o 'mixed' y store_id es MAIN_STORE_ID
+      // Solo buscar transferencias para ventas de la tienda principal
+      // La transferencia se identifica por tener un registro asociado, no por método de pago
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      const transferSales = sales.filter(sale => 
-        (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && 
-        sale.storeId === MAIN_STORE_ID
-      )
+      const mainStoreSales = sales.filter(sale => sale.storeId === MAIN_STORE_ID)
       const transfersToLoad: Record<string, StoreStockTransfer> = {}
       
       await Promise.all(
-        transferSales.map(async (sale) => {
+        mainStoreSales.map(async (sale) => {
           if (!transfers[sale.id]) {
             try {
               const transfer = await StoreStockTransferService.getTransferBySaleId(sale.id)
@@ -171,15 +169,10 @@ export function SalesTable({
     return transfer.id.substring(transfer.id.length - 8).toUpperCase()
   }
 
-  // Verificar si una venta es de transferencia
+  // Verificar si una venta es de transferencia entre tiendas
+  // Solo es true si hay una transferencia de stock asociada cargada
   const isTransferSale = (sale: Sale): boolean => {
-    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-    // Una venta es de transferencia si:
-    // 1. El paymentMethod es 'transfer' o 'mixed'
-    // 2. El storeId es MAIN_STORE_ID (se creó desde la tienda principal)
-    // 3. Opcionalmente, si ya tenemos la transferencia cargada, mejor
-    return (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && 
-           sale.storeId === MAIN_STORE_ID
+    return !!transfers[sale.id]
   }
 
   // Efecto para manejar la búsqueda
@@ -752,8 +745,17 @@ export function SalesTable({
                             </div>
                           )}
 
-                          {/* Botón de Anular Factura - Mobile */}
-                          {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && (
+                          {/* Mensaje para facturas de transferencias - Mobile */}
+                          {sale.status !== 'cancelled' && transfers[sale.id] && (
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              <div className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+                                <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                                <span>Esta factura solo puede anularse desde Transferencias</span>
+                              </div>
+                            </div>
+                          )}
+                          {/* Botón de Anular Factura - Mobile (No mostrar para transferencias entre tiendas) */}
+                          {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && !transfers[sale.id] && (
                             <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                               {!showCancelForm[sale.id] ? (
                                 <Button
@@ -1197,8 +1199,17 @@ export function SalesTable({
                               </div>
                             )}
 
-                            {/* Botón de Anular Factura */}
-                            {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && (
+                            {/* Mensaje para facturas de transferencias - Desktop */}
+                            {sale.status !== 'cancelled' && transfers[sale.id] && (
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                                <div className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
+                                  <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
+                                  <span>Esta factura solo puede anularse desde Transferencias</span>
+                                </div>
+                              </div>
+                            )}
+                            {/* Botón de Anular Factura (No mostrar para transferencias entre tiendas) */}
+                            {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && !transfers[sale.id] && (
                               <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
                                 {!showCancelForm[sale.id] ? (
                                   <Button

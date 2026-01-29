@@ -28,7 +28,7 @@ export default function TransfersPage() {
   const [isCancelModalOpen, setIsCancelModalOpen] = useState(false)
   const [transferToCancel, setTransferToCancel] = useState<StoreStockTransfer | null>(null)
   const [isCancelling, setIsCancelling] = useState(false)
-  const [filter, setFilter] = useState<'all' | 'sent' | 'received'>('all')
+  const [filter, setFilter] = useState<'all' | 'pending' | 'cancelled' | 'received'>('all')
   const [expandedTransfers, setExpandedTransfers] = useState<Set<string>>(new Set())
   const [transferSales, setTransferSales] = useState<Map<string, Sale>>(new Map())
   const [loadingSales, setLoadingSales] = useState<Set<string>>(new Set())
@@ -214,15 +214,27 @@ export default function TransfersPage() {
       })
       const result = await StoreStockTransferService.getStoreTransfers(
         storeIdToUse,
-        filter === 'all' ? 'all' : filter,
+        'all', // Siempre cargar todas, filtrar por estado localmente
         currentPage,
-        10 // limit
+        50 // Obtener más para poder filtrar
       )
+      
+      // Filtrar por estado según el filtro seleccionado
+      let filteredTransfers = result.transfers
+      if (filter === 'pending') {
+        filteredTransfers = result.transfers.filter(t => t.status === 'pending' || t.status === 'in_transit')
+      } else if (filter === 'received') {
+        filteredTransfers = result.transfers.filter(t => t.status === 'received' || t.status === 'partially_received')
+      } else if (filter === 'cancelled') {
+        filteredTransfers = result.transfers.filter(t => t.status === 'cancelled')
+      }
+      
       console.log('[TRANSFERS PAGE] Transfers loaded:', {
-        count: result.transfers.length,
+        count: filteredTransfers.length,
         total: result.total,
         hasMore: result.hasMore,
-        transfers: result.transfers.slice(0, 3).map(t => ({
+        filter,
+        transfers: filteredTransfers.slice(0, 3).map(t => ({
           id: t.id,
           fromStore: t.fromStoreName,
           toStore: t.toStoreName,
@@ -230,7 +242,7 @@ export default function TransfersPage() {
           createdAt: t.createdAt
         }))
       })
-      setTransfers(result.transfers)
+      setTransfers(filteredTransfers)
       setTotalTransfers(result.total)
       setHasMore(result.hasMore)
     } catch (error) {
@@ -346,13 +358,13 @@ export default function TransfersPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={loadTransfers}>
+            <Button variant="outline" onClick={loadTransfers}>
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualizar
             </Button>
             {canManageAllStores && (
               <Button onClick={handleCreateTransfer} className="bg-cyan-600 hover:bg-cyan-700 text-white">
-                <Plus className="h-5 w-5 mr-2" />
+                <Plus className="h-4 w-4 mr-2" />
                 Nueva Transferencia
               </Button>
             )}
@@ -371,11 +383,11 @@ export default function TransfersPage() {
                 Todas
               </Button>
               <Button
-                variant={filter === 'sent' ? 'default' : 'outline'}
+                variant={filter === 'pending' ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setFilter('sent')}
+                onClick={() => setFilter('pending')}
               >
-                Enviadas
+                Pendientes
               </Button>
               <Button
                 variant={filter === 'received' ? 'default' : 'outline'}
@@ -383,6 +395,13 @@ export default function TransfersPage() {
                 onClick={() => setFilter('received')}
               >
                 Recibidas
+              </Button>
+              <Button
+                variant={filter === 'cancelled' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setFilter('cancelled')}
+              >
+                Canceladas
               </Button>
             </div>
           </CardContent>
@@ -437,11 +456,19 @@ export default function TransfersPage() {
                           <ArrowRightLeft className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
                           <div className="flex-1">
                             <div className="flex items-center gap-3">
-                              <div className="flex-1">
+                              <div 
+                                className="flex-1 select-text cursor-text" 
+                                onClick={(e) => e.stopPropagation()}
+                              >
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Número de Transferencia</div>
                                 <div className="text-xl font-bold text-gray-900 dark:text-white font-mono">
                                   {transfer.transferNumber || `#${transfer.id.substring(0, 8)}`}
                                 </div>
+                                {transferSales.has(transfer.id) && (
+                                  <div className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
+                                    Factura: {transferSales.get(transfer.id)?.invoiceNumber || 'N/A'}
+                                  </div>
+                                )}
                               </div>
                             </div>
                           </div>
