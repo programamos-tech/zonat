@@ -58,6 +58,7 @@ export default function ProductDetailPage() {
   const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
   // Solo se puede transferir desde la tienda principal
   const canTransfer = isVendedor ? false : (isMainStore && hasPermission('transfers', 'create'))
+  const canMarkInventory = isVendedor ? false : hasPermission('products', 'edit')
   
   console.log('[PRODUCT DETAIL] Component mounted, productId:', productId)
   console.log('[PRODUCT DETAIL] Params:', params)
@@ -285,6 +286,21 @@ export default function ProductDetailPage() {
     }
   }
 
+  const handleMarkInventory = async () => {
+    if (!product) return
+    try {
+      const success = await ProductsService.markInventory(product.id, user?.id)
+      if (success) {
+        toast.success('Inventario marcado exitosamente')
+        await loadProduct()
+      } else {
+        toast.error('Error marcando inventario. Por favor, intenta nuevamente.')
+      }
+    } catch (error) {
+      toast.error('Error marcando inventario. Por favor, intenta nuevamente.')
+    }
+  }
+
   const getCategoryName = (categoryId: string) => {
     const category = categories.find(c => c.id === categoryId)
     return category?.name || 'Sin categoría'
@@ -387,6 +403,54 @@ export default function ProductDetailPage() {
     }
     
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+  }
+
+  const getInventoryStatusInfo = (lastInventoryAt?: string | null) => {
+    if (!lastInventoryAt) {
+      return {
+        label: 'Inventario pendiente',
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+        dateText: 'Sin inventario',
+        countdownText: 'Inventario vencido',
+        daysRemaining: null
+      }
+    }
+
+    const lastInventoryDate = new Date(lastInventoryAt)
+    const today = new Date()
+    const diffDays = Math.floor((today.getTime() - lastInventoryDate.getTime()) / (1000 * 60 * 60 * 24))
+    const daysRemaining = 30 - diffDays
+
+    if (daysRemaining <= 2) {
+      const countdownText = daysRemaining <= 0
+        ? `Inventario vencido por ${Math.abs(daysRemaining)} días`
+        : `Faltan ${daysRemaining} días`
+      return {
+        label: daysRemaining <= 0 ? 'Inventario vencido' : 'Inventario próximo',
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+        dateText: formatDate(lastInventoryAt),
+        countdownText,
+        daysRemaining
+      }
+    }
+
+    if (daysRemaining <= 9) {
+      return {
+        label: 'Inventario próximo',
+        color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+        dateText: formatDate(lastInventoryAt),
+        countdownText: `Faltan ${daysRemaining} días`,
+        daysRemaining
+      }
+    }
+
+    return {
+      label: 'Inventario al día',
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      dateText: formatDate(lastInventoryAt),
+      countdownText: `Faltan ${daysRemaining} días`,
+      daysRemaining
+    }
   }
 
   const formatCurrency = (amount: number) => {
@@ -546,6 +610,7 @@ export default function ProductDetailPage() {
   }
 
   const StatusIcon = getStatusIcon(product.status)
+  const inventoryInfo = getInventoryStatusInfo(product.lastInventoryAt)
 
   return (
     <RoleProtectedRoute module="products" requiredAction="view">
@@ -738,13 +803,29 @@ export default function ProductDetailPage() {
                 </div>
               )}
               <div>
-                <div className="text-xs md:text-sm text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1 flex-wrap">
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-2 flex-wrap">
                   <span>Última Actualización de Inventario</span>
-                  <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-600 italic">(próximamente)</span>
+                  <Badge className={`${inventoryInfo.color} text-xs`}>
+                    {inventoryInfo.label}
+                  </Badge>
                 </div>
-                <div className="text-sm md:text-base text-gray-400 dark:text-gray-600 italic">
-                  No disponible
+                <div className="text-sm md:text-base text-gray-900 dark:text-white">
+                  {inventoryInfo.dateText}
                 </div>
+                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
+                  {inventoryInfo.countdownText}
+                </div>
+                {canMarkInventory && (
+                  <div className="mt-2">
+                    <Button
+                      onClick={handleMarkInventory}
+                      variant="outline"
+                      className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-400 dark:hover:bg-cyan-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto"
+                    >
+                      Marcar inventario
+                    </Button>
+                  </div>
+                )}
               </div>
             </div>
           </CardContent>

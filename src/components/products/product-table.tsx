@@ -241,6 +241,43 @@ export function ProductTable({
     return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
   }
 
+  const getInventoryStatusInfo = (product: Product) => {
+    if (!product.lastInventoryAt) {
+      return {
+        label: 'Inventario pendiente',
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+        daysRemaining: null
+      }
+    }
+
+    const lastInventoryDate = new Date(product.lastInventoryAt)
+    const today = new Date()
+    const diffDays = Math.floor((today.getTime() - lastInventoryDate.getTime()) / (1000 * 60 * 60 * 24))
+    const daysRemaining = 30 - diffDays
+
+    if (daysRemaining <= 2) {
+      return {
+        label: daysRemaining <= 0 ? `Inventario vencido` : `Inventario en ${daysRemaining} días`,
+        color: 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400',
+        daysRemaining
+      }
+    }
+
+    if (daysRemaining <= 9) {
+      return {
+        label: `Inventario en ${daysRemaining} días`,
+        color: 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400',
+        daysRemaining
+      }
+    }
+
+    return {
+      label: `Inventario en ${daysRemaining} días`,
+      color: 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400',
+      daysRemaining
+    }
+  }
+
   // Los productos ya vienen filtrados desde el contexto (filtro aplicado en backend)
 
   const formatCurrency = (amount: number) => {
@@ -254,6 +291,7 @@ export function ProductTable({
   // Opciones de estado de stock - las de bodega solo para tienda principal
   const stockStatusOptions = [
     { value: 'all', label: 'Todos los estados' },
+    { value: 'Sin Inventario', label: 'Sin Inventario' },
     { value: 'Sin Stock', label: 'Sin Stock' },
     { value: 'Disponible Local', label: 'Disponible Local' },
     { value: 'Stock Local Bajo', label: 'Stock Local Bajo' },
@@ -488,9 +526,14 @@ export function ProductTable({
                         )}
                         
                         <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                          <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
-                            {getStockStatusLabel(product)}
-                          </Badge>
+                          <div className="flex items-center gap-2">
+                            <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
+                              {getStockStatusLabel(product)}
+                            </Badge>
+                            <Badge className={`${getInventoryStatusInfo(product).color} text-xs`} title={getInventoryStatusInfo(product).label}>
+                              {getInventoryStatusInfo(product).label}
+                            </Badge>
+                          </div>
                           <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                             {canEdit && (
                               <Button
@@ -615,6 +658,13 @@ export function ProductTable({
                                   </div>
                                 </div>
                               )}
+                              
+                              <div className="mt-4">
+                                <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Inventario</div>
+                                <Badge className={`${getInventoryStatusInfo(product).color} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
+                                  {getInventoryStatusInfo(product).label}
+                                </Badge>
+                              </div>
                               
                               {product.status !== 'active' && (
                                 <div className="mt-4 flex items-center gap-2">

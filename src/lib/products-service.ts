@@ -8,6 +8,7 @@ import { getCurrentUserStoreId, isMainStoreUser } from './store-helper'
 // Tipo para filtros de stock (funciona tanto para tienda principal como microtiendas)
 export type StockFilter =
   | 'all'
+  | 'Sin Inventario'
   | 'Sin Stock'
   | 'Disponible Local'
   | 'Stock Local Bajo'
@@ -26,8 +27,20 @@ export class ProductsService {
     return products.filter(product => {
       const storeStock = product.stock?.store || 0
       const warehouseStock = product.stock?.warehouse || 0
+      const isInventoryRed = (() => {
+        if (!product.lastInventoryAt) {
+          return true
+        }
+        const lastInventoryDate = new Date(product.lastInventoryAt)
+        const today = new Date()
+        const diffDays = Math.floor((today.getTime() - lastInventoryDate.getTime()) / (1000 * 60 * 60 * 24))
+        const daysRemaining = 30 - diffDays
+        return daysRemaining <= 2
+      })()
 
       switch (stockFilter) {
+        case 'Sin Inventario':
+          return isInventoryRed
         case 'Sin Stock':
           return storeStock === 0 && warehouseStock === 0
         case 'Disponible Local':
@@ -389,6 +402,7 @@ export class ProductsService {
           price: productPrice,
           cost: productCost,
           stock: stock,
+          lastInventoryAt: product.last_inventory_at || null,
           status: product.status,
           createdAt: product.created_at,
           updatedAt: product.updated_at
@@ -579,6 +593,7 @@ export class ProductsService {
             price: productPrice,
             cost: productCost,
             stock: stock,
+            lastInventoryAt: product.last_inventory_at || null,
             status: product.status,
             createdAt: product.created_at,
             updatedAt: product.updated_at
@@ -767,6 +782,7 @@ export class ProductsService {
         price: productPrice,
         cost: productCost,
         stock: stock,
+        lastInventoryAt: data.last_inventory_at || null,
         status: data.status,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -865,6 +881,7 @@ export class ProductsService {
           store: data.stock_store || 0,
           total: (data.stock_warehouse || 0) + (data.stock_store || 0)
         },
+        lastInventoryAt: data.last_inventory_at || null,
         status: data.status,
         createdAt: data.created_at,
         updatedAt: data.updated_at
@@ -983,6 +1000,38 @@ export class ProductsService {
     }
   }
 
+  // Marcar inventario manual del producto
+  static async markInventory(productId: string, currentUserId?: string): Promise<boolean> {
+    try {
+      const now = new Date().toISOString()
+      const { error } = await supabaseAdmin
+        .from('products')
+        .update({ last_inventory_at: now })
+        .eq('id', productId)
+
+      if (error) {
+        return false
+      }
+
+      if (currentUserId) {
+        await AuthService.logActivity(
+          currentUserId,
+          'inventory_mark',
+          'products',
+          {
+            description: `Inventario marcado para producto ${productId}`,
+            productId,
+            lastInventoryAt: now
+          }
+        )
+      }
+
+      return true
+    } catch (error) {
+      return false
+    }
+  }
+
   // Eliminar producto
   static async deleteProduct(id: string, currentUserId?: string): Promise<{ success: boolean, error?: string }> {
     try {
@@ -1052,7 +1101,7 @@ export class ProductsService {
       // Búsqueda simplificada sin timeout - buscar en referencia y nombre
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, created_at')
+        .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, created_at, last_inventory_at')
         .or(`reference.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
         .order('created_at', { ascending: false })
         .limit(100)
@@ -1124,6 +1173,7 @@ export class ProductsService {
           price: productPrice,
           cost: productCost,
           stock: stock,
+          lastInventoryAt: product.last_inventory_at || null,
           status: product.status,
           createdAt: product.created_at,
           updatedAt: product.created_at // Usar created_at como fallback

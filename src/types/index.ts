@@ -39,6 +39,7 @@ export interface Product {
     store: number
     total: number
   }
+  lastInventoryAt?: string | null
   categoryId: string
   brand: string
   status: 'active' | 'inactive' | 'discontinued' | 'out_of_stock'
