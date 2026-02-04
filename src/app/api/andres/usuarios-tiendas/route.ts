@@ -2,9 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 /**
- * API para andres.st / backstage: listar usuarios y "tienda" (Zonat es single-tenant:
- * una sola empresa, sin tabla stores). Devolvemos una tienda virtual con datos de company_config.
- *
+ * API para andres.st / backstage: listar todas las microtiendas (stores) y usuarios.
  * Protegida por header x-andres-api-key (ANDRES_API_KEY en Zonat).
  */
 
@@ -20,10 +18,16 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const [usersRes, companyRes] = await Promise.all([
+    const [storesRes, usersRes, companyRes] = await Promise.all([
+      supabaseAdmin
+        .from('stores')
+        .select('id, name, logo_url')
+        .eq('is_active', true)
+        .is('deleted_at', null)
+        .order('name'),
       supabaseAdmin
         .from('users')
-        .select('id, name, email, role')
+        .select('id, name, email, role, store_id')
         .eq('is_active', true)
         .order('email'),
       supabaseAdmin
@@ -33,13 +37,18 @@ export async function GET(request: NextRequest) {
         .maybeSingle()
     ])
 
+    if (storesRes.error) {
+      console.error('[andres/usuarios-tiendas] stores:', storesRes.error)
+      return NextResponse.json({ error: 'Error fetching stores' }, { status: 500 })
+    }
     if (usersRes.error) {
       console.error('[andres/usuarios-tiendas] users:', usersRes.error)
       return NextResponse.json({ error: 'Error fetching users' }, { status: 500 })
     }
 
+    const base = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
+    const baseClean = base.replace(/\/$/, '')
     const companyRow = companyRes.data as { id?: string; name?: string; value?: string } | null
-    const companyName = companyRow?.name ?? 'Zonat'
     let app_logo_url: string | null = null
     try {
       const val = companyRow?.value
@@ -49,28 +58,30 @@ export async function GET(request: NextRequest) {
     } catch {
       // ignore
     }
-    const base = process.env.NEXT_PUBLIC_APP_URL || new URL(request.url).origin
-    const baseClean = base.replace(/\/$/, '')
     if (app_logo_url?.startsWith('/')) {
       app_logo_url = `${baseClean}${app_logo_url}`
     } else if (!app_logo_url || !app_logo_url.startsWith('http')) {
       app_logo_url = `${baseClean}/zonat-logo.png`
     }
 
-    const stores = [
-      {
-        id: MAIN_STORE_ID,
-        name: companyName,
-        logo_url: app_logo_url
+    const stores = (storesRes.data ?? []).map(
+      (s: { id: string; name: string; logo_url?: string | null }) => {
+        let logo = s.logo_url?.trim() || null
+        if (logo && logo.startsWith('/')) {
+          logo = `${baseClean}${logo}`
+        } else if (!logo || !logo.startsWith('http')) {
+          logo = app_logo_url
+        }
+        return { id: s.id, name: s.name, logo_url: logo }
       }
-    ]
+    )
 
     const users = (usersRes.data ?? []).map(
-      (u: { id: string; name: string; email: string; role: string }) => ({
+      (u: { id: string; name: string; email: string; role: string; store_id: string | null }) => ({
         id: u.id,
         name: u.name,
         email: u.email,
-        store_id: MAIN_STORE_ID,
+        store_id: u.store_id ?? null,
         es_dueño:
           u.role === 'superadmin' ||
           u.role === 'Super Admin' ||

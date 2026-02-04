@@ -2,13 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
 
 /**
- * API para andres.st / backstage: listar actividades (logs).
+ * API para andres.st / backstage: listar actividades (logs) por tienda.
  * GET /api/andres/actividades?store_id=uuid&limit=50
- * Zonat no tiene store_id en logs; se ignora el filtro por tienda.
  * Protegida por header x-andres-api-key.
  */
 
 const API_KEY_HEADER = 'x-andres-api-key'
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 export async function GET(request: NextRequest) {
   try {
@@ -20,13 +20,24 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
+    const storeId = searchParams.get('store_id')?.trim() || null
     const limit = Math.min(Math.max(parseInt(searchParams.get('limit') || '50', 10), 1), 200)
 
-    const { data: logs, error: logsError } = await supabaseAdmin
+    let logsQuery = supabaseAdmin
       .from('logs')
-      .select('id, user_id, action, module, details, created_at')
+      .select('id, user_id, action, module, details, store_id, created_at')
       .order('created_at', { ascending: false })
       .limit(limit)
+
+    if (storeId) {
+      if (storeId === MAIN_STORE_ID) {
+        logsQuery = logsQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        logsQuery = logsQuery.eq('store_id', storeId)
+      }
+    }
+
+    const { data: logs, error: logsError } = await logsQuery
 
     if (logsError) {
       console.error('[andres/actividades]', logsError)
@@ -48,14 +59,14 @@ export async function GET(request: NextRequest) {
     }
 
     const activities = rows.map(
-      (l: { id: string; user_id: string | null; action: string; module: string; details: unknown; created_at: string }) => ({
+      (l: { id: string; user_id: string | null; action: string; module: string; details: unknown; store_id: string | null; created_at: string }) => ({
         id: l.id,
         user_id: l.user_id,
         user_name: (l.user_id && userNamesMap[l.user_id]) || null,
         action: l.action,
         module: l.module,
         details: (l.details as Record<string, unknown>) ?? {},
-        store_id: null,
+        store_id: l.store_id ?? null,
         created_at: l.created_at
       })
     )
