@@ -34,6 +34,8 @@ import {
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { StoreBadge } from '@/components/ui/store-badge'
+import { getCurrentUserStoreId, isStoreSincelejo } from '@/lib/store-helper'
+import { StoresService } from '@/lib/stores-service'
 
 interface ProductTableProps {
   products: Product[]
@@ -93,26 +95,29 @@ export function ProductTable({
                      user?.role === 'Vendedor'
   const isInventario = user?.role?.toLowerCase() === 'inventario'
   
-  // Verificar si estamos en la tienda principal
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
   const isMainStore = !user?.storeId || user?.storeId === MAIN_STORE_ID
-  
-  // Inventario tiene acciones sobre productos en cualquier tienda; el resto solo en tienda principal
-  const canEdit = isVendedor ? false : hasPermission('products', 'edit')
-  const canDelete = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('products', 'delete'))
-  const canCreate = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('products', 'create'))
-  const canAdjust = isVendedor ? false : hasPermission('products', 'edit')
-  const canTransfer = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('transfers', 'create'))
-  
-  // Debug: verificar valores
+
+  // Solo en Sincelejo el rol Inventario puede hacer acciones; en microtiendas todos solo ven
+  const [isSincelejoStore, setIsSincelejoStore] = useState(false)
   useEffect(() => {
-    if (user) {
-      console.log('[PRODUCT TABLE] User role:', user.role)
-      console.log('[PRODUCT TABLE] Is vendedor:', isVendedor)
-      console.log('[PRODUCT TABLE] Is main store:', isMainStore)
-      console.log('[PRODUCT TABLE] Permissions:', { canEdit, canDelete, canCreate, canAdjust, canTransfer })
+    const load = async () => {
+      const storeId = getCurrentUserStoreId() || MAIN_STORE_ID
+      const store = storeId === MAIN_STORE_ID
+        ? await StoresService.getMainStore()
+        : await StoresService.getStoreById(storeId)
+      setIsSincelejoStore(isStoreSincelejo(store))
     }
-  }, [user, isVendedor, isMainStore, canEdit, canDelete, canCreate, canAdjust, canTransfer])
+    if (user) load()
+  }, [user?.storeId])
+
+  // Acciones sobre productos: solo en tienda Sincelejo y solo rol Inventario; resto solo ver
+  const canEdit = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'edit'))
+  const canDelete = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'delete'))
+  const canCreate = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'create'))
+  const canAdjust = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'edit'))
+  const canTransfer = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'edit'))
+
   const [searchTerm, setSearchTerm] = useState('')
 
   // Función simple para manejar búsqueda

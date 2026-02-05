@@ -65,3 +65,18 @@ export function canAccessAllStores(user: User | null): boolean {
   // Esto permite que un superadmin pueda cambiar entre tiendas y seguir teniendo acceso al módulo de Tiendas
   return user.role === 'superadmin' || user.role === 'admin' || user.role === 'Super Admin' || user.role === 'Super Administrador'
 }
+
+/** Nombre o ciudad que identifica la tienda donde se permite transferir stock Bodega ↔ Local */
+const STORE_IDENTIFIER_SINCELEJO = 'Sincelejo'
+
+/**
+ * Indica si una tienda es la de Sincelejo (donde se permite transferir stock bodega ↔ local).
+ * Compara nombre y ciudad en mayúsculas/minúsculas.
+ */
+export function isStoreSincelejo(store: { name?: string; city?: string } | null): boolean {
+  if (!store) return false
+  const name = (store.name || '').toLowerCase()
+  const city = (store.city || '').toLowerCase()
+  const key = STORE_IDENTIFIER_SINCELEJO.toLowerCase()
+  return name.includes(key) || city.includes(key)
+}
