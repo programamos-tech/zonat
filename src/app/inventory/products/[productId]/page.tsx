@@ -47,17 +47,17 @@ export default function ProductDetailPage() {
   // Verificación adicional: si es vendedor, no puede editar/eliminar productos
   const userRole = user?.role?.toLowerCase() || ''
   const isVendedor = userRole === 'vendedor'
+  const isInventario = userRole === 'inventario'
   
   // Detectar si es tienda principal o microtienda
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
   const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   
+  // Inventario tiene acciones sobre productos en cualquier tienda
   const canEdit = isVendedor ? false : hasPermission('products', 'edit')
-  // Solo se puede eliminar desde la tienda principal
-  const canDelete = isVendedor ? false : (isMainStore && hasPermission('products', 'delete'))
-  const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
-  // Solo se puede transferir desde la tienda principal
-  const canTransfer = isVendedor ? false : (isMainStore && hasPermission('transfers', 'create'))
+  const canDelete = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('products', 'delete'))
+  const canAdjust = isVendedor ? false : hasPermission('products', 'edit')
+  const canTransfer = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('transfers', 'create'))
   
   console.log('[PRODUCT DETAIL] Component mounted, productId:', productId)
   console.log('[PRODUCT DETAIL] Params:', params)

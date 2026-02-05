@@ -80,7 +80,7 @@ const roleDescriptions = {
   'superadmin': 'Acceso completo a todos los módulos del sistema (Diego)',
   'admin': 'Acceso al dashboard, ventas y créditos',
   'vendedor': 'Acceso a dashboard, productos, clientes, ventas y créditos',
-  'inventario': 'Acceso únicamente a productos'
+  'inventario': 'Solo productos (permisos según lo que marques abajo)'
 }
 
 export function UserManagement() {

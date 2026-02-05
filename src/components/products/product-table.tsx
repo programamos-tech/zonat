@@ -88,24 +88,21 @@ export function ProductTable({
   const { user } = useAuth()
   
   // Verificación adicional: si es vendedor, no puede editar/eliminar productos
-  // Verificar múltiples variaciones del nombre del rol
   const isVendedor = user?.role?.toLowerCase() === 'vendedor' || 
                      user?.role === 'vendedor' || 
                      user?.role === 'Vendedor'
+  const isInventario = user?.role?.toLowerCase() === 'inventario'
   
   // Verificar si estamos en la tienda principal
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
   const isMainStore = !user?.storeId || user?.storeId === MAIN_STORE_ID
   
-  // Si es vendedor, forzar que no tenga permisos de edición/eliminación
+  // Inventario tiene acciones sobre productos en cualquier tienda; el resto solo en tienda principal
   const canEdit = isVendedor ? false : hasPermission('products', 'edit')
-  // Solo se puede eliminar desde la tienda principal
-  const canDelete = isVendedor ? false : (isMainStore && hasPermission('products', 'delete'))
-  // Solo se pueden crear productos desde la tienda principal
-  const canCreate = isVendedor ? false : (isMainStore && hasPermission('products', 'create'))
-  const canAdjust = isVendedor ? false : hasPermission('products', 'edit') // Ajustar stock requiere editar
-  // Solo se puede transferir desde la tienda principal
-  const canTransfer = isVendedor ? false : (isMainStore && hasPermission('transfers', 'create'))
+  const canDelete = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('products', 'delete'))
+  const canCreate = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('products', 'create'))
+  const canAdjust = isVendedor ? false : hasPermission('products', 'edit')
+  const canTransfer = isVendedor ? false : ((isInventario || isMainStore) && hasPermission('transfers', 'create'))
   
   // Debug: verificar valores
   useEffect(() => {

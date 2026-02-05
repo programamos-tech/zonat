@@ -322,7 +322,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                           {item.submenu.map((subitem) => {
                             if (!canView(subitem.module)) return null
                             
-                            // Ocultar "Transferencias" para usuarios de micro tiendas
+                            // Ocultar "Transferencias" para usuarios de microtienda
                             if (subitem.href === '/inventory/transfers' && !isMainStoreUser(user)) return null
                             
                             // Verificar si requiere acceso a todas las tiendas (para el subitem de Tiendas)

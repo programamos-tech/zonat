@@ -15,8 +15,14 @@ export function usePermissions() {
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
-    // Restricción especial para vendedores
     const userRole = currentUser.role?.toLowerCase() || ''
+
+    // Rol inventario: solo productos por defecto (el resto según permisos guardados del usuario)
+    if (userRole === 'inventario' && module === 'products') {
+      return ['view', 'create', 'edit', 'delete', 'cancel'].includes(action)
+    }
+
+    // Restricción especial para vendedores
     if (userRole === 'vendedor' || userRole === 'vendedora') {
       if (module === 'products') {
         return action === 'view' // Solo permitir ver productos
@@ -25,18 +31,14 @@ export function usePermissions() {
         return false // Vendedores no pueden transferir
       }
       
-      // Para otros módulos, si no tiene permisos explícitos, usar permisos por defecto del rol vendedor
       const hasExplicitPermissions = currentUser.permissions && Array.isArray(currentUser.permissions) && currentUser.permissions.length > 0
-      
       if (!hasExplicitPermissions) {
-        // Permisos por defecto para vendedores (según rolePermissions en user-management.tsx)
         const defaultVendedorPermissions: { [key: string]: string[] } = {
           'dashboard': ['view', 'create', 'edit', 'delete', 'cancel'],
           'clients': ['view', 'create', 'edit', 'delete', 'cancel'],
           'sales': ['view', 'create', 'edit', 'delete', 'cancel'],
           'payments': ['view', 'create', 'edit', 'delete', 'cancel']
         }
-        
         const allowedActions = defaultVendedorPermissions[module] || []
         return allowedActions.includes(action)
       }
@@ -83,9 +85,18 @@ export function usePermissions() {
   const getAccessibleModules = (): string[] => {
     if (!currentUser) return []
     
-    // Super admin tiene acceso a todos los módulos
     if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin' || currentUser.role === 'Super Administrador') {
       return ['dashboard', 'products', 'transfers', 'receptions', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs', 'stores']
+    }
+
+    // Inventario: dashboard + solo los módulos que tenga marcados en permisos (ej. solo Productos)
+    if (currentUser.role?.toLowerCase() === 'inventario') {
+      const fromPermissions = currentUser.permissions && Array.isArray(currentUser.permissions)
+        ? currentUser.permissions
+            .filter(p => (p.actions || p.permissions || []).includes('view'))
+            .map(p => p.module)
+        : []
+      return Array.from(new Set(['dashboard', ...fromPermissions]))
     }
     
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []
@@ -103,9 +114,13 @@ export function usePermissions() {
   const getModuleActions = (module: string): string[] => {
     if (!currentUser) return []
     
-    // Super admin tiene todas las acciones
     if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
       return ['view', 'create', 'edit', 'delete', 'cancel']
+    }
+
+    if (currentUser.role?.toLowerCase() === 'inventario') {
+      if (module === 'products') return ['view', 'create', 'edit', 'delete', 'cancel']
+      // transfers y receptions solo si están en los permisos del usuario
     }
     
     if (!currentUser.permissions || !Array.isArray(currentUser.permissions)) return []

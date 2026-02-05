@@ -7,7 +7,9 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // Validar que las variables estén definidas
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Variables de entorno de Supabase no configuradas. Verifica las variables de entorno en Vercel.')
+  throw new Error(
+    'Variables de entorno de Supabase no configuradas. Crea .env.local con NEXT_PUBLIC_SUPABASE_URL y NEXT_PUBLIC_SUPABASE_ANON_KEY (copia .env.local.example).'
+  )
 }
 
 // Cliente para operaciones del cliente (anon)
