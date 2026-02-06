@@ -60,10 +60,12 @@ export function isMainStoreUser(user: User | null): boolean {
  * @returns true si puede acceder a todas las tiendas
  */
 export function canAccessAllStores(user: User | null): boolean {
-  if (!user) return false
-  // Un superadmin o admin puede acceder a todas las tiendas, sin importar el storeId actual
-  // Esto permite que un superadmin pueda cambiar entre tiendas y seguir teniendo acceso al módulo de Tiendas
-  return user.role === 'superadmin' || user.role === 'admin' || user.role === 'Super Admin' || user.role === 'Super Administrador'
+  if (!user?.role) return false
+  const role = String(user.role).toLowerCase().trim()
+  // Superadmin o admin: pueden entrar a Tiendas y cambiar de tienda
+  if (role === 'superadmin' || role === 'admin') return true
+  if (role.includes('super') && (role.includes('admin') || role.includes('administrador'))) return true
+  return false
 }
 
 /** Nombre o ciudad que identifica la tienda donde se permite transferir stock Bodega ↔ Local */

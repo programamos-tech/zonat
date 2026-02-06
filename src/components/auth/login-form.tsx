@@ -44,7 +44,8 @@ export function LoginForm() {
         const savedUser = localStorage.getItem('zonat_user')
         if (savedUser) {
           const userData = JSON.parse(savedUser)
-          const isSuperAdmin = userData.role === 'superadmin' || userData.role === 'Super Admin' || userData.role === 'Super Administrador'
+          const roleNorm = (userData.role || '').toLowerCase().trim()
+          const isSuperAdmin = roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))
           
           if (isSuperAdmin) {
             router.push('/select-store')

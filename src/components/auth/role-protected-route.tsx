@@ -25,7 +25,8 @@ export function RoleProtectedRoute({
       // Verificar si el usuario tiene permisos para este módulo
       if (!hasPermission(module, requiredAction)) {
         // Redirigir según el rol del usuario
-        const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin'
+        const roleNorm = (user?.role || '').toLowerCase().trim()
+        const isSuperAdmin = roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))
         if (isSuperAdmin) {
           router.push('/dashboard')
         } else {

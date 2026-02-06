@@ -9,8 +9,9 @@ export function usePermissions() {
   const hasPermission = (module: string, action: string): boolean => {
     if (!currentUser) return false
     
-    // Super admin tiene todos los permisos
-    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin' || currentUser.role === 'Super Administrador') return true
+    // Super admin tiene todos los permisos (cualquier variante del rol)
+    const roleNorm = (currentUser.role || '').toLowerCase().trim()
+    if (roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))) return true
 
     // El dashboard es accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
@@ -85,7 +86,8 @@ export function usePermissions() {
   const getAccessibleModules = (): string[] => {
     if (!currentUser) return []
     
-    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin' || currentUser.role === 'Super Administrador') {
+    const roleNorm = (currentUser.role || '').toLowerCase().trim()
+    if (roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))) {
       return ['dashboard', 'products', 'transfers', 'receptions', 'clients', 'sales', 'payments', 'warranties', 'roles', 'logs', 'stores']
     }
 
@@ -114,7 +116,8 @@ export function usePermissions() {
   const getModuleActions = (module: string): string[] => {
     if (!currentUser) return []
     
-    if (currentUser.role === 'superadmin' || currentUser.role === 'Super Admin') {
+    const roleNorm = (currentUser.role || '').toLowerCase().trim()
+    if (roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))) {
       return ['view', 'create', 'edit', 'delete', 'cancel']
     }
 

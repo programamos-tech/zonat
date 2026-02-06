@@ -94,11 +94,12 @@ export function ProductTable({
                      user?.role === 'vendedor' || 
                      user?.role === 'Vendedor'
   const isInventario = user?.role?.toLowerCase() === 'inventario'
-  
+  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
+
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
   const isMainStore = !user?.storeId || user?.storeId === MAIN_STORE_ID
 
-  // Solo en Sincelejo el rol Inventario puede hacer acciones; en microtiendas todos solo ven
+  // Solo en Sincelejo: Inventario o Super Admin pueden hacer acciones; en microtiendas todos solo ven
   const [isSincelejoStore, setIsSincelejoStore] = useState(false)
   useEffect(() => {
     const load = async () => {
@@ -111,12 +112,12 @@ export function ProductTable({
     if (user) load()
   }, [user?.storeId])
 
-  // Acciones sobre productos: solo en tienda Sincelejo y solo rol Inventario; resto solo ver
-  const canEdit = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'edit'))
-  const canDelete = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'delete'))
-  const canCreate = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'create'))
-  const canAdjust = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'edit'))
-  const canTransfer = isVendedor ? false : (isSincelejoStore && isInventario && hasPermission('products', 'edit'))
+  const canDoProductActions = isSincelejoStore && (isInventario || isSuperAdmin)
+  const canEdit = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
+  const canDelete = isVendedor ? false : (canDoProductActions && hasPermission('products', 'delete'))
+  const canCreate = isVendedor ? false : (canDoProductActions && hasPermission('products', 'create'))
+  const canAdjust = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
+  const canTransfer = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
 
   const [searchTerm, setSearchTerm] = useState('')
 
