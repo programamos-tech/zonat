@@ -112,12 +112,14 @@ export function ProductTable({
     if (user) load()
   }, [user?.storeId])
 
-  const canDoProductActions = isSincelejoStore && (isInventario || isSuperAdmin)
-  const canEdit = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
-  const canDelete = isVendedor ? false : (canDoProductActions && hasPermission('products', 'delete'))
-  const canCreate = isVendedor ? false : (canDoProductActions && hasPermission('products', 'create'))
-  const canAdjust = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
-  const canTransfer = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
+  // Sincelejo: Inventario y Super Admin pueden crear, editar, eliminar, ajustar, transferir bodega↔local
+  const canDoProductActionsSincelejo = isSincelejoStore && (isInventario || isSuperAdmin)
+  // Super Admin en microtiendas: puede editar, actualizar stock y eliminar solo en esa tienda (sin afectar otras)
+  const canEdit = isVendedor ? false : ((canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit'))
+  const canAdjust = isVendedor ? false : ((canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit'))
+  const canCreate = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'create'))
+  const canDelete = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'delete'))
+  const canTransfer = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'edit'))
 
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -311,9 +313,9 @@ export function ProductTable({
                       <span className="sm:hidden">Nuevo</span>
                     </Button>
                   )}
-                  {!isSincelejoStore && hasPermission('products', 'create') && (
+                  {!canCreate && hasPermission('products', 'create') && (
                     <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">
-                      Solo puedes crear y editar productos en la tienda de Sincelejo
+                      Solo puedes crear productos en la tienda de Sincelejo
                     </span>
                   )}
                   {canEdit && (

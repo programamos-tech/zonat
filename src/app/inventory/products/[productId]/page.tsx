@@ -68,11 +68,11 @@ export default function ProductDetailPage() {
     if (user) load()
   }, [user?.storeId])
 
-  const canDoProductActions = isSincelejoStore && (isInventario || isSuperAdmin)
-  const canEdit = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
-  const canDelete = isVendedor ? false : (canDoProductActions && hasPermission('products', 'delete'))
-  const canAdjust = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
-  const canTransfer = isVendedor ? false : (canDoProductActions && hasPermission('products', 'edit'))
+  const canDoProductActionsSincelejo = isSincelejoStore && (isInventario || isSuperAdmin)
+  const canEdit = isVendedor ? false : ((canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit'))
+  const canAdjust = isVendedor ? false : ((canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit'))
+  const canDelete = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'delete'))
+  const canTransfer = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'edit'))
   
   const [product, setProduct] = useState<Product | null>(null)
   const [sales, setSales] = useState<Sale[]>([]) // Todas las ventas desde la creación

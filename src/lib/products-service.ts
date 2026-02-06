@@ -983,21 +983,36 @@ export class ProductsService {
     }
   }
 
-  // Eliminar producto
+  // Stock total del producto en todas las tiendas (principal + microtiendas)
+  private static async getTotalStockAcrossAllStores(productId: string): Promise<number> {
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const { data: product } = await supabaseAdmin
+      .from('products')
+      .select('stock_warehouse, stock_store')
+      .eq('id', productId)
+      .single()
+    const mainStock = (product?.stock_warehouse || 0) + (product?.stock_store || 0)
+    const { data: storeStocks } = await supabaseAdmin
+      .from('store_stock')
+      .select('quantity')
+      .eq('product_id', productId)
+    const microStock = (storeStocks || []).reduce((sum: number, row: { quantity: number }) => sum + (Number(row.quantity) || 0), 0)
+    return mainStock + microStock
+  }
+
+  // Eliminar producto (solo desde Sincelejo; no se permite si tiene stock en cualquier tienda)
   static async deleteProduct(id: string, currentUserId?: string): Promise<{ success: boolean, error?: string }> {
     try {
-      // Obtener información del producto antes de eliminarlo para el log
       const productToDelete = await this.getProductById(id)
       if (!productToDelete) {
         return { success: false, error: 'Producto no encontrado' }
       }
 
-      // Validar que el producto no tenga stock
-      const totalStock = (productToDelete.stock?.store || 0) + (productToDelete.stock?.warehouse || 0)
+      const totalStock = await this.getTotalStockAcrossAllStores(id)
       if (totalStock > 0) {
         return { 
           success: false, 
-          error: `No se puede eliminar el producto "${productToDelete.name}" porque tiene ${totalStock} unidad(es) en stock. Debe tener stock en 0 para poder eliminarlo.` 
+          error: `No se puede eliminar el producto "${productToDelete.name}" porque tiene ${totalStock} unidad(es) en stock en una o más tiendas. El stock debe estar en 0 en todas las tiendas para poder eliminarlo.` 
         }
       }
 
