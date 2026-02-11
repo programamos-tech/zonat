@@ -366,9 +366,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       const product = products.find(p => p.id === productId)
       if (!product) return
       
-      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
-      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
-      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      // Precio mínimo: siempre el costo de adquisición (en Sincelejo y microtiendas)
+      const minPrice = product.cost || 0
+      const priceType = 'costo de adquisición'
       
       // Si el precio es menor al mínimo, mostrar alerta
       if (item.unitPrice < minPrice) {
@@ -415,17 +415,15 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       return
     }
     
-    // Validar que todos los precios de venta sean >= precio mínimo
-    // Si tiene precio de venta, debe ser >= precio de venta
-    // Si no tiene precio de venta, debe ser >= precio de compra
+    // Validar que todos los precios de venta sean >= costo de adquisición (en Sincelejo y microtiendas)
     const invalidProducts: string[] = []
     selectedProducts.forEach(item => {
       const product = products.find(p => p.id === item.productId)
       if (!product) return
       
-      // Determinar precio mínimo: si tiene precio de venta, usar ese; si no, usar costo
-      const minPrice = (product.price && product.price > 0) ? product.price : (product.cost || 0)
-      const priceType = (product.price && product.price > 0) ? 'precio de venta' : 'precio de compra'
+      // Precio mínimo: siempre el costo de adquisición (en Sincelejo y microtiendas)
+      const minPrice = product.cost || 0
+      const priceType = 'costo de adquisición'
       
       if (item.unitPrice < minPrice) {
         invalidProducts.push(`${item.productName} no puede ser vendido por menos de $${minPrice.toLocaleString('es-CO')} (${priceType})`)

@@ -369,12 +369,14 @@ export class ProductsService {
           
           if (storeStockCostPrice) {
             // Si hay registro en store_stock con cost/price, usar esos valores
-            // Si son null, usar 0 (no se ha configurado el precio aún)
-            productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : 0
+            // Si cost es null o 0, usar el price de Sincelejo como cost por defecto
+            productCost = (storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0) 
+              ? storeStockCostPrice.cost 
+              : product.price // Precio de venta de Sincelejo como cost por defecto
             productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
           } else {
-            // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
-            productCost = 0
+            // Sin registro: usar price de Sincelejo como cost por defecto
+            productCost = product.price
             productPrice = 0
           }
         }
@@ -745,15 +747,17 @@ export class ProductsService {
         
         if (storeStock) {
           // Si existe store_stock con cost/price, usarlos
-          // Si son null, usar 0 (no se ha configurado el precio aún)
-          productCost = storeStock.cost !== null ? storeStock.cost : 0
+          // Si cost es null o 0, usar el price de Sincelejo como cost por defecto
+          productCost = (storeStock.cost !== null && storeStock.cost !== 0)
+            ? storeStock.cost
+            : data.price // Precio de venta de Sincelejo como cost por defecto
           productPrice = storeStock.price !== null ? storeStock.price : 0
           console.log('[PRODUCTS SERVICE] Using store_stock cost/price:', { cost: productCost, price: productPrice })
         } else {
-          // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
-          productCost = 0
+          // Sin registro: usar price de Sincelejo como cost por defecto
+          productCost = data.price
           productPrice = 0
-          console.log('[PRODUCTS SERVICE] No store_stock entry, using 0 for cost/price')
+          console.log('[PRODUCTS SERVICE] No store_stock entry, using price from Sincelejo as cost:', productCost)
         }
       }
 
@@ -1119,12 +1123,14 @@ export class ProductsService {
           
           if (storeStockCostPrice) {
             // Si hay registro en store_stock con cost/price, usar esos valores
-            // Si son null, usar 0 (no se ha configurado el precio aún)
-            productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : 0
+            // Si cost es null o 0, usar el price de Sincelejo como cost por defecto
+            productCost = (storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0) 
+              ? storeStockCostPrice.cost 
+              : product.price // Precio de venta de Sincelejo como cost por defecto
             productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
           } else {
-            // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
-            productCost = 0
+            // Sin registro: usar price de Sincelejo como cost por defecto
+            productCost = product.price
             productPrice = 0
           }
         }
