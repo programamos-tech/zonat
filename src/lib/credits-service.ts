@@ -1022,7 +1022,7 @@ export class CreditsService {
     }
   }
 
-  // Método optimizado para obtener resumen de créditos
+  // Método optimizado para obtener resumen de créditos con soporte para grandes volúmenes
   static async getCreditsSummary(): Promise<{
     totalDebt: number,
     pendingCreditsCount: number
@@ -1031,31 +1031,48 @@ export class CreditsService {
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
-      let query = supabase
-        .from('credits')
-        .select('pending_amount, total_amount')
-        .or('status.eq.pending,status.eq.partial')
-
-      if (!storeId || storeId === MAIN_STORE_ID) {
-        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-      } else {
-        query = query.eq('store_id', storeId)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-
       let totalDebt = 0
       let pendingCreditsCount = 0
+      let hasMore = true
+      let offset = 0
+      const limit = 1000
 
-      data?.forEach(c => {
-        const pending = c.pending_amount || c.total_amount || 0
-        if (pending > 0) {
-          totalDebt += pending
-          pendingCreditsCount++
+      while (hasMore) {
+        let query = supabase
+          .from('credits')
+          .select('pending_amount, total_amount')
+          .or('status.eq.pending,status.eq.partial')
+          .range(offset, offset + limit - 1)
+
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        } else {
+          query = query.eq('store_id', storeId)
         }
-      })
+
+        const { data, error } = await query
+
+        if (error) throw error
+
+        if (!data || data.length === 0) {
+          hasMore = false
+          break
+        }
+
+        data.forEach(c => {
+          const pending = c.pending_amount || c.total_amount || 0
+          if (pending > 0) {
+            totalDebt += pending
+            pendingCreditsCount++
+          }
+        })
+
+        if (data.length < limit) {
+          hasMore = false
+        } else {
+          offset += limit
+        }
+      }
 
       return { totalDebt, pendingCreditsCount }
     } catch (error) {

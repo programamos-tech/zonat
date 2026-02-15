@@ -221,9 +221,9 @@ export default function DashboardPage() {
       // Esto devuelve los números grandes casi instantáneamente
       if (startDate && endDate) {
         const [fastSales, fastInventory, fastCredits] = await Promise.all([
-          withTimeout(SalesService.getDashboardSummary(startDate, endDate), 10000),
-          withTimeout(ProductsService.getInventoryMetrics(), 10000),
-          withTimeout(CreditsService.getCreditsSummary(), 10000)
+          withTimeout(SalesService.getDashboardSummary(startDate, endDate), 30000),
+          withTimeout(ProductsService.getInventoryMetrics(), 30000),
+          withTimeout(CreditsService.getCreditsSummary(), 30000)
         ])
 
         setOptimizedMetrics({

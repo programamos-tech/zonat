@@ -1693,8 +1693,8 @@ export class ProductsService {
   }
 
   /**
-   * Obtiene métricas básicas de inventario optimizadas
-   */
+ * Obtiene métricas básicas de inventario optimizadas con soporte para grandes volúmenes
+ */
   static async getInventoryMetrics(): Promise<{
     totalStockUnits: number,
     totalStockInvestment: number,
@@ -1704,36 +1704,52 @@ export class ProductsService {
       const { supabase } = await import('@/lib/supabase')
       const storeId = await getCurrentUserStoreId()
 
-      // Consultar productos activos
-      let query = supabase
-        .from('products')
-        .select('cost, stock_warehouse, stock_store')
-        .neq('status', 'discontinued')
-
-      if (storeId && storeId !== 'main') {
-        // Si hay un storeId específico, podríamos filtrar aquí si la tabla lo permite
-        // Por ahora mantenemos la lógica global o adaptada al esquema actual
-      }
-
-      const { data: products, error } = await query
-
-      if (error || !products) {
-        console.error('Error fetching inventory metrics:', error)
-        return { totalStockUnits: 0, totalStockInvestment: 0, lowStockCount: 0 }
-      }
-
       let totalStockUnits = 0
       let totalStockInvestment = 0
       let lowStockCount = 0
+      let hasMore = true
+      let offset = 0
+      const limit = 1000
 
-      products.forEach(p => {
-        const stock = (p.stock_store || 0) + (p.stock_warehouse || 0)
-        totalStockUnits += stock
-        totalStockInvestment += (p.cost || 0) * stock
-        if (stock > 0 && stock <= 5) {
-          lowStockCount++
+      while (hasMore) {
+        // Consultar productos activos en lotes
+        let query = supabase
+          .from('products')
+          .select('cost, stock_warehouse, stock_store')
+          .neq('status', 'discontinued')
+          .range(offset, offset + limit - 1)
+
+        // Por ahora el esquema no parece usar storeId para sumar stock total en productos,
+        // pero incluimos la estructura por si fuera necesario filtrar por tienda en el futuro.
+        // if (storeId && storeId !== 'main') { ... }
+
+        const { data: products, error } = await query
+
+        if (error) {
+          console.error('Error fetching inventory metrics batch:', error)
+          throw error
         }
-      })
+
+        if (!products || products.length === 0) {
+          hasMore = false
+          break
+        }
+
+        products.forEach(p => {
+          const stock = (p.stock_store || 0) + (p.stock_warehouse || 0)
+          totalStockUnits += stock
+          totalStockInvestment += (p.cost || 0) * stock
+          if (stock > 0 && stock <= 5) {
+            lowStockCount++
+          }
+        })
+
+        if (products.length < limit) {
+          hasMore = false
+        } else {
+          offset += limit
+        }
+      }
 
       return { totalStockUnits, totalStockInvestment, lowStockCount }
     } catch (error) {
@@ -1741,4 +1757,5 @@ export class ProductsService {
       return { totalStockUnits: 0, totalStockInvestment: 0, lowStockCount: 0 }
     }
   }
+}
 }

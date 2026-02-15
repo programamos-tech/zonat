@@ -1947,7 +1947,7 @@ export class SalesService {
     }
   }
 
-  // Método ultra-optimizado para obtener solo los totales del dashboard
+  // Método ultra-optimizado para obtener solo los totales del dashboard con soporte para grandes volúmenes
   static async getDashboardSummary(startDate: Date, endDate: Date): Promise<{
     totalRevenue: number,
     cashRevenue: number,
@@ -1958,47 +1958,66 @@ export class SalesService {
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
-      let query = supabase
-        .from('sales')
-        .select(`
-          total,
-          payment_method,
-          status,
-          sale_payments (
-            payment_type,
-            amount
-          )
-        `)
-        .gte('created_at', startDate.toISOString())
-        .lte('created_at', endDate.toISOString())
-        .not('status', 'eq', 'cancelled')
-        .not('status', 'eq', 'draft')
-
-      if (!storeId || storeId === MAIN_STORE_ID) {
-        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-      } else {
-        query = query.eq('store_id', storeId)
-      }
-
-      const { data, error } = await query
-
-      if (error) throw error
-
       let cashRevenue = 0
       let transferRevenue = 0
-      let salesCount = data?.length || 0
+      let salesCount = 0
+      let hasMore = true
+      let offset = 0
+      const limit = 1000
 
-      data?.forEach(sale => {
-        if (sale.sale_payments && sale.sale_payments.length > 0) {
-          sale.sale_payments.forEach((payment: any) => {
-            if (payment.payment_type === 'cash') cashRevenue += payment.amount || 0
-            if (payment.payment_type === 'transfer') transferRevenue += payment.amount || 0
-          })
+      while (hasMore) {
+        let query = supabase
+          .from('sales')
+          .select(`
+            total,
+            payment_method,
+            status,
+            sale_payments (
+              payment_type,
+              amount
+            )
+          `)
+          .gte('created_at', startDate.toISOString())
+          .lte('created_at', endDate.toISOString())
+          .not('status', 'eq', 'cancelled')
+          .not('status', 'eq', 'draft')
+          .range(offset, offset + limit - 1)
+
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
         } else {
-          if (sale.payment_method === 'cash') cashRevenue += sale.total || 0
-          if (sale.payment_method === 'transfer') transferRevenue += sale.total || 0
+          query = query.eq('store_id', storeId)
         }
-      })
+
+        const { data, error } = await query
+
+        if (error) throw error
+
+        if (!data || data.length === 0) {
+          hasMore = false
+          break
+        }
+
+        salesCount += data.length
+
+        data.forEach(sale => {
+          if (sale.sale_payments && sale.sale_payments.length > 0) {
+            sale.sale_payments.forEach((payment: any) => {
+              if (payment.payment_type === 'cash') cashRevenue += payment.amount || 0
+              if (payment.payment_type === 'transfer') transferRevenue += payment.amount || 0
+            })
+          } else {
+            if (sale.payment_method === 'cash') cashRevenue += sale.total || 0
+            if (sale.payment_method === 'transfer') transferRevenue += sale.total || 0
+          }
+        })
+
+        if (data.length < limit) {
+          hasMore = false
+        } else {
+          offset += limit
+        }
+      }
 
       return {
         totalRevenue: cashRevenue + transferRevenue,
