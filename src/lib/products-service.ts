@@ -1758,4 +1758,3 @@ export class ProductsService {
     }
   }
 }
-}
