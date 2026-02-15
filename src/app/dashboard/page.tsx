@@ -211,8 +211,9 @@ export default function DashboardPage() {
       }
       const dateToUse = overrideSpecificDate !== undefined ? overrideSpecificDate : specificDate
       const yearToUse = overrideYear !== undefined ? overrideYear : selectedYear
-      const shouldFilterByDate = currentFilter !== 'all'
-      const { startDate, endDate } = shouldFilterByDate ? getDateRange(currentFilter, yearToUse, dateToUse) : { startDate: null, endDate: null }
+
+      // Corregir lógica: 'all' (año) TAMBIÉN requiere un rango de fechas
+      const { startDate, endDate } = getDateRange(currentFilter, yearToUse, dateToUse)
 
       console.log('🔍 [DASHBOARD] Iniciando carga optimizada...', { currentFilter })
 
@@ -311,8 +312,10 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadAvailableYears = async () => {
       try {
-        // Obtener la primera venta para saber desde qué año empezar
         const { supabase } = await import('@/lib/supabase')
+        const currentYear = new Date().getFullYear()
+
+        // Obtener la venta más antigua para saber desde qué año empezar
         const { data, error } = await supabase
           .from('sales')
           .select('created_at')
@@ -320,15 +323,12 @@ export default function DashboardPage() {
           .limit(1)
 
         if (error || !data || data.length === 0) {
-          // Si no hay ventas, retornar solo el año actual
-          setAvailableYears([new Date().getFullYear()])
-          setSelectedYear(new Date().getFullYear())
+          // Si no hay ventas, asegurar que al menos el año actual esté disponible
+          setAvailableYears([currentYear])
           return
         }
 
-        const firstSaleDate = new Date(data[0].created_at)
-        const firstYear = firstSaleDate.getFullYear()
-        const currentYear = new Date().getFullYear()
+        const firstYear = new Date(data[0].created_at).getFullYear()
 
         // Generar array de años desde la primera venta hasta el año actual
         const years: number[] = []
@@ -336,12 +336,11 @@ export default function DashboardPage() {
           years.push(year)
         }
 
-        setAvailableYears(years.reverse()) // Más reciente primero
-        setSelectedYear(currentYear) // Año actual por defecto
+        const uniqueYears = Array.from(new Set([...years, currentYear])).sort((a, b) => b - a)
+        setAvailableYears(uniqueYears)
       } catch (error) {
-        // En caso de error, retornar solo el año actual
+        console.error('Error cargando años:', error)
         setAvailableYears([new Date().getFullYear()])
-        setSelectedYear(new Date().getFullYear())
       }
     }
 
