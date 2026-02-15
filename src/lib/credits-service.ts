@@ -103,7 +103,7 @@ export class CreditsService {
       const { data: creditsData, error: creditsError } = await query.order('created_at', { ascending: false })
 
       if (creditsError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw creditsError
       }
 
@@ -180,13 +180,13 @@ export class CreditsService {
     // Obtener emails de usuarios únicos
     const userIds = [...new Set(creditsData.map(credit => credit.last_payment_user).filter(Boolean))]
     const userEmails: { [key: string]: string } = {}
-    
+
     if (userIds.length > 0) {
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('id, email')
         .in('id', userIds)
-      
+
       if (!usersError && users) {
         users.forEach(user => {
           userEmails[user.id] = user.email
@@ -246,7 +246,7 @@ export class CreditsService {
         .select('email')
         .eq('id', data.last_payment_user)
         .single()
-      
+
       if (user) {
         userEmail = user.email
       }
@@ -276,7 +276,7 @@ export class CreditsService {
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
     const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-    
+
     let query = supabase
       .from('credits')
       .select('*')
@@ -300,13 +300,13 @@ export class CreditsService {
     // Obtener emails de usuarios únicos
     const userIds = [...new Set(data.map(credit => credit.last_payment_user).filter(Boolean))]
     const userEmails: { [key: string]: string } = {}
-    
+
     if (userIds.length > 0) {
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('id, email')
         .in('id', userIds)
-      
+
       if (!usersError && users) {
         users.forEach(user => {
           userEmails[user.id] = user.email
@@ -346,14 +346,14 @@ export class CreditsService {
 
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
-    
+
     // Verificar que el crédito pertenece a la tienda actual (si hay storeId y no es admin)
     if (storeId && existingCredit.storeId !== storeId && !canAccessAllStores(user)) {
       throw new Error('No tienes permiso para actualizar este crédito')
     }
 
     const updateData: any = {}
-    
+
     if (updates.paidAmount !== undefined) updateData.paid_amount = updates.paidAmount
     if (updates.pendingAmount !== undefined) updateData.pending_amount = updates.pendingAmount
     if (updates.status !== undefined) updateData.status = updates.status
@@ -378,7 +378,7 @@ export class CreditsService {
         .select('email')
         .eq('id', data.last_payment_user)
         .single()
-      
+
       if (user) {
         userEmail = user.email
       }
@@ -437,11 +437,11 @@ export class CreditsService {
 
     // Crear registros de pago en payment_records
     let paymentRecords = []
-    
+
     if (paymentData.paymentMethod === 'mixed' && paymentData.cashAmount && paymentData.transferAmount) {
       // Para pagos mixtos, crear DOS registros separados
       const baseDescription = paymentData.description || ''
-      
+
       // Obtener store_id del crédito
       const storeId = credit.storeId || getCurrentUserStoreId() || '00000000-0000-0000-0000-000000000001'
 
@@ -456,7 +456,7 @@ export class CreditsService {
         store_id: storeId,
         description: baseDescription ? `${baseDescription} (Parte en efectivo)` : 'Pago mixto - Parte en efectivo'
       }
-      
+
       // Registro para transferencia
       const transferRecord = {
         payment_id: paymentDataResult.id,
@@ -468,26 +468,26 @@ export class CreditsService {
         store_id: storeId,
         description: baseDescription ? `${baseDescription} (Parte por transferencia)` : 'Pago mixto - Parte por transferencia'
       }
-      
+
       // Insertar ambos registros
       const { data: cashData, error: cashError } = await supabaseAdmin
         .from('payment_records')
         .insert([cashRecord])
         .select()
         .single()
-      
+
       if (cashError) throw cashError
-      
+
       const { data: transferData, error: transferError } = await supabaseAdmin
         .from('payment_records')
         .insert([transferRecord])
         .select()
         .single()
-      
+
       if (transferError) throw transferError
-      
+
       paymentRecords = [cashData, transferData]
-      
+
     } else {
       // Para pagos simples (cash o transfer), crear un solo registro
       // Obtener store_id del crédito
@@ -502,19 +502,19 @@ export class CreditsService {
         user_name: paymentData.userName,
         store_id: storeId
       }
-      
+
       if (paymentData.description) {
         insertData.description = paymentData.description
       }
-      
+
       const { data, error } = await supabaseAdmin
         .from('payment_records')
         .insert([insertData])
         .select()
         .single()
-      
+
       if (error) throw error
-      
+
       paymentRecords = [data]
     }
 
@@ -524,7 +524,7 @@ export class CreditsService {
     const newPendingAmount = credit.pendingAmount - paymentData.amount!
     const newPaidAmount = credit.paidAmount + paymentData.amount!
     const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
-    
+
     // Actualizar el crédito en la tabla credits
     await this.updateCredit(credit.id, {
       pendingAmount: newPendingAmount,
@@ -538,14 +538,14 @@ export class CreditsService {
     // Log de actividad para el pago
     // Si el crédito se completa con este abono, el log incluirá esa información
     const isCompleted = newPendingAmount <= 0
-    
+
     if (paymentData.userId) {
       await AuthService.logActivity(
         paymentData.userId,
         'credit_payment',
         'credits',
         {
-          description: isCompleted 
+          description: isCompleted
             ? `Pago completado: ${credit.clientName} - Factura: ${credit.invoiceNumber} - Monto: $${paymentData.amount!.toLocaleString('es-CO')} - Método: ${paymentData.paymentMethod === 'cash' ? 'Efectivo' : paymentData.paymentMethod === 'transfer' ? 'Transferencia' : 'Mixto'}`
             : `Abono registrado: ${credit.clientName} - Factura: ${credit.invoiceNumber} - Monto: $${paymentData.amount!.toLocaleString('es-CO')} - Método: ${paymentData.paymentMethod === 'cash' ? 'Efectivo' : paymentData.paymentMethod === 'transfer' ? 'Transferencia' : 'Mixto'}`,
           creditId: credit.id,
@@ -578,14 +578,14 @@ export class CreditsService {
         .eq('id', credit.saleId)
 
       if (saleUpdateError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         // No lanzamos error aquí para no interrumpir el flujo del pago
       }
     }
 
     // Retornar el primer registro (o crear un registro consolidado para la respuesta)
     const firstRecord = paymentRecords[0]
-    
+
     return {
       id: firstRecord.id,
       creditId: paymentData.creditId, // Mantener el creditId original
@@ -619,7 +619,7 @@ export class CreditsService {
         .from('payments')
         .select('id')
         .eq('sale_id', credit.saleId)
-      
+
       if (!saleError && paymentsBySale && paymentsBySale.length > 0) {
         paymentIds = paymentsBySale.map(p => p.id)
       }
@@ -720,7 +720,7 @@ export class CreditsService {
       for (const payment of paymentHistory) {
         const { error: cancelError } = await supabaseAdmin
           .from('payment_records')
-          .update({ 
+          .update({
             status: 'cancelled',
             cancelled_at: new Date().toISOString(),
             cancelled_by: userId,
@@ -730,7 +730,7 @@ export class CreditsService {
           .eq('id', payment.id)
 
         if (cancelError) {
-      // Error silencioso en producción
+          // Error silencioso en producción
           throw new Error(`Error al anular los abonos: ${cancelError.message}`)
         }
       }
@@ -738,7 +738,7 @@ export class CreditsService {
       // Anular el crédito en la tabla credits
       const { error: creditError } = await supabase
         .from('credits')
-        .update({ 
+        .update({
           status: 'cancelled',
           cancelled_at: new Date().toISOString(),
           cancelled_by: userId,
@@ -748,14 +748,14 @@ export class CreditsService {
         .eq('id', creditId)
 
       if (creditError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw new Error(`Error al anular el crédito: ${creditError.message}`)
       }
 
       // Anular el crédito en la tabla payments (sistema antiguo)
       const { error: paymentError } = await supabase
         .from('payments')
-        .update({ 
+        .update({
           status: 'cancelled',
           cancelled_at: new Date().toISOString(),
           cancelled_by: userId,
@@ -766,7 +766,7 @@ export class CreditsService {
         .eq('client_id', credit.clientId)
 
       if (paymentError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         // No lanzamos error aquí para no interrumpir el flujo
       }
 
@@ -774,7 +774,7 @@ export class CreditsService {
       try {
         const { SalesService } = await import('./sales-service')
         const { ProductsService } = await import('./products-service')
-        
+
         // Obtener la venta por sale_id
         const sale = await SalesService.getSaleById(credit.saleId)
         if (sale && sale.items && sale.items.length > 0) {
@@ -785,28 +785,28 @@ export class CreditsService {
             try {
 
               const result = await ProductsService.returnStockFromSale(item.productId, item.quantity, userId)
-              stockReturnResults.push({ 
-                productId: item.productId, 
+              stockReturnResults.push({
+                productId: item.productId,
                 productName: item.productName,
                 quantity: item.quantity,
-                success: result 
+                success: result
               })
-              
+
               if (!result) {
-      // Error silencioso en producción
+                // Error silencioso en producción
               }
             } catch (error) {
-      // Error silencioso en producción
-              stockReturnResults.push({ 
-                productId: item.productId, 
+              // Error silencioso en producción
+              stockReturnResults.push({
+                productId: item.productId,
                 productName: item.productName,
                 quantity: item.quantity,
-                success: false, 
-                error 
+                success: false,
+                error
               })
             }
           }
-          
+
           // Verificar si hubo errores en el retorno de stock
           const failedReturns = stockReturnResults.filter(r => !r.success)
           if (failedReturns.length > 0) {
@@ -818,29 +818,29 @@ export class CreditsService {
         } else {
 
         }
-        
+
         // ACTUALIZAR STATUS DE LA VENTA: Marcar la venta como cancelada
         if (sale) {
           try {
             const { error: saleUpdateError } = await supabase
               .from('sales')
-              .update({ 
+              .update({
                 status: 'cancelled',
                 updated_at: new Date().toISOString()
               })
               .eq('id', credit.saleId)
 
             if (saleUpdateError) {
-      // Error silencioso en producción
+              // Error silencioso en producción
             } else {
 
             }
           } catch (saleError) {
-      // Error silencioso en producción
+            // Error silencioso en producción
           }
         }
       } catch (stockError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         // No lanzamos error aquí para no interrumpir la cancelación del crédito
       }
 
@@ -899,7 +899,7 @@ export class CreditsService {
     try {
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      
+
       let query = supabase
         .from('payment_records')
         .select('*')
@@ -970,7 +970,7 @@ export class CreditsService {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      
+
       let query = supabase
         .from('credits')
         .select('*')
@@ -1019,6 +1019,48 @@ export class CreditsService {
     } catch (error) {
       // Error silencioso en producción
       return null
+    }
+  }
+
+  // Método optimizado para obtener resumen de créditos
+  static async getCreditsSummary(): Promise<{
+    totalDebt: number,
+    pendingCreditsCount: number
+  }> {
+    try {
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      let query = supabase
+        .from('credits')
+        .select('pending_amount, total_amount')
+        .or('status.eq.pending,status.eq.partial')
+
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      let totalDebt = 0
+      let pendingCreditsCount = 0
+
+      data?.forEach(c => {
+        const pending = c.pending_amount || c.total_amount || 0
+        if (pending > 0) {
+          totalDebt += pending
+          pendingCreditsCount++
+        }
+      })
+
+      return { totalDebt, pendingCreditsCount }
+    } catch (error) {
+      console.error('Error en getCreditsSummary:', error)
+      return { totalDebt: 0, pendingCreditsCount: 0 }
     }
   }
 }

@@ -65,7 +65,7 @@ export function useStoreUrl() {
         if (currentStore !== slug || lastStoreIdRef.current !== user.storeId) {
           currentUrl.searchParams.set('store', slug)
           router.replace(currentUrl.pathname + currentUrl.search, { scroll: false })
-          lastStoreIdRef.current = user.storeId
+          lastStoreIdRef.current = user.storeId || null
         }
       } catch (error) {
         console.error('Error updating URL with store:', error)
@@ -81,7 +81,7 @@ export function useStoreUrl() {
 
     return () => clearTimeout(timeoutId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user?.storeId, pathname, user]) // Incluir user completo para detectar cambios
+  }, [user?.storeId, pathname, user?.id]) // Usar user?.id para evitar re-ejecuciones si el objeto user cambia pero el ID es el mismo
 
   return { storeSlug }
 }

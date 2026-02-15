@@ -11,7 +11,7 @@ export class SalesService {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      
+
       let query = supabase
         .from('sales')
         .select('*', { count: 'exact', head: true })
@@ -30,7 +30,7 @@ export class SalesService {
       const { count, error } = await query
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         return '#001' // Fallback
       }
 
@@ -48,7 +48,7 @@ export class SalesService {
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      
+
       // Obtener el total de ventas
       let countQuery = supabase
         .from('sales')
@@ -66,12 +66,12 @@ export class SalesService {
       }
 
       const { count, error: countError } = await countQuery
-      
+
       if (countError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw countError
       }
-      
+
       // Obtener las ventas paginadas con los códigos de referencia y pagos mixtos
       let dataQuery = supabase
         .from('sales')
@@ -112,7 +112,7 @@ export class SalesService {
         .range(offset, offset + limit - 1)
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw error
       }
 
@@ -123,7 +123,7 @@ export class SalesService {
           const itemsWithReferences = await Promise.all(
             (sale.sale_items || []).map(async (item: any) => {
               let productReference = item.product_reference_code
-              
+
               // Si no hay referencia guardada, obtenerla desde la tabla products
               if (!productReference || productReference === 'N/A' || productReference === null) {
                 const { data: product } = await supabase
@@ -131,10 +131,10 @@ export class SalesService {
                   .select('reference')
                   .eq('id', item.product_id)
                   .single()
-                
+
                 productReference = product?.reference || 'N/A'
               }
-              
+
               return {
                 id: item.id,
                 productId: item.product_id,
@@ -303,7 +303,7 @@ export class SalesService {
       let offset = 0
       const limit = 1000 // Límite real de Supabase
       let hasMore = true
-      
+
       while (hasMore) {
         const user = getCurrentUser()
         const storeId = getCurrentUserStoreId()
@@ -405,17 +405,17 @@ export class SalesService {
           const itemsWithReferences = await Promise.all(
             (sale.sale_items || []).map(async (item: any) => {
               let productReference = item.product_reference_code
-              
+
               if (!productReference || productReference === 'N/A' || productReference === null) {
                 const { data: product } = await supabase
                   .from('products')
                   .select('reference')
                   .eq('id', item.product_id)
                   .single()
-                
+
                 productReference = product?.reference || 'N/A'
               }
-              
+
               return {
                 id: item.id,
                 productId: item.product_id,
@@ -451,14 +451,14 @@ export class SalesService {
               updatedAt: payment.updated_at || payment.created_at
             })) || [],
             invoiceNumber: sale.invoice_number,
-        sellerId: sale.seller_id,
-        sellerName: sale.seller_name,
-        sellerEmail: sale.seller_email,
-        storeId: sale.store_id || undefined,
-        createdAt: sale.created_at,
-        items: itemsWithReferences,
-        cancellationReason: sale.cancellation_reason || undefined
-      }
+            sellerId: sale.seller_id,
+            sellerName: sale.seller_name,
+            sellerEmail: sale.seller_email,
+            storeId: sale.store_id || undefined,
+            createdAt: sale.created_at,
+            items: itemsWithReferences,
+            cancellationReason: sale.cancellation_reason || undefined
+          }
         })
       )
 
@@ -517,7 +517,7 @@ export class SalesService {
       const { data, error } = await query.single()
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw error
       }
 
@@ -531,7 +531,7 @@ export class SalesService {
       const itemsWithReferences = await Promise.all(
         (data.sale_items || []).map(async (item: any) => {
           let productReference = item.product_reference_code
-          
+
           // Si no hay referencia guardada, obtenerla desde la tabla products
           if (!productReference || productReference === 'N/A' || productReference === null) {
             const { data: product } = await supabase
@@ -539,10 +539,10 @@ export class SalesService {
               .select('reference')
               .eq('id', item.product_id)
               .single()
-            
+
             productReference = product?.reference || 'N/A'
           }
-          
+
           return {
             id: item.id,
             productId: item.product_id,
@@ -604,10 +604,10 @@ export class SalesService {
     try {
       // Generar número de factura secuencial
       const invoiceNumber = await this.getNextInvoiceNumber()
-      
+
       // Obtener información del usuario actual
       const currentUser = await AuthService.getCurrentUser()
-      
+
       // Obtener store_id del usuario actual
       const storeId = getCurrentUserStoreId()
 
@@ -633,7 +633,7 @@ export class SalesService {
         .single()
 
       if (saleError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw saleError
       }
 
@@ -645,11 +645,11 @@ export class SalesService {
           // Primero descontar stock de todos los productos
           for (const item of saleData.items) {
             const stockResult = await ProductsService.deductStockForSale(
-              item.productId, 
-              item.quantity, 
+              item.productId,
+              item.quantity,
               currentUserId
             )
-            
+
             if (!stockResult.success || !stockResult.stockInfo) {
               // Si no se pudo descontar stock, revertir la venta
               await supabase.from('sales').delete().eq('id', sale.id)
@@ -694,7 +694,7 @@ export class SalesService {
           .insert(saleItems)
 
         if (itemsError) {
-      // Error silencioso en producción
+          // Error silencioso en producción
           throw itemsError
         }
       }
@@ -714,13 +714,13 @@ export class SalesService {
             .insert(paymentRecords)
 
           if (paymentsError) {
-        // Error silencioso en producción
+            // Error silencioso en producción
             throw paymentsError
           }
         } else if (saleData.paymentMethod === 'credit') {
           // Crear crédito para ventas a crédito
           const { CreditsService } = await import('./credits-service')
-          
+
           await CreditsService.createCredit({
             saleId: sale.id,
             clientId: saleData.clientId,
@@ -753,29 +753,29 @@ export class SalesService {
             })
 
           if (paymentError) {
-        // Error silencioso en producción
+            // Error silencioso en producción
             throw paymentError
           }
         }
       }
 
       // Log de actividad
-      const paymentMethodLabel = saleData.paymentMethod === 'credit' ? 'Venta a Crédito' : 
-                                 saleData.paymentMethod === 'cash' ? 'Venta en Efectivo' :
-                                 saleData.paymentMethod === 'transfer' ? 'Venta por Transferencia' :
-                                 saleData.paymentMethod === 'mixed' ? 'Venta Mixta' : 'Venta'
-      
+      const paymentMethodLabel = saleData.paymentMethod === 'credit' ? 'Venta a Crédito' :
+        saleData.paymentMethod === 'cash' ? 'Venta en Efectivo' :
+          saleData.paymentMethod === 'transfer' ? 'Venta por Transferencia' :
+            saleData.paymentMethod === 'mixed' ? 'Venta Mixta' : 'Venta'
+
       // Usar acción diferente según el tipo de venta
-      const logAction = saleData.status === 'draft' 
-        ? 'sale_draft_create' 
-        : saleData.paymentMethod === 'credit' 
-          ? 'credit_sale_create' 
+      const logAction = saleData.status === 'draft'
+        ? 'sale_draft_create'
+        : saleData.paymentMethod === 'credit'
+          ? 'credit_sale_create'
           : 'sale_create'
-      
+
       const logDescription = saleData.status === 'draft'
         ? `Borrador de ${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`
         : `${paymentMethodLabel}: ${saleData.clientName} - Total: $${saleData.total.toLocaleString()}`
-      
+
       // Obtener la fecha de vencimiento del crédito si existe
       let creditDueDate = null
       if (saleData.paymentMethod === 'credit') {
@@ -818,7 +818,7 @@ export class SalesService {
 
       // Obtener la venta completa con toda la información (códigos de referencia, vendedor, etc.)
       const completeSale = await this.getSaleById(sale.id)
-      
+
       if (!completeSale) {
         throw new Error('Error al obtener la venta creada')
       }
@@ -844,7 +844,7 @@ export class SalesService {
       if (storeId && !canAccessAllStores(user) && existingSale.storeId !== storeId) {
         throw new Error('No tienes permiso para editar esta venta')
       }
-      
+
       if (existingSale.status !== 'draft') {
         throw new Error('Solo se pueden editar ventas en estado borrador')
       }
@@ -868,7 +868,7 @@ export class SalesService {
         .single()
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw error
       }
 
@@ -902,7 +902,7 @@ export class SalesService {
           .insert(saleItems)
 
         if (itemsError) {
-      // Error silencioso en producción
+          // Error silencioso en producción
           throw itemsError
         }
       }
@@ -966,18 +966,18 @@ export class SalesService {
           if (!product) {
             throw new Error(`Producto no encontrado: ${item.productName}`)
           }
-          
+
           const totalStock = (product.stock?.warehouse || 0) + (product.stock?.store || 0)
           if (totalStock < item.quantity) {
             throw new Error(`No hay suficiente stock para el producto "${item.productName}". Stock disponible: ${totalStock}, Cantidad requerida: ${item.quantity}`)
           }
-          
+
           const stockResult = await ProductsService.deductStockForSale(
-            item.productId, 
-            item.quantity, 
+            item.productId,
+            item.quantity,
             currentUserId
           )
-          
+
           if (!stockResult.success) {
             throw new Error(`No hay suficiente stock para el producto "${item.productName}". Stock disponible: ${totalStock}, Cantidad requerida: ${item.quantity}`)
           }
@@ -990,7 +990,7 @@ export class SalesService {
       // Crear crédito si el método de pago es crédito
       if (draftSale.paymentMethod === 'credit') {
         const { CreditsService } = await import('./credits-service')
-        
+
         // Intentar obtener la fecha de vencimiento del log de creación del borrador
         let creditDueDate = null
         try {
@@ -1001,7 +1001,7 @@ export class SalesService {
             .eq('action', 'sale_draft_create')
             .order('created_at', { ascending: false })
             .limit(100)
-          
+
           // Buscar el log que corresponde a este borrador
           if (logs && logs.length > 0) {
             for (const log of logs) {
@@ -1022,7 +1022,7 @@ export class SalesService {
         } catch (error) {
           // Error silencioso - usar null si no se encuentra
         }
-        
+
         await CreditsService.createCredit({
           saleId: draftSale.id,
           clientId: draftSale.clientId,
@@ -1085,7 +1085,7 @@ export class SalesService {
         .eq('id', id)
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw error
       }
 
@@ -1120,7 +1120,7 @@ export class SalesService {
       if (sale.paymentMethod === 'credit') {
         const { CreditsService } = await import('./credits-service')
         credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
-        
+
         if (credit) {
           // Para ventas a crédito, obtener todos los abonos del crédito que no estén cancelados
           // Primero buscar el payment relacionado al crédito
@@ -1130,7 +1130,7 @@ export class SalesService {
             .eq('invoice_number', sale.invoiceNumber)
             .eq('client_id', sale.clientId)
             .single()
-          
+
           if (!paymentError && paymentData) {
             // Obtener todos los payment_records relacionados a este payment que no estén cancelados
             const { data: paymentRecords, error: recordsError } = await supabase
@@ -1138,11 +1138,11 @@ export class SalesService {
               .select('id, amount, status')
               .eq('payment_id', paymentData.id)
               .neq('status', 'cancelled')
-            
+
             if (!recordsError && paymentRecords && paymentRecords.length > 0) {
               // Calcular el reembolso total
               totalRefund = paymentRecords.reduce((sum, payment) => sum + (payment.amount || 0), 0)
-              
+
               // Obtener el nombre del usuario que está cancelando
               let userName = 'Usuario'
               try {
@@ -1154,12 +1154,12 @@ export class SalesService {
               } catch (error) {
                 // Error silencioso - usar nombre por defecto
               }
-              
+
               // Cancelar todos los abonos del crédito
               for (const paymentRecord of paymentRecords) {
                 const { error: cancelError } = await supabase
                   .from('payment_records')
-                  .update({ 
+                  .update({
                     status: 'cancelled',
                     cancelled_at: new Date().toISOString(),
                     cancelled_by: currentUserId,
@@ -1185,7 +1185,7 @@ export class SalesService {
           .filter(payment => payment.paymentType === 'cash' || payment.paymentType === 'transfer')
           .reduce((sum, payment) => sum + payment.amount, 0)
       }
-      
+
       // Preparar items para devolución de stock
       const stockReturnItems = sale.items.map(item => ({
         productId: item.productId,
@@ -1196,7 +1196,7 @@ export class SalesService {
       // Devolver stock al local (siempre hacer esto para ventas canceladas)
       // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote en lugar de loop secuencial
       const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
-      
+
       // Capturar información del stock devuelto para el log
       let stockReturnInfo = null
       if (stockReturnResult.success && stockReturnResult.results.length > 0) {
@@ -1211,7 +1211,7 @@ export class SalesService {
           }))
         }
       }
-      
+
       if (!stockReturnResult.success) {
         const failedReturns = stockReturnResult.results.filter(r => !r.success)
         // Continuar con la anulación aunque algunos productos no se pudieron devolver
@@ -1234,7 +1234,7 @@ export class SalesService {
         .eq('id', id)
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw error
       }
 
@@ -1246,7 +1246,7 @@ export class SalesService {
         .single()
 
       if (verifyError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
       } else {
 
         // 🚀 OPTIMIZACIÓN: Solo actualizar crédito si es necesario (evitar query redundante)
@@ -1267,7 +1267,7 @@ export class SalesService {
         'sale_cancel',
         'sales',
         {
-          description: sale.paymentMethod === 'credit' 
+          description: sale.paymentMethod === 'credit'
             ? `Factura perteneciente a un crédito cancelada: ${sale.invoiceNumber} - Motivo: ${reason}${totalRefund > 0 ? ` - Reembolso: $${totalRefund.toLocaleString()}` : ''}`
             : `Venta cancelada: ID ${id} - Motivo: ${reason}${totalRefund > 0 ? ` - Reembolso: $${totalRefund.toLocaleString()}` : ''}`,
           saleId: id,
@@ -1295,7 +1295,7 @@ export class SalesService {
       // Obtener la venta cancelada para obtener el cliente
       const cancelledSale = await this.getSaleById(cancelledSaleId)
       if (!cancelledSale) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         return
       }
 
@@ -1307,7 +1307,7 @@ export class SalesService {
         .order('created_at', { ascending: true })
 
       if (salesError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         return
       }
 
@@ -1358,7 +1358,7 @@ export class SalesService {
           .eq('id', creditId)
 
         if (updateError) {
-      // Error silencioso en producción
+          // Error silencioso en producción
           throw updateError
         }
 
@@ -1397,7 +1397,7 @@ export class SalesService {
         .single()
 
       if (creditError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         return
       }
 
@@ -1431,7 +1431,7 @@ export class SalesService {
         .eq('id', creditId)
 
       if (updateError) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw updateError
       }
 
@@ -1507,17 +1507,17 @@ export class SalesService {
       // Si el término es un número, priorizar búsqueda por número de factura
       if (!isNaN(Number(cleanTerm))) {
         const numericValue = Number(cleanTerm)
-        
+
         // Buscar por número de factura exacto (sin el #)
         searchConditions.push(`invoice_number.eq.#${cleanTerm.padStart(3, '0')}`)
-        
+
         // Buscar por número de factura que contenga el número (para casos como #010, #100, etc.)
         searchConditions.push(`invoice_number.ilike.%${cleanTerm}%`)
-        
+
         // Buscar por monto exacto
         searchConditions.push(`total.eq.${numericValue}`)
         searchConditions.push(`subtotal.eq.${numericValue}`)
-        
+
         // Buscar en otros campos que puedan contener el número
         searchConditions.push(`client_name.ilike.%${cleanTerm}%`)
         searchConditions.push(`seller_name.ilike.%${cleanTerm}%`)
@@ -1530,7 +1530,7 @@ export class SalesService {
           `seller_name.ilike.%${cleanTerm}%`,
           `seller_email.ilike.%${cleanTerm}%`
         ]
-        
+
         // Agregar búsqueda por métodos de pago en español
         const paymentMethodMappings = {
           'efectivo': 'cash',
@@ -1543,7 +1543,7 @@ export class SalesService {
           'garantia': 'warranty',
           'mixto': 'mixed'
         }
-        
+
         // Si el término coincide con un método de pago en español, buscar por el valor en inglés
         const lowerTerm = cleanTerm.toLowerCase()
         if (paymentMethodMappings[lowerTerm]) {
@@ -1557,7 +1557,7 @@ export class SalesService {
         .order('created_at', { ascending: false })
 
       if (error) {
-      // Error silencioso en producción
+        // Error silencioso en producción
         throw error
       }
 
@@ -1598,18 +1598,18 @@ export class SalesService {
           // Priorizar coincidencias exactas en el número de factura
           const aExactMatch = a.invoiceNumber === `#${cleanTerm.padStart(3, '0')}` ? 3 : 0
           const bExactMatch = b.invoiceNumber === `#${cleanTerm.padStart(3, '0')}` ? 3 : 0
-          
+
           // Luego coincidencias parciales en el número de factura
           const aPartialMatch = a.invoiceNumber?.includes(cleanTerm) ? 2 : 0
           const bPartialMatch = b.invoiceNumber?.includes(cleanTerm) ? 2 : 0
-          
+
           // Finalmente coincidencias en otros campos
           const aOtherMatch = (a.clientName?.includes(cleanTerm) || a.sellerName?.includes(cleanTerm)) ? 1 : 0
           const bOtherMatch = (b.clientName?.includes(cleanTerm) || b.sellerName?.includes(cleanTerm)) ? 1 : 0
-          
+
           const aScore = aExactMatch + aPartialMatch + aOtherMatch
           const bScore = bExactMatch + bPartialMatch + bOtherMatch
-          
+
           return bScore - aScore
         })
       }
@@ -1629,7 +1629,7 @@ export class SalesService {
       // Detectar si es un número (para buscar por ID de factura)
       const numericValue = cleanTerm.replace('#', '')
       const isNumber = !isNaN(Number(numericValue)) && numericValue.length > 0
-      
+
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
 
@@ -1662,7 +1662,7 @@ export class SalesService {
         // Si no es un número, buscar solo por nombre del cliente
         query = query.ilike('client_name', `%${cleanTerm}%`)
       }
-      
+
       const { data, error } = await query.order('created_at', { ascending: false })
 
       if (error) {
@@ -1674,7 +1674,7 @@ export class SalesService {
         // Obtener items de la venta con referencia de productos
         const items = await Promise.all((sale.sale_items || []).map(async (item: any) => {
           let productReference = item.product_reference_code
-          
+
           // Si no hay referencia guardada, obtenerla desde la tabla products (para ventas antiguas)
           if (!productReference || productReference === 'N/A' || productReference === null) {
             const { data: product } = await supabase
@@ -1682,10 +1682,10 @@ export class SalesService {
               .select('reference')
               .eq('id', item.product_id)
               .single()
-            
+
             productReference = product?.reference || 'N/A'
           }
-          
+
           return {
             id: item.id,
             productId: item.product_id,
@@ -1707,7 +1707,7 @@ export class SalesService {
             .from('sale_payments')
             .select('id,sale_id,payment_type,amount,created_at')
             .eq('sale_id', sale.id)
-          
+
           payments = (paymentData || []).map((p: any) => ({
             id: p.id,
             saleId: p.sale_id,
@@ -1780,7 +1780,7 @@ export class SalesService {
 
       // Obtener los IDs de ventas únicos
       const saleIds = [...new Set(saleItems.map((item: any) => item.sale_id))]
-      
+
       if (saleIds.length === 0) {
         return []
       }
@@ -1821,7 +1821,7 @@ export class SalesService {
             )
           `)
           .in('id', batch)
-        
+
         // Siempre filtrar por la tienda actual: análisis de rotación y márgenes es por tienda
         const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
         if (!storeId || storeId === MAIN_STORE_ID) {
@@ -1829,12 +1829,12 @@ export class SalesService {
         } else {
           salesQuery = salesQuery.eq('store_id', storeId)
         }
-        
+
         // Si hay una fecha de inicio, filtrar por fecha
         if (startDate) {
           salesQuery = salesQuery.gte('created_at', startDate.toISOString())
         }
-        
+
         const { data: salesData, error: salesError } = await salesQuery
           .order('created_at', { ascending: false })
 
@@ -1873,7 +1873,7 @@ export class SalesService {
             .from('products')
             .select('id, reference')
             .in('id', batch)
-          
+
           if (products) {
             products.forEach((product: any) => {
               productReferencesMap.set(product.id, product.reference || 'N/A')
@@ -1887,11 +1887,11 @@ export class SalesService {
         // Obtener referencias de productos del mapa
         const itemsWithReferences = (sale.sale_items || []).map((item: any) => {
           let productReference = item.product_reference_code
-          
+
           if (!productReference || productReference === 'N/A' || productReference === null) {
             productReference = productReferencesMap.get(item.product_id) || 'N/A'
           }
-          
+
           return {
             id: item.id,
             productId: item.product_id,
@@ -1906,34 +1906,34 @@ export class SalesService {
           }
         })
 
-          return {
-            id: sale.id,
-            clientId: sale.client_id,
-            clientName: sale.client_name,
-            total: sale.total,
-            subtotal: sale.subtotal,
-            tax: sale.tax,
-            discount: sale.discount,
-            discountType: sale.discount_type || 'amount',
-            status: sale.status,
-            paymentMethod: sale.payment_method,
-            invoiceNumber: sale.invoice_number,
-            sellerId: sale.seller_id,
-            sellerName: sale.seller_name || '',
-            sellerEmail: sale.seller_email || '',
-            storeId: sale.store_id || undefined,
-            createdAt: sale.created_at,
-            items: itemsWithReferences,
-            payments: sale.sale_payments?.map((payment: any) => ({
-              id: payment.id,
-              saleId: payment.sale_id,
-              paymentType: payment.payment_type,
-              amount: payment.amount,
-              createdAt: payment.created_at,
-              updatedAt: payment.updated_at || payment.created_at
-            })) || []
-          }
-        })
+        return {
+          id: sale.id,
+          clientId: sale.client_id,
+          clientName: sale.client_name,
+          total: sale.total,
+          subtotal: sale.subtotal,
+          tax: sale.tax,
+          discount: sale.discount,
+          discountType: sale.discount_type || 'amount',
+          status: sale.status,
+          paymentMethod: sale.payment_method,
+          invoiceNumber: sale.invoice_number,
+          sellerId: sale.seller_id,
+          sellerName: sale.seller_name || '',
+          sellerEmail: sale.seller_email || '',
+          storeId: sale.store_id || undefined,
+          createdAt: sale.created_at,
+          items: itemsWithReferences,
+          payments: sale.sale_payments?.map((payment: any) => ({
+            id: payment.id,
+            saleId: payment.sale_id,
+            paymentType: payment.payment_type,
+            amount: payment.amount,
+            createdAt: payment.created_at,
+            updatedAt: payment.updated_at || payment.created_at
+          })) || []
+        }
+      })
 
       // Filtrar solo las ventas que tienen el producto
       const salesWithProduct = sales.filter(sale => {
@@ -1944,6 +1944,71 @@ export class SalesService {
     } catch (error) {
       console.error('Error en getSalesByProductId:', error)
       return []
+    }
+  }
+
+  // Método ultra-optimizado para obtener solo los totales del dashboard
+  static async getDashboardSummary(startDate: Date, endDate: Date): Promise<{
+    totalRevenue: number,
+    cashRevenue: number,
+    transferRevenue: number,
+    salesCount: number
+  }> {
+    try {
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      let query = supabase
+        .from('sales')
+        .select(`
+          total,
+          payment_method,
+          status,
+          sale_payments (
+            payment_type,
+            amount
+          )
+        `)
+        .gte('created_at', startDate.toISOString())
+        .lte('created_at', endDate.toISOString())
+        .not('status', 'eq', 'cancelled')
+        .not('status', 'eq', 'draft')
+
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query
+
+      if (error) throw error
+
+      let cashRevenue = 0
+      let transferRevenue = 0
+      let salesCount = data?.length || 0
+
+      data?.forEach(sale => {
+        if (sale.sale_payments && sale.sale_payments.length > 0) {
+          sale.sale_payments.forEach((payment: any) => {
+            if (payment.payment_type === 'cash') cashRevenue += payment.amount || 0
+            if (payment.payment_type === 'transfer') transferRevenue += payment.amount || 0
+          })
+        } else {
+          if (sale.payment_method === 'cash') cashRevenue += sale.total || 0
+          if (sale.payment_method === 'transfer') transferRevenue += sale.total || 0
+        }
+      })
+
+      return {
+        totalRevenue: cashRevenue + transferRevenue,
+        cashRevenue,
+        transferRevenue,
+        salesCount
+      }
+    } catch (error) {
+      console.error('Error en getDashboardSummary:', error)
+      return { totalRevenue: 0, cashRevenue: 0, transferRevenue: 0, salesCount: 0 }
     }
   }
 }
