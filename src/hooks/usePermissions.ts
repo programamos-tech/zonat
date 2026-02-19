@@ -32,6 +32,11 @@ export function usePermissions() {
         return false // Vendedores no pueden transferir
       }
       
+      // Los vendedores SIEMPRE pueden crear ventas, sin importar los permisos explícitos
+      if (module === 'sales' && action === 'create') {
+        return true
+      }
+      
       const hasExplicitPermissions = currentUser.permissions && Array.isArray(currentUser.permissions) && currentUser.permissions.length > 0
       if (!hasExplicitPermissions) {
         const defaultVendedorPermissions: { [key: string]: string[] } = {
@@ -53,14 +58,54 @@ export function usePermissions() {
     
     // Buscar el módulo en los permisos del usuario
     const modulePermission = currentUser.permissions.find(p => p.module === module)
-    if (!modulePermission) return false
+    if (!modulePermission) {
+      // Si es vendedor y no encuentra el módulo en permisos explícitos, usar permisos por defecto
+      if (userRole === 'vendedor' || userRole === 'vendedora') {
+        const defaultVendedorPermissions: { [key: string]: string[] } = {
+          'dashboard': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'clients': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'sales': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'payments': ['view', 'create', 'edit', 'delete', 'cancel']
+        }
+        const allowedActions = defaultVendedorPermissions[module] || []
+        return allowedActions.includes(action)
+      }
+      return false
+    }
     
     // Soporte para ambas estructuras: "actions" o "permissions"
     const actions = modulePermission.actions || modulePermission.permissions || []
-    if (!Array.isArray(actions)) return false
+    if (!Array.isArray(actions)) {
+      // Si es vendedor y las acciones no son válidas, usar permisos por defecto
+      if (userRole === 'vendedor' || userRole === 'vendedora') {
+        const defaultVendedorPermissions: { [key: string]: string[] } = {
+          'dashboard': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'clients': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'sales': ['view', 'create', 'edit', 'delete', 'cancel'],
+          'payments': ['view', 'create', 'edit', 'delete', 'cancel']
+        }
+        const allowedActions = defaultVendedorPermissions[module] || []
+        return allowedActions.includes(action)
+      }
+      return false
+    }
     
     // Verificar si tiene la acción específica
-    return actions.includes(action)
+    const hasAction = actions.includes(action)
+    
+    // Si es vendedor y no tiene la acción pero el módulo es sales/clients/payments, usar permisos por defecto
+    if (!hasAction && (userRole === 'vendedor' || userRole === 'vendedora')) {
+      const defaultVendedorPermissions: { [key: string]: string[] } = {
+        'dashboard': ['view', 'create', 'edit', 'delete', 'cancel'],
+        'clients': ['view', 'create', 'edit', 'delete', 'cancel'],
+        'sales': ['view', 'create', 'edit', 'delete', 'cancel'],
+        'payments': ['view', 'create', 'edit', 'delete', 'cancel']
+      }
+      const allowedActions = defaultVendedorPermissions[module] || []
+      return allowedActions.includes(action)
+    }
+    
+    return hasAction
   }
 
   const canView = (module: string): boolean => {
