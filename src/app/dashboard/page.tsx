@@ -77,8 +77,9 @@ export default function DashboardPage() {
   const [allWarranties, setAllWarranties] = useState<any[]>([])
   const [allCredits, setAllCredits] = useState<any[]>([])
   const [allClients, setAllClients] = useState<any[]>([])
-  const [allProducts, setAllProducts] = useState<any[]>([])
+  const [allProducts, setAllProducts] = useState<any[]>([]) // Solo para productos específicos cargados bajo demanda
   const [allPaymentRecords, setAllPaymentRecords] = useState<any[]>([])
+  const [specificProductsCache, setSpecificProductsCache] = useState<Map<string, any>>(new Map())
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [isInitialLoading, setIsInitialLoading] = useState(true)
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
@@ -251,14 +252,13 @@ export default function DashboardPage() {
       // Si es "Todo el Tiempo", cargar solo el año seleccionado
       const finalEndDate = endDate || new Date()
 
-      const [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult] = await Promise.allSettled([
+      const [salesResult, warrantiesResult, creditsResult, clientsResult, paymentRecordsResult] = await Promise.allSettled([
         // Limitar la cantidad de ventas recuperadas si es "Todo el Tiempo" para evitar lentitud
         withTimeout(SalesService.getDashboardSales(chartStartDate, finalEndDate), currentFilter === 'all' ? 30000 : 20000),
         withTimeout(WarrantyService.getWarrantiesByDateRange(startDate || chartStartDate, finalEndDate), 15000),
         withTimeout(CreditsService.getAllCredits(), 15000),
         withTimeout(ClientsService.getAllClients(), 10000),
-        // Para productos, si ya tenemos métricas optimizadas, podríamos cargar una versión más ligera o solo si es necesario
-        withTimeout(ProductsService.getAllProductsLegacy(getCurrentUserStoreId()), 15000),
+        // OPTIMIZADO: Ya no cargamos todos los productos, usamos getInventoryMetrics() que ya se cargó arriba
         withTimeout(CreditsService.getPaymentRecordsByDateRange(chartStartDate, finalEndDate), 15000)
       ])
 
@@ -267,18 +267,18 @@ export default function DashboardPage() {
       const warranties = warrantiesResult.status === 'fulfilled' ? warrantiesResult.value : []
       const credits = creditsResult.status === 'fulfilled' ? creditsResult.value : []
       const clients = clientsResult.status === 'fulfilled' ? clientsResult.value : []
-      const products = productsResult.status === 'fulfilled' ? productsResult.value : []
       const payments = paymentRecordsResult.status === 'fulfilled' ? paymentRecordsResult.value : []
 
       setAllSales(sales)
       setAllWarranties(warranties)
       setAllCredits(credits)
       setAllClients(clients)
-      setAllProducts(products)
+      // OPTIMIZADO: No cargamos todos los productos aquí, solo se cargan bajo demanda cuando se necesitan
+      setAllProducts([])
       setAllPaymentRecords(payments)
       setLastUpdated(new Date())
 
-      const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, productsResult, paymentRecordsResult]
+      const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, paymentRecordsResult]
         .filter(result => result.status === 'rejected')
         .map(result => (result as PromiseRejectedResult).reason)
 
@@ -294,11 +294,53 @@ export default function DashboardPage() {
     }
   }
 
+  // Función para cargar productos específicos por IDs bajo demanda
+  const loadSpecificProducts = useCallback(async (productIds: string[]) => {
+    if (productIds.length === 0) return
+    
+    // Filtrar IDs únicos
+    const uniqueIds = Array.from(new Set(productIds))
+    
+    setSpecificProductsCache(prevCache => {
+      // Filtrar IDs que ya están en el cache
+      const idsToLoad = uniqueIds.filter(id => !prevCache.has(id))
+      if (idsToLoad.length === 0) return prevCache
+      
+      // Cargar productos en segundo plano
+      Promise.all(
+        idsToLoad.map(async (id) => {
+          try {
+            const { ProductsService } = await import('@/lib/products-service')
+            return await ProductsService.getProductById(id)
+          } catch (error) {
+            console.error(`Error loading product ${id}:`, error)
+            return null
+          }
+        })
+      ).then(products => {
+        setSpecificProductsCache(currentCache => {
+          const updatedCache = new Map(currentCache)
+          products.forEach((product, index) => {
+            if (product) {
+              updatedCache.set(idsToLoad[index], product)
+            }
+          })
+          // Actualizar allProducts con los nuevos productos cargados
+          setAllProducts(Array.from(updatedCache.values()))
+          return updatedCache
+        })
+      })
+      
+      return prevCache
+    })
+  }, [])
+
   // Función para actualización manual del dashboard
   const handleRefresh = () => {
-    // Forzar recarga completa de todos los datos, especialmente productos
+    // Forzar recarga completa de todos los datos
     // IMPORTANTE: Preservar el filtro actual (today, specific, all) y la fecha específica si existe
-    setAllProducts([]) // Limpiar productos existentes para forzar recarga
+    setSpecificProductsCache(new Map()) // Limpiar cache de productos específicos
+    setAllProducts([]) // Limpiar productos existentes
     console.log('🔄 [DASHBOARD] Actualizando datos con filtro actual:', {
       dateFilter,
       specificDate: specificDate?.toISOString(),
@@ -351,7 +393,7 @@ export default function DashboardPage() {
   useEffect(() => {
     // Solo cargar si no hay datos aún (evitar doble carga)
     // El filtro inicial es 'today', así que cargará datos de hoy
-    if (allSales.length === 0 && allProducts.length === 0) {
+    if (allSales.length === 0) {
       console.log('🚀 [DASHBOARD] Carga inicial - filtro:', effectiveDateFilter)
       loadDashboardData()
     }
@@ -379,6 +421,7 @@ export default function DashboardPage() {
       setAllClients([])
       setAllProducts([])
       setAllPaymentRecords([])
+      setSpecificProductsCache(new Map())
       // Recargar datos
       loadDashboardData()
     }
@@ -576,6 +619,29 @@ export default function DashboardPage() {
     }
   }, [allSales, allWarranties, allCredits, allPaymentRecords, effectiveDateFilter, specificDate])
 
+  // Cargar productos específicos bajo demanda cuando cambien las ventas o garantías
+  useEffect(() => {
+    // Cargar productos de garantías completadas
+    const warrantyProductIds = allWarranties
+      .filter(w => w.status === 'completed')
+      .slice(0, 5)
+      .map(w => w.productDeliveredId)
+      .filter(Boolean) as string[]
+    
+    // Cargar productos de ventas activas para cálculo de ganancias
+    const saleProductIds = allSales
+      .filter(sale => sale.status !== 'cancelled' && sale.status !== 'draft')
+      .flatMap(sale => sale.items?.map(item => item.productId) || [])
+      .filter(Boolean) as string[]
+    
+    // Combinar y cargar productos únicos
+    const allProductIds = Array.from(new Set([...warrantyProductIds, ...saleProductIds]))
+    
+    if (allProductIds.length > 0) {
+      loadSpecificProducts(allProductIds)
+    }
+  }, [allSales, allWarranties, loadSpecificProducts])
+
   // Calcular métricas del dashboard
   const metrics = useMemo(() => {
     const { sales, warranties, credits, paymentRecords } = filteredData
@@ -749,14 +815,14 @@ export default function DashboardPage() {
       })
 
     const totalWarrantyValue = completedWarrantyDetails.reduce((sum, warranty) => {
-      const replacementProduct = allProducts.find(p => p.id === warranty.productDeliveredId)
+      const replacementProduct = specificProductsCache.get(warranty.productDeliveredId) || allProducts.find(p => p.id === warranty.productDeliveredId)
       return sum + (replacementProduct?.price || 0)
     }, 0)
 
     const recentWarrantyReplacements = completedWarrantyDetails
       .slice(0, 5)
       .map(warranty => {
-        const replacementProduct = allProducts.find(p => p.id === warranty.productDeliveredId)
+        const replacementProduct = specificProductsCache.get(warranty.productDeliveredId) || allProducts.find(p => p.id === warranty.productDeliveredId)
         const deliveredName = warranty.productDeliveredName || replacementProduct?.name || 'Producto entregado'
         const reference = replacementProduct?.reference
         const value = replacementProduct?.price || 0
@@ -877,8 +943,8 @@ export default function DashboardPage() {
       if (!sale.items) return totalProfit
 
       const saleProfit = sale.items.reduce((itemProfit, item) => {
-        // Buscar el producto para obtener su costo
-        const product = allProducts.find(p => p.id === item.productId)
+        // Buscar el producto para obtener su costo (primero en cache, luego en allProducts)
+        const product = specificProductsCache.get(item.productId) || allProducts.find(p => p.id === item.productId)
         const cost = product?.cost || 0
 
         // Calcular el precio real de venta después de descuentos
@@ -919,7 +985,7 @@ export default function DashboardPage() {
       if (!sale.items) return { ...sale, profit: 0 }
 
       const saleProfit = sale.items.reduce((itemProfit, item) => {
-        const product = allProducts.find(p => p.id === item.productId)
+        const product = specificProductsCache.get(item.productId) || allProducts.find(p => p.id === item.productId)
         const cost = product?.cost || 0
 
         // Calcular el precio real de venta después de descuentos
@@ -960,92 +1026,18 @@ export default function DashboardPage() {
       .filter(sale => sale.status === 'cancelled')
       .reduce((sum, sale) => sum + sale.total, 0)
 
-    // Contar TODOS los productos para stock e inversión (activos e inactivos)
-    // Solo excluir productos discontinuados explícitamente
-    const productsForCalculation = allProducts.filter(p => {
-      const status = p.status?.toLowerCase()
-      // Excluir solo productos explícitamente discontinuados
-      return status !== 'discontinued'
-    })
-
-    // Filtrar solo productos con stock > 0 para el cálculo de métricas
-    // Para una tienda nueva, todos los productos deberían tener stock 0
-    const productsWithStock = productsForCalculation.filter(p => {
-      const storeStock = Number(p.stock?.store) || 0;
-      const warehouseStock = Number(p.stock?.warehouse) || 0;
-      const totalStock = storeStock + warehouseStock;
-      return totalStock > 0;
-    })
-
-    // DEBUG: Log para verificar productos con stock y sus costos
-    const sampleWithCost = productsWithStock.filter(p => p.cost > 0).slice(0, 5)
-    const totalInvestmentCalc = productsWithStock.reduce((sum, p) => {
-      const localStock = p.stock?.store || 0
-      const warehouseStock = p.stock?.warehouse || 0
-      const totalStock = localStock + warehouseStock
-      return sum + ((p.cost || 0) * totalStock)
-    }, 0)
-
-    console.log('[DASHBOARD] Products debug:', {
-      totalProducts: allProducts.length,
-      productsForCalculation: productsForCalculation.length,
-      productsWithStock: productsWithStock.length,
-      productsWithCostGreaterThan0: productsWithStock.filter(p => p.cost > 0).length,
-      totalInvestmentCalc: totalInvestmentCalc,
-      sampleProductsWithStock: productsWithStock.slice(0, 3).map(p => ({
-        name: p.name,
-        cost: p.cost,
-        price: p.price,
-        stock: p.stock
-      })),
-      sampleProductsWithCost: sampleWithCost.map(p => ({
-        name: p.name,
-        cost: p.cost,
-        stock: p.stock
-      }))
-    })
-
-    // Total de unidades en stock (local + bodega) - solo productos con stock > 0
-    const totalStockUnits = productsWithStock.reduce((sum, p) => {
-      const storeStock = Number(p.stock?.store) || 0;
-      const warehouseStock = Number(p.stock?.warehouse) || 0;
-      const productTotal = storeStock + warehouseStock;
-      return sum + productTotal;
-    }, 0)
-
-    // Productos con stock bajo - solo productos con stock > 0
-    // Stock bajo = total <= 5 unidades y > 0
-    const lowStockProducts = productsWithStock.filter(p => {
-      const storeStock = Number(p.stock?.store) || 0;
-      const warehouseStock = Number(p.stock?.warehouse) || 0;
-      const totalStock = storeStock + warehouseStock;
-      return totalStock > 0 && totalStock <= 5;
-    }).length
-
-    // Calcular inversión total en stock (precio de compra * stock actual) - solo productos con stock > 0
-    const totalStockInvestment = productsWithStock.reduce((sum, product) => {
-      const localStock = product.stock?.store || 0;
-      const warehouseStock = product.stock?.warehouse || 0;
-      const totalStock = localStock + warehouseStock;
-      const costPrice = product.cost || 0; // Precio de compra/costo
-      return sum + (costPrice * totalStock);
-    }, 0)
-
-    // Calcular inversión potencial (costo total de todos los productos, asumiendo 1 unidad de cada uno)
-    // Solo para productos con stock > 0
-    const potentialInvestment = productsWithStock.reduce((sum, product) => {
-      const costPrice = product.cost || 0;
-      return sum + costPrice;
-    }, 0)
-
-    // Calcular valor estimado de ventas (precio de venta * stock actual) - solo productos con stock > 0
-    const estimatedSalesValue = productsWithStock.reduce((sum, product) => {
-      const localStock = product.stock?.store || 0;
-      const warehouseStock = product.stock?.warehouse || 0;
-      const totalStock = localStock + warehouseStock;
-      const sellingPrice = product.price || 0; // Precio de venta
-      return sum + (sellingPrice * totalStock);
-    }, 0)
+    // OPTIMIZADO: Usar métricas optimizadas de inventario en lugar de calcular desde allProducts
+    // Estas métricas ya vienen de getInventoryMetrics() que es mucho más rápido
+    const totalStockUnits = optimizedMetrics.inventorySummary?.totalStockUnits ?? 0
+    const lowStockProducts = optimizedMetrics.inventorySummary?.lowStockCount ?? 0
+    const totalStockInvestment = optimizedMetrics.inventorySummary?.totalStockInvestment ?? 0
+    
+    // Para métricas que no están en getInventoryMetrics, usar valores por defecto o calcular desde productos cargados
+    // Nota: potentialInvestment y estimatedSalesValue requieren todos los productos, 
+    // pero como no los cargamos, usamos valores aproximados o 0
+    const potentialInvestment = 0 // No calculamos esto sin todos los productos
+    const estimatedSalesValue = 0 // No calculamos esto sin todos los productos
+    const productsForCalculation = allProducts // Solo productos cargados bajo demanda
 
     // Datos para gráficos - Debe coincidir exactamente con totalRevenue (efectivo + transferencia + abonos)
     // Excluir ventas canceladas y borradores del gráfico
@@ -1279,16 +1271,16 @@ export default function DashboardPage() {
       lostValue,
       lowStockProducts: optimizedMetrics.inventorySummary?.lowStockCount ?? lowStockProducts,
       totalProducts: optimizedMetrics.inventorySummary?.totalStockUnits ?? totalStockUnits,
-      totalProductsCount: productsForCalculation.length, // Número total de productos
+      totalProductsCount: optimizedMetrics.inventorySummary?.totalProductsCount ?? 0, // Usar métrica optimizada si está disponible
       totalStockInvestment: optimizedMetrics.inventorySummary?.totalStockInvestment ?? totalStockInvestment,
-      potentialInvestment, // Inversión potencial (costo de todos los productos)
-      estimatedSalesValue,
+      potentialInvestment, // No disponible sin cargar todos los productos
+      estimatedSalesValue, // No disponible sin cargar todos los productos
       totalClients: allClients.length,
       salesChartData,
       paymentMethodData,
       topProductsChart
     }
-  }, [filteredData, allProducts, allClients, allWarranties, allCredits, optimizedMetrics])
+  }, [filteredData, allProducts, allClients, allWarranties, allCredits, optimizedMetrics, specificProductsCache])
 
   // Función helper para formatear moneda con opción de ocultar
   const formatCurrency = (amount: number): string => {
@@ -1379,7 +1371,7 @@ export default function DashboardPage() {
   }
 
   // Mostrar skeleton loader durante la carga inicial
-  if (isInitialLoading && allSales.length === 0 && allProducts.length === 0) {
+  if (isInitialLoading && allSales.length === 0) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
         <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
@@ -2273,8 +2265,9 @@ export default function DashboardPage() {
                     // Calcular ganancia por producto
                     const productProfits: { [key: string]: { name: string; profit: number; sales: number } } = {}
 
-                    // Usar allProducts del estado
-                    const productsMap = new Map(allProducts.map(p => [p.id, p]))
+                    // Usar productos del cache y allProducts combinados
+                    const allProductsCombined = Array.from(specificProductsCache.values()).concat(allProducts)
+                    const productsMap = new Map(allProductsCombined.map(p => [p.id, p]))
 
                     filteredData.sales.forEach((sale: Sale) => {
                       if (sale.status !== 'cancelled' && sale.items) {
