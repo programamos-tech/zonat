@@ -27,10 +27,17 @@ export function RoleProtectedRoute({
         // Redirigir según el rol del usuario
         const roleNorm = (user?.role || '').toLowerCase().trim()
         const isSuperAdmin = roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))
+        const isVendedor = roleNorm === 'vendedor' || roleNorm === 'vendedora'
+        const isInventario = roleNorm === 'inventario'
+        
         if (isSuperAdmin) {
           router.push('/dashboard')
-        } else {
+        } else if (isVendedor) {
+          router.push('/sales')
+        } else if (isInventario) {
           router.push('/inventory/products')
+        } else {
+          router.push('/dashboard')
         }
       }
     }
