@@ -160,8 +160,8 @@ export default function CreditsPage() {
         cashAmount: paymentData.cashAmount,
         transferAmount: paymentData.transferAmount,
         description: paymentData.description,
-        userId: paymentData.userId || 'current-user-id',
-        userName: paymentData.userName || 'Usuario Actual'
+        userId: paymentData.userId,
+        userName: paymentData.userName
       })
 
       // Actualizar el crédito
@@ -176,7 +176,7 @@ export default function CreditsPage() {
         status: newStatus,
         lastPaymentAmount: paymentAmount,
         lastPaymentDate: paymentData.paymentDate!,
-        lastPaymentUser: paymentData.userId!
+        lastPaymentUser: paymentRecord.userId!
       })
 
       // Actualizar el estado local

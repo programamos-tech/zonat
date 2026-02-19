@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { Credit, PaymentRecord } from '@/types'
 import { useAuth } from '@/contexts/auth-context'
+import { getCurrentUser } from '@/lib/store-helper'
 
 interface PaymentModalProps {
   isOpen: boolean
@@ -140,14 +141,25 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
       return
     }
 
+    // Obtener userId de forma confiable
+    let userId = user?.id
+    let userName = user?.name
+    
+    // Si no hay usuario del contexto, intentar obtenerlo de localStorage
+    if (!userId) {
+      const currentUser = getCurrentUser()
+      userId = currentUser?.id || undefined
+      userName = currentUser?.name || userName
+    }
+    
     const paymentData: Partial<PaymentRecord> = {
       creditId: credit.id,
       amount: parseFormattedNumber(formData.amount),
       paymentDate: new Date().toISOString(),
       paymentMethod: formData.paymentMethod,
       description: formData.description,
-      userId: user?.id || 'current-user-id',
-      userName: user?.name || 'Usuario Actual',
+      userId: userId, // El servicio validará y obtendrá el userId si es undefined
+      userName: userName || 'Usuario Actual',
       createdAt: new Date().toISOString()
     }
 

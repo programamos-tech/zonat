@@ -406,6 +406,20 @@ export class CreditsService {
 
   // Crear registro de pago
   static async createPaymentRecord(paymentData: Omit<PaymentRecord, 'id' | 'createdAt'>): Promise<PaymentRecord> {
+    // Validar y obtener userId válido
+    let userId = paymentData.userId
+    let userName = paymentData.userName
+    
+    // Si el userId no es válido (es 'current-user-id' o undefined), obtenerlo del usuario actual
+    if (!userId || userId === 'current-user-id' || !userId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+      const currentUser = await AuthService.getCurrentUser()
+      if (!currentUser) {
+        throw new Error('No se pudo obtener el usuario actual. Por favor, inicia sesión nuevamente.')
+      }
+      userId = currentUser.id
+      userName = currentUser.name || userName || 'Usuario Actual'
+    }
+    
     // Obtener el crédito para crear un registro en la tabla payments
     const credit = await this.getCreditById(paymentData.creditId!)
     if (!credit) {
@@ -423,7 +437,7 @@ export class CreditsService {
       pending_amount: credit.pendingAmount - paymentData.amount!,
       last_payment_amount: paymentData.amount,
       last_payment_date: paymentData.paymentDate,
-      last_payment_user: paymentData.userId,
+      last_payment_user: userId,
       status: (credit.pendingAmount - paymentData.amount! <= 0) ? 'completed' : 'partial'
     }
 
@@ -451,8 +465,8 @@ export class CreditsService {
         amount: paymentData.cashAmount,
         payment_date: paymentData.paymentDate,
         payment_method: 'cash',
-        user_id: paymentData.userId,
-        user_name: paymentData.userName,
+        user_id: userId,
+        user_name: userName,
         store_id: storeId,
         description: baseDescription ? `${baseDescription} (Parte en efectivo)` : 'Pago mixto - Parte en efectivo'
       }
@@ -463,8 +477,8 @@ export class CreditsService {
         amount: paymentData.transferAmount,
         payment_date: paymentData.paymentDate,
         payment_method: 'transfer',
-        user_id: paymentData.userId,
-        user_name: paymentData.userName,
+        user_id: userId,
+        user_name: userName,
         store_id: storeId,
         description: baseDescription ? `${baseDescription} (Parte por transferencia)` : 'Pago mixto - Parte por transferencia'
       }
@@ -498,8 +512,8 @@ export class CreditsService {
         amount: paymentData.amount,
         payment_date: paymentData.paymentDate,
         payment_method: paymentData.paymentMethod,
-        user_id: paymentData.userId,
-        user_name: paymentData.userName,
+        user_id: userId,
+        user_name: userName,
         store_id: storeId
       }
 
@@ -532,16 +546,16 @@ export class CreditsService {
       status: newStatus,
       lastPaymentAmount: paymentData.amount,
       lastPaymentDate: paymentData.paymentDate,
-      lastPaymentUser: paymentData.userId
+      lastPaymentUser: userId
     })
 
     // Log de actividad para el pago
     // Si el crédito se completa con este abono, el log incluirá esa información
     const isCompleted = newPendingAmount <= 0
 
-    if (paymentData.userId) {
+    if (userId) {
       await AuthService.logActivity(
-        paymentData.userId,
+        userId,
         'credit_payment',
         'credits',
         {

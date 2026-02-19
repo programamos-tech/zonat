@@ -129,7 +129,7 @@ export default function ClientCreditsPage() {
     if (!selectedCredit) return
 
     try {
-      await CreditsService.createPaymentRecord({
+      const paymentRecord = await CreditsService.createPaymentRecord({
         creditId: selectedCredit.id,
         amount: paymentData.amount!,
         paymentDate: paymentData.paymentDate!,
@@ -137,8 +137,8 @@ export default function ClientCreditsPage() {
         cashAmount: paymentData.cashAmount,
         transferAmount: paymentData.transferAmount,
         description: paymentData.description,
-        userId: paymentData.userId || 'current-user-id',
-        userName: paymentData.userName || 'Usuario Actual'
+        userId: paymentData.userId,
+        userName: paymentData.userName
       })
 
       const paymentAmount = paymentData.amount!
@@ -152,7 +152,7 @@ export default function ClientCreditsPage() {
         status: newStatus,
         lastPaymentAmount: paymentAmount,
         lastPaymentDate: paymentData.paymentDate!,
-        lastPaymentUser: paymentData.userId!
+        lastPaymentUser: paymentRecord.userId!
       })
 
       setIsPaymentModalOpen(false)
