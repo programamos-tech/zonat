@@ -3,7 +3,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
 import { User } from '@/types'
 import { AuthService } from '@/lib/auth-service'
-import { invalidateSupabaseCache } from '@/lib/supabase'
 
 interface AuthContextType {
   user: User | null
@@ -23,78 +22,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Verificar sesión al cargar (con timeout para no quedarse colgado si Supabase no responde)
-  const AUTH_CHECK_TIMEOUT_MS = 8000
-
+  // Verificar sesión al cargar
   useEffect(() => {
-    let cancelled = false
-
     const checkAuth = async () => {
-      try {
-        if (typeof window === 'undefined') {
-          setIsLoading(false)
-          return
-        }
-
+      if (typeof window !== 'undefined') {
         const savedUser = localStorage.getItem('zonat_user')
-        if (!savedUser) {
-          setIsLoading(false)
-          return
-        }
-
-        const userData = JSON.parse(savedUser)
-        const savedStoreId = userData.storeId
-
-        const currentUser = await Promise.race([
-          AuthService.getCurrentUser(),
-          new Promise<User | null>((resolve) =>
-            setTimeout(() => resolve(null), AUTH_CHECK_TIMEOUT_MS)
-          )
-        ])
-
-        if (cancelled) return
-
-        if (currentUser) {
-          if (savedStoreId !== undefined) {
-            currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
-          }
-          setUser(currentUser)
-          const userToSave = {
-            ...currentUser,
-            storeId: currentUser.storeId === undefined ? null : currentUser.storeId
-          }
-          localStorage.setItem('zonat_user', JSON.stringify(userToSave))
-          invalidateSupabaseCache()
-        } else {
-          // Timeout o error: usar usuario de localStorage para no bloquear la app
-          if (userData?.id) {
-            setUser({
-              id: userData.id,
-              name: userData.name,
-              email: userData.email,
-              role: userData.role,
-              permissions: userData.permissions || [],
-              isActive: userData.isActive,
-              storeId: userData.storeId,
-              lastLogin: userData.lastLogin,
-              createdAt: userData.createdAt,
-              updatedAt: userData.updatedAt
-            })
-            invalidateSupabaseCache()
+        if (savedUser) {
+          const userData = JSON.parse(savedUser)
+          // Preservar el storeId del localStorage (puede haber sido cambiado por switchStore)
+          const savedStoreId = userData.storeId
+          
+          // Obtener el usuario actualizado (que incluye sincronización de permisos del rol)
+          const currentUser = await AuthService.getCurrentUser()
+          if (currentUser) {
+            // Preservar el storeId si estaba guardado en localStorage (incluso si es null para tienda principal)
+            // Esto permite mantener la tienda seleccionada al recargar
+            if (savedStoreId !== undefined) {
+              currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
+            }
+            
+            setUser(currentUser)
+            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados y storeId preservado)
+            // Convertir undefined a null para que se guarde correctamente en JSON
+            const userToSave = {
+              ...currentUser,
+              storeId: currentUser.storeId === undefined ? null : currentUser.storeId
+            }
+            localStorage.setItem('zonat_user', JSON.stringify(userToSave))
           } else {
             localStorage.removeItem('zonat_user')
           }
         }
-      } catch {
-        // Si falla el parse o algo, no bloquear
-        if (!cancelled) localStorage.removeItem('zonat_user')
-      } finally {
-        if (!cancelled) setIsLoading(false)
       }
+      setIsLoading(false)
     }
 
     checkAuth()
-    return () => { cancelled = true }
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
@@ -111,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         if (typeof window !== 'undefined') {
           localStorage.setItem('zonat_user', JSON.stringify(userData))
           document.cookie = `zonat_user=${JSON.stringify(userData)}; path=/; max-age=86400`
-          invalidateSupabaseCache()
+
         }
         setIsLoading(false)
 
@@ -182,7 +145,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('zonat_user')
       document.cookie = 'zonat_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-      invalidateSupabaseCache()
     }
   }
 

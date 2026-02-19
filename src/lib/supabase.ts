@@ -1,4 +1,4 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js'
+import { createClient } from '@supabase/supabase-js'
 
 // Obtener variables de entorno - NO usar valores por defecto para evitar conexiones incorrectas
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -12,41 +12,8 @@ if (!supabaseUrl || !supabaseAnonKey) {
   )
 }
 
-// Cache del cliente anon con header x-user-id (para RLS: get_current_user_id())
-let cachedAnonClient: SupabaseClient | null = null
-let cachedAnonUserId: string | null = undefined as unknown as string | null
-
-function getAnonClient(): SupabaseClient {
-  if (typeof window === 'undefined') {
-    return createClient(supabaseUrl!, supabaseAnonKey!)
-  }
-  let userId: string | null = null
-  try {
-    const u = localStorage.getItem('zonat_user')
-    if (u) userId = JSON.parse(u).id ?? null
-  } catch {
-    // ignore
-  }
-  if (cachedAnonClient && cachedAnonUserId === userId) return cachedAnonClient
-  cachedAnonUserId = userId
-  cachedAnonClient = createClient(supabaseUrl!, supabaseAnonKey!, {
-    global: { headers: { ...(userId ? { 'x-user-id': userId } : {}) } }
-  })
-  return cachedAnonClient
-}
-
-/** Invalidar caché del cliente anon (llamar en login/logout para que RLS use el usuario correcto) */
-export function invalidateSupabaseCache(): void {
-  cachedAnonClient = null
-  cachedAnonUserId = undefined as unknown as string | null
-}
-
-// Cliente para operaciones del cliente (anon) — envía x-user-id para que RLS get_current_user_id() funcione
-export const supabase = new Proxy({} as SupabaseClient, {
-  get(_, prop) {
-    return (getAnonClient() as Record<string, unknown>)[prop as string]
-  }
-})
+// Cliente para operaciones del cliente (anon)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 // Cliente para operaciones del servidor (service role)
 // Solo crear si la key está disponible
