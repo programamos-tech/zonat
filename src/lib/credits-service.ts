@@ -412,8 +412,12 @@ export class CreditsService {
     
     // Si el userId no es válido (es 'current-user-id' o undefined), obtenerlo del usuario actual
     if (!userId || userId === 'current-user-id' || !userId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-      const currentUser = await AuthService.getCurrentUser()
+      let currentUser = await AuthService.getCurrentUser()
+      // Fallback: si la verificación en BD falla (ej. vendedor en microtienda, RLS, red), usar usuario de localStorage
       if (!currentUser) {
+        currentUser = getCurrentUser()
+      }
+      if (!currentUser?.id) {
         throw new Error('No se pudo obtener el usuario actual. Por favor, inicia sesión nuevamente.')
       }
       userId = currentUser.id
