@@ -26,6 +26,7 @@ export function Logo({ className, showText = false, size = 'md' }: LogoProps) {
           width={logoSize}
           height={logoSize}
           className="rounded-lg object-contain"
+          style={{ width: logoSize, height: 'auto' }}
           priority
           unoptimized
         />

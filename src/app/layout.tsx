@@ -68,7 +68,7 @@ export default function RootLayout({
             </ProductsProvider>
           </ClientsProvider>
         </AuthProvider>
-        <Analytics mode="production" />
+        {process.env.NODE_ENV === 'production' && <Analytics mode="production" />}
       </body>
     </html>
   );

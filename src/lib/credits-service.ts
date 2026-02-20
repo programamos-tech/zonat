@@ -937,24 +937,14 @@ export class CreditsService {
         query = query.eq('store_id', storeId)
       }
 
-      // Aplicar filtros de fecha si existen (usar payment_date, no created_at)
+      // Aplicar filtros de fecha si existen (usar payment_date).
+      // Usar las fechas tal cual vienen del frontend (ya en hora local del usuario) para que
+      // los abonos del día sumen correctamente en efectivo y total de ingresos.
       if (startDate) {
-        const startUTC = new Date(Date.UTC(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-          0, 0, 0, 0
-        ))
-        query = query.gte('payment_date', startUTC.toISOString())
+        query = query.gte('payment_date', startDate.toISOString())
       }
       if (endDate) {
-        const endUTC = new Date(Date.UTC(
-          endDate.getFullYear(),
-          endDate.getMonth(),
-          endDate.getDate(),
-          23, 59, 59, 999
-        ))
-        query = query.lte('payment_date', endUTC.toISOString())
+        query = query.lte('payment_date', endDate.toISOString())
       }
 
       const { data, error } = await query.limit(10000)

@@ -45,6 +45,7 @@ import {
 } from 'recharts'
 import { useSales } from '@/contexts/sales-context'
 import { useProducts } from '@/contexts/products-context'
+import { useClients } from '@/contexts/clients-context'
 import { useAuth } from '@/contexts/auth-context'
 import { getCurrentUserStoreId, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
@@ -57,6 +58,7 @@ type DateFilter = 'today' | 'specific' | 'all'
 export default function DashboardPage() {
   const router = useRouter()
   const { sales } = useSales()
+  const { clients: clientsFromContext } = useClients()
   const { totalProducts: totalProductsFromContext, products: productsFromContext, productsLastUpdated } = useProducts()
   const { user } = useAuth()
   const [dateFilter, setDateFilter] = useState<DateFilter>('today')
@@ -95,6 +97,13 @@ export default function DashboardPage() {
     inventorySummary?: any,
     creditsSummary?: any
   }>({})
+
+  // Usar clientes del contexto (evita duplicar getAllClients con el dashboard)
+  useEffect(() => {
+    if (clientsFromContext?.length !== undefined) {
+      setAllClients(clientsFromContext)
+    }
+  }, [clientsFromContext])
 
   // Cargar información de la tienda actual y recargar datos cuando cambie el storeId
   useEffect(() => {
@@ -191,7 +200,6 @@ export default function DashboardPage() {
       const { SalesService } = await import('@/lib/sales-service')
       const { WarrantyService } = await import('@/lib/warranty-service')
       const { CreditsService } = await import('@/lib/credits-service')
-      const { ClientsService } = await import('@/lib/clients-service')
       const { ProductsService } = await import('@/lib/products-service')
 
       // Determinar si necesitamos filtrar por fecha
@@ -207,24 +215,8 @@ export default function DashboardPage() {
       // Corregir lógica: 'all' (año) TAMBIÉN requiere un rango de fechas
       const { startDate, endDate } = getDateRange(currentFilter, yearToUse, dateToUse)
 
-      // 1. CARGA RÁPIDA: Métricas agregadas (Dashboard Summary)
-      // Esto devuelve los números grandes casi instantáneamente
-      if (startDate && endDate) {
-        const [fastSales, fastInventory, fastCredits] = await Promise.all([
-          withTimeout(SalesService.getDashboardSummary(startDate, endDate), 30000),
-          withTimeout(ProductsService.getInventoryMetrics(), 30000),
-          withTimeout(CreditsService.getCreditsSummary(), 30000)
-        ])
-
-        setOptimizedMetrics({
-          salesSummary: fastSales,
-          inventorySummary: fastInventory,
-          creditsSummary: fastCredits
-        })
-      }
-
-      // 2. CARGA DE LISTAS Y GRÁFICOS (Segundo plano)
-      // Para la gráfica de tendencia, necesitamos 15 días hacia atrás
+      // Una sola ronda de carga: ventas, garantías, créditos, pagos, métricas de inventario y resumen de créditos
+      // (evitamos getDashboardSummary y getAllClients duplicados; el resumen de ventas se calcula desde las ventas)
       let chartStartDate = startDate || new Date()
       if (currentFilter === 'specific' && dateToUse) {
         const extendedStart = new Date(dateToUse)
@@ -241,33 +233,58 @@ export default function DashboardPage() {
       // Si es "Todo el Tiempo", cargar solo el año seleccionado
       const finalEndDate = endDate || new Date()
 
-      const [salesResult, warrantiesResult, creditsResult, clientsResult, paymentRecordsResult] = await Promise.allSettled([
-        // Limitar la cantidad de ventas recuperadas si es "Todo el Tiempo" para evitar lentitud
+      const [salesResult, warrantiesResult, creditsResult, paymentRecordsResult, inventoryResult, creditsSummaryResult] = await Promise.allSettled([
         withTimeout(SalesService.getDashboardSales(chartStartDate, finalEndDate), currentFilter === 'all' ? 30000 : 20000),
         withTimeout(WarrantyService.getWarrantiesByDateRange(startDate || chartStartDate, finalEndDate), 15000),
         withTimeout(CreditsService.getAllCredits(), 15000),
-        withTimeout(ClientsService.getAllClients(), 10000),
-        // OPTIMIZADO: Ya no cargamos todos los productos, usamos getInventoryMetrics() que ya se cargó arriba
-        withTimeout(CreditsService.getPaymentRecordsByDateRange(chartStartDate, finalEndDate), 15000)
+        withTimeout(CreditsService.getPaymentRecordsByDateRange(chartStartDate, finalEndDate), 15000),
+        withTimeout(ProductsService.getInventoryMetrics(), 30000),
+        withTimeout(CreditsService.getCreditsSummary(), 15000)
       ])
 
-      // Procesar resultados
       const sales = salesResult.status === 'fulfilled' ? salesResult.value : []
       const warranties = warrantiesResult.status === 'fulfilled' ? warrantiesResult.value : []
       const credits = creditsResult.status === 'fulfilled' ? creditsResult.value : []
-      const clients = clientsResult.status === 'fulfilled' ? clientsResult.value : []
       const payments = paymentRecordsResult.status === 'fulfilled' ? paymentRecordsResult.value : []
+      const fastInventory = inventoryResult.status === 'fulfilled' ? inventoryResult.value : null
+      const fastCredits = creditsSummaryResult.status === 'fulfilled' ? creditsSummaryResult.value : null
+
+      // Resumen de ventas calculado desde la lista (evita getDashboardSummary y sus N requests)
+      let cashRevenue = 0
+      let transferRevenue = 0
+      const activeSales = sales.filter((s: Sale) => s.status !== 'cancelled' && s.status !== 'draft')
+      activeSales.forEach((sale: Sale) => {
+        if (sale.payments?.length) {
+          sale.payments.forEach((p: { paymentType: string; amount: number }) => {
+            if (p.paymentType === 'cash') cashRevenue += p.amount || 0
+            if (p.paymentType === 'transfer') transferRevenue += p.amount || 0
+          })
+        } else {
+          if (sale.paymentMethod === 'cash') cashRevenue += sale.total || 0
+          if (sale.paymentMethod === 'transfer') transferRevenue += sale.total || 0
+        }
+      })
+      const salesSummary = {
+        totalRevenue: cashRevenue + transferRevenue,
+        cashRevenue,
+        transferRevenue,
+        salesCount: activeSales.length
+      }
+
+      setOptimizedMetrics({
+        salesSummary,
+        inventorySummary: fastInventory ?? undefined,
+        creditsSummary: fastCredits ?? undefined
+      })
 
       setAllSales(sales)
       setAllWarranties(warranties)
       setAllCredits(credits)
-      setAllClients(clients)
-      // OPTIMIZADO: No cargamos todos los productos aquí, solo se cargan bajo demanda cuando se necesitan
       setAllProducts([])
       setAllPaymentRecords(payments)
       setLastUpdated(new Date())
 
-      const errors = [salesResult, warrantiesResult, creditsResult, clientsResult, paymentRecordsResult]
+      const errors = [salesResult, warrantiesResult, creditsResult, paymentRecordsResult, inventoryResult, creditsSummaryResult]
         .filter(result => result.status === 'rejected')
         .map(result => (result as PromiseRejectedResult).reason)
 
@@ -283,43 +300,31 @@ export default function DashboardPage() {
     }
   }
 
-  // Función para cargar productos específicos por IDs bajo demanda
-  const loadSpecificProducts = useCallback(async (productIds: string[]) => {
+  // Función para cargar productos específicos por IDs en batch (1–2 requests en lugar de N)
+  const loadSpecificProducts = useCallback((productIds: string[]) => {
     if (productIds.length === 0) return
-    
-    // Filtrar IDs únicos
+
     const uniqueIds = Array.from(new Set(productIds))
-    
+
     setSpecificProductsCache(prevCache => {
-      // Filtrar IDs que ya están en el cache
       const idsToLoad = uniqueIds.filter(id => !prevCache.has(id))
       if (idsToLoad.length === 0) return prevCache
-      
-      // Cargar productos en segundo plano
-      Promise.all(
-        idsToLoad.map(async (id) => {
-          try {
-            const { ProductsService } = await import('@/lib/products-service')
-            return await ProductsService.getProductById(id)
-          } catch (error) {
-            console.error(`Error loading product ${id}:`, error)
-            return null
-          }
-        })
+
+      import('@/lib/products-service').then(({ ProductsService }) =>
+        ProductsService.getProductsByIds(idsToLoad)
       ).then(products => {
         setSpecificProductsCache(currentCache => {
           const updatedCache = new Map(currentCache)
-          products.forEach((product, index) => {
-            if (product) {
-              updatedCache.set(idsToLoad[index], product)
-            }
+          products.forEach(product => {
+            updatedCache.set(product.id, product)
           })
-          // Actualizar allProducts con los nuevos productos cargados
           setAllProducts(Array.from(updatedCache.values()))
           return updatedCache
         })
+      }).catch(error => {
+        console.error('Error loading products batch:', error)
       })
-      
+
       return prevCache
     })
   }, [])
@@ -505,11 +510,12 @@ export default function DashboardPage() {
         return saleDateNormalized.getTime() === targetDateNormalized.getTime()
       })
 
-      // Filtrar pagos solo del día seleccionado
+      // Filtrar abonos solo del día seleccionado (misma normalización que ventas para zona horaria)
+      const targetDateNormalized = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
       const filteredPayments = allPaymentRecords.filter(payment => {
         const paymentDate = new Date(payment.paymentDate)
-        paymentDate.setHours(0, 0, 0, 0)
-        return paymentDate.getTime() === targetDate.getTime()
+        const paymentDateNormalized = new Date(paymentDate.getFullYear(), paymentDate.getMonth(), paymentDate.getDate())
+        return paymentDateNormalized.getTime() === targetDateNormalized.getTime()
       })
 
       // Warranties y credits ya vienen filtrados del backend (solo del día)
@@ -607,14 +613,11 @@ export default function DashboardPage() {
       }
     })
 
-    // Agregar abonos de créditos
-    cashRevenue += validPaymentRecords
-      .filter(p => p.paymentMethod === 'cash')
-      .reduce((sum, payment) => sum + payment.amount, 0)
-
-    transferRevenue += validPaymentRecords
-      .filter(p => p.paymentMethod === 'transfer')
-      .reduce((sum, payment) => sum + payment.amount, 0)
+    // Agregar abonos de créditos (efectivo y transferencia) al total de ingresos
+    const isCash = (p: { paymentMethod?: string }) => p.paymentMethod === 'cash' || p.paymentMethod === 'efectivo'
+    const isTransfer = (p: { paymentMethod?: string }) => p.paymentMethod === 'transfer'
+    cashRevenue += validPaymentRecords.filter(isCash).reduce((sum, payment) => sum + payment.amount, 0)
+    transferRevenue += validPaymentRecords.filter(isTransfer).reduce((sum, payment) => sum + payment.amount, 0)
 
     // Ingresos totales (solo efectivo + transferencia - dinero que realmente ha ingresado)
     const totalRevenue = cashRevenue + transferRevenue
@@ -1003,7 +1006,7 @@ export default function DashboardPage() {
         salesByDay[date] = { amount: 0, count: 0 }
       }
       // Sumar abonos en efectivo y transferencia (EXACTAMENTE igual que líneas 443-449)
-      if (payment.paymentMethod === 'cash') {
+      if (payment.paymentMethod === 'cash' || payment.paymentMethod === 'efectivo') {
         salesByDay[date].amount += payment.amount
       } else if (payment.paymentMethod === 'transfer') {
         salesByDay[date].amount += payment.amount
@@ -1087,11 +1090,12 @@ export default function DashboardPage() {
     }))
 
     return {
-      totalRevenue: optimizedMetrics.salesSummary?.totalRevenue ?? totalRevenue,
-      salesRevenue: optimizedMetrics.salesSummary?.totalRevenue ?? salesRevenue, // Fallback to totalRevenue if summary is available
+      // Total y por método deben incluir SIEMPRE ventas + abonos (no usar solo resumen de ventas)
+      totalRevenue,
+      salesRevenue: salesRevenue,
       creditPaymentsRevenue,
-      cashRevenue: optimizedMetrics.salesSummary?.cashRevenue ?? cashRevenue,
-      transferRevenue: optimizedMetrics.salesSummary?.transferRevenue ?? transferRevenue,
+      cashRevenue,
+      transferRevenue,
       creditRevenue,
       knownPaymentMethodsTotal,
       totalSales: optimizedMetrics.salesSummary?.salesCount ?? activeSales.length,
@@ -1794,7 +1798,7 @@ export default function DashboardPage() {
 
                     // Agregar abonos de créditos
                     filteredData.paymentRecords.forEach((payment: any) => {
-                      if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'transfer')) {
+                      if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'efectivo' || payment.paymentMethod === 'transfer')) {
                         const paymentDate = new Date(payment.paymentDate)
                         const monthKey = paymentDate.toLocaleDateString('es-CO', {
                           month: 'short',
@@ -1832,7 +1836,7 @@ export default function DashboardPage() {
                     const tooltipText = isDarkMode ? '#f3f4f6' : '#111827'
 
                     return monthlyArray.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                         <LineChart data={monthlyArray}>
                           <CartesianGrid
                             strokeDasharray="3 3"
@@ -1996,7 +2000,7 @@ export default function DashboardPage() {
                       }
                     }
 
-                    if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'transfer')) {
+                    if (payment.status !== 'cancelled' && (payment.paymentMethod === 'cash' || payment.paymentMethod === 'efectivo' || payment.paymentMethod === 'transfer')) {
                       const paymentDate = new Date(payment.paymentDate)
                       paymentDate.setHours(0, 0, 0, 0)
 
@@ -2029,7 +2033,7 @@ export default function DashboardPage() {
                   const tooltipText = isDarkMode ? '#f3f4f6' : '#111827'
 
                   return chartData.length > 0 ? (
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                       <LineChart data={chartData}>
                         <CartesianGrid
                           strokeDasharray="3 3"
@@ -2149,7 +2153,7 @@ export default function DashboardPage() {
                       .slice(0, 5)
 
                     return topProducts.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                         <BarChart
                           data={topProducts.map(p => ({ name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name, profit: p.profit }))}
                           margin={{ top: 10, right: 10, left: 5, bottom: 40 }}
@@ -2258,7 +2262,7 @@ export default function DashboardPage() {
                     // Agregar abonos de créditos
                     filteredData.paymentRecords.forEach((payment: any) => {
                       if (payment.status !== 'cancelled') {
-                        if (payment.paymentMethod === 'cash') {
+                        if (payment.paymentMethod === 'cash' || payment.paymentMethod === 'efectivo') {
                           efectivoTotal += payment.amount || 0
                         } else if (payment.paymentMethod === 'transfer') {
                           transferenciaTotal += payment.amount || 0
@@ -2273,7 +2277,7 @@ export default function DashboardPage() {
                     ].filter(item => item.value > 0)
 
                     return paymentData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                         <BarChart
                           data={paymentData}
                           margin={{ top: 10, right: 10, left: 5, bottom: 5 }}
