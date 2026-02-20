@@ -220,14 +220,16 @@ export class CreditsService {
   static async getCreditById(id: string): Promise<Credit | null> {
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
     let query = supabase
       .from('credits')
       .select('*')
       .eq('id', id)
 
-    // SIEMPRE filtrar por store_id si hay uno especificado
-    // Incluso para super admins, si están viendo una microtienda específica, solo mostrar sus créditos
-    if (storeId) {
+    // Misma lógica que getAllCredits: tienda principal incluye store_id null o MAIN_STORE_ID
+    if (!storeId || storeId === MAIN_STORE_ID) {
+      query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+    } else {
       query = query.eq('store_id', storeId)
     }
 
@@ -266,6 +268,7 @@ export class CreditsService {
       lastPaymentAmount: data.last_payment_amount,
       lastPaymentDate: data.last_payment_date,
       lastPaymentUser: userEmail,
+      storeId: data.store_id || undefined,
       createdAt: data.created_at,
       updatedAt: data.updated_at
     }
@@ -346,9 +349,13 @@ export class CreditsService {
 
     const user = getCurrentUser()
     const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
-    // Verificar que el crédito pertenece a la tienda actual (si hay storeId y no es admin)
-    if (storeId && existingCredit.storeId !== storeId && !canAccessAllStores(user)) {
+    // Verificar que el crédito pertenece a la tienda actual (tienda principal = null o MAIN_STORE_ID es la misma)
+    const userIsMainStore = !storeId || storeId === MAIN_STORE_ID
+    const creditIsMainStore = !existingCredit.storeId || existingCredit.storeId === MAIN_STORE_ID
+    const sameStore = storeId === existingCredit.storeId || (userIsMainStore && creditIsMainStore)
+    if (!sameStore && !canAccessAllStores(user)) {
       throw new Error('No tienes permiso para actualizar este crédito')
     }
 
