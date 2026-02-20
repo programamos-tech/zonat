@@ -214,18 +214,6 @@ export class SalesService {
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
-      console.log('[SALES SERVICE] getDashboardSales - Initial:', {
-        storeId,
-        userStoreId: user?.storeId,
-        userRole: user?.role,
-        userId: user?.id,
-        userName: user?.name,
-        isMainStore: storeId === MAIN_STORE_ID || !storeId,
-        startDate: startDate?.toISOString(),
-        endDate: endDate?.toISOString(),
-        localStorageStoreId: typeof window !== 'undefined' ? (JSON.parse(localStorage.getItem('zonat_user') || '{}')?.storeId || null) : null
-      })
-
       // Construir query base
       let query = supabase
         .from('sales')
@@ -256,11 +244,9 @@ export class SalesService {
       if (!storeId || storeId === MAIN_STORE_ID) {
         // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
         query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-        console.log('[SALES SERVICE] Filtering by main store (store_id = null or MAIN_STORE_ID)')
       } else {
         // Microtienda: solo ventas de esa microtienda
         query = query.eq('store_id', storeId)
-        console.log('[SALES SERVICE] Filtering by store_id:', storeId)
       }
 
       query = query.order('created_at', { ascending: false })
@@ -275,11 +261,6 @@ export class SalesService {
           0, 0, 0, 0
         )
         query = query.gte('created_at', startLocal.toISOString())
-        console.log('[SALES SERVICE] Date filter - startDate:', {
-          original: startDate.toISOString(),
-          local: startLocal.toISOString(),
-          localString: startLocal.toLocaleString('es-CO')
-        })
       }
       if (endDate) {
         // Usar final del día en hora local (sin conversión UTC)
@@ -290,11 +271,6 @@ export class SalesService {
           23, 59, 59, 999
         )
         query = query.lte('created_at', endLocal.toISOString())
-        console.log('[SALES SERVICE] Date filter - endDate:', {
-          original: endDate.toISOString(),
-          local: endLocal.toISOString(),
-          localString: endLocal.toLocaleString('es-CO')
-        })
       }
 
       // Ejecutar query - Supabase tiene límite de 1,000 registros por query
@@ -337,11 +313,9 @@ export class SalesService {
         if (!storeId || storeId === MAIN_STORE_ID) {
           // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
           paginatedQuery = paginatedQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-          console.log('[SALES SERVICE] Paginated query filtering by main store (store_id = null or MAIN_STORE_ID)')
         } else {
           // Microtienda: solo ventas de esa microtienda
           paginatedQuery = paginatedQuery.eq('store_id', storeId)
-          console.log('[SALES SERVICE] Paginated query filtering by store_id:', storeId)
         }
 
         paginatedQuery = paginatedQuery.order('created_at', { ascending: false })
@@ -386,18 +360,6 @@ export class SalesService {
           hasMore = false
         }
       }
-
-      console.log('[SALES SERVICE] getDashboardSales - Raw sales from DB:', {
-        totalSales: allSales.length,
-        sales: allSales.slice(0, 5).map(s => ({
-          id: s.id,
-          invoice_number: s.invoice_number,
-          store_id: s.store_id,
-          total: s.total,
-          created_at: s.created_at,
-          status: s.status
-        }))
-      })
 
       // Procesar referencias de productos (mismo código que getAllSales)
       const sales = await Promise.all(
@@ -462,18 +424,6 @@ export class SalesService {
         })
       )
 
-      console.log('[SALES SERVICE] getDashboardSales - Processed sales:', {
-        totalSales: sales.length,
-        sales: sales.slice(0, 5).map(s => ({
-          id: s.id,
-          invoice: s.invoiceNumber,
-          storeId: s.storeId,
-          total: s.total,
-          createdAt: s.createdAt,
-          status: s.status
-        }))
-      })
-
       return sales
     } catch (error) {
       // Error silencioso en producción
@@ -523,10 +473,6 @@ export class SalesService {
 
       if (!data) return null
 
-      console.log('🔍 DEBUG getSaleById - data.sale_items:', data.sale_items)
-      console.log('🔍 DEBUG getSaleById - data.sale_items type:', typeof data.sale_items)
-      console.log('🔍 DEBUG getSaleById - data.sale_items length:', data.sale_items?.length)
-
       // Obtener referencias de productos si no están en sale_items (para ventas antiguas)
       const itemsWithReferences = await Promise.all(
         (data.sale_items || []).map(async (item: any) => {
@@ -558,9 +504,6 @@ export class SalesService {
         })
       )
 
-      console.log('🔍 DEBUG getSaleById - itemsWithReferences:', itemsWithReferences)
-      console.log('🔍 DEBUG getSaleById - itemsWithReferences length:', itemsWithReferences.length)
-
       const result = {
         id: data.id,
         clientId: data.client_id,
@@ -589,9 +532,6 @@ export class SalesService {
         createdAt: data.created_at,
         items: itemsWithReferences
       }
-
-      console.log('🔍 DEBUG getSaleById - result.items:', result.items)
-      console.log('🔍 DEBUG getSaleById - returning result')
 
       return result
     } catch (error) {
@@ -937,10 +877,6 @@ export class SalesService {
     try {
       // Obtener la venta borrador
       const draftSale = await this.getSaleById(id)
-      console.log('🔍 DEBUG finalizeDraftSale - draftSale received:', draftSale)
-      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items:', draftSale?.items)
-      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items type:', typeof draftSale?.items)
-      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items length:', draftSale?.items?.length)
 
       if (!draftSale) {
         throw new Error('Venta no encontrada')
@@ -953,13 +889,8 @@ export class SalesService {
       // Obtener información del usuario actual
       const currentUser = await AuthService.getCurrentUser()
 
-      console.log('🔍 DEBUG finalizeDraftSale - About to check items condition')
-      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items:', draftSale.items)
-      console.log('🔍 DEBUG finalizeDraftSale - draftSale.items?.length:', draftSale.items?.length)
-
       // Descontar stock de todos los productos
       if (draftSale.items && draftSale.items.length > 0) {
-        console.log('🟢 DEBUG finalizeDraftSale - ENTERING stock deduction loop')
         for (const item of draftSale.items) {
           // Verificar stock disponible antes de descontar
           const product = await ProductsService.getProductById(item.productId)
@@ -982,9 +913,6 @@ export class SalesService {
             throw new Error(`No hay suficiente stock para el producto "${item.productName}". Stock disponible: ${totalStock}, Cantidad requerida: ${item.quantity}`)
           }
         }
-      } else {
-        console.log('🔴 DEBUG finalizeDraftSale - NOT ENTERING stock deduction loop')
-        console.log('🔴 DEBUG finalizeDraftSale - Condition failed: draftSale.items && draftSale.items.length > 0')
       }
 
       // Crear crédito si el método de pago es crédito

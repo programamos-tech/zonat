@@ -100,30 +100,22 @@ export default function DashboardPage() {
   useEffect(() => {
     const loadStoreInfo = async () => {
       const storeId = getCurrentUserStoreId()
-      console.log('[DASHBOARD] Loading store info:', { storeId, user: user?.id, isMainStore: isMainStoreUser(user) })
 
       if (storeId && !isMainStoreUser(user)) {
         try {
-          console.log('[DASHBOARD] Fetching store data for:', storeId)
           const store = await StoresService.getStoreById(storeId)
-          console.log('[DASHBOARD] Store data received:', store)
-
           if (store) {
             setCurrentStoreName(store.name)
             setCurrentStoreCity(store.city || null)
-            console.log('[DASHBOARD] Store info set:', { name: store.name, city: store.city })
           }
         } catch (error) {
           console.error('[DASHBOARD] Error loading store info:', error)
         }
       } else {
-        console.log('[DASHBOARD] Not loading store info - isMainStore or no storeId')
         setCurrentStoreName(null)
         setCurrentStoreCity(null)
       }
 
-      // Recargar datos del dashboard cuando cambia el storeId
-      console.log('[DASHBOARD] StoreId changed, reloading dashboard data')
       loadDashboardData()
     }
     if (user) {
@@ -183,7 +175,6 @@ export default function DashboardPage() {
     try {
       // Prevenir ejecuciones duplicadas
       if (isRefreshing || isFiltering) {
-        console.log('⚠️ [DASHBOARD] loadDashboardData ya está ejecutándose, saltando...')
         return
       }
 
@@ -215,8 +206,6 @@ export default function DashboardPage() {
 
       // Corregir lógica: 'all' (año) TAMBIÉN requiere un rango de fechas
       const { startDate, endDate } = getDateRange(currentFilter, yearToUse, dateToUse)
-
-      console.log('🔍 [DASHBOARD] Iniciando carga optimizada...', { currentFilter })
 
       // 1. CARGA RÁPIDA: Métricas agregadas (Dashboard Summary)
       // Esto devuelve los números grandes casi instantáneamente
@@ -337,16 +326,8 @@ export default function DashboardPage() {
 
   // Función para actualización manual del dashboard
   const handleRefresh = () => {
-    // Forzar recarga completa de todos los datos
-    // IMPORTANTE: Preservar el filtro actual (today, specific, all) y la fecha específica si existe
-    setSpecificProductsCache(new Map()) // Limpiar cache de productos específicos
-    setAllProducts([]) // Limpiar productos existentes
-    console.log('🔄 [DASHBOARD] Actualizando datos con filtro actual:', {
-      dateFilter,
-      specificDate: specificDate?.toISOString(),
-      selectedYear
-    })
-    // Pasar los parámetros explícitamente para evitar problemas de timing con el estado
+    setSpecificProductsCache(new Map())
+    setAllProducts([])
     loadDashboardData(true, dateFilter, specificDate, selectedYear)
   }
 
@@ -394,7 +375,6 @@ export default function DashboardPage() {
     // Solo cargar si no hay datos aún (evitar doble carga)
     // El filtro inicial es 'today', así que cargará datos de hoy
     if (allSales.length === 0) {
-      console.log('🚀 [DASHBOARD] Carga inicial - filtro:', effectiveDateFilter)
       loadDashboardData()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -405,16 +385,8 @@ export default function DashboardPage() {
     if (!user) return
 
     const currentStoreId = getCurrentUserStoreId()
-    console.log('[DASHBOARD] Monitoring storeId changes:', {
-      userStoreId: user.storeId,
-      currentStoreId,
-      shouldReload: currentStoreId !== user.storeId
-    })
 
-    // Si el storeId cambió, limpiar y recargar datos
     if (currentStoreId !== user.storeId) {
-      console.log('[DASHBOARD] StoreId changed, reloading data')
-      // Limpiar datos anteriores
       setAllSales([])
       setAllWarranties([])
       setAllCredits([])
@@ -429,56 +401,27 @@ export default function DashboardPage() {
 
   // Escuchar cambios en las ventas del contexto para actualizar el dashboard
   useEffect(() => {
-    console.log('[DASHBOARD LISTENER] Checking for new sales:', {
-      salesInContext: sales.length,
-      salesInDashboard: allSales.length,
-      salesIds: sales.map(s => s.id),
-      dashboardIds: allSales.map(s => s.id)
+    if (sales.length === 0) return
+
+    const newSales = sales.filter(sale => {
+      const saleDate = new Date(sale.createdAt)
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const saleDay = new Date(saleDate)
+      saleDay.setHours(0, 0, 0, 0)
+      const isToday = saleDay.getTime() === today.getTime()
+      const notInDashboard = !allSales.find(existingSale => existingSale.id === sale.id)
+      return isToday && notInDashboard
     })
 
-    // Si hay ventas en el contexto, verificar si hay una venta nueva
-    if (sales.length > 0) {
-      // Verificar si hay una venta nueva que no esté en allSales
-      const newSales = sales.filter(sale => {
-        const saleDate = new Date(sale.createdAt)
-        const today = new Date()
-        today.setHours(0, 0, 0, 0)
-        const saleDay = new Date(saleDate)
-        saleDay.setHours(0, 0, 0, 0)
-
-        // Solo considerar ventas de hoy
-        const isToday = saleDay.getTime() === today.getTime()
-        const notInDashboard = !allSales.find(existingSale => existingSale.id === sale.id)
-
-        if (isToday && notInDashboard) {
-          console.log('[DASHBOARD LISTENER] Found new sale:', {
-            id: sale.id,
-            invoice: sale.invoiceNumber,
-            total: sale.total,
-            createdAt: sale.createdAt,
-            storeId: sale.storeId
-          })
-        }
-
-        return isToday && notInDashboard
-      })
-
-      if (newSales.length > 0) {
-        console.log('🔄 [DASHBOARD] Nueva venta detectada, actualizando dashboard...', {
-          newSalesCount: newSales.length,
-          newSales: newSales.map(s => ({ id: s.id, invoice: s.invoiceNumber, total: s.total }))
-        })
-        // Recargar datos del dashboard para incluir la nueva venta
-        // Usar un pequeño delay para asegurar que la venta esté completamente guardada
-        const timeoutId = setTimeout(() => {
-          loadDashboardData(false, effectiveDateFilter, specificDate, selectedYear)
-        }, 1000) // Aumentar delay a 1 segundo
-
-        return () => clearTimeout(timeoutId)
-      }
+    if (newSales.length > 0) {
+      const timeoutId = setTimeout(() => {
+        loadDashboardData(false, effectiveDateFilter, specificDate, selectedYear)
+      }, 1000)
+      return () => clearTimeout(timeoutId)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sales.length, allSales.length, sales]) // Incluir sales completo para detectar cambios
+  }, [sales.length, allSales.length, sales])
 
   // Función para obtener fechas de filtro
   const getDateRange = (filter: DateFilter, year?: number, overrideSpecificDate?: Date | null) => {
@@ -559,39 +502,7 @@ export default function DashboardPage() {
         // Normalizar ambas fechas a medianoche en hora local
         const saleDateNormalized = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate())
         const targetDateNormalized = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
-        const matches = saleDateNormalized.getTime() === targetDateNormalized.getTime()
-
-        // Log para debugging (solo para las primeras ventas)
-        if (allSales.length > 0 && allSales.length < 20) {
-          console.log('[DASHBOARD] Filtering sale:', {
-            saleId: sale.id,
-            invoiceNumber: sale.invoiceNumber,
-            saleDate: saleDateNormalized.toISOString(),
-            targetDate: targetDateNormalized.toISOString(),
-            saleDateTime: saleDateNormalized.getTime(),
-            targetDateTime: targetDateNormalized.getTime(),
-            matches,
-            createdAt: sale.createdAt,
-            paymentMethod: sale.paymentMethod,
-            total: sale.total
-          })
-        }
-
-        return matches
-      })
-
-      console.log('[DASHBOARD] Filtered sales for date:', {
-        totalSales: allSales.length,
-        filteredSales: filteredSales.length,
-        targetDate: targetDate.toISOString(),
-        sales: filteredSales.map(s => ({
-          id: s.id,
-          invoice: s.invoiceNumber,
-          total: s.total,
-          createdAt: s.createdAt,
-          paymentMethod: s.paymentMethod,
-          payments: s.payments?.length || 0
-        }))
+        return saleDateNormalized.getTime() === targetDateNormalized.getTime()
       })
 
       // Filtrar pagos solo del día seleccionado
@@ -694,15 +605,6 @@ export default function DashboardPage() {
           })
         }
       }
-    })
-
-    console.log('[DASHBOARD] Revenue calculation:', {
-      activeSalesCount: activeSales.length,
-      cashRevenue,
-      transferRevenue,
-      totalRevenue: cashRevenue + transferRevenue,
-      mixedSales: activeSales.filter(s => s.paymentMethod === 'mixed').length,
-      mixedSalesWithPayments: activeSales.filter(s => s.paymentMethod === 'mixed' && s.payments && s.payments.length > 0).length
     })
 
     // Agregar abonos de créditos
@@ -1110,36 +1012,7 @@ export default function DashboardPage() {
     })
 
     // Debug detallado para fecha específica
-    if (effectiveDateFilter === 'specific' && specificDate) {
-      const targetDate = getDateKey(specificDate)
-      const chartDataForDate = salesByDay[targetDate]
-      const abonosForDate = validPaymentRecords.filter(p => {
-        const paymentDate = getDateKey(p.paymentDate)
-        return paymentDate === targetDate
-      })
-      console.log('🔍 [DASHBOARD CHART DEBUG] Para fecha específica:', {
-        targetDate,
-        specificDate: specificDate.toISOString(),
-        chartDataForDate,
-        abonosForDate: abonosForDate.map(p => ({
-          paymentDate: p.paymentDate,
-          normalizedDate: getDateKey(p.paymentDate),
-          amount: p.amount,
-          method: p.paymentMethod
-        })),
-        totalAbonosForDate: abonosForDate.reduce((sum, p) => {
-          if (p.paymentMethod === 'cash' || p.paymentMethod === 'transfer') {
-            return sum + p.amount
-          }
-          return sum
-        }, 0),
-        totalRevenue,
-        cashRevenue,
-        transferRevenue
-      })
-    }
-
-    // Debug: Verificar que los totales coincidan
+    // Verificar que los totales coincidan
     const totalFromChart = Object.values(salesByDay).reduce((sum, day) => sum + day.amount, 0)
     if (Math.abs(totalFromChart - totalRevenue) > 1) {
       console.error('❌ [DASHBOARD] Discrepancia entre gráfico y totalRevenue:', {
@@ -1157,11 +1030,6 @@ export default function DashboardPage() {
           amount: data.amount,
           count: data.count
         }))
-      })
-    } else {
-      console.log('✅ [DASHBOARD] Gráfico y totalRevenue coinciden:', {
-        totalFromChart,
-        totalRevenue
       })
     }
 
@@ -1197,28 +1065,6 @@ export default function DashboardPage() {
     const salesChartData = allDays
       .map(date => {
         const data = salesByDay[date] || { amount: 0, count: 0 }
-        // Debug para fecha específica
-        if (effectiveDateFilter === 'specific' && specificDate) {
-          const expectedDate = getDateKey(specificDate)
-          if (date === expectedDate) {
-            console.log('📊 [DASHBOARD CHART] Datos para fecha específica:', {
-              date,
-              expectedDate,
-              amount: data.amount,
-              totalRevenue,
-              salesByDayKeys: Object.keys(salesByDay),
-              validPaymentRecordsForDate: validPaymentRecords.filter(p => {
-                const paymentDate = getDateKey(p.paymentDate)
-                return paymentDate === date
-              }).map(p => ({
-                date: p.paymentDate,
-                normalizedDate: getDateKey(p.paymentDate),
-                amount: p.amount,
-                method: p.paymentMethod
-              }))
-            })
-          }
-        }
         return {
           date,
           amount: data.amount,

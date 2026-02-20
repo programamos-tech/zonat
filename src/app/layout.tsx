@@ -68,7 +68,7 @@ export default function RootLayout({
             </ProductsProvider>
           </ClientsProvider>
         </AuthProvider>
-        <Analytics />
+        <Analytics mode="production" />
       </body>
     </html>
   );

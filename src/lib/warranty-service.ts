@@ -262,11 +262,6 @@ export class WarrantyService {
           0, 0, 0, 0
         )
         query = query.gte('created_at', startLocal.toISOString())
-        console.log('[WARRANTY SERVICE] Date filter - startDate:', {
-          original: startDate.toISOString(),
-          local: startLocal.toISOString(),
-          localString: startLocal.toLocaleString('es-CO')
-        })
       }
       if (endDate) {
         // Usar final del día en hora local (sin conversión UTC)
@@ -277,11 +272,6 @@ export class WarrantyService {
           23, 59, 59, 999
         )
         query = query.lte('created_at', endLocal.toISOString())
-        console.log('[WARRANTY SERVICE] Date filter - endDate:', {
-          original: endDate.toISOString(),
-          local: endLocal.toISOString(),
-          localString: endLocal.toLocaleString('es-CO')
-        })
       }
 
       const { data: warranties, error: warrantiesError } = await query.limit(10000)
@@ -289,17 +279,6 @@ export class WarrantyService {
       if (warrantiesError) {
         throw warrantiesError
       }
-
-      console.log('[WARRANTY SERVICE] getWarrantiesByDateRange - Raw warranties from DB:', {
-        totalWarranties: warranties?.length || 0,
-        warranties: warranties?.slice(0, 5).map(w => ({
-          id: w.id,
-          store_id: w.store_id,
-          status: w.status,
-          created_at: w.created_at,
-          client_name: w.client_name
-        })) || []
-      })
 
       // Mapear datos (mismo código que getAllWarranties)
       const mappedWarranties: Warranty[] = warranties.map(warranty => ({
@@ -354,17 +333,6 @@ export class WarrantyService {
           } : undefined
         })) || []
       }))
-
-      console.log('[WARRANTY SERVICE] getWarrantiesByDateRange - Processed warranties:', {
-        totalWarranties: mappedWarranties.length,
-        warranties: mappedWarranties.slice(0, 5).map(w => ({
-          id: w.id,
-          storeId: w.storeId,
-          status: w.status,
-          createdAt: w.createdAt,
-          clientName: w.clientName
-        }))
-      })
 
       return mappedWarranties
     } catch (error) {

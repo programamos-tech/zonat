@@ -28,21 +28,6 @@ export class StoreStockTransferService {
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const isFromMainStore = fromStoreId === MAIN_STORE_ID || !fromStoreId
 
-      console.log('[CREATE TRANSFER] Starting transfer creation:', {
-        fromStoreId,
-        toStoreId,
-        itemsCount: items.length,
-        isFromMainStore,
-        MAIN_STORE_ID,
-        paymentInfo,
-        items: items.map(item => ({
-          productId: item.productId,
-          productName: item.productName,
-          quantity: item.quantity,
-          unitPrice: item.unitPrice
-        }))
-      })
-
       // Verificar stock disponible para todos los productos
       for (const item of items) {
         if (isFromMainStore) {
@@ -130,14 +115,6 @@ export class StoreStockTransferService {
       // Reducir stock de la tienda origen según el tipo de tienda
       for (const item of items) {
         if (isFromMainStore) {
-          // Para la tienda principal, descontar de products.stock_warehouse o products.stock_store
-          console.log('[STORE STOCK TRANSFER] Deducting stock from MAIN STORE:', {
-            productId: item.productId,
-            productName: item.productName,
-            fromLocation: item.fromLocation,
-            quantity: item.quantity
-          })
-          
           const { data: product } = await supabaseAdmin
             .from('products')
             .select('stock_warehouse, stock_store')
@@ -150,14 +127,6 @@ export class StoreStockTransferService {
               ? (product.stock_warehouse || 0)
               : (product.stock_store || 0)
             const newStock = currentStock - item.quantity
-
-            console.log('[STORE STOCK TRANSFER] Stock calculation for MAIN STORE:', {
-              productId: item.productId,
-              field,
-              currentStock,
-              quantityToDeduct: item.quantity,
-              newStock
-            })
 
             if (newStock < 0) {
               console.error(`Insufficient stock for product ${item.productName}`)
@@ -176,45 +145,17 @@ export class StoreStockTransferService {
               await supabaseAdmin.from('stock_transfers').delete().eq('id', transfer.id)
               return null
             }
-            
-            console.log('[STORE STOCK TRANSFER] Stock successfully deducted from MAIN STORE:', {
-              productId: item.productId,
-              field,
-              previousStock: currentStock,
-              newStock
-            })
           } else {
             console.error('[STORE STOCK TRANSFER] Product not found when trying to deduct stock:', item.productId)
           }
         } else {
-          // Para micro tiendas, descontar de store_stock
-          console.log('[STORE STOCK TRANSFER] Deducting stock from MICRO STORE:', {
-            storeId: fromStoreId,
-            productId: item.productId,
-            productName: item.productName,
-            quantity: item.quantity
-          })
           await this.updateStoreStock(fromStoreId, item.productId, -item.quantity)
         }
       }
 
-      // Si la transferencia es desde la tienda principal, crear una factura automáticamente
-      console.log('[CREATE TRANSFER] Checking if should create invoice:', {
-        isFromMainStore,
-        fromStoreId,
-        MAIN_STORE_ID
-      })
-      
       if (isFromMainStore) {
-        console.log('[CREATE TRANSFER] Is from main store, creating invoice...')
         try {
-          // Obtener información de la tienda destino
           const toStore = await StoresService.getStoreById(toStoreId)
-          console.log('[CREATE TRANSFER] To store found:', {
-            toStoreId,
-            toStore: toStore ? { id: toStore.id, name: toStore.name } : null
-          })
-          
           if (!toStore) {
             console.error('[TRANSFER INVOICE] Store not found:', toStoreId)
           } else {
@@ -230,13 +171,7 @@ export class StoreStockTransferService {
             
             if (!searchError && existingClients && existingClients.length > 0) {
               storeClientId = existingClients[0].id
-              console.log('[TRANSFER INVOICE] Found existing client for store:', {
-                storeName: toStore.name,
-                clientId: storeClientId
-              })
             } else {
-              // Crear un cliente para la tienda si no existe
-              console.log('[TRANSFER INVOICE] Creating client for store:', toStore.name)
               const { data: newClient, error: clientError } = await supabaseAdmin
                 .from('clients')
                 .insert({
@@ -273,17 +208,12 @@ export class StoreStockTransferService {
                 
                 if (retryClients && retryClients.length > 0) {
                   storeClientId = retryClients[0].id
-                  console.log('[TRANSFER INVOICE] Found client on retry:', storeClientId)
                 } else {
                   console.error('[TRANSFER INVOICE] Could not create or find client for store. Sale creation will fail.')
                   throw new Error(`No se pudo crear o encontrar un cliente para la tienda ${toStore.name}`)
                 }
               } else if (newClient) {
                 storeClientId = newClient.id
-                console.log('[TRANSFER INVOICE] Created client for store:', {
-                  clientId: storeClientId,
-                  storeName: toStore.name
-                })
               }
             }
             // Crear items de la venta con precios (usar precios proporcionados en la transferencia)
@@ -317,39 +247,14 @@ export class StoreStockTransferService {
               })
             }
 
-            console.log('[CREATE TRANSFER] Sale items prepared:', {
-              saleItemsCount: saleItems.length,
-              subtotal,
-              items: saleItems.map((item) => ({
-                productName: item.productName,
-                quantity: item.quantity,
-                unitPrice: item.unitPrice,
-                total: item.total
-              }))
-            })
-
             // Solo crear la factura si hay items válidos
             if (saleItems.length > 0 && subtotal > 0) {
-              console.log('[CREATE TRANSFER] Creating invoice (subtotal > 0)')
               // Obtener usuario actual
               const currentUser = await AuthService.getCurrentUser()
               const currentUserId = currentUser?.id || createdBy || ''
 
               // Generar número de factura
               const invoiceNumber = await SalesService.getNextInvoiceNumber()
-
-              console.log('[TRANSFER INVOICE] Creating invoice with payment info:', {
-                paymentInfo,
-                subtotal,
-                paymentMethod: paymentInfo?.method || 'transfer',
-                cashAmount: paymentInfo?.cashAmount,
-                transferAmount: paymentInfo?.transferAmount,
-                invoiceNumber,
-                currentUserId,
-                toStoreId,
-                toStoreName: toStore.name,
-                MAIN_STORE_ID
-              })
 
               // Validar que todos los datos necesarios estén presentes
               if (!toStoreId || !toStore.name || !invoiceNumber) {
@@ -386,17 +291,6 @@ export class StoreStockTransferService {
                 }
               })
 
-              console.log('[TRANSFER INVOICE] Sale data to insert:', saleData)
-              console.log('[TRANSFER INVOICE] Sale data validation:', {
-                hasClientId: !!saleData.client_id,
-                hasClientName: !!saleData.client_name,
-                hasTotal: saleData.total > 0,
-                hasSubtotal: saleData.subtotal > 0,
-                hasInvoiceNumber: !!saleData.invoice_number,
-                hasStoreId: !!saleData.store_id,
-                sellerId: saleData.seller_id
-              })
-
               const { data: sale, error: saleError } = await supabaseAdmin
                 .from('sales')
                 .insert(saleData)
@@ -424,16 +318,6 @@ export class StoreStockTransferService {
                 // No fallar la transferencia si hay error al crear la factura, pero loguear
                 // Continuar con la transferencia aunque falle la factura
               } else if (sale) {
-                console.log('[TRANSFER INVOICE] Sale created successfully:', {
-                  saleId: sale.id,
-                  invoiceNumber: sale.invoice_number,
-                  total: sale.total,
-                  client_id: sale.client_id,
-                  store_id: sale.store_id,
-                  created_at: sale.created_at,
-                  toStoreId: toStoreId,
-                  transferId: transfer.id
-                })
                 // Crear los items de la venta
                 const saleItemsToInsert = saleItems.map(item => ({
                   sale_id: sale.id,
@@ -455,15 +339,7 @@ export class StoreStockTransferService {
                   // Eliminar la venta si falla la creación de items
                   await supabaseAdmin.from('sales').delete().eq('id', sale.id)
                 } else {
-                  // Crear registros de pago según el método
                   if (paymentInfo && paymentInfo.method === 'mixed') {
-                    console.log('[TRANSFER INVOICE] Creating mixed payment records:', {
-                      saleId: sale.id,
-                      cashAmount: paymentInfo.cashAmount,
-                      transferAmount: paymentInfo.transferAmount,
-                      total: subtotal
-                    })
-                    
                     // Pagos mixtos: crear registros en sale_payments (para que el dashboard los vea)
                     const { data: salePaymentsData, error: salePaymentsError } = await supabaseAdmin
                       .from('sale_payments')
@@ -483,19 +359,9 @@ export class StoreStockTransferService {
                     
                     if (salePaymentsError) {
                       console.error('[TRANSFER INVOICE] Error creating sale_payments:', salePaymentsError)
-                      // No fallar la transferencia si hay error, pero loguear
-                    } else {
-                      console.log('[TRANSFER INVOICE] sale_payments created successfully:', salePaymentsData)
                     }
                   } else {
-                    // Pago único
                     const method = paymentInfo?.method || 'transfer'
-                    console.log('[TRANSFER INVOICE] Creating single payment:', {
-                      saleId: sale.id,
-                      method,
-                      amount: subtotal
-                    })
-                    
                     // Crear registro en sale_payments (para que el dashboard lo vea)
                     const { data: salePaymentsData, error: salePaymentsError } = await supabaseAdmin
                       .from('sale_payments')
@@ -508,19 +374,8 @@ export class StoreStockTransferService {
                     
                     if (salePaymentsError) {
                       console.error('[TRANSFER INVOICE] Error creating sale_payments:', salePaymentsError)
-                      // No fallar la transferencia si hay error, pero loguear
-                    } else {
-                      console.log('[TRANSFER INVOICE] sale_payments created successfully:', salePaymentsData)
                     }
                   }
-
-                  console.log('[TRANSFER INVOICE] Invoice created successfully:', {
-                    invoiceNumber: invoiceNumber,
-                    saleId: sale.id,
-                    total: subtotal,
-                    itemsCount: saleItems.length,
-                    paymentMethod: paymentInfo?.method || 'transfer'
-                  })
                 }
               } else {
                 console.error('[TRANSFER INVOICE] Sale creation returned null or undefined')
@@ -1278,16 +1133,6 @@ export class StoreStockTransferService {
               const costToSet = isToMicroStore ? (originalItem.unitPrice ?? 0) : undefined
               const priceToSet = isToMicroStore ? 0 : undefined
               
-              console.log('[STORE STOCK TRANSFER] Updating stock for micro store:', {
-                storeId: transfer.toStoreId,
-                productId: originalItem.productId,
-                quantityReceived: receivedItem.quantityReceived,
-                unitPrice: originalItem.unitPrice,
-                isToMicroStore,
-                costToSet,
-                priceToSet
-              })
-              
               const stockUpdated = await this.updateStoreStock(
                 transfer.toStoreId, 
                 originalItem.productId, 
@@ -1298,8 +1143,6 @@ export class StoreStockTransferService {
               if (!stockUpdated) {
                 console.error('[STORE STOCK TRANSFER] Failed to update stock for product:', originalItem.productId)
               } else {
-                console.log('[STORE STOCK TRANSFER] Stock updated successfully')
-                
                 // Registrar log de recepción
                 if (receivedBy) {
                   const storeId = getCurrentUserStoreId()
@@ -1335,11 +1178,6 @@ export class StoreStockTransferService {
           const quantityToReceive = itemsToReceive.length > 0 
             ? itemsToReceive[0].quantityReceived 
             : transfer.quantity
-          console.log('[STORE STOCK TRANSFER] Updating stock for legacy transfer:', {
-            storeId: transfer.toStoreId,
-            productId: transfer.productId,
-            quantityReceived: quantityToReceive
-          })
           const stockUpdated = await this.updateStoreStock(transfer.toStoreId, transfer.productId, quantityToReceive)
           if (!stockUpdated) {
             console.error('[STORE STOCK TRANSFER] Failed to update stock for legacy transfer')
@@ -1381,12 +1219,6 @@ export class StoreStockTransferService {
   // Cancelar transferencia
   static async cancelTransfer(transferId: string, reason: string, currentUserId?: string): Promise<{ success: boolean; totalRefund?: number }> {
     try {
-      console.log('[CANCEL TRANSFER] Starting cancellation:', {
-        transferId,
-        reason,
-        userId: currentUserId
-      })
-
       // Obtener la transferencia con sus items
       const transfer = await this.getTransferById(transferId)
       if (!transfer) {
@@ -1415,18 +1247,8 @@ export class StoreStockTransferService {
       if (isFromMainStore) {
         try {
           sale = await this.getTransferSale(transferId)
-          console.log('[CANCEL TRANSFER] Sale found:', sale ? {
-            id: sale.id,
-            invoiceNumber: sale.invoiceNumber,
-            total: sale.total,
-            paymentMethod: sale.paymentMethod
-          } : null)
 
-          // Si hay una venta asociada, cancelarla y devolver el dinero
-          // IMPORTANTE: No usar cancelSale porque también devuelve stock, y nosotros ya lo estamos haciendo
           if (sale && sale.status !== 'cancelled' && currentUserId) {
-            console.log('[CANCEL TRANSFER] Cancelling associated sale manually:', sale.id)
-            
             try {
               // Calcular el reembolso según el método de pago
               if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
@@ -1488,8 +1310,6 @@ export class StoreStockTransferService {
               if (saleUpdateError) {
                 console.error('[CANCEL TRANSFER] Error updating sale status:', saleUpdateError)
               } else {
-                console.log('[CANCEL TRANSFER] Sale cancelled successfully, refund:', totalRefund)
-                
                 // Registrar log de cancelación de venta
                 const { AuthService } = await import('./auth-service')
                 await AuthService.logActivity(
@@ -1543,26 +1363,11 @@ export class StoreStockTransferService {
 
               if (updateStockError) {
                 console.error('[CANCEL TRANSFER] Error returning stock to product:', updateStockError)
-              } else {
-                console.log('[CANCEL TRANSFER] Stock returned:', {
-                  productId: item.productId,
-                  quantity: item.quantity,
-                  fromLocation: item.fromLocation,
-                  previousStock: currentStock,
-                  newStock
-                })
               }
             }
           } else {
             // Para micro tiendas, devolver a store_stock
-            const stockUpdated = await this.updateStoreStock(transfer.fromStoreId, item.productId, item.quantity)
-            if (stockUpdated) {
-              console.log('[CANCEL TRANSFER] Stock returned to microstore:', {
-                storeId: transfer.fromStoreId,
-                productId: item.productId,
-                quantity: item.quantity
-              })
-            }
+            await this.updateStoreStock(transfer.fromStoreId, item.productId, item.quantity)
           }
         }
       } else {
@@ -1652,11 +1457,6 @@ export class StoreStockTransferService {
           // No fallar la cancelación si hay error en el log
         }
       }
-
-      console.log('[CANCEL TRANSFER] Transfer cancelled successfully:', {
-        transferId,
-        totalRefund
-      })
 
       return { success: true, totalRefund }
     } catch (error) {
@@ -1766,22 +1566,10 @@ export class StoreStockTransferService {
     price?: number | null
   ): Promise<boolean> {
     try {
-      console.log('[STORE STOCK TRANSFER] updateStoreStock called:', {
-        storeId,
-        productId,
-        quantityChange
-      })
-
       // Obtener stock actual
       const currentStock = await this.getStoreStock(storeId, productId)
       const currentQuantity = currentStock?.quantity || 0
       const newQuantity = currentQuantity + quantityChange
-
-      console.log('[STORE STOCK TRANSFER] Stock calculation:', {
-        currentQuantity,
-        quantityChange,
-        newQuantity
-      })
 
       if (newQuantity < 0) {
         console.error('[STORE STOCK TRANSFER] Insufficient stock:', {
@@ -1814,11 +1602,6 @@ export class StoreStockTransferService {
         }
       }
 
-      console.log('[STORE STOCK TRANSFER] Upserting stock:', {
-        upsertData,
-        isMainStore
-      })
-
       const { data, error } = await supabaseAdmin
         .from('store_stock')
         .upsert(upsertData, {
@@ -1839,9 +1622,7 @@ export class StoreStockTransferService {
           newQuantity,
           upsertData
         })
-        // Intentar sin location si el error es por la columna location
         if (error.message && error.message.includes('location')) {
-          console.log('[STORE STOCK TRANSFER] Retrying without location column')
           const { error: retryError } = await supabaseAdmin
             .from('store_stock')
             .upsert({
@@ -1861,7 +1642,6 @@ export class StoreStockTransferService {
         return false
       }
 
-      console.log('[STORE STOCK TRANSFER] Stock updated successfully:', data)
       return true
     } catch (error) {
       console.error('[STORE STOCK TRANSFER] Error in updateStoreStock:', error)
@@ -1882,13 +1662,10 @@ export class StoreStockTransferService {
         .single()
       
       if (saleError || !sale) {
-        console.log('[TRANSFER BY SALE] Sale not found:', saleId)
         return null
       }
-      
-      // Solo buscar si la venta es de la tienda principal
+
       if (sale.store_id !== MAIN_STORE_ID) {
-        console.log('[TRANSFER BY SALE] Sale is not from main store, skipping transfer lookup')
         return null
       }
       
@@ -1900,7 +1677,6 @@ export class StoreStockTransferService {
         .single()
       
       if (clientError || !client || !client.store_id) {
-        console.log('[TRANSFER BY SALE] Client not found or has no store_id:', sale.client_id)
         return null
       }
       
@@ -1922,7 +1698,6 @@ export class StoreStockTransferService {
         .limit(1)
       
       if (error || !transfers || transfers.length === 0) {
-        console.log('[TRANSFER BY SALE] No transfer found for sale:', saleId)
         return null
       }
       
@@ -1943,25 +1718,11 @@ export class StoreStockTransferService {
       // Obtener la transferencia para saber el toStoreId y la fecha
       const transfer = await this.getTransferById(transferId)
       if (!transfer) {
-        console.log('[TRANSFER SALE] Transfer not found:', transferId)
         return null
       }
-      
-      // Verificar si es desde la tienda principal (igual que en createTransfer)
+
       const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID || !transfer.fromStoreId
-      
-      console.log('[TRANSFER SALE] Looking for sale:', {
-        transferId,
-        fromStoreId: transfer.fromStoreId,
-        toStoreId: transfer.toStoreId,
-        createdAt: transfer.createdAt,
-        isFromMainStore,
-        MAIN_STORE_ID
-      })
-      
-      // Solo buscar si la transferencia es desde la tienda principal
       if (!isFromMainStore) {
-        console.log('[TRANSFER SALE] Transfer is not from main store, skipping sale lookup')
         return null
       }
       
@@ -1974,7 +1735,6 @@ export class StoreStockTransferService {
         .limit(5) // Puede haber múltiples clientes para la misma tienda
       
       if (clientSearchError || !storeClients || storeClients.length === 0) {
-        console.log('[TRANSFER SALE] No client found for store:', transfer.toStoreId)
         // Intentar búsqueda alternativa: buscar por nombre de la tienda
         const { data: toStore } = await supabaseAdmin
           .from('stores')
@@ -1990,7 +1750,6 @@ export class StoreStockTransferService {
             .limit(5)
           
           if (clientsByName && clientsByName.length > 0) {
-            console.log('[TRANSFER SALE] Found client by store name:', clientsByName[0].id)
             // Usar el primer cliente encontrado
             const clientIds = clientsByName.map(c => c.id)
             
@@ -1998,15 +1757,7 @@ export class StoreStockTransferService {
       const transferDate = new Date(transfer.createdAt)
             const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
             const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
-            
-            console.log('[TRANSFER SALE] Searching sale with client IDs:', {
-              clientIds,
-              store_id: MAIN_STORE_ID,
-              transferDate: transferDate.toISOString(),
-              startDate: startDate.toISOString(),
-              endDate: endDate.toISOString()
-            })
-            
+
             const { data: sales, error } = await supabaseAdmin
               .from('sales')
               .select(`
@@ -2040,22 +1791,8 @@ export class StoreStockTransferService {
               console.error('[TRANSFER SALE] Error fetching sale:', error)
               return null
             }
-            
-            console.log('[TRANSFER SALE] Found sales:', {
-              count: sales?.length || 0,
-              sales: sales?.map(s => ({
-                id: s.id,
-                client_id: s.client_id,
-                total: s.total,
-                created_at: s.created_at,
-                invoice_number: s.invoice_number
-              }))
-            })
-            
+
             if (!sales || sales.length === 0) {
-              // Continuar con la búsqueda sin filtro de fecha (lógica más abajo)
-              // Por ahora retornar null, la lógica de búsqueda sin fecha está más abajo
-              console.log('[TRANSFER SALE] No sale found with date filter, will try without date filter')
             } else {
               // Si hay múltiples, buscar la que tenga los mismos productos
               let sale = sales[0]
@@ -2068,28 +1805,23 @@ export class StoreStockTransferService {
                 })
                 if (matchingSale) {
                   sale = matchingSale
-                  console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
                 }
               }
-              
               return this.mapSaleToType(sale)
             }
-            
-            // Si hay múltiples, buscar la que tenga los mismos productos
+
             let sale = sales[0]
             if (sales.length > 1) {
               const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
               const matchingSale = sales.find(s => {
                 const saleProductIds = new Set(s.sale_items?.map((item: any) => item.product_id) || [])
-                return transferProductIds.size === saleProductIds.size && 
+                return transferProductIds.size === saleProductIds.size &&
                   [...transferProductIds].every(id => saleProductIds.has(id))
               })
               if (matchingSale) {
                 sale = matchingSale
-                console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
               }
             }
-            
             return this.mapSaleToType(sale)
           }
         }
@@ -2105,15 +1837,7 @@ export class StoreStockTransferService {
       const transferDate = new Date(transfer.createdAt)
       const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
       const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
-      
-      console.log('[TRANSFER SALE] Searching sale with filters:', {
-        clientIds,
-        store_id: MAIN_STORE_ID,
-        transferDate: transferDate.toISOString(),
-        startDate: startDate.toISOString(),
-        endDate: endDate.toISOString()
-      })
-      
+
       const { data: sales, error } = await supabaseAdmin
         .from('sales')
         .select(`
@@ -2147,20 +1871,8 @@ export class StoreStockTransferService {
         console.error('[TRANSFER SALE] Error fetching sale:', error)
         return null
       }
-      
-      console.log('[TRANSFER SALE] Found sales:', {
-        count: sales?.length || 0,
-        sales: sales?.map(s => ({
-          id: s.id,
-          client_id: s.client_id,
-          total: s.total,
-          created_at: s.created_at,
-          invoice_number: s.invoice_number
-        }))
-      })
-      
+
       if (!sales || sales.length === 0) {
-        console.log('[TRANSFER SALE] No sale found for transfer with date filter, trying without date filter...')
         // Intentar búsqueda más amplia sin filtro de fecha usando los clientIds
         const { data: salesWithoutDate, error: error2 } = await supabaseAdmin
           .from('sales')
@@ -2193,47 +1905,20 @@ export class StoreStockTransferService {
           console.error('[TRANSFER SALE] Error in fallback search:', error2)
           return null
         }
-        
-        console.log('[TRANSFER SALE] Found sales without date filter:', {
-          count: salesWithoutDate?.length || 0,
-          sales: salesWithoutDate?.map(s => ({
-            id: s.id,
-            client_id: s.client_id,
-            created_at: s.created_at,
-            invoice_number: s.invoice_number
-          }))
-        })
-        
+
         if (salesWithoutDate && salesWithoutDate.length > 0) {
-          // Buscar la venta que tenga los mismos productos
           const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
-          console.log('[TRANSFER SALE] Transfer product IDs:', Array.from(transferProductIds))
-          
           for (const sale of salesWithoutDate) {
-          const saleProductIds = new Set(sale.sale_items?.map((item: any) => item.product_id) || [])
-            console.log('[TRANSFER SALE] Checking sale:', {
-              saleId: sale.id,
-              saleProductIds: Array.from(saleProductIds),
-              transferProductIds: Array.from(transferProductIds)
-            })
-            
-            // Verificar que los productos coincidan
-          const productsMatch = transferProductIds.size === saleProductIds.size && 
+            const saleProductIds = new Set(sale.sale_items?.map((item: any) => item.product_id) || [])
+            const productsMatch = transferProductIds.size === saleProductIds.size &&
               transferProductIds.size > 0 &&
-            [...transferProductIds].every(id => saleProductIds.has(id))
-          
-          if (productsMatch) {
-              console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
-            return this.mapSaleToType(sale)
+              [...transferProductIds].every(id => saleProductIds.has(id))
+            if (productsMatch) {
+              return this.mapSaleToType(sale)
+            }
           }
-        }
-        
-          // Si no encontramos por productos, devolver la más reciente
-          console.log('[TRANSFER SALE] No matching sale by products, returning most recent:', salesWithoutDate[0].id)
           return this.mapSaleToType(salesWithoutDate[0])
         }
-        
-        console.log('[TRANSFER SALE] No sale found for transfer after all searches')
         return null
       }
       
@@ -2248,11 +1933,9 @@ export class StoreStockTransferService {
         })
         if (matchingSale) {
           sale = matchingSale
-          console.log('[TRANSFER SALE] Found matching sale by products:', sale.id)
         }
       }
-      
-      // Mapear a formato Sale
+
       return this.mapSaleToType(sale)
     } catch (error) {
       console.error('[TRANSFER SALE] Error in getTransferSale:', error)
