@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ChevronLeft, ChevronRight, ArrowRightLeft, CheckCircle, Store } from 'lucide-react'
+import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ArrowRightLeft, CheckCircle, Store } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
@@ -99,44 +99,15 @@ export function BottomNav() {
     }
   }, [visibleItems.length, isMounted])
 
-  // Función para hacer scroll
-  const scroll = (direction: 'left' | 'right') => {
-    if (!scrollContainerRef.current) return
-    
-    const scrollAmount = 200 // Píxeles a desplazar
-    const currentScroll = scrollContainerRef.current.scrollLeft
-    const newScroll = direction === 'left' 
-      ? currentScroll - scrollAmount 
-      : currentScroll + scrollAmount
-    
-    scrollContainerRef.current.scrollTo({
-      left: newScroll,
-      behavior: 'smooth'
-    })
-  }
-
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 shadow-lg supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))]">
-      <div className="relative flex items-center">
-        {/* Botón izquierdo */}
-        {showLeftButton && (
-          <button
-            onClick={() => scroll('left')}
-            className="absolute left-0 z-10 h-16 md:h-20 px-3 md:px-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-r border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
-            aria-label="Scroll izquierda"
-          >
-            <ChevronLeft className="h-6 w-6 md:h-7 md:w-7 text-gray-600 dark:text-gray-400" />
-          </button>
-        )}
-
-        {/* Contenedor de scroll */}
+    <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))]">
+      {/* Barra transparente: difuminado en la parte de arriba, esquinas redondeadas */}
+      <div className="relative flex flex-col pt-1.5 md:pt-2 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-gradient-to-b from-transparent via-white/50 dark:via-neutral-950/55 to-white/85 dark:to-neutral-950/90 backdrop-blur-xl shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_30px_-4px_rgba(0,0,0,0.35)]">
+        <div className="flex items-stretch h-12 md:h-14 flex-shrink-0">
+        {/* Contenedor de scroll: siempre empezando por Dashboard a la izquierda */}
         <ul 
           ref={scrollContainerRef}
-          className={`flex items-stretch h-16 md:h-20 gap-1 overflow-x-auto scrollbar-hide flex-1 ${
-            showLeftButton ? 'pl-12 md:pl-14' : 'pl-2 md:pl-2.5'
-          } ${
-            showRightButton ? 'pr-12 md:pr-14' : 'pr-2 md:pr-2.5'
-          }`}
+          className="flex items-stretch h-full gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0 pl-2 pr-2 md:justify-center"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {visibleItems.map(({ href, label, icon: Icon, module }) => {
@@ -152,62 +123,47 @@ export function BottomNav() {
               (href === '/sales' && currentPathname?.startsWith('/sales')) ||
               (href === '/stores' && currentPathname?.startsWith('/stores'))
             
-            // Colores por módulo para el estado activo (igual que el sidebar)
-            const getActiveColor = () => {
-              switch (module) {
-                case 'dashboard': return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                case 'products': return 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400'
-                case 'clients': return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                case 'sales': return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                case 'warranties': return 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
-                case 'payments': return 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
-                case 'roles': return 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                case 'logs': return 'bg-gray-50 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
-                case 'stores': return 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400'
-                default: return 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-              }
-            }
-            
+            // Estado activo: sin selector ni fondo; solo el icono se alumbra con su color
+            const getActiveColor = () =>
+              ''
+
             const getIconColor = () => {
               if (!active) return 'text-gray-500 dark:text-gray-400'
-              switch (module) {
-                case 'dashboard': return 'text-green-700 dark:text-green-400'
-                case 'products': return 'text-cyan-700 dark:text-cyan-400'
-                case 'clients': return 'text-red-700 dark:text-red-400'
-                case 'sales': return 'text-green-700 dark:text-green-400'
-                case 'warranties': return 'text-purple-700 dark:text-purple-400'
-                case 'payments': return 'text-orange-700 dark:text-orange-400'
-                case 'roles': return 'text-indigo-700 dark:text-indigo-400'
-                case 'logs': return 'text-gray-700 dark:text-gray-300'
-                case 'stores': return 'text-emerald-700 dark:text-emerald-400'
-                default: return 'text-gray-900 dark:text-white'
-              }
+              if (module === 'products') return 'text-sky-500 dark:text-sky-400'
+              if (module === 'clients') return 'text-orange-500 dark:text-orange-400'
+              if (module === 'sales') return 'text-emerald-500 dark:text-emerald-400'
+              if (module === 'warranties') return 'text-purple-500 dark:text-purple-400'
+              if (module === 'payments') return 'text-orange-500 dark:text-orange-400'
+              if (module === 'roles') return 'text-indigo-500 dark:text-indigo-400'
+              if (module === 'logs') return 'text-blue-500 dark:text-blue-400'
+              if (module === 'dashboard' || module === 'stores') return 'text-emerald-500 dark:text-emerald-400'
+              return 'text-emerald-500 dark:text-emerald-400'
             }
             
             return (
-              <li key={href} className="flex-shrink-0 flex-1 min-w-[70px] md:min-w-[80px] max-w-[90px] md:max-w-[100px]">
+              <li key={href} className="flex-shrink-0 flex-1 min-w-[56px] md:min-w-0 md:flex-none md:w-[72px] md:max-w-[76px]">
                 {isStoresModule && !canAccessStores ? (
                   <div
-                    className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg cursor-not-allowed opacity-50 ${
+                    className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-2 text-[9px] md:text-[10px] transition-all duration-200 rounded-t-lg cursor-not-allowed opacity-50 ${
                       active 
-                        ? `${getActiveColor()} shadow-sm font-semibold` 
+                        ? `${getActiveColor()} text-gray-600 dark:text-gray-300` 
                         : 'text-gray-400 dark:text-gray-500'
                     }`}
                     title="Solo disponible para Super Administradores"
                   >
-                    <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
+                    <Icon className={`h-5 w-5 md:h-5 md:w-5 flex-shrink-0 transition-colors ${getIconColor()}`} />
                     <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
                   </div>
                 ) : (
                 <Link
                   href={href}
-                  className={`flex h-full flex-col items-center justify-center gap-1 md:gap-1.5 px-2 md:px-2.5 text-[9px] md:text-[10px] lg:text-[11px] transition-all duration-200 rounded-t-lg touch-manipulation ${
+                  className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-2 text-[9px] md:text-[10px] transition-all duration-200 rounded-t-lg touch-manipulation ${
                     active 
-                      ? `${getActiveColor()} shadow-sm font-semibold` 
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-white active:bg-gray-100 dark:active:bg-gray-700 active:scale-95'
+                      ? `${getActiveColor()} text-gray-600 dark:text-gray-300` 
+                      : 'text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white active:scale-95'
                   }`}
                 >
-                  <Icon className={`h-5 w-5 md:h-6 md:w-6 lg:h-7 lg:w-7 flex-shrink-0 transition-colors ${getIconColor()}`} />
+                  <Icon className={`h-5 w-5 md:h-5 md:w-5 flex-shrink-0 transition-colors ${getIconColor()}`} />
                   <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
                 </Link>
                 )}
@@ -215,16 +171,21 @@ export function BottomNav() {
             )
           })}
         </ul>
+        </div>
 
-        {/* Botón derecho */}
+        {/* Difuminado derecha: indica que hay más opciones sin quitar espacio */}
         {showRightButton && (
-          <button
-            onClick={() => scroll('right')}
-            className="absolute right-0 z-10 h-16 md:h-20 px-3 md:px-4 bg-white dark:bg-gray-900 hover:bg-gray-50 dark:hover:bg-gray-800 border-l border-gray-200 dark:border-gray-700 flex items-center justify-center transition-colors touch-manipulation"
-            aria-label="Scroll derecha"
-          >
-            <ChevronRight className="h-6 w-6 md:h-7 md:w-7 text-gray-600 dark:text-gray-400" />
-          </button>
+          <div
+            className="absolute right-0 top-0 bottom-0 w-8 md:w-10 pointer-events-none z-10 bg-gradient-to-l from-white/90 dark:from-neutral-950/90 to-transparent"
+            aria-hidden
+          />
+        )}
+        {/* Difuminado izquierda: cuando hay scroll, indica que hay más a la izquierda */}
+        {showLeftButton && (
+          <div
+            className="absolute left-0 top-0 bottom-0 w-8 md:w-10 pointer-events-none z-10 bg-gradient-to-r from-white/90 dark:from-neutral-950/90 to-transparent"
+            aria-hidden
+          />
         )}
       </div>
     </nav>

@@ -149,13 +149,13 @@ export function ProductTable({
       case 'active':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 hover:text-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400'
       case 'inactive':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
       case 'discontinued':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
       case 'out_of_stock':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 hover:bg-orange-100 hover:text-orange-800 dark:hover:bg-orange-900/20 dark:hover:text-orange-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
     }
   }
 
@@ -273,7 +273,7 @@ export function ProductTable({
     <TooltipProvider>
       <div className="space-y-4 md:space-y-6">
         {/* Header */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
           <CardHeader className="p-3 md:p-6">
             <div className="flex flex-col gap-3 md:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -341,7 +341,7 @@ export function ProductTable({
         </Card>
 
         {/* Search and Filters */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
           <CardContent className="p-3 md:p-4">
             <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
               <div className="relative flex-1">
@@ -357,7 +357,7 @@ export function ProductTable({
                       handleSearch(searchTerm)
                     }
                   }}
-                  className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                 />
                 {searchTerm && (
                   <button
@@ -386,7 +386,7 @@ export function ProductTable({
               <select
                 value={stockFilter}
                 onChange={(e) => onFilterChange(e.target.value as StockFilter)}
-                className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
               >
                 {stockStatusOptions.map(status => (
                   <option key={status.value} value={status.value}>
@@ -399,10 +399,10 @@ export function ProductTable({
         </Card>
 
         {/* Table */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 relative overflow-hidden">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 relative overflow-hidden">
           {/* Overlay de carga para búsquedas/refresh sin perder el contenido */}
           {loading && (
-            <div className="absolute inset-0 bg-white/60 dark:bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-10">
+            <div className="absolute inset-0 bg-white/60 dark:bg-neutral-950/50 backdrop-blur-sm flex items-center justify-center z-10">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
             </div>
           )}
@@ -435,7 +435,7 @@ export function ProductTable({
                       <div
                         key={product.id}
                         onClick={() => router.push(`/products/${product.id}`)}
-                        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+                        className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex-1 min-w-0">
@@ -459,7 +459,7 @@ export function ProductTable({
                         </div>
                         
                         {isMainStore ? (
-                          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
                             <div className="text-center">
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Bodega</div>
                               <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.warehouse}</div>
@@ -474,7 +474,7 @@ export function ProductTable({
                             </div>
                           </div>
                         ) : (
-                          <div className="flex justify-center pt-2 border-t border-gray-200 dark:border-gray-700">
+                          <div className="flex justify-center pt-2 border-t border-gray-200 dark:border-neutral-700">
                             <div className="text-center">
                               <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Stock</div>
                               <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
@@ -482,7 +482,7 @@ export function ProductTable({
                           </div>
                         )}
                         
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
                           <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
                             {getStockStatusLabel(product)}
                           </Badge>
@@ -542,7 +542,7 @@ export function ProductTable({
                     return (
                       <Card
                         key={product.id}
-                        className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                        className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
                         onClick={() => {
                           router.push(`/products/${product.id}`)
                         }}
@@ -729,7 +729,7 @@ export function ProductTable({
 
             {/* Paginación - Solo mostrar cuando no está en modo búsqueda */}
             {!isSearching && totalProducts > ITEMS_PER_PAGE && (
-              <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 px-4 md:px-6">
+              <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 px-4 md:px-6">
                 <button
                   onClick={() => onPageChange(currentPage - 1)}
                   disabled={currentPage === 1 || loading}

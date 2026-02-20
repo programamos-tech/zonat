@@ -350,24 +350,24 @@ export default function TransfersPage() {
 
   return (
     <RoleProtectedRoute module="transfers" requiredAction="view">
-      <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
+        <div className="flex flex-col gap-4">
           <div>
-            <div className="flex items-center gap-3 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-800 dark:text-gray-200">Transferencias de Inventario</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-gray-200">Transferencias de Inventario</h1>
               <StoreBadge />
             </div>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
               Gestiona las transferencias de productos entre tiendas
             </p>
           </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={loadTransfers}>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+            <Button variant="outline" onClick={loadTransfers} className="w-full sm:w-auto">
               <RefreshCw className="h-4 w-4 mr-2" />
               Actualizar
             </Button>
             {canManageAllStores && (
-              <Button onClick={handleCreateTransfer} className="bg-cyan-600 hover:bg-cyan-700 text-white">
+              <Button onClick={handleCreateTransfer} className="w-full sm:w-auto bg-cyan-600 hover:bg-cyan-700 text-white">
                 <Plus className="h-4 w-4 mr-2" />
                 Nueva Transferencia
               </Button>
@@ -376,13 +376,14 @@ export default function TransfersPage() {
         </div>
 
         {/* Filtros */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
-          <CardContent className="p-4">
-            <div className="flex gap-2">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
+          <CardContent className="p-3 sm:p-4">
+            <div className="flex flex-wrap gap-2">
               <Button
                 variant={filter === 'all' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('all')}
+                className="flex-1 min-w-[72px] sm:flex-none"
               >
                 Todas
               </Button>
@@ -390,6 +391,7 @@ export default function TransfersPage() {
                 variant={filter === 'pending' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('pending')}
+                className="flex-1 min-w-[72px] sm:flex-none"
               >
                 Pendientes
               </Button>
@@ -397,6 +399,7 @@ export default function TransfersPage() {
                 variant={filter === 'received' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('received')}
+                className="flex-1 min-w-[72px] sm:flex-none"
               >
                 Recibidas
               </Button>
@@ -404,6 +407,7 @@ export default function TransfersPage() {
                 variant={filter === 'cancelled' ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => setFilter('cancelled')}
+                className="flex-1 min-w-[72px] sm:flex-none"
               >
                 Canceladas
               </Button>
@@ -413,7 +417,7 @@ export default function TransfersPage() {
 
         {/* Lista de Transferencias */}
         {transfers.length === 0 ? (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
             <CardContent className="p-12">
               <div className="text-center">
                 <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -445,7 +449,7 @@ export default function TransfersPage() {
               return (
                 <Card
                   key={transfer.id}
-                  className={`bg-white dark:bg-gray-800 border-l-4 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                  className={`bg-white dark:bg-neutral-900 border-l-4 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
                     isExpanded 
                       ? 'border-l-cyan-500 dark:border-l-cyan-400 border-cyan-300 dark:border-cyan-600' 
                       : 'border-l-cyan-500 dark:border-l-cyan-400'
@@ -454,31 +458,29 @@ export default function TransfersPage() {
                 >
                   <CardContent className="p-4 md:p-6">
                     {/* Header de la Transferencia */}
-                    <div className="flex items-start justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-4 mb-2">
-                          <ArrowRightLeft className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-3">
-                              <div 
-                                className="flex-1 select-text cursor-text" 
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Número de Transferencia</div>
-                                <div className="text-xl font-bold text-gray-900 dark:text-white font-mono">
-                                  {transfer.transferNumber || `#${transfer.id.substring(0, 8)}`}
-                                </div>
-                                {transferSales.has(transfer.id) && (
-                                  <div className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
-                                    Factura: {transferSales.get(transfer.id)?.invoiceNumber || 'N/A'}
-                                  </div>
-                                )}
+                        <div className="flex items-start gap-3 mb-3">
+                          <ArrowRightLeft className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
+                          <div className="flex-1 min-w-0">
+                            <div 
+                              className="select-text cursor-text" 
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Número de Transferencia</div>
+                              <div className="text-base sm:text-xl font-bold text-gray-900 dark:text-white font-mono break-all">
+                                {transfer.transferNumber || `#${transfer.id.substring(0, 8)}`}
                               </div>
+                              {transferSales.has(transfer.id) && (
+                                <div className="text-xs text-cyan-600 dark:text-cyan-400 mt-1">
+                                  Factura: {transferSales.get(transfer.id)?.invoiceNumber || 'N/A'}
+                                </div>
+                              )}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 mt-3 sm:mt-4">
                           <div>
                             <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Desde</div>
                             <div className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-1">
@@ -515,9 +517,9 @@ export default function TransfersPage() {
                                       </div>
                         </div>
 
-                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
-                          <div className="flex items-center gap-2">
-                            <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                        <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
+                          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                            <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400 flex-shrink-0" />
                             <span className="text-xs text-gray-500 dark:text-gray-400">Fecha de Creación:</span>
                             <span className="text-sm font-semibold text-gray-900 dark:text-white">
                               {format(new Date(transfer.createdAt), 'dd MMM yyyy, HH:mm', { locale: es })}
@@ -526,7 +528,7 @@ export default function TransfersPage() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center gap-2 ml-4">
+                      <div className="flex items-center justify-end sm:ml-4 flex-shrink-0">
                         <Button
                           variant="ghost"
                           size="sm"
@@ -534,7 +536,7 @@ export default function TransfersPage() {
                             e.stopPropagation()
                             toggleTransfer(transfer.id)
                           }}
-                          className="h-8 w-8 p-0 hover:bg-cyan-50 dark:hover:bg-cyan-900/20"
+                          className="h-9 w-9 sm:h-8 sm:w-8 p-0 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 touch-manipulation"
                         >
                           {isExpanded ? (
                             <ChevronUp className="h-5 w-5 text-cyan-600 dark:text-cyan-400 font-bold" />
@@ -547,7 +549,7 @@ export default function TransfersPage() {
 
                     {/* Detalle Expandible */}
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-4">
                         {/* Información Adicional */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           {transfer.description && (
@@ -614,7 +616,7 @@ export default function TransfersPage() {
                                 return (
                                   <div
                                     key={item.id}
-                                    className={`border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
+                                    className={`border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
                                   >
                                     <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
                                       <div className="flex items-center gap-2">
@@ -673,7 +675,7 @@ export default function TransfersPage() {
                                 )
                               })
                             ) : (
-                              <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
+                              <div className="border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600">
                                 <div className="flex justify-between items-center">
                                   <div>
                                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Producto</div>
@@ -738,7 +740,7 @@ export default function TransfersPage() {
                                       </div>
                                       
                                       {sale.payments && sale.payments.length > 0 ? (
-                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                                        <div className="pt-2 border-t border-gray-200 dark:border-neutral-700 space-y-2">
                                           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Desglose de pagos:</p>
                                           {sale.payments.map((payment) => (
                                             <div key={payment.id} className="flex justify-between items-center">
@@ -755,7 +757,7 @@ export default function TransfersPage() {
                                           ))}
                                         </div>
                                       ) : (
-                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                                           <div className="flex justify-between items-center">
                                             <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                                               <CreditCard className="h-3 w-3" />
@@ -771,7 +773,7 @@ export default function TransfersPage() {
                                       )}
                                       
                                       {sale.invoiceNumber && (
-                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                                        <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                                           <p className="text-xs text-gray-500 dark:text-gray-400">
                                             Factura: {sale.invoiceNumber}
                                           </p>
@@ -780,7 +782,7 @@ export default function TransfersPage() {
                                       
                                       {/* Mostrar precios unitarios en productos */}
                                       {sale.items && sale.items.length > 0 && (
-                                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700 mt-3">
+                                        <div className="pt-2 border-t border-gray-200 dark:border-neutral-700 mt-3">
                                           <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Precios por producto:</p>
                                           <div className="space-y-1">
                                             {transfer.items && transfer.items.length > 0 ? (
@@ -825,7 +827,7 @@ export default function TransfersPage() {
                         })()}
 
                         {/* Acciones */}
-                        <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex flex-col sm:flex-row gap-2 pt-2 border-t border-gray-200 dark:border-neutral-600">
                           <Button
                             variant="outline"
                             size="sm"
@@ -833,7 +835,7 @@ export default function TransfersPage() {
                               e.stopPropagation()
                               handleDownloadPDF(transfer)
                             }}
-                            className="flex-1 border-cyan-300 dark:border-cyan-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-400 dark:hover:border-cyan-600 transition-all"
+                            className="w-full sm:flex-1 border-cyan-300 dark:border-cyan-700 text-cyan-600 dark:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/20 hover:border-cyan-400 dark:hover:border-cyan-600 transition-all"
                           >
                             <Download className="h-4 w-4 mr-2" />
                             Descargar PDF
@@ -849,7 +851,7 @@ export default function TransfersPage() {
                                 e.stopPropagation()
                                 handleCancel(transfer)
                               }}
-                              className="flex-1 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-600 transition-all"
+                              className="w-full sm:flex-1 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-600 transition-all"
                             >
                               <X className="h-4 w-4 mr-2" />
                               Cancelar
@@ -867,11 +869,11 @@ export default function TransfersPage() {
 
         {/* Paginación */}
         {totalTransfers > 10 && (
-          <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 rounded-b-lg">
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-1 px-3 sm:px-4 py-3 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-b-lg">
             <button
               onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
               disabled={currentPage === 1 || loading}
-              className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-9 w-9 sm:h-7 sm:w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-neutral-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
             >
               <ChevronLeft className="h-3.5 w-3.5" />
             </button>
@@ -894,10 +896,10 @@ export default function TransfersPage() {
                       <button
                         onClick={() => setCurrentPage(page)}
                         disabled={loading}
-                        className={`h-7 min-w-[28px] px-2 text-xs rounded border transition-colors ${
+                        className={`h-9 min-w-[36px] sm:h-7 sm:min-w-[28px] px-2 text-xs rounded border transition-colors touch-manipulation ${
                           page === currentPage 
                           ? "bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-300 border-cyan-200 dark:border-cyan-800 font-medium" 
-                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-100 dark:border-gray-600"
+                          : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-100 dark:border-neutral-600"
                         }`}
                       >
                         {page}
@@ -910,7 +912,7 @@ export default function TransfersPage() {
             <button
               onClick={() => setCurrentPage(prev => prev + 1)}
               disabled={currentPage >= Math.ceil(totalTransfers / 10) || loading}
-              className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="h-9 w-9 sm:h-7 sm:w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-neutral-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed touch-manipulation"
             >
               <ChevronRight className="h-3.5 w-3.5" />
             </button>

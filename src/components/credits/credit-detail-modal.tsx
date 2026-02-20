@@ -111,7 +111,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
     }
   }
 
@@ -194,9 +194,9 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col p-4 xl:px-6">
-      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[98vw] xl:max-h-[90vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-neutral-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[98vw] xl:max-h-[90vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-600 flex-shrink-0 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
           <div className="flex items-center space-x-3">
             <CreditCard className="h-6 w-6 text-orange-600" />
             <div>
@@ -216,10 +216,10 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-neutral-900">
           <div className="space-y-4 md:space-y-6">
             {clientCredits.length > 1 && (
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg md:text-xl text-gray-900 dark:text-white flex items-center">
                     <User className="h-5 w-5 md:h-6 md:w-6 mr-2 text-orange-600" />
@@ -234,7 +234,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                           const isSelected = selectedCreditId === c.id
                           const bgColor = isSelected 
                             ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-400 dark:border-orange-500' 
-                            : 'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-600'
+                            : 'bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-600'
                           
                           return (
                             <div
@@ -303,7 +303,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
             {currentCredit && (
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
                 {/* Información del Crédito */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm lg:col-span-1">
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm lg:col-span-1">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg md:text-xl text-gray-900 dark:text-white flex items-center">
                       <Receipt className="h-5 w-5 md:h-6 md:w-6 mr-2 text-orange-600" />
@@ -320,7 +320,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                      <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                         <User className="h-6 w-6 text-orange-600 flex-shrink-0" />
                         <div className="flex-1">
                           <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Cliente</div>
@@ -328,7 +328,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                         </div>
                       </div>
                       
-                      <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-3">
+                      <div className="pt-3 border-t border-gray-200 dark:border-neutral-600 space-y-3">
                         <div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
                           <div className="text-lg font-semibold text-gray-900 dark:text-white">
@@ -364,7 +364,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                       </div>
                       
                       {currentCredit?.dueDate && (
-                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                           <Calendar className="h-6 w-6 text-orange-600 flex-shrink-0" />
                           <div className="flex-1">
                             <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Vencimiento</div>
@@ -376,7 +376,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                       )}
                       
                       {currentCredit?.createdByName && (
-                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                        <div className="flex items-center space-x-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                           <User className="h-6 w-6 text-orange-600 flex-shrink-0" />
                           <div className="flex-1">
                             <div className="text-sm text-gray-600 dark:text-gray-300 mb-1">Registrado por</div>
@@ -389,7 +389,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                 </Card>
 
                 {/* Historial de Abonos */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm lg:col-span-2">
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm lg:col-span-2">
                   <CardHeader className="pb-3">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                       <CardTitle className="text-lg md:text-xl text-gray-900 dark:text-white flex items-center">
@@ -433,7 +433,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                             className={`border rounded-lg p-4 ${
                               currentCredit?.status === 'cancelled' 
                                 ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800' 
-                                : 'bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600'
+                                : 'bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600'
                             } shadow-sm`}
                           >
                             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-center">
@@ -474,7 +474,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                             </div>
                             
                             {payment.description && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
                                 <p className="text-sm text-gray-700 dark:text-gray-300">
                                   {payment.description}
@@ -502,7 +502,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-900 flex-shrink-0 sticky bottom-0">
           <div className="flex-1"></div>
           <div className="flex space-x-3">
             <Button

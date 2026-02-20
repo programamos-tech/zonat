@@ -124,9 +124,9 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
 
   return (
     <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000]">
+      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Package className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
             <div>
@@ -153,7 +153,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
         <form onSubmit={handleSubmit} className="p-4 md:p-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Información del Producto */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                   <FileText className="h-5 w-5 text-cyan-600" />
@@ -187,7 +187,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
             </Card>
 
             {/* Configuración del Ajuste */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                   <AlertTriangle className="h-5 w-5 text-cyan-600" />
@@ -207,7 +207,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                           className={`p-4 rounded-lg border-2 transition-all ${
                             formData.location === 'store'
                               ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                              : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500'
                           }`}
                     >
                       <div className="flex items-center space-x-3">
@@ -231,7 +231,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                             className={`p-4 rounded-lg border-2 transition-all ${
                               formData.location === 'warehouse'
                                 ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                                : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500'
+                                : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500'
                             }`}
                       >
                         <div className="flex items-center space-x-3">
@@ -262,8 +262,8 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       const numericValue = parseFormattedNumber(e.target.value)
                       handleInputChange('newQuantity', numericValue)
                     }}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                      errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                      errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
                     }`}
                     placeholder="Ingrese la nueva cantidad"
                   />
@@ -280,8 +280,8 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <textarea
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                      errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                      errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
                     }`}
                     placeholder="Ej: Inventario físico, producto dañado, corrección de error... (opcional)"
                     rows={3}
@@ -302,7 +302,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           {/* Stock Difference Preview */}
           {formData.newQuantity !== getCurrentStock() && (
             <div className="mt-6">
-              <Card className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-gray-50 dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Diferencia:</span>
@@ -328,12 +328,12 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           )}
 
           {/* Botones dentro del form para que hagan scroll con el contenido */}
-          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-neutral-700">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+              className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Cancelar
             </Button>

@@ -176,7 +176,7 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       {cards.map((card, index) => {
         const Icon = card.icon
         return (
-          <Card key={index} className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 hover:shadow-lg transition-shadow">
+          <Card key={index} className="border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 hover:shadow-lg transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex-1">

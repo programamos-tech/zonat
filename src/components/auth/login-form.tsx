@@ -64,7 +64,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black p-4">
       <div className="w-full max-w-md">
         {/* Logo y Título */}
         <div className="text-center mb-8">
@@ -91,7 +91,7 @@ export function LoginForm() {
         </div>
 
         {/* Formulario de Login */}
-        <Card className="border-gray-200 dark:border-gray-700 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm shadow-xl">
+        <Card className="border-gray-200 dark:border-neutral-700 bg-white/80 dark:bg-neutral-900/80 backdrop-blur-sm shadow-xl">
           <CardHeader className="text-center pb-4">
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white">
               Iniciar Sesión
@@ -112,8 +112,8 @@ export function LoginForm() {
                   <Input
                     id="email"
                     type="email"
-                    placeholder="diego@zonat.com"
-                    className="pl-10 border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500"
+                    placeholder="tu@correo.com"
+                    className="pl-10 border-gray-300 dark:border-neutral-600 focus:border-emerald-500 focus:ring-emerald-500"
                     {...register('email')}
                   />
                 </div>
@@ -135,7 +135,7 @@ export function LoginForm() {
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     placeholder="••••••••"
-                    className="pl-10 pr-10 border-gray-300 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500"
+                    className="pl-10 pr-10 border-gray-300 dark:border-neutral-600 focus:border-emerald-500 focus:ring-emerald-500"
                     {...register('password')}
                   />
                   <button
@@ -185,8 +185,8 @@ export function LoginForm() {
                 Credenciales de Demo
               </h3>
               <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
-                <p><strong>Email:</strong> diego@zonat.com</p>
-                <p><strong>Contraseña:</strong> admin123</p>
+                <p><strong>Email:</strong> (solicitar al administrador)</p>
+                <p><strong>Contraseña:</strong> (solicitar al administrador)</p>
               </div>
             </div>
           </CardContent>

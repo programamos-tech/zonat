@@ -76,7 +76,7 @@ export function RecentSalesCard({ sales, limit = 8 }: RecentSalesCardProps) {
       case 'mixed':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-400'
     }
   }
 
@@ -106,7 +106,7 @@ export function RecentSalesCard({ sales, limit = 8 }: RecentSalesCardProps) {
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-400'
     }
   }
 
@@ -126,7 +126,7 @@ export function RecentSalesCard({ sales, limit = 8 }: RecentSalesCardProps) {
         <div className="h-full overflow-y-auto space-y-3 pr-2">
           {recentSales.length > 0 ? (
             recentSales.map((sale) => (
-              <div key={sale.id} className="p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200">
+              <div key={sale.id} className="p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center space-x-2">
                     <h4 className="font-semibold text-gray-900 dark:text-white">
@@ -168,7 +168,7 @@ export function RecentSalesCard({ sales, limit = 8 }: RecentSalesCardProps) {
             ))
           ) : (
             <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="p-4 rounded-full bg-gray-100 dark:bg-neutral-800 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Receipt className="h-8 w-8 text-gray-400" />
               </div>
               <p className="text-gray-500 dark:text-gray-400">
@@ -179,7 +179,7 @@ export function RecentSalesCard({ sales, limit = 8 }: RecentSalesCardProps) {
         </div>
         
         {sales.length > limit && (
-          <div className="pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
+          <div className="pt-4 border-t border-gray-100 dark:border-neutral-700 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Mostrando {limit} de {sales.length} ventas
             </p>

@@ -180,7 +180,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
 
   return (
     <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000]">
+      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 bg-purple-50 dark:bg-purple-900/20 border-b border-purple-200 dark:border-purple-800 flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -214,7 +214,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
             <div className="flex items-center gap-4">
               {formData.logo ? (
                 <div className="relative">
-                  <div className="h-20 w-20 rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800 flex items-center justify-center">
+                  <div className="h-20 w-20 rounded-lg border-2 border-gray-200 dark:border-neutral-700 overflow-hidden bg-gray-50 dark:bg-neutral-900 flex items-center justify-center">
                     <img
                       src={formData.logo}
                       alt="Logo"
@@ -247,7 +247,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                   </Button>
                 </div>
               ) : (
-                <div className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center">
+                <div className="h-20 w-20 rounded-lg border-2 border-dashed border-gray-300 dark:border-neutral-600 flex items-center justify-center">
                   <ImageIcon className="h-8 w-8 text-gray-400" />
                 </div>
               )}
@@ -348,7 +348,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
           </div>
 
           {/* Botones */}
-          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+          <div className="flex justify-end gap-3 pt-4 border-t border-gray-200 dark:border-neutral-700 flex-shrink-0">
             <Button
               onClick={onClose}
               variant="outline"

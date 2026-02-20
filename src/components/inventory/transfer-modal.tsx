@@ -364,7 +364,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
   return (
     <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 xl:pb-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-neutral-950 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-neutral-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -419,7 +419,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
             </div>
 
             {/* Productos */}
-            <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+            <div className="border border-gray-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-900">
               <div className="flex items-center gap-2 mb-4">
                 <Package className="h-4 w-4 text-cyan-400" />
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -451,7 +451,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                   
                   {/* Resultados de búsqueda */}
                   {globalProductSearch && !loadingProducts && (
-                    <div className="mt-2 max-h-60 overflow-y-auto border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
+                    <div className="mt-2 max-h-60 overflow-y-auto border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900">
                           {availableProducts
                             .filter(p => {
                               // Filtrar productos ya seleccionados
@@ -482,7 +482,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               return (
                                 <div
                                   key={product.id}
-                                  className={`w-full px-4 py-3 border-b border-gray-100 dark:border-gray-700 last:border-b-0 transition-colors flex items-center justify-between gap-3 ${
+                                  className={`w-full px-4 py-3 border-b border-gray-100 dark:border-neutral-700 last:border-b-0 transition-colors flex items-center justify-between gap-3 ${
                                     !hasStock ? 'opacity-60' : ''
                                   }`}
                                 >
@@ -548,7 +548,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                       const isComplete = item.quantity > 0 && item.productId && item.fromLocation
 
                       return (
-                        <div key={index} className="border border-gray-200 dark:border-gray-700 rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50">
+                        <div key={index} className="border border-gray-200 dark:border-neutral-700 rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex-1 flex items-start gap-2">
                               {isComplete && (
@@ -601,10 +601,10 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                         disabled={isDisabled}
                                         className={`p-3 rounded-lg border-2 transition-all text-left ${
                                           isDisabled
-                                            ? 'border-gray-200 dark:border-gray-700 text-gray-400 cursor-not-allowed opacity-50'
+                                            ? 'border-gray-200 dark:border-neutral-700 text-gray-400 cursor-not-allowed opacity-50'
                                             : isSelected
                                             ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                                            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                                            : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400'
                                         }`}
                                       >
                                         <div className="flex items-center gap-2 mb-1">
@@ -663,7 +663,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                     }
                                   }}
                                   disabled={!item.productId || availableQty <= 0}
-                                  className="w-full h-10 px-3 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-full h-10 px-3 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="0"
                                 />
                                 {stockAlerts[index] ? (
@@ -688,7 +688,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                   value={formatCurrency(item.unitPrice || 0)}
                                   disabled
                                   readOnly
-                                  className="w-full h-10 text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                                  className="w-full h-10 text-sm bg-gray-100 dark:bg-neutral-900 text-gray-600 dark:text-gray-400 cursor-not-allowed"
                                 />
                                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
                                   Precio de venta
@@ -757,7 +757,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
             {/* Método de Pago */}
             {items.length > 0 && calculateTotal() > 0 && (
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
+              <div className="border border-gray-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-900">
                 <div className="flex items-center gap-2 mb-3">
                   <CreditCard className="h-4 w-4 text-cyan-400" />
                   <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
@@ -790,7 +790,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
                   {/* Campos para pago mixto */}
                   {paymentMethod === 'mixed' && (
-                    <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                    <div className="space-y-3 p-3 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                       <div>
                         <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
                           Efectivo
@@ -825,7 +825,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                           className="w-full h-10 text-sm"
                         />
                       </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-600">
                         <div className="flex justify-between items-center text-sm">
                           <span className="text-gray-600 dark:text-gray-400">Total ingresado:</span>
                           <span className="font-semibold text-gray-900 dark:text-white">
@@ -883,7 +883,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
           </div>
 
         {/* Footer */}
-        <div className="flex flex-col gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex flex-col gap-3 p-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
           {/* Alerta si no hay tienda seleccionada (solo mostrar después de intentar guardar) */}
           {showStoreError && !toStoreId && (
             <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
@@ -899,7 +899,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               onClick={onClose}
               variant="outline"
               disabled={isSaving}
-              className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+              className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
             >
               Cancelar
             </Button>

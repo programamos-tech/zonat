@@ -76,7 +76,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   // Durante el render inicial en el servidor, no mostrar nada
   if (!isMounted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
         <div className="text-center">
           {/* Logo con animación simple */}
           <div className="relative">
@@ -91,7 +91,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-white dark:bg-neutral-950">
         <div className="text-center">
           {/* Logo con animación simple */}
           <div className="relative">

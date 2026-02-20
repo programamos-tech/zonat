@@ -201,7 +201,7 @@ export default function SaleDetailModal({
       case 'cancelled':
         return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-950 dark:text-gray-200'
     }
   }
 
@@ -231,7 +231,7 @@ export default function SaleDetailModal({
       case 'mixed':
         return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-950 dark:text-gray-200'
     }
   }
 
@@ -659,10 +659,10 @@ export default function SaleDetailModal({
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col p-4 xl:px-6">
-      <div className="bg-white dark:bg-gray-800 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 overflow-hidden">
+      <div className="bg-white dark:bg-neutral-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[85vh] xl:m-auto flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 overflow-hidden">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-600 flex-shrink-0 bg-green-50 dark:bg-green-900/20">
+        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-600 flex-shrink-0 bg-green-50 dark:bg-green-900/20">
           <div className="flex items-center space-x-3">
             <Receipt className="h-6 w-6 text-green-600" />
             <div>
@@ -718,11 +718,11 @@ export default function SaleDetailModal({
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-gray-800">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-white dark:bg-neutral-900">
           <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
             
             {/* Sale Information */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm">
               <CardHeader className="pb-2">
                 <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
                   <Receipt className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
@@ -748,7 +748,7 @@ export default function SaleDetailModal({
                         </div>
                       </div>
                       {sale.paymentMethod === 'credit' && credit && (
-                        <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                        <div className="border-l border-gray-300 dark:border-neutral-600 pl-3">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
                           <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                             #{getCreditId(credit)}
@@ -756,7 +756,7 @@ export default function SaleDetailModal({
                         </div>
                       )}
                       {transfer && (sale.paymentMethod === 'transfer' || sale.paymentMethod === 'mixed') && (
-                        <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                        <div className="border-l border-gray-300 dark:border-neutral-600 pl-3">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Transferencia</div>
                           <div className="text-sm font-mono font-semibold text-cyan-600 dark:text-cyan-400">
                             {transfer.transferNumber || `#${getTransferId(transfer)}`}
@@ -807,13 +807,13 @@ export default function SaleDetailModal({
                 
                 {/* Sección de Pagos Mixtos */}
                 {sale.paymentMethod === 'mixed' && sale.payments && sale.payments.length > 0 && (
-                  <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                  <div className="mt-4 p-4 bg-gray-50 dark:bg-neutral-800 rounded-lg border border-gray-200 dark:border-neutral-600">
                     <h4 className="text-sm font-medium text-gray-900 dark:text-white mb-3">
                       Desglose de Pago Mixto
                     </h4>
                     <div className="space-y-2">
                       {sale.payments.map((payment, index) => (
-                        <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-gray-600 rounded border border-gray-200 dark:border-gray-500">
+                        <div key={index} className="flex justify-between items-center py-2 px-3 bg-white dark:bg-neutral-700 rounded border border-gray-200 dark:border-neutral-600">
                           <div className="flex items-center space-x-3">
                             <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300">
                               {getPaymentMethodLabel(payment.paymentType)}
@@ -829,7 +829,7 @@ export default function SaleDetailModal({
                           </span>
                         </div>
                       ))}
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-600">
                         <div className="flex justify-between items-center font-medium">
                           <span className="text-gray-900 dark:text-white">Total:</span>
                           <span className="text-emerald-600 dark:text-emerald-400">
@@ -856,7 +856,7 @@ export default function SaleDetailModal({
                   
                   {/* Motivo de cancelación */}
                   {sale.status === 'cancelled' && sale.cancellationReason && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600">
                       <div className="flex items-start space-x-3">
                         <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400 flex-shrink-0 mt-0.5" />
                         <div className="flex-1">
@@ -876,7 +876,7 @@ export default function SaleDetailModal({
           </div>
 
           {/* Products Table - Full Width */}
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm mt-3 md:mt-4">
+          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm mt-3 md:mt-4">
             <CardHeader className="pb-2">
               <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center">
                 <Package className="h-4 w-4 md:h-5 md:w-5 mr-2 text-green-600" />
@@ -886,8 +886,8 @@ export default function SaleDetailModal({
             <CardContent className="p-3">
               <div className="overflow-x-auto overflow-y-auto" style={{ maxHeight: '500px' }}>
                 <table className="w-full">
-                  <thead className="sticky top-0 bg-white dark:bg-gray-800 z-10">
-                    <tr className="border-b border-gray-200 dark:border-gray-600">
+                  <thead className="sticky top-0 bg-white dark:bg-neutral-900 z-10">
+                    <tr className="border-b border-gray-200 dark:border-neutral-600">
                       <th className="text-left py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Producto</th>
                       <th className="text-center py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Cantidad</th>
                       <th className="text-right py-2 px-2 md:px-4 font-medium text-gray-700 dark:text-gray-300 text-xs md:text-sm">Precio Unit.</th>
@@ -905,7 +905,7 @@ export default function SaleDetailModal({
                       const subtotalAfterDiscount = Math.max(0, baseTotal - discountAmount)
                       
                       return (
-                        <tr key={item.id} className={`border-b border-gray-600 ${index % 2 === 0 ? 'bg-gray-100 dark:bg-gray-600' : ''}`}>
+                        <tr key={item.id} className={`border-b border-gray-600 ${index % 2 === 0 ? 'bg-gray-100 dark:bg-neutral-700' : ''}`}>
                           <td className="py-2 md:py-3 px-2 md:px-4">
                           <div className="font-medium text-gray-900 dark:text-white">{item.productName}</div>
                             <div className="text-xs text-gray-500 dark:text-gray-400">Ref: {item.productReferenceCode || 'N/A'}</div>
@@ -961,7 +961,7 @@ export default function SaleDetailModal({
           {/* Cancel Form */}
           {showCancelForm && (
             <div ref={cancelFormRef} className="mt-4">
-              <Card className="bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600">
+              <Card className="bg-gray-50 dark:bg-neutral-800 border-gray-200 dark:border-neutral-600">
               <CardHeader>
                 <CardTitle className="text-lg text-red-500 dark:text-red-400 flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2 text-red-400" />
@@ -978,7 +978,7 @@ export default function SaleDetailModal({
                     onChange={(e) => setCancelReason(e.target.value)}
                     placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
                     disabled={isCancelling}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-neutral-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     rows={4}
                   />
                   <div className="mt-1 text-right">
@@ -1013,7 +1013,7 @@ export default function SaleDetailModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-900 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
           <div className="flex space-x-3">
             {/* Botones de borrador comentados
             {sale.status === 'draft' && onEdit && (

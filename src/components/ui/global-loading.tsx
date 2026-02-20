@@ -9,7 +9,7 @@ export function GlobalLoading() {
   if (!isLoading) return null
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-gray-900">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-white dark:bg-neutral-950">
       <div className="text-center">
         {/* Logo con animación simple */}
         <div className="relative">

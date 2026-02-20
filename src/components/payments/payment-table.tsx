@@ -180,9 +180,9 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
       case 'overdue':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'cancelled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
     }
   }
 
@@ -211,7 +211,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -274,7 +274,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col md:flex-row gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -287,7 +287,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                   setSearchTerm(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <select
@@ -296,7 +296,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                 setFilterStatus(e.target.value)
                 setCurrentPage(1)
               }}
-              className="px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700 md:w-auto w-full"
+              className="px-3 py-2 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 md:w-auto w-full"
             >
               <option value="all">Todos los estados</option>
               <option value="pending">Pendiente</option>
@@ -310,7 +310,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="text-center py-12">
@@ -342,7 +342,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                     <div
                       key={credit.id}
                       onClick={() => router.push(`/payments/${credit.clientId}`)}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+                      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -368,7 +368,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="text-center">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
                           <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatCurrency(credit.totalAmount)}</div>
@@ -382,7 +382,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                       </div>
                       
                       {credit.dueDate && credit.status !== 'completed' && (
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                           <div className="flex items-center justify-between text-xs">
                             <span className="text-gray-500 dark:text-gray-400">Vencimiento:</span>
                             <span className={`font-semibold ${getDueDateColor(credit.dueDate)}`}>
@@ -392,7 +392,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                         </div>
                       )}
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="flex-1 min-w-0">
                           {credit.lastPaymentAmount && (
                             <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={`Último abono: ${formatCurrency(credit.lastPaymentAmount)}`}>
@@ -423,7 +423,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
                     <div key={credit.id}>
                       {/* Card Principal */}
                       <Card 
-                        className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                        className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
                         onClick={() => {
                           // Navegar a la página del cliente
                           router.push(`/payments/${credit.clientId}`)
@@ -483,7 +483,7 @@ export function CreditTable({ credits, onView, onCreate, isLoading = false, onRe
 
                 {/* Paginación */}
                 {totalPages > 1 && (
-                  <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
                     <button
                       onClick={() => goToPage(currentPage - 1)}
                       disabled={currentPage === 1}

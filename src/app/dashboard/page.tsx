@@ -1224,16 +1224,16 @@ export default function DashboardPage() {
   if (isInitialLoading && allSales.length === 0) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen">
+        <div className="p-4 md:p-6 bg-white dark:bg-neutral-950 min-h-screen">
           {/* Header Skeleton */}
           <div className="mb-4 md:mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
               <div>
                 <div className="flex items-center gap-3 mb-2">
-                  <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                  <div className="h-7 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                  <div className="w-8 h-8 bg-gray-200 dark:bg-neutral-800 rounded-lg animate-pulse"></div>
+                  <div className="h-7 w-32 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse"></div>
                 </div>
-                <div className="h-4 w-64 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-4 w-64 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse"></div>
               </div>
             </div>
           </div>
@@ -1241,13 +1241,13 @@ export default function DashboardPage() {
           {/* Cards Skeleton */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
             {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-4 md:p-6 shadow-sm">
+              <div key={i} className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-4 md:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg animate-pulse"></div>
-                  <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
+                  <div className="w-10 h-10 bg-gray-200 dark:bg-neutral-800 rounded-lg animate-pulse"></div>
+                  <div className="h-4 w-20 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse mb-2"></div>
                 </div>
-                <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded animate-pulse"></div>
+                <div className="h-8 w-32 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse mb-2"></div>
+                <div className="h-4 w-24 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse"></div>
               </div>
             ))}
           </div>
@@ -1274,10 +1274,10 @@ export default function DashboardPage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-4 md:p-6 bg-white dark:bg-gray-900 min-h-screen relative">
+      <div className="p-4 md:p-6 bg-white dark:bg-neutral-950 min-h-screen relative">
         {/* Overlay de carga para actualizaciones */}
         {(isRefreshing || isFiltering) && (
-          <div className="absolute inset-0 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="flex flex-col items-center justify-center -mt-[200px]">
               {/* Spinner minimalista */}
               <div className="w-12 h-12 mb-4">
@@ -1291,7 +1291,7 @@ export default function DashboardPage() {
         )}
 
         {/* Header con estilo de las otras páginas */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 mb-3 md:mb-6">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 mb-3 md:mb-6">
           <CardHeader className="p-3 md:p-6">
             <div className="flex flex-col gap-2 md:gap-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -1333,7 +1333,7 @@ export default function DashboardPage() {
                         <select
                           value={dateFilter}
                           onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
-                          className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className="w-full appearance-none bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                         >
                           {(['today', 'specific', 'all'] as DateFilter[]).map((filter) => (
                             <option key={filter} value={filter}>
@@ -1354,7 +1354,7 @@ export default function DashboardPage() {
                           <select
                             value={selectedYear}
                             onChange={(e) => handleYearChange(Number(e.target.value))}
-                            className="w-full appearance-none bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            className="w-full appearance-none bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                           >
                             {availableYears.map((year) => (
                               <option key={year} value={year}>
@@ -1396,7 +1396,7 @@ export default function DashboardPage() {
                     <Button
                       onClick={() => setHideNumbers(!hideNumbers)}
                       variant="outline"
-                      className="justify-center text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-gray-600 dark:hover:bg-gray-700 text-xs md:text-sm px-2.5 md:px-3 py-2"
+                      className="justify-center text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-neutral-600 dark:hover:bg-gray-700 text-xs md:text-sm px-2.5 md:px-3 py-2"
                       title={hideNumbers ? 'Mostrar números' : 'Ocultar números'}
                     >
                       {hideNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
@@ -1422,7 +1422,7 @@ export default function DashboardPage() {
           {/* Total Ingresos */}
           <div
             onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
@@ -1448,7 +1448,7 @@ export default function DashboardPage() {
           {/* Efectivo */}
           <div
             onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -1474,7 +1474,7 @@ export default function DashboardPage() {
           {/* Transferencia */}
           <div
             onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
@@ -1503,7 +1503,7 @@ export default function DashboardPage() {
               // Facturas Anuladas para Super Admin
               <div
                 onClick={() => setShowCancelledModal(true)}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
@@ -1529,7 +1529,7 @@ export default function DashboardPage() {
               // Crédito para Admin (no Super Admin)
               <div
                 onClick={() => router.push('/payments')}
-                className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+                className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1570,7 +1570,7 @@ export default function DashboardPage() {
                   goToCredits()
                 }
               }}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
+              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1593,7 +1593,7 @@ export default function DashboardPage() {
           {/* Garantías Completadas */}
           <div
             onClick={() => router.push('/warranties')}
-            className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
+            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
           >
             <div className="flex items-center justify-between mb-3">
               <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
@@ -1615,7 +1615,7 @@ export default function DashboardPage() {
           {isSuperAdmin && (
             <div
               onClick={() => router.push('/sales')}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
+              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -1643,7 +1643,7 @@ export default function DashboardPage() {
           {isSuperAdmin && (
             <div
               onClick={() => router.push('/inventory/products')}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
+              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="p-1.5 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
@@ -1676,7 +1676,7 @@ export default function DashboardPage() {
                   goToCredits()
                 }
               }}
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
+              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
             >
               <div className="flex items-center justify-between mb-3">
                 <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -1700,7 +1700,7 @@ export default function DashboardPage() {
           ) : (
             // Facturas Anuladas para otros usuarios
             <div
-              className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
+              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
               onClick={() => setShowCancelledModal(true)}
             >
               <div className="flex items-center justify-between mb-2 md:mb-4">
@@ -1717,7 +1717,7 @@ export default function DashboardPage() {
               </p>
 
               {/* Resumen adicional */}
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-gray-600 space-y-1.5 md:space-y-2 mt-auto">
+              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-neutral-600 space-y-1.5 md:space-y-2 mt-auto">
                 <div className="flex items-center justify-between text-xs md:text-sm">
                   <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
                   <span className="font-semibold text-red-600 dark:text-red-400">
@@ -1750,7 +1750,7 @@ export default function DashboardPage() {
         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
           {/* Tendencia de Ingresos - Dinámica según filtros */}
           {isSuperAdmin && (
-            <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm">
+            <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
@@ -2098,7 +2098,7 @@ export default function DashboardPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
             {/* Top Productos Más Rentables */}
             {isSuperAdmin && (
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm">
+              <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
@@ -2221,7 +2221,7 @@ export default function DashboardPage() {
 
             {/* Ingresos por Método de Pago */}
             {isSuperAdmin && (
-              <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-4 md:p-6 shadow-sm">
+              <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm">
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">

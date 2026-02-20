@@ -44,7 +44,7 @@ export function TopProductsCard({ products, limit = 5 }: TopProductsCardProps) {
       case 0:
         return 'bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-400'
       case 1:
-        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300'
+        return 'bg-gray-100 dark:bg-neutral-800 text-gray-800 dark:text-gray-300'
       case 2:
         return 'bg-amber-100 dark:bg-amber-900/20 text-amber-800 dark:text-amber-400'
       default:
@@ -68,7 +68,7 @@ export function TopProductsCard({ products, limit = 5 }: TopProductsCardProps) {
         <div className="space-y-3">
           {topProducts.length > 0 ? (
             topProducts.map((product, index) => (
-              <div key={product.id} className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200">
+              <div key={product.id} className="flex items-center justify-between p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm hover:shadow-md transition-all duration-200">
                 <div className="flex items-center space-x-4">
                   <div className={`p-2 rounded-xl ${getRankColor(index)} shadow-sm`}>
                     {getRankIcon(index)}
@@ -101,7 +101,7 @@ export function TopProductsCard({ products, limit = 5 }: TopProductsCardProps) {
             ))
           ) : (
             <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="p-4 rounded-full bg-gray-100 dark:bg-neutral-800 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Package className="h-8 w-8 text-gray-400" />
               </div>
               <p className="text-gray-500 dark:text-gray-400">

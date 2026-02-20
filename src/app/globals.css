@@ -1,5 +1,20 @@
 @import "tailwindcss";
 
+/* Verde de marca: tono cálido y coherente (sidebar, botones y acentos mismo family) */
+@theme {
+  --color-emerald-50: #f2fce8;
+  --color-emerald-100: #e2f9d4;
+  --color-emerald-200: #c5f2a8;
+  --color-emerald-300: #9de872;
+  --color-emerald-400: #75dc45;
+  --color-emerald-500: #52c42a;
+  --color-emerald-600: #3dab1f;
+  --color-emerald-700: #2e8f1a;
+  --color-emerald-800: #24701a;
+  --color-emerald-900: #1a5516;
+  --color-emerald-950: #0d2f0a;
+}
+
 /* Force light mode styles */
 html.light {
   background-color: #ffffff !important;
@@ -14,13 +29,15 @@ html.light * {
   background-color: inherit !important;
 }
 
-/* Force dark mode styles */
+/* Force dark mode styles - negro mate con difuminado sutil */
 html.dark {
   background-color: #0a0a0a !important;
+  background-image: linear-gradient(165deg, #0a0a0a 0%, #0f0f0f 35%, #141414 50%, #0f0f0f 65%, #0a0a0a 100%) !important;
+  background-attachment: fixed !important;
 }
 
 html.dark body {
-  background-color: #0a0a0a !important;
+  background-color: transparent !important;
   color: #ededed !important;
 }
 
@@ -42,6 +59,23 @@ body {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Ocultar barra de scroll en tablet y mobile en toda la app (scroll sigue funcionando) */
+@media (max-width: 1280px) {
+  html,
+  body,
+  * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar,
+  *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
 }
 
 /* Estilos específicos para tablets en la tabla de productos */

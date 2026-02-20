@@ -67,7 +67,7 @@ export function StockOverviewCard({
           {/* Estado general del stock */}
           <div className={`p-4 rounded-xl ${stockStatus.bgColor} shadow-sm`}>
             <div className="flex items-center space-x-3">
-              <div className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+              <div className="p-2 rounded-lg bg-white dark:bg-neutral-900 shadow-sm">
                 <StatusIcon className={`h-4 w-4 ${stockStatus.color}`} />
               </div>
               <span className={`font-medium ${stockStatus.color}`}>
@@ -78,8 +78,8 @@ export function StockOverviewCard({
 
           {/* Distribución del stock */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-600 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-neutral-700 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Package className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </div>
               <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">
@@ -90,7 +90,7 @@ export function StockOverviewCard({
               </p>
             </div>
 
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Warehouse className="h-6 w-6 text-purple-600" />
               </div>
@@ -102,7 +102,7 @@ export function StockOverviewCard({
               </p>
             </div>
 
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Store className="h-6 w-6 text-emerald-600" />
               </div>
@@ -117,7 +117,7 @@ export function StockOverviewCard({
 
           {/* Estadísticas adicionales */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 {totalProducts}
               </p>
@@ -126,7 +126,7 @@ export function StockOverviewCard({
               </p>
             </div>
 
-            <div className="text-center p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <p className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
                 {lowStockProducts + outOfStockProducts}
               </p>
@@ -143,7 +143,7 @@ export function StockOverviewCard({
                 <span>Bodega</span>
                 <span>{totalStock > 0 ? ((warehouseStock / totalStock) * 100).toFixed(1) : 0}%</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
                 <div 
                   className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${totalStock > 0 ? (warehouseStock / totalStock) * 100 : 0}%` }}
@@ -156,7 +156,7 @@ export function StockOverviewCard({
                 <span>Local</span>
                 <span>{totalStock > 0 ? ((localStock / totalStock) * 100).toFixed(1) : 0}%</span>
               </div>
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
                 <div 
                   className="bg-gradient-to-r from-emerald-500 to-emerald-600 h-2 rounded-full transition-all duration-500"
                   style={{ width: `${totalStock > 0 ? (localStock / totalStock) * 100 : 0}%` }}

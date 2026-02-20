@@ -113,7 +113,7 @@ export function ProfitInvestmentCard({
         <div className="space-y-6">
           {/* Resumen principal */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <DollarSign className="h-6 w-6 text-emerald-600" />
               </div>
@@ -125,7 +125,7 @@ export function ProfitInvestmentCard({
               </p>
             </div>
 
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-900/20 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Target className="h-6 w-6 text-blue-600" />
               </div>
@@ -137,7 +137,7 @@ export function ProfitInvestmentCard({
               </p>
             </div>
 
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-900/20 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <TrendingUp className="h-6 w-6 text-purple-600" />
               </div>
@@ -151,7 +151,7 @@ export function ProfitInvestmentCard({
           </div>
 
           {/* Margen de ganancia */}
-          <div className="p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+          <div className="p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <span className="text-lg font-medium text-gray-900 dark:text-white">
@@ -181,7 +181,7 @@ export function ProfitInvestmentCard({
               </div>
 
               {/* Barra de progreso del margen */}
-              <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+              <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full transition-all duration-700 ${
                     profitMargin >= 50 ? 'bg-gradient-to-r from-green-500 to-green-600' :
@@ -196,7 +196,7 @@ export function ProfitInvestmentCard({
 
           {/* Comparación de ganancias */}
           {previousProfit > 0 && (
-            <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-700/50">
+            <div className="p-4 rounded-xl bg-gray-50 dark:bg-neutral-800/50">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm text-gray-600 dark:text-gray-400">
                   Ganancia período anterior:
@@ -220,7 +220,7 @@ export function ProfitInvestmentCard({
           )}
 
           {/* ROI (Return on Investment) */}
-          <div className="p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+          <div className="p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                 Retorno de Inversión (ROI)

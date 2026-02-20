@@ -107,7 +107,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
@@ -128,7 +128,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-4">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
@@ -138,13 +138,13 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
                 placeholder="Buscar roles..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
             >
               <option value="all">Todos los tipos</option>
               <option value="system">Sistema</option>
@@ -155,7 +155,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-0">
           {filteredRoles.length === 0 ? (
             <div className="text-center py-12">
@@ -177,7 +177,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-neutral-800">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       #
@@ -202,7 +202,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredRoles.map((role, index) => {
                     const TypeIcon = getTypeIcon(role.isSystem)
                     return (
@@ -249,7 +249,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
                                   {permission.actions.map((action, actionIdx) => (
                                     <Badge
                                       key={actionIdx}
-                                      className="text-xs bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300"
+                                      className="text-xs bg-gray-100 text-gray-700 dark:bg-neutral-800 dark:text-gray-300"
                                     >
                                       {getActionLabel(action)}
                                     </Badge>

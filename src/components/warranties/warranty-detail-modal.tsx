@@ -61,9 +61,9 @@ export function WarrantyDetailModal({
       case 'rejected':
         return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
       case 'discarded':
-        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
+        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-600'
       default:
-        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-700 dark:text-gray-300 dark:border-gray-600'
+        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-600'
     }
   }
 
@@ -105,9 +105,9 @@ export function WarrantyDetailModal({
     <>
       {/* Modal Principal */}
       <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center xl:pl-6 xl:pr-4 p-4">
-        <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+        <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
+          <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
             <div className="flex items-center gap-3">
               <Shield className="h-5 w-5 md:h-8 md:w-8 text-purple-600" />
               <div>
@@ -130,7 +130,7 @@ export function WarrantyDetailModal({
           <div className="flex-1 overflow-y-auto p-4 md:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Información General */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                     <FileText className="h-5 w-5 text-purple-600" />
@@ -187,7 +187,7 @@ export function WarrantyDetailModal({
               </Card>
 
               {/* Información del Cliente */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                     <User className="h-5 w-5 text-purple-600" />
@@ -215,7 +215,7 @@ export function WarrantyDetailModal({
               </Card>
 
               {/* Producto Recibido */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="h-5 w-5 text-red-600" />
@@ -245,7 +245,7 @@ export function WarrantyDetailModal({
                   )}
                   <div>
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Motivo de la Garantía:</span>
-                    <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <p className="text-sm text-gray-900 dark:text-white bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
                       {warranty.reason || '-'}
                     </p>
                   </div>
@@ -253,7 +253,7 @@ export function WarrantyDetailModal({
               </Card>
 
               {/* Producto Entregado */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="h-5 w-5 text-green-600" />
@@ -316,7 +316,7 @@ export function WarrantyDetailModal({
           </div>
 
           {/* Footer */}
-          <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+          <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
             <div className="flex items-center gap-3">
               {/* Botón de cambiar estado eliminado */}
             </div>

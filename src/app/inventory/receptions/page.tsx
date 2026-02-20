@@ -141,7 +141,7 @@ export default function ReceptionsPage() {
 
   return (
     <RoleProtectedRoute module="receptions" requiredAction="view">
-      <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
             <div className="flex items-center gap-3 flex-wrap">
@@ -159,7 +159,7 @@ export default function ReceptionsPage() {
         </div>
 
         {/* Filtros */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
           <CardContent className="p-4">
             <div className="flex gap-2">
               <Button
@@ -189,7 +189,7 @@ export default function ReceptionsPage() {
 
         {/* Lista de Transferencias Pendientes */}
         {filter !== 'received' && (
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
             <CardContent className="p-4 md:p-6">
               {pendingTransfers.length === 0 ? (
                 <div className="p-12">
@@ -216,7 +216,7 @@ export default function ReceptionsPage() {
                 return (
                   <Card
                     key={transfer.id}
-                    className={`bg-white dark:bg-gray-800 border-l-4 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    className={`bg-white dark:bg-neutral-900 border-l-4 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
                       isExpanded 
                         ? 'border-l-cyan-500 dark:border-l-cyan-400 border-cyan-300 dark:border-cyan-600' 
                         : 'border-l-cyan-500 dark:border-l-cyan-400'
@@ -276,7 +276,7 @@ export default function ReceptionsPage() {
                             </div>
                           </div>
 
-                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -310,7 +310,7 @@ export default function ReceptionsPage() {
 
                       {/* Detalle Expandible */}
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-4">
                           {/* Información Adicional */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {transfer.description && (
@@ -377,7 +377,7 @@ export default function ReceptionsPage() {
                                   return (
                                     <div
                                       key={item.id}
-                                      className={`border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
+                                      className={`border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
                                     >
                                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
                                         <div className="flex items-center gap-2">
@@ -436,7 +436,7 @@ export default function ReceptionsPage() {
                                   )
                                 })
                               ) : (
-                                <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
+                                <div className="border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600">
                                   <div className="flex justify-between items-center">
                                     <div>
                                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Producto</div>
@@ -460,7 +460,7 @@ export default function ReceptionsPage() {
 
                           {/* Acción - Solo mostrar si está pendiente */}
                           {!isReceived && (
-                            <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-neutral-600">
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -483,7 +483,7 @@ export default function ReceptionsPage() {
 
                   {/* Paginación - Pendientes */}
                   {pendingTotal > 10 && (
-                    <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
                       <button
                         onClick={() => setPendingPage(prev => Math.max(1, prev - 1))}
                         disabled={pendingPage === 1 || loading}
@@ -546,7 +546,7 @@ export default function ReceptionsPage() {
 
         {/* Lista de Transferencias Recibidas */}
         {filter !== 'pending' && (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
             <CardContent className="p-4 md:p-6">
               {receivedTransfers.length === 0 ? (
                 <div className="p-12">
@@ -573,7 +573,7 @@ export default function ReceptionsPage() {
                 return (
                   <Card
                     key={transfer.id}
-                    className={`bg-white dark:bg-gray-800 border-l-4 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                    className={`bg-white dark:bg-neutral-900 border-l-4 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
                       isExpanded 
                         ? 'border-l-cyan-500 dark:border-l-cyan-400 border-cyan-300 dark:border-cyan-600' 
                         : 'border-l-cyan-500 dark:border-l-cyan-400'
@@ -633,7 +633,7 @@ export default function ReceptionsPage() {
                             </div>
                           </div>
 
-                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-xs text-gray-500 dark:text-gray-400">
@@ -667,7 +667,7 @@ export default function ReceptionsPage() {
 
                       {/* Detalle Expandible */}
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-4">
                           {/* Información Adicional */}
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {transfer.description && (
@@ -734,7 +734,7 @@ export default function ReceptionsPage() {
                                   return (
                                     <div
                                       key={item.id}
-                                      className={`border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
+                                      className={`border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600 ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : ''}`}
                                     >
                                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
                                         <div className="flex items-center gap-2">
@@ -793,7 +793,7 @@ export default function ReceptionsPage() {
                                   )
                                 })
                               ) : (
-                                <div className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600">
+                                <div className="border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600">
                                   <div className="flex justify-between items-center">
                                     <div>
                                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Producto</div>
@@ -817,7 +817,7 @@ export default function ReceptionsPage() {
 
                           {/* Acción - Solo mostrar si está pendiente */}
                           {!isReceived && (
-                            <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                            <div className="flex gap-2 pt-2 border-t border-gray-200 dark:border-neutral-600">
                               <Button
                                 onClick={(e) => {
                                   e.stopPropagation()
@@ -840,7 +840,7 @@ export default function ReceptionsPage() {
 
                   {/* Paginación - Recibidas */}
                   {receivedTotal > 10 && (
-                    <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-gray-800">
+                    <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800">
                       <button
                         onClick={() => setReceivedPage(prev => Math.max(1, prev - 1))}
                         disabled={receivedPage === 1 || loading}

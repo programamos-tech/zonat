@@ -159,7 +159,8 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
       <div 
         ref={sidebarRef}
         className={cn(
-          "fixed inset-y-0 left-0 z-40 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 shadow-sm transform transition-all duration-300 ease-in-out xl:translate-x-0 w-56",
+          "fixed inset-y-0 left-0 z-40 overflow-hidden rounded-r-2xl xl:rounded-r-3xl shadow-[4px_0_24px_-4px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_30px_-4px_rgba(0,0,0,0.4)] transform transition-all duration-300 ease-in-out xl:translate-x-0 w-56",
+          "bg-gradient-to-r from-transparent via-white/35 dark:via-neutral-950/40 to-white/70 dark:to-neutral-950/75 backdrop-blur-2xl border-r border-white/15 dark:border-neutral-600/30",
           isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
           className
         )}
@@ -168,9 +169,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           {/* Logo y Tienda */}
           <div className={cn(
             "px-4 py-4 border-b transition-all duration-300",
-            isMainStoreUser(user)
-              ? "bg-emerald-50/50 dark:bg-emerald-900/10 border-emerald-200 dark:border-emerald-800/30"
-              : "border-gray-100 dark:border-gray-800"
+            "border-white/30 dark:border-neutral-700/40"
           )}>
             <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity flex flex-col items-center relative">
               <div className="relative">
@@ -193,12 +192,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               </div>
               {currentStore && (
                 <div className="mt-2 text-center">
-                  <p className={cn(
-                    "text-xs font-semibold truncate max-w-[180px] transition-colors",
-                    isMainStoreUser(user)
-                      ? "text-emerald-700 dark:text-emerald-300"
-                      : "text-gray-700 dark:text-gray-300"
-                  )}>
+                  <p className="text-xs font-semibold truncate max-w-[180px] text-gray-800 dark:text-white transition-colors">
                     {currentStore.name}
                   </p>
                 </div>
@@ -247,32 +241,17 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 (item.href === '/stores' && pathname?.startsWith('/stores')) ||
                 isSubmenuActive
               
-              // Colores por módulo para el estado activo (basados en los colores de los modales)
-              const getActiveColor = () => {
-                // Si es un menú con submenú, usar el color del grupo
-                if (item.name === 'Inventario') {
-                  return 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400'
-                }
-                if (item.name === 'Comercial') {
-                  return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                }
-                if (item.name === 'Administración') {
-                  return 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                }
-                
-                // Colores para menús individuales
-                switch (item.module) {
-                  case 'dashboard': return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                  case 'products': return 'bg-cyan-50 dark:bg-cyan-900/20 text-cyan-700 dark:text-cyan-400'
-                  case 'clients': return 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400'
-                  case 'sales': return 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400'
-                  case 'warranties': return 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
-                  case 'payments': return 'bg-orange-50 dark:bg-orange-900/20 text-orange-700 dark:text-orange-400'
-                  case 'roles': return 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-700 dark:text-indigo-400'
-                  case 'logs': return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400'
-                  case 'stores': return 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-400'
-                  default: return 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white'
-                }
+              // Selector activo: solo gris/blanco
+              const getActiveColor = () =>
+                'bg-white/90 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
+
+              // Color del icono según el módulo
+              const getIconColorForItem = (active: boolean) => {
+                if (item.name === 'Inventario') return active ? 'text-cyan-600 dark:text-cyan-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
+                if (item.name === 'Comercial') return active ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
+                if (item.name === 'Administración') return active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                if (item.module === 'dashboard') return active ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
+                return active ? 'text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white'
               }
 
               const toggleSubmenu = (e: React.MouseEvent) => {
@@ -299,15 +278,13 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                           "group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
                           isActive || isSubmenuActive
                             ? getActiveColor()
-                            : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                            : "text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
                         )}
                       >
                         <div className="flex items-center flex-1">
                           <item.icon className={cn(
-                            "h-5 w-5 transition-all duration-200 flex-shrink-0",
-                            isActive || isSubmenuActive
-                              ? "mr-3" 
-                              : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                            "h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3",
+                            getIconColorForItem(!!(isActive || isSubmenuActive))
                           )} />
                           <span className="flex-1 truncate text-left">{item.name}</span>
                         </div>
@@ -339,98 +316,18 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                               (subitem.href === '/stores' && pathname?.startsWith('/stores')) ||
                               (subitem.href === '/roles' && pathname?.startsWith('/roles')) ||
                               (subitem.href === '/logs' && pathname?.startsWith('/logs'))
-                            
-                            // Función para obtener el color según el módulo
-                            const getSubitemColor = (href: string) => {
-                              if (href === '/inventory/products' || href === '/inventory/transfers' || href === '/inventory/receptions') {
-                                return isSubActive 
-                                  ? 'bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-cyan-50 dark:hover:bg-cyan-900/10 hover:text-cyan-700 dark:hover:text-cyan-400'
-                              }
-                              if (href === '/clients') {
-                                return isSubActive
-                                  ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-red-50 dark:hover:bg-red-900/10 hover:text-red-700 dark:hover:text-red-400'
-                              }
-                              if (href === '/sales') {
-                                return isSubActive
-                                  ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-green-50 dark:hover:bg-green-900/10 hover:text-green-700 dark:hover:text-green-400'
-                              }
-                              if (href === '/payments') {
-                                return isSubActive
-                                  ? 'bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-orange-50 dark:hover:bg-orange-900/10 hover:text-orange-700 dark:hover:text-orange-400'
-                              }
-                              if (href === '/warranties') {
-                                return isSubActive
-                                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:text-purple-700 dark:hover:text-purple-400'
-                              }
-                              if (href === '/stores') {
-                                return isSubActive
-                                  ? 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-purple-50 dark:hover:bg-purple-900/10 hover:text-purple-700 dark:hover:text-purple-400'
-                              }
-                              if (href === '/roles') {
-                                return isSubActive
-                                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/10 hover:text-indigo-700 dark:hover:text-indigo-400'
-                              }
-                              if (href === '/logs') {
-                                return isSubActive
-                                  ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
-                                  : 'text-gray-600 dark:text-gray-400 hover:bg-blue-50 dark:hover:bg-blue-900/10 hover:text-blue-700 dark:hover:text-blue-400'
-                              }
-                              return isSubActive
-                                ? 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
-                                : 'text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
-                            }
-                            
+
+                            // Color del icono del subítem según módulo
                             const getSubitemIconColor = (href: string) => {
-                              if (href === '/inventory/products' || href === '/inventory/transfers' || href === '/inventory/receptions') {
-                                return isSubActive
-                                  ? 'text-cyan-600 dark:text-cyan-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
-                              }
-                              if (href === '/clients') {
-                                return isSubActive
-                                  ? 'text-red-600 dark:text-red-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-red-600 dark:group-hover:text-red-400'
-                              }
-                              if (href === '/sales') {
-                                return isSubActive
-                                  ? 'text-green-600 dark:text-green-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-green-600 dark:group-hover:text-green-400'
-                              }
-                              if (href === '/payments') {
-                                return isSubActive
-                                  ? 'text-orange-600 dark:text-orange-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-orange-600 dark:group-hover:text-orange-400'
-                              }
-                              if (href === '/warranties') {
-                                return isSubActive
-                                  ? 'text-purple-600 dark:text-purple-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-600 dark:group-hover:text-purple-400'
-                              }
-                              if (href === '/stores') {
-                                return isSubActive
-                                  ? 'text-purple-600 dark:text-purple-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-purple-600 dark:group-hover:text-purple-400'
-                              }
-                              if (href === '/roles') {
-                                return isSubActive
-                                  ? 'text-indigo-600 dark:text-indigo-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                              }
-                              if (href === '/logs') {
-                                return isSubActive
-                                  ? 'text-blue-600 dark:text-blue-400'
-                                  : 'text-gray-400 dark:text-gray-500 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                              }
-                              return isSubActive
-                                ? 'text-gray-900 dark:text-gray-100'
-                                : 'text-gray-400 dark:text-gray-500 group-hover:text-gray-600 dark:group-hover:text-gray-300'
+                              if (href.startsWith('/inventory')) return isSubActive ? 'text-cyan-600 dark:text-cyan-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
+                              if (href === '/clients') return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
+                              if (href === '/sales') return isSubActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
+                              if (href === '/payments') return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
+                              if (href === '/warranties') return isSubActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
+                              if (href === '/stores') return isSubActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
+                              if (href === '/roles') return isSubActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
+                              if (href === '/logs') return isSubActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
+                              return isSubActive ? 'text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white'
                             }
                             
                             return (
@@ -440,7 +337,9 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={cn(
                                   "group flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
-                                  getSubitemColor(subitem.href)
+                                  isSubActive
+                                    ? 'bg-white/90 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
+                                    : 'text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
                                 )}
                               >
                                 <subitem.icon className={cn(
@@ -460,11 +359,11 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                         <div
                           className={cn(
                             "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 cursor-not-allowed opacity-50",
-                            "text-gray-400 dark:text-gray-500"
+                            "text-gray-600 dark:text-gray-400"
                           )}
                           title="Solo disponible para Super Administradores"
                         >
-                          <item.icon className="h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3" />
+                          <item.icon className="h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3 text-purple-500 dark:text-purple-400" />
                           <span className="flex-1 truncate">{item.name}</span>
                         </div>
                   ) : (
@@ -475,14 +374,12 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                         "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
                         isActive
                           ? getActiveColor()
-                          : "text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200"
+                          : "text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
                       )}
                     >
                       <item.icon className={cn(
-                        "h-5 w-5 transition-all duration-200 flex-shrink-0",
-                        isActive 
-                          ? "mr-3" 
-                          : "text-gray-400 dark:text-gray-500 mr-3 group-hover:text-gray-600 dark:group-hover:text-gray-300"
+                        "h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3",
+                        getIconColorForItem(isActive)
                       )} />
                       <span className="flex-1 truncate">{item.name}</span>
                     </Link>
@@ -495,8 +392,8 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-gray-100 dark:border-gray-800">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
+          <div className="p-4 border-t border-gray-100 dark:border-neutral-800">
+            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors">
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex-shrink-0">
                   <div className="w-9 h-9 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center shadow-sm">
@@ -509,7 +406,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                     {user?.name || 'Diego Admin'}
                   </p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
                     {user?.role === 'superadmin' ? 'Super Admin' : 
                      user?.role === 'admin' ? 'Admin' :
                      user?.role === 'vendedor' ? 'Vendedor' :
@@ -520,7 +417,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               </div>
               <button
                 onClick={logout}
-                className="ml-2 p-2 rounded-md text-gray-400 hover:text-red-500 dark:text-gray-500 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all duration-200"
+                className="ml-2 p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10 transition-all duration-200"
                 title="Cerrar sesión"
               >
                 <LogOut className="h-4 w-4" />

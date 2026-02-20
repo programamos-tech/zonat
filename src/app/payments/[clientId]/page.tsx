@@ -224,9 +224,9 @@ export default function ClientCreditsPage() {
       case 'overdue':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'cancelled':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
     }
   }
 
@@ -416,9 +416,9 @@ export default function ClientCreditsPage() {
 
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
-      <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
         {/* Header con Resumen Integrado */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
           <CardContent className="p-4 md:p-6">
             <div className="flex items-start justify-between gap-4">
               <div className="flex-1">
@@ -430,7 +430,7 @@ export default function ClientCreditsPage() {
                         {clientName || 'Cliente'}
                       </h1>
                       <div 
-                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600"
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-600"
                         title={clientScore.description}
                       >
                         {Array.from({ length: 5 }).map((_, index) => (
@@ -465,7 +465,7 @@ export default function ClientCreditsPage() {
                 </div>
                 
                 {/* Resumen en una sola línea */}
-                <div className="flex flex-wrap items-center gap-4 md:gap-6 pt-4 border-t border-gray-200 dark:border-gray-600">
+                <div className="flex flex-wrap items-center gap-4 md:gap-6 pt-4 border-t border-gray-200 dark:border-neutral-600">
                   <div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total Créditos</div>
                     <div className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">
@@ -491,7 +491,7 @@ export default function ClientCreditsPage() {
                   onClick={() => router.push('/payments')}
                   variant="outline"
                   size="sm"
-                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+                  className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white border-gray-300 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <ArrowLeft className="h-4 w-4 mr-2" />
                   Créditos
@@ -503,7 +503,7 @@ export default function ClientCreditsPage() {
 
         {/* Lista de Créditos */}
         {isLoading ? (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
             <CardContent className="p-12">
               <div className="flex flex-col items-center justify-center">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mb-4"></div>
@@ -512,7 +512,7 @@ export default function ClientCreditsPage() {
             </CardContent>
           </Card>
         ) : credits.length === 0 ? (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
             <CardContent className="p-12">
               <div className="text-center">
                 <CreditCard className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -529,7 +529,7 @@ export default function ClientCreditsPage() {
               return (
                 <Card
                   key={credit.id}
-                  className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                  className={`bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
                     isExpanded ? 'border-orange-300 dark:border-orange-600' : ''
                   }`}
                   onClick={() => toggleCredit(credit.id)}
@@ -548,7 +548,7 @@ export default function ClientCreditsPage() {
                                   #{getCreditDescription(credit)}
                                 </div>
                               </div>
-                              <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                              <div className="border-l border-gray-300 dark:border-neutral-600 pl-3">
                                 <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Factura</div>
                                 <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                                   {credit.invoiceNumber}
@@ -589,7 +589,7 @@ export default function ClientCreditsPage() {
                         </div>
 
                         {credit.dueDate && (
-                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                          <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               <span className="text-xs text-gray-500 dark:text-gray-400">Vencimiento:</span>
@@ -636,7 +636,7 @@ export default function ClientCreditsPage() {
 
                     {/* Detalle Expandible */}
                     {isExpanded && (
-                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                      <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-4">
                         {/* Información Adicional */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <div>
@@ -681,7 +681,7 @@ export default function ClientCreditsPage() {
                           </div>
                           
                           {history.length === 0 ? (
-                            <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                            <div className="text-center py-6 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                               <CreditCard className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                               <p className="text-sm text-gray-500 dark:text-gray-400">No hay abonos registrados</p>
                             </div>
@@ -690,7 +690,7 @@ export default function ClientCreditsPage() {
                               {history.map((payment) => (
                                 <div
                                   key={payment.id}
-                                  className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                                  className="border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600"
                                 >
                                   <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
                                     <div className="flex items-center gap-2">
@@ -724,7 +724,7 @@ export default function ClientCreditsPage() {
                                     </div>
                                   </div>
                                   {payment.description && (
-                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-600">
+                                    <div className="mt-2 pt-2 border-t border-gray-200 dark:border-neutral-600">
                                       <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
                                       <p className="text-sm text-gray-700 dark:text-gray-300">{payment.description}</p>
                                     </div>

@@ -298,7 +298,7 @@ export default function NewSalePage() {
   const getClientTypeColor = (type: string) => {
     if (type === 'mayorista') return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
     if (type === 'minorista') return 'bg-purple-100 text-purple-800 border-purple-300 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-600'
-    return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-gray-900/30 dark:text-gray-300 dark:border-gray-600'
+    return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-neutral-950/30 dark:text-gray-300 dark:border-neutral-600'
   }
 
   const handleAddProduct = (product: Product) => {
@@ -701,9 +701,9 @@ export default function NewSalePage() {
 
   return (
     <RoleProtectedRoute module="sales" requiredAction="create">
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
         {/* Header Fijo - Compacto */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <div className="sticky top-0 z-40 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-700">
           <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-2">
             <div className="flex items-center gap-3">
               <Button
@@ -738,7 +738,7 @@ export default function NewSalePage() {
             {/* Columna Izquierda - Productos (2/3 del ancho) */}
             <div className="xl:col-span-2 space-y-6">
               {/* Búsqueda y Selección de Productos */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -764,11 +764,11 @@ export default function NewSalePage() {
                         }}
                         onKeyDown={handleProductSearchKeyDown}
                         onFocus={() => setShowProductDropdown(true)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                       />
                       
                       {showProductDropdown && productSearch && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
                           {isSearchingProducts ? (
                             <div className="p-4 text-center">
                               <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto mb-2"></div>
@@ -793,11 +793,11 @@ export default function NewSalePage() {
                                     }}
                                     onClick={() => hasStock ? handleAddProduct(product) : undefined}
                                     onMouseEnter={() => setHighlightedProductIndex(index)}
-                                    className={`p-3 border-b border-gray-200 dark:border-gray-600 last:border-b-0 rounded-lg transition-colors duration-150 ease-in-out cursor-pointer ${
+                                    className={`p-3 border-b border-gray-200 dark:border-neutral-600 last:border-b-0 rounded-lg transition-colors duration-150 ease-in-out cursor-pointer ${
                                       isHighlighted
                                         ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-600'
                                         : hasStock
-                                          ? 'bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600'
+                                          ? 'bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700'
                                           : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 opacity-60 cursor-not-allowed'
                                     }`}
                                   >
@@ -848,7 +848,7 @@ export default function NewSalePage() {
 
                   {/* Productos Seleccionados */}
                   {orderedSelectedProducts.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
+                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-700">
                       <div className="flex items-center justify-between mb-3">
                         <h3 className="text-base font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
                         <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600 text-sm">
@@ -863,7 +863,7 @@ export default function NewSalePage() {
                           const reference = item.productReferenceCode || product?.reference || 'N/A'
                           
                           return (
-                            <div key={item.id} className="bg-gray-50 dark:bg-gray-700/50 border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+                            <div key={item.id} className="bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-600 rounded-lg p-4">
                               <div className="flex items-start justify-between mb-3">
                                 <div className="flex-1 min-w-0">
                                   <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
@@ -885,7 +885,7 @@ export default function NewSalePage() {
                                         }
                                       }}
                                       onBlur={() => handlePriceBlur(item.id)}
-                                      className="w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600 px-2"
+                                      className="w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-neutral-700 px-2"
                                       min={product?.cost || 0}
                                       step="100"
                                       placeholder="0"
@@ -898,7 +898,7 @@ export default function NewSalePage() {
                                 </div>
                               </div>
                               
-                              <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+                              <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-600">
                                 <div className="flex items-center gap-2">
                                   <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Cantidad:</span>
                                   <div className="flex items-center gap-1">
@@ -906,7 +906,7 @@ export default function NewSalePage() {
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                      className="h-8 w-8 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                      className="h-8 w-8 p-0 border-gray-300 dark:border-neutral-600 hover:bg-gray-100 dark:hover:bg-neutral-700"
                                     >
                                       <Minus className="h-4 w-4" />
                                     </Button>
@@ -914,14 +914,14 @@ export default function NewSalePage() {
                                       type="text"
                                       value={item.quantity}
                                       onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                      className="w-16 h-8 text-center text-base font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-gray-500 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-gray-600"
+                                      className="w-16 h-8 text-center text-base font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-neutral-700"
                                       min="1"
                                     />
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                      className="h-8 w-8 p-0 border-gray-300 dark:border-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600"
+                                      className="h-8 w-8 p-0 border-gray-300 dark:border-neutral-600 hover:bg-gray-100 dark:hover:bg-neutral-700"
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
@@ -951,7 +951,7 @@ export default function NewSalePage() {
             {/* Columna Derecha - Cliente, Pago y Resumen (1/3 del ancho, Sticky) */}
             <div className="xl:col-span-1 space-y-6">
               {/* Cliente */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -984,11 +984,11 @@ export default function NewSalePage() {
                             setShowClientDropdown(false)
                           }, 200)
                         }}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       />
                       
                       {showClientDropdown && !selectedClient && filteredClients.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50">
                           <div className="p-2">
                             {filteredClients.map((client, index) => (
                               <button
@@ -1032,7 +1032,7 @@ export default function NewSalePage() {
                       )}
                       
                       {showClientDropdown && !selectedClient && filteredClients.length === 0 && clientSearch.trim().length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg shadow-xl z-50">
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg shadow-xl z-50">
                           <div className="p-4 text-center">
                             <User className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                             <div className="text-sm text-gray-500 dark:text-gray-400">
@@ -1084,7 +1084,7 @@ export default function NewSalePage() {
               </Card>
 
               {/* Método de Pago */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -1102,7 +1102,7 @@ export default function NewSalePage() {
                           setReceivedAmount('')
                         }
                       }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                     >
                       <option value="">Seleccionar método...</option>
                       <option value="cash">Efectivo</option>
@@ -1111,7 +1111,7 @@ export default function NewSalePage() {
                     </select>
 
                   {showMixedPayments && (
-                    <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="space-y-2 p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
                       {mixedPayments.map((payment, index) => (
                         <div key={index}>
                           <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
@@ -1124,11 +1124,11 @@ export default function NewSalePage() {
                               const cleanValue = e.target.value.replace(/[^\d]/g, '')
                               updateMixedPayment(index, 'amount', parseInt(cleanValue) || 0)
                             }}
-                            className="w-full px-2 py-1.5 border border-gray-300 dark:border-gray-600 rounded text-sm bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                            className="w-full px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
                           />
                         </div>
                       ))}
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-600">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-600">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-400">Total ingresado:</span>
                           <span className="font-semibold">{formatCurrency(getTotalMixedPayments())}</span>
@@ -1144,7 +1144,7 @@ export default function NewSalePage() {
                   )}
 
                   {paymentMethod === 'cash' && validProducts.length > 0 && (
-                    <div className="pt-3 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                    <div className="pt-3 border-t border-gray-200 dark:border-neutral-600 space-y-2">
                       <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Dinero recibido:</label>
                       <input
                         type="text"
@@ -1155,7 +1155,7 @@ export default function NewSalePage() {
                         }}
                         onFocus={(e) => e.target.select()}
                         placeholder="0"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg text-base font-semibold bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-base font-semibold bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                       />
                       {receivedAmount && parseFloat(receivedAmount.replace(/[^\d]/g, '')) > 0 && (
                         <div className={`p-3 rounded-lg ${
@@ -1193,7 +1193,7 @@ export default function NewSalePage() {
               </Card>
 
               {/* Resumen */}
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 xl:sticky xl:top-24">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 xl:sticky xl:top-24">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -1214,7 +1214,7 @@ export default function NewSalePage() {
                         {orderedValidProducts.map((item) => {
                           const hasPrice = item.unitPrice > 0
                           return (
-                            <div key={item.id} className={`flex justify-between text-sm py-1.5 border-b border-gray-200 dark:border-gray-700 last:border-b-0 ${!hasPrice ? 'opacity-60' : ''}`}>
+                            <div key={item.id} className={`flex justify-between text-sm py-1.5 border-b border-gray-200 dark:border-neutral-700 last:border-b-0 ${!hasPrice ? 'opacity-60' : ''}`}>
                               <div className="flex-1 min-w-0">
                                 <div className={`font-medium truncate flex items-center gap-2 ${!hasPrice ? 'text-orange-600 dark:text-orange-400' : ''}`}>
                                   {item.productName}
@@ -1237,7 +1237,7 @@ export default function NewSalePage() {
                         })}
                       </div>
 
-                      <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-gray-700">
+                      <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-neutral-700">
                         <div className="flex justify-between text-sm">
                           <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
                           <span className="font-semibold">{formatCurrency(subtotal)}</span>
@@ -1260,14 +1260,14 @@ export default function NewSalePage() {
                             <span>{formatCurrency(tax)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200 dark:border-neutral-700">
                           <span>Total:</span>
                           <span className="text-green-600 dark:text-green-400">{formatCurrency(total)}</span>
                         </div>
                       </div>
                       
                       {/* Botón Crear Venta */}
-                      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+                      <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
                         <Button
                           onClick={handleSave}
                           disabled={

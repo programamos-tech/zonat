@@ -83,7 +83,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col dark:bg-gray-900 dark:border-gray-700">
+      <Card className="w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col dark:bg-neutral-950 dark:border-neutral-700">
         <CardHeader className="flex flex-row items-center justify-between flex-shrink-0">
           <CardTitle className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Package className="h-6 w-6 text-cyan-500" />
@@ -140,7 +140,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
           {/* Productos */}
           <div>
             <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Productos</p>
-            <Card className="dark:bg-gray-800 dark:border-gray-700">
+            <Card className="dark:bg-neutral-900 dark:border-neutral-700">
               <CardContent className="p-4">
                 {transfer.items && transfer.items.length > 0 ? (
                   <div className="space-y-2">
@@ -151,7 +151,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
                       const itemTotal = unitPrice * item.quantity
                       
                       return (
-                        <div key={item.id} className="py-2 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                        <div key={item.id} className="py-2 border-b border-gray-200 dark:border-neutral-700 last:border-0">
                           <div className="flex justify-between items-start">
                             <div className="flex-1">
                               <p className="text-sm font-medium text-gray-900 dark:text-white">{item.productName}</p>
@@ -178,7 +178,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
                         </div>
                       )
                     })}
-                    <div className="pt-2 mt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="pt-2 mt-2 border-t border-gray-200 dark:border-neutral-700">
                       <p className="text-sm font-semibold text-gray-900 dark:text-white flex justify-between">
                         <span>Total unidades:</span>
                         <span>{totalQuantity} {totalQuantity === 1 ? 'unidad' : 'unidades'}</span>
@@ -228,7 +228,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
                 <DollarSign className="h-3 w-3" />
                 Valor de la Transferencia
               </p>
-              <Card className="dark:bg-gray-800 dark:border-gray-700 border-2 border-cyan-500">
+              <Card className="dark:bg-neutral-900 dark:border-neutral-700 border-2 border-cyan-500">
                 <CardContent className="p-4">
                   <div className="space-y-3">
                     <div className="flex justify-between items-center">
@@ -239,7 +239,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
                     </div>
                     
                     {sale.payments && sale.payments.length > 0 ? (
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 space-y-2">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-700 space-y-2">
                         <p className="text-xs font-medium text-gray-500 dark:text-gray-400 mb-2">Desglose de pagos:</p>
                         {sale.payments.map((payment) => (
                           <div key={payment.id} className="flex justify-between items-center">
@@ -256,7 +256,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
                         ))}
                       </div>
                     ) : (
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="flex justify-between items-center">
                           <span className="text-sm text-gray-600 dark:text-gray-400 flex items-center gap-1">
                             <CreditCard className="h-3 w-3" />
@@ -272,7 +272,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
                     )}
                     
                     {sale.invoiceNumber && (
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           Factura: {sale.invoiceNumber}
                         </p>
@@ -337,7 +337,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
             </div>
           )}
         </CardContent>
-        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
+        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-neutral-700 flex-shrink-0">
           <Button variant="outline" onClick={onClose}>
             Cerrar
           </Button>

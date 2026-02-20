@@ -236,7 +236,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
   return (
     <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000]">
+      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 bg-cyan-50 dark:bg-cyan-900/20 border-b border-cyan-200 dark:border-cyan-800 flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -260,13 +260,13 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-gray-900" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
+        <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
           <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="p-4 md:p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Columna Izquierda */}
               <div className="space-y-6">
                 {/* Información Básica */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <Package className="h-5 w-5 mr-2 text-cyan-400" />
@@ -283,8 +283,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       type="text"
                       value={formData.name}
                       onChange={(e) => handleInputChange('name', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 placeholder-gray-500 dark:placeholder-gray-400 ${
-                        errors.name ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 placeholder-gray-500 dark:placeholder-gray-400 ${
+                        errors.name ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
                       }`}
                       placeholder="Nombre del producto"
                     />
@@ -301,8 +301,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       type="text"
                       value={formData.reference}
                       onChange={(e) => handleInputChange('reference', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                        errors.reference ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                        errors.reference ? 'border-red-500 ' : 'border-gray-300 dark:border-neutral-600 '
                       }`}
                       placeholder="REF-001"
                     />
@@ -319,8 +319,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   <textarea
                     value={formData.description}
                     onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 resize-none ${
-                      errors.description ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 resize-none ${
+                      errors.description ? 'border-red-500 ' : 'border-gray-300 dark:border-neutral-600 '
                     }`}
                     placeholder="Descripción detallada del producto (opcional)"
                     rows={3}
@@ -339,8 +339,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       type="text"
                       value={formData.brand}
                       onChange={(e) => handleInputChange('brand', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                        errors.brand ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                        errors.brand ? 'border-red-500 ' : 'border-gray-300 dark:border-neutral-600 '
                       }`}
                       placeholder="Marca del producto (opcional)"
                     />
@@ -356,8 +356,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                     <select
                       value={formData.categoryId}
                       onChange={(e) => handleInputChange('categoryId', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                        errors.categoryId ? 'border-red-500 ' : 'border-gray-300 dark:border-gray-600 '
+                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                        errors.categoryId ? 'border-red-500 ' : 'border-gray-300 dark:border-neutral-600 '
                       }`}
                     >
                       <option value="">Seleccionar categoría (opcional)</option>
@@ -376,7 +376,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </Card>
 
                 {/* Información Financiera */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <DollarSign className="h-5 w-5 mr-2 text-cyan-400" />
@@ -399,7 +399,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         const numericValue = parseFormattedNumber(e.target.value)
                         handleInputChange('price', numericValue)
                       }}
-                      className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
+                      className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
                         errors.price ? 'border-red-500 ' : 'border-gray-600 '
                       }`}
                       placeholder="0"
@@ -425,7 +425,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         const numericValue = parseFormattedNumber(e.target.value)
                         handleInputChange('cost', numericValue)
                       }}
-                      className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
+                      className={`w-full pl-8 pr-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
                         errors.cost ? 'border-red-500 ' : 'border-gray-600 '
                       }`}
                       placeholder="0"
@@ -442,7 +442,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
               {/* Columna Derecha */}
               <div className="space-y-6">
                 {/* Control de Stock */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <BarChart3 className="h-5 w-5 mr-2 text-cyan-400" />
@@ -473,7 +473,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                           formData.initialLocation === 'store'
                             ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                            : 'border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <Store className="h-4 w-4" />
@@ -485,7 +485,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                           formData.initialLocation === 'warehouse'
                             ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300'
-                            : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                            : 'border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                         }`}
                       >
                         <Package className="h-4 w-4" />
@@ -510,7 +510,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       </label>
                       {product ? (
                         // Solo lectura para productos existentes
-                        <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-gray-600/50 text-gray-600 dark:text-gray-300 cursor-not-allowed opacity-75">
+                        <div className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md bg-gray-100 dark:bg-neutral-700/50 text-gray-600 dark:text-gray-300 cursor-not-allowed opacity-75">
                           {formatNumber(formData.stock.store)} unidades
                         </div>
                       ) : (
@@ -522,8 +522,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                             const numericValue = parseFormattedNumber(e.target.value)
                             handleInputChange('stock.store', numericValue)
                           }}
-                          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                            errors.stockStore ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                          className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                            errors.stockStore ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
                           }`}
                           placeholder="0"
                         />
@@ -549,7 +549,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         </label>
                         {product ? (
                           // Solo lectura para productos existentes
-                          <div className="w-full px-3 py-2 border border-gray-300 dark:border-gray-500 rounded-md bg-gray-100 dark:bg-gray-600/50 text-gray-600 dark:text-gray-300 cursor-not-allowed opacity-75">
+                          <div className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md bg-gray-100 dark:bg-neutral-700/50 text-gray-600 dark:text-gray-300 cursor-not-allowed opacity-75">
                             {formatNumber(formData.stock.warehouse)} unidades
                           </div>
                         ) : (
@@ -561,8 +561,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                               const numericValue = parseFormattedNumber(e.target.value)
                               handleInputChange('stock.warehouse', numericValue)
                             }}
-                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800 ${
-                              errors.stockWarehouse ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'
+                            className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
+                              errors.stockWarehouse ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
                             }`}
                             placeholder="0"
                           />
@@ -577,7 +577,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 </div>
 
                 {/* Total del stock */}
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-4">
+                <div className="bg-gray-100 dark:bg-neutral-800 rounded-lg p-4">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Stock Total:</span>
                     <span className="text-lg font-bold text-cyan-400">
@@ -589,7 +589,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </Card>
 
                 {/* Estado del Producto */}
-                <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                   <AlertTriangle className="h-5 w-5 mr-2 text-cyan-400" />
@@ -605,7 +605,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
                         formData.status === status
                           ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20 text-cyan-800 dark:text-cyan-300'
-                          : 'border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
+                          : 'border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white'
                       }`}
                     >
                       <span className="text-sm font-medium">{getStatusLabel(status)}</span>
@@ -623,12 +623,12 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </div>
 
             {/* Botones dentro del form para que hagan scroll con el contenido */}
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-neutral-700">
               <Button
                 type="button"
                 onClick={handleClose}
                 variant="outline"
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
               >
                 Cancelar
               </Button>

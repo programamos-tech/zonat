@@ -237,9 +237,9 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 xl:px-6">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[90vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-[95vw] xl:max-h-[90vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700">
         {/* Header */}
-        <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10 flex-shrink-0">
+        <div className="flex items-center justify-between p-3 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-red-50/30 dark:bg-red-900/10 flex-shrink-0">
           <div className="flex items-center gap-2 md:gap-3 flex-1 min-w-0">
             <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg flex-shrink-0">
               <XCircle className="h-5 w-5 md:h-8 md:w-8 text-red-500 dark:text-red-400" />
@@ -269,9 +269,9 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
         {/* Content */}
         <div className="flex-1 overflow-hidden flex flex-col md:flex-row">
           {/* Resumen lateral */}
-          <div className="w-full md:w-72 lg:w-80 xl:w-96 border-b md:border-b-0 md:border-r border-gray-200 dark:border-gray-700 flex-shrink-0 bg-gray-50 dark:bg-gray-800/50 p-3 md:p-4">
+          <div className="w-full md:w-72 lg:w-80 xl:w-96 border-b md:border-b-0 md:border-r border-gray-200 dark:border-neutral-700 flex-shrink-0 bg-gray-50 dark:bg-neutral-900/50 p-3 md:p-4">
             <div className="space-y-3 md:space-y-4">
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/20 rounded-lg">
@@ -290,7 +290,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
                 </CardContent>
               </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardContent className="p-3 md:p-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="p-1.5 md:p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
@@ -367,7 +367,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
                                 <FileText className="h-3 w-3 md:h-4 md:w-4 mt-0.5 flex-shrink-0 text-red-500 dark:text-red-400" />
                                 <div className="flex-1 min-w-0">
                                   <span className="font-medium text-gray-700 dark:text-gray-300 block mb-1">Motivo:</span>
-                                  <p className="text-gray-900 dark:text-white bg-white dark:bg-gray-700 p-2 rounded border border-gray-200 dark:border-gray-600">
+                                  <p className="text-gray-900 dark:text-white bg-white dark:bg-neutral-800 p-2 rounded border border-gray-200 dark:border-neutral-600">
                                     {invoice.cancellationReason || 'No especificado'}
                                   </p>
                                 </div>
@@ -406,7 +406,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-3 md:p-6 pb-16 md:pb-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-3 md:p-6 pb-16 md:pb-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 z-10 flex-shrink-0">
           <Button
             onClick={onClose}
             className="bg-red-500 hover:bg-red-600 text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"

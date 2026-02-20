@@ -444,7 +444,7 @@ export function UserManagement() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -476,9 +476,9 @@ export function UserManagement() {
       {/* Modal de creación */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000]">
+          <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
                 <div>
@@ -508,7 +508,7 @@ export function UserManagement() {
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-6">
                   {/* Información Básica */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                         <UserCheck className="h-5 w-5 mr-2 text-blue-400" />
@@ -525,7 +525,7 @@ export function UserManagement() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900"
                                 placeholder="Ej: Juan Pérez"
                               />
                             </div>
@@ -537,7 +537,7 @@ export function UserManagement() {
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900"
                                 placeholder="juan@zonat.com"
                               />
                             </div>
@@ -551,7 +551,7 @@ export function UserManagement() {
                                 type="password"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900"
                                 placeholder="Mínimo 6 caracteres"
                               />
                             </div>
@@ -560,7 +560,7 @@ export function UserManagement() {
                                 Rol *
                               </label>
                               <Select value={formData.role} onValueChange={applyRolePermissions}>
-                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -587,7 +587,7 @@ export function UserManagement() {
                                   setFormData({ ...formData, storeId: value === MAIN_STORE_ID ? '' : value })
                                 }}
                               >
-                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-800">
+                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900">
                                   <SelectValue placeholder="Seleccionar tienda (opcional)" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -615,7 +615,7 @@ export function UserManagement() {
                   </Card>
 
                   {/* Descripción del Rol */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                         <Shield className="h-5 w-5 mr-2 text-blue-400" />
@@ -634,7 +634,7 @@ export function UserManagement() {
                   </Card>
 
                   {/* Estado del Usuario */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                         <User className="h-5 w-5 mr-2 text-blue-400" />
@@ -659,7 +659,7 @@ export function UserManagement() {
 
                 {/* Columna Derecha - Permisos */}
                 <div className="space-y-6">
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                         <Shield className="h-5 w-5 mr-2 text-blue-400" />
@@ -673,7 +673,7 @@ export function UserManagement() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                           {moduleOptions.map(module => (
-                            <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                            <div key={module.value} className="border border-gray-200 dark:border-neutral-600 rounded-xl p-4 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
                               <label className="flex items-center space-x-3 cursor-pointer">
                                 <input
                                   type="checkbox"
@@ -693,7 +693,7 @@ export function UserManagement() {
 
             {/* Footer */}
             <div 
-              className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0 sticky bottom-0"
+              className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0 sticky bottom-0"
               style={{
                 paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)`
               }}
@@ -704,7 +704,7 @@ export function UserManagement() {
                   setIsCreateModalOpen(false)
                   resetForm()
                 }}
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
               >
                 Cancelar
               </Button>
@@ -721,7 +721,7 @@ export function UserManagement() {
       )}
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:gap-4">
             <div className="relative flex-1">
@@ -771,7 +771,7 @@ export function UserManagement() {
       </Card>
 
       {/* Users List */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-0">
           {filteredUsers.length === 0 ? (
             <div className="text-center py-12">
@@ -809,7 +809,7 @@ export function UserManagement() {
                   return (
                     <div
                       key={user.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2"
+                      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2"
                     >
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
@@ -838,7 +838,7 @@ export function UserManagement() {
                         </Badge>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="text-center">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Rol</div>
                           <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={roleOptions.find(r => r.value === user.role)?.label || user.role}>
@@ -853,7 +853,7 @@ export function UserManagement() {
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={formatDateTime(user.lastLogin || '')}>
                             {user.lastLogin ? formatDateTime(user.lastLogin) : 'Nunca ha iniciado sesión'}
@@ -943,9 +943,9 @@ export function UserManagement() {
       {/* Modal de edición */}
       {isEditModalOpen && (
         <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000]">
+          <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
             {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
+            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
               <div className="flex items-center gap-3">
                 <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
                 <div>
@@ -973,7 +973,7 @@ export function UserManagement() {
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-6">
                   {/* Información Personal */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                         <User className="h-5 w-5 text-blue-600" />
@@ -1015,7 +1015,7 @@ export function UserManagement() {
                   </Card>
 
                   {/* Rol y Estado */}
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                         <Shield className="h-5 w-5 text-blue-600" />
@@ -1097,7 +1097,7 @@ export function UserManagement() {
 
                 {/* Columna Derecha - Permisos */}
                 <div className="space-y-6">
-                  <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
                         <Shield className="h-5 w-5 text-blue-600" />
@@ -1106,7 +1106,7 @@ export function UserManagement() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {moduleOptions.map(module => (
-                        <div key={module.value} className="border border-gray-200 dark:border-gray-600 rounded-xl p-4 bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors">
+                        <div key={module.value} className="border border-gray-200 dark:border-neutral-600 rounded-xl p-4 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
                           <label className="flex items-center space-x-3 cursor-pointer">
                             <input
                               type="checkbox"
@@ -1125,7 +1125,7 @@ export function UserManagement() {
             </div>
 
             {/* Footer */}
-            <div className="flex justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
+            <div className="flex justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
               <Button 
                 variant="outline" 
                 onClick={() => setIsEditModalOpen(false)}

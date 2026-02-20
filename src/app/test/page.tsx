@@ -30,8 +30,8 @@ export default function TestPage() {
         <div className="bg-yellow-100 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
           <h3 className="font-semibold text-yellow-800 dark:text-yellow-200">🔑 Credenciales de Prueba:</h3>
           <div className="mt-2 text-yellow-700 dark:text-yellow-300">
-            <p><strong>Email:</strong> diego@zonat.com</p>
-            <p><strong>Contraseña:</strong> admin123</p>
+            <p><strong>Email:</strong> (solicitar al administrador)</p>
+            <p><strong>Contraseña:</strong> (solicitar al administrador)</p>
           </div>
         </div>
       </div>

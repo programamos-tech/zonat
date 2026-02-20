@@ -26,13 +26,13 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Para todas las demás páginas, mostrar el layout completo con sidebar
   return (
     <ProtectedRoute>
-      <div className="flex h-screen bg-white dark:bg-gray-900">
+      <div className="flex h-screen bg-white dark:bg-neutral-950">
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
-        <main className={`flex-1 xl:ml-56 relative z-10 bg-white dark:bg-gray-900 transition-all duration-300 flex flex-col ${
+        <main className={`flex-1 xl:ml-56 relative z-10 bg-white dark:bg-neutral-950 transition-all duration-300 flex flex-col ${
           isMobileMenuOpen ? 'blur-sm' : ''
         }`}>
           <BetaBanner />
-          <div className="flex-1 overflow-auto bg-white dark:bg-gray-900">
+          <div className="flex-1 overflow-auto bg-white dark:bg-neutral-950">
             {children}
           </div>
         </main>

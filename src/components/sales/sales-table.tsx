@@ -251,7 +251,7 @@ export function SalesTable({
       case 'draft':
         return 'bg-purple-100 text-purple-800 hover:bg-purple-200 hover:text-purple-900 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/30 dark:hover:text-purple-300'
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-200'
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700 dark:hover:text-gray-200'
     }
   }
 
@@ -327,7 +327,7 @@ export function SalesTable({
       case 'mixed':
         return 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300'
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-200'
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700 dark:hover:text-gray-200'
     }
   }
 
@@ -392,7 +392,7 @@ export function SalesTable({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -447,7 +447,7 @@ export function SalesTable({
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <div className="relative flex-1">
@@ -457,7 +457,7 @@ export function SalesTable({
                 placeholder={isSearching ? "Buscando..." : "Buscar factura o cliente..."}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 md:pl-10 pr-10 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-10 md:pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
               {isSearching && (
                 <div className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2">
@@ -468,7 +468,7 @@ export function SalesTable({
             <select
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
-              className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+              className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
             >
               {statuses.map(status => (
                 <option key={status} value={status}>
@@ -484,7 +484,7 @@ export function SalesTable({
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-0">
           {isSearching ? (
             <div className="text-center py-12">
@@ -511,8 +511,8 @@ export function SalesTable({
                   return (
                     <div
                       key={sale.id}
-                      className={`bg-white dark:bg-gray-800 border rounded-lg p-3 space-y-2 ${
-                        isExpanded ? 'border-green-300 dark:border-green-600' : 'border-gray-200 dark:border-gray-700'
+                      className={`bg-white dark:bg-neutral-900 border rounded-lg p-3 space-y-2 ${
+                        isExpanded ? 'border-green-300 dark:border-green-600' : 'border-gray-200 dark:border-neutral-700'
                       }`}
                       onClick={() => toggleSale(sale.id)}
                     >
@@ -580,7 +580,7 @@ export function SalesTable({
                           </div>
                       </div>
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="text-center">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
                           <div className="text-sm font-semibold text-gray-900 dark:text-white">{formatCurrency(sale.total)}</div>
@@ -592,7 +592,7 @@ export function SalesTable({
                         </div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} text-xs`} title={getPaymentMethodLabel(sale.paymentMethod)}>
                           {getPaymentMethodLabel(sale.paymentMethod)}
                         </Badge>
@@ -615,7 +615,7 @@ export function SalesTable({
 
                       {/* Detalle Expandible Mobile */}
                       {isExpanded && (
-                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                        <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-4">
                           {/* Información Adicional */}
                           <div className="space-y-3">
                             <div>
@@ -648,7 +648,7 @@ export function SalesTable({
                             </h3>
                             
                             {(!sale.items || sale.items.length === 0) ? (
-                              <div className="text-center py-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                              <div className="text-center py-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                                 <Package className="h-6 w-6 text-gray-400 mx-auto mb-2" />
                                 <p className="text-xs text-gray-500 dark:text-gray-400">No hay productos</p>
                               </div>
@@ -657,7 +657,7 @@ export function SalesTable({
                                 {sale.items.map((item) => (
                                   <div
                                     key={item.id}
-                                    className="border rounded-lg p-2 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                                    className="border rounded-lg p-2 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600"
                                   >
                                     <div className="space-y-1">
                                       <div className="flex items-center gap-2">
@@ -690,7 +690,7 @@ export function SalesTable({
                           </div>
 
                           {/* Resumen Financiero */}
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600">
                             <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                               <Receipt className="h-4 w-4 text-green-600" />
                               Resumen
@@ -712,7 +712,7 @@ export function SalesTable({
                                   <span className="font-semibold">{formatCurrency(sale.tax)}</span>
                                 </div>
                               )}
-                              <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-gray-600">
+                              <div className="flex justify-between pt-2 border-t border-gray-200 dark:border-neutral-600">
                                 <span className="font-bold text-gray-900 dark:text-white">Total:</span>
                                 <span className="font-bold text-green-600 dark:text-green-400">{formatCurrency(sale.total)}</span>
                               </div>
@@ -721,7 +721,7 @@ export function SalesTable({
 
                           {/* Información de anulación - Mobile */}
                           {sale.status === 'cancelled' && (
-                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-2">
                               {/* Motivo de cancelación */}
                               <div className="flex items-start space-x-2">
                                 <AlertTriangle className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
@@ -749,7 +749,7 @@ export function SalesTable({
 
                           {/* Mensaje para facturas de transferencias - Mobile */}
                           {sale.status !== 'cancelled' && transfers[sale.id] && (
-                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                               <div className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
                                 <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                                 <span>Esta factura solo puede anularse desde Transferencias</span>
@@ -758,7 +758,7 @@ export function SalesTable({
                           )}
                           {/* Botón de Anular Factura - Mobile (No mostrar para transferencias entre tiendas) */}
                           {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && !transfers[sale.id] && (
-                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                               {!showCancelForm[sale.id] ? (
                                 <Button
                                   onClick={(e) => {
@@ -813,7 +813,7 @@ export function SalesTable({
                                         onFocus={(e) => e.stopPropagation()}
                                         placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
                                         disabled={isCancelling[sale.id]}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-neutral-700 disabled:opacity-50"
                                         rows={3}
                                       />
                                     <div className="mt-1 text-right">
@@ -931,7 +931,7 @@ export function SalesTable({
                       return (
                     <Card
                       key={sale.id}
-                      className={`bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
+                      className={`bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer ${
                         isExpanded ? 'border-green-300 dark:border-green-600' : ''
                       }`}
                       onClick={() => toggleSale(sale.id)}
@@ -958,7 +958,7 @@ export function SalesTable({
                                       </div>
                                     </div>
                                     {sale.paymentMethod === 'credit' && credits[sale.id] && (
-                                      <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                                      <div className="border-l border-gray-300 dark:border-neutral-600 pl-3">
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Crédito</div>
                                         <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
                                           #{getCreditId(credits[sale.id])}
@@ -966,7 +966,7 @@ export function SalesTable({
                                       </div>
                                     )}
                                     {isTransferSale(sale) && transfers[sale.id] && (
-                                      <div className="border-l border-gray-300 dark:border-gray-600 pl-3">
+                                      <div className="border-l border-gray-300 dark:border-neutral-600 pl-3">
                                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">ID Transferencia</div>
                                         <div className="text-sm font-mono font-semibold text-cyan-600 dark:text-cyan-400">
                                           {transfers[sale.id].transferNumber || `#${getTransferId(transfers[sale.id])}`}
@@ -1049,7 +1049,7 @@ export function SalesTable({
 
                         {/* Detalle Expandible */}
                         {isExpanded && (
-                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-4">
+                          <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-4">
                             {/* Información Adicional */}
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div>
@@ -1084,7 +1084,7 @@ export function SalesTable({
                               </div>
                               
                               {(!sale.items || sale.items.length === 0) ? (
-                                <div className="text-center py-6 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                                <div className="text-center py-6 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                                   <Package className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                                   <p className="text-sm text-gray-500 dark:text-gray-400">No hay productos registrados</p>
                                 </div>
@@ -1093,7 +1093,7 @@ export function SalesTable({
                                   {sale.items.map((item) => (
                                     <div
                                       key={item.id}
-                                      className="border rounded-lg p-3 bg-gray-50 dark:bg-gray-700/50 border-gray-200 dark:border-gray-600"
+                                      className="border rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50 border-gray-200 dark:border-neutral-600"
                                     >
                                       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-center">
                                         <div className="flex items-center gap-2">
@@ -1136,7 +1136,7 @@ export function SalesTable({
                             </div>
 
                             {/* Resumen Financiero */}
-                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600">
+                            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600">
                               <h3 className="text-base font-semibold text-gray-900 dark:text-white mb-3 flex items-center gap-2">
                                 <Receipt className="h-4 w-4 text-green-600" />
                                 Resumen Financiero
@@ -1175,7 +1175,7 @@ export function SalesTable({
 
                             {/* Información de anulación - Desktop */}
                             {sale.status === 'cancelled' && (
-                              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-600 space-y-2">
+                              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-600 space-y-2">
                                 {/* Motivo de cancelación */}
                                 <div className="flex items-start space-x-2">
                                   <AlertTriangle className="h-4 w-4 text-orange-500 dark:text-orange-400 flex-shrink-0 mt-0.5" />
@@ -1203,7 +1203,7 @@ export function SalesTable({
 
                             {/* Mensaje para facturas de transferencias - Desktop */}
                             {sale.status !== 'cancelled' && transfers[sale.id] && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                                 <div className="text-xs text-cyan-600 dark:text-cyan-400 flex items-center gap-1.5">
                                   <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                                   <span>Esta factura solo puede anularse desde Transferencias</span>
@@ -1212,7 +1212,7 @@ export function SalesTable({
                             )}
                             {/* Botón de Anular Factura (No mostrar para transferencias entre tiendas) */}
                             {sale.status !== 'cancelled' && sale.status !== 'draft' && onCancel && !transfers[sale.id] && (
-                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-600">
+                              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
                                 {!showCancelForm[sale.id] ? (
                                   <Button
                                     onClick={(e) => {
@@ -1267,7 +1267,7 @@ export function SalesTable({
                                         onFocus={(e) => e.stopPropagation()}
                                         placeholder="Describa detalladamente el motivo de la anulación (mínimo 10 caracteres)..."
                                         disabled={isCancelling[sale.id]}
-                                        className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-gray-600 disabled:opacity-50"
+                                        className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 bg-white dark:bg-neutral-700 disabled:opacity-50"
                                         rows={3}
                                       />
                                       <div className="mt-1 text-right">
@@ -1380,11 +1380,11 @@ export function SalesTable({
 
               {/* Paginación - solo mostrar si no hay búsqueda activa */}
               {!searchTerm.trim() && (
-                <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex items-center justify-center gap-1 px-4 py-3 border-t border-gray-200 dark:border-neutral-700">
                     <button
                       onClick={() => onPageChange(currentPage - 1)}
                       disabled={currentPage === 1 || loading}
-                    className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-neutral-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                     <ChevronLeft className="h-3.5 w-3.5" />
                     </button>
@@ -1410,7 +1410,7 @@ export function SalesTable({
                               className={`h-7 min-w-[28px] px-2 text-xs rounded border transition-colors ${
                                   page === currentPage 
                                   ? "bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800 font-medium" 
-                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-100 dark:border-gray-600"
+                                  : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-100 dark:border-neutral-600"
                                 }`}
                               >
                                 {page}
@@ -1423,7 +1423,7 @@ export function SalesTable({
                     <button
                       onClick={() => onPageChange(currentPage + 1)}
                       disabled={currentPage >= Math.ceil(totalSales / 10) || loading}
-                    className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-neutral-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                     <ChevronRight className="h-3.5 w-3.5" />
                     </button>

@@ -410,13 +410,6 @@ export class AuthService {
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const finalStoreId = storeId || MAIN_STORE_ID
 
-      console.log('[AUTH SERVICE] Logging activity:', {
-        userId,
-        action,
-        module,
-        storeId: finalStoreId
-      })
-
       const { data, error } = await supabaseAdmin
         .from('logs')
         .insert({
@@ -433,8 +426,6 @@ export class AuthService {
         
       if (error) {
         console.error('[AUTH SERVICE] Error inserting log:', error)
-      } else {
-        console.log('[AUTH SERVICE] Log inserted successfully:', data?.[0]?.id)
       }
     } catch (error) {
       console.error('[AUTH SERVICE] Exception in logActivity:', error)

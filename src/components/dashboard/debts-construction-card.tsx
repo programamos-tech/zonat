@@ -40,25 +40,25 @@ export function DebtsConstructionCard() {
           </p>
           
           <div className="space-y-3 text-left max-w-sm mx-auto">
-            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-neutral-800/50">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 Registrar deudas de clientes
               </span>
             </div>
-            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-neutral-800/50">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 Seguimiento de pagos pendientes
               </span>
             </div>
-            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-neutral-800/50">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 Reportes de cartera
               </span>
             </div>
-            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-gray-700/50">
+            <div className="flex items-center space-x-3 p-2 rounded-lg bg-gray-50 dark:bg-neutral-800/50">
               <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
               <span className="text-sm text-gray-600 dark:text-gray-400">
                 Alertas de vencimiento

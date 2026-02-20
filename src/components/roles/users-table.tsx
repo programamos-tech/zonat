@@ -51,7 +51,7 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
       case 'contador':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
     }
   }
 
@@ -106,7 +106,7 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
   })
 
   return (
-    <Card className="border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+    <Card className="border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-gray-900 dark:text-white">
@@ -129,13 +129,13 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
               placeholder="Buscar usuarios..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 bg-white dark:bg-gray-700"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white placeholder-gray-600 dark:placeholder-gray-400 bg-white dark:bg-neutral-800"
             />
           </div>
           <select
             value={filterRole}
             onChange={(e) => setFilterRole(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+            className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
           >
             <option value="all">Todos los roles</option>
             <option value="superadmin">Super Admin</option>
@@ -147,7 +147,7 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}
-            className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+            className="px-4 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
           >
             <option value="all">Todos los estados</option>
             <option value="active">Activo</option>
@@ -159,7 +159,7 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
         <div className="overflow-x-auto">
           <table className="w-full min-w-[1000px]">
             <thead>
-              <tr className="border-b border-gray-200 dark:border-gray-700">
+              <tr className="border-b border-gray-200 dark:border-neutral-700">
                 <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">#</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Usuario</th>
                 <th className="text-left py-3 px-4 font-medium text-gray-600 dark:text-gray-300">Email</th>
@@ -172,7 +172,7 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
             </thead>
             <tbody>
               {filteredUsers.map((user, index) => (
-                <tr key={user.id} className="border-b border-gray-100 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700">
+                <tr key={user.id} className="border-b border-gray-100 dark:border-neutral-700 hover:bg-gray-50 dark:hover:bg-gray-700">
                   <td className="py-4 px-4">
                     <div className="text-sm font-medium text-gray-900 dark:text-white">
                       {index + 1}

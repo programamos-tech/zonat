@@ -75,7 +75,7 @@ export function SalesPeriodCard({ period, sales, previousSales, label }: SalesPe
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="p-2 rounded-xl bg-white dark:bg-gray-700 shadow-sm">
+            <div className="p-2 rounded-xl bg-white dark:bg-neutral-800 shadow-sm">
               {getPeriodIcon()}
             </div>
             <span className="text-lg font-medium text-gray-800 dark:text-gray-200">{label}</span>
@@ -108,7 +108,7 @@ export function SalesPeriodCard({ period, sales, previousSales, label }: SalesPe
           </div>
           
           {previousSales > 0 && (
-            <div className="pt-3 border-t border-gray-100 dark:border-gray-700">
+            <div className="pt-3 border-t border-gray-100 dark:border-neutral-700">
               <p className="text-xs text-gray-500 dark:text-gray-400">
                 Anterior: {formatCurrency(previousSales)}
               </p>

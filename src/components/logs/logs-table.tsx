@@ -209,7 +209,7 @@ export function LogsTable({
       case 'login':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
     }
   }
 
@@ -350,7 +350,7 @@ export function LogsTable({
   return (
     <div className="space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -383,7 +383,7 @@ export function LogsTable({
       </Card>
 
       {/* Search and Filters */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <div className="relative flex-1">
@@ -400,7 +400,7 @@ export function LogsTable({
                     setLocalSearchTerm(value)
                   }
                 }}
-                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <div>
@@ -414,7 +414,7 @@ export function LogsTable({
                     setLocalFilterModule(value)
                   }
                 }}
-                className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-gray-700"
+                className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-gray-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
               >
                 {modules.map(module => (
                   <option key={module.value} value={module.value}>
@@ -428,7 +428,7 @@ export function LogsTable({
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-0">
           {filteredLogs.length === 0 ? (
             <div className="text-center py-12">
@@ -442,8 +442,8 @@ export function LogsTable({
             </div>
           ) : (
             <>
-              {/* Vista de Tarjetas para Mobile */}
-              <div className="md:hidden space-y-3 p-3">
+              {/* Vista de Tarjetas para Mobile y Tablet */}
+              <div className="lg:hidden space-y-3 p-3">
                 {filteredLogs.map((log, index) => {
                   const getLogType = (log: any) => {
                     if (log.action === 'sale_cancellation_stock_return') return 'sale_cancellation_stock_return'
@@ -576,7 +576,7 @@ export function LogsTable({
                   return (
                     <div
                       key={log.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                       onClick={() => onLogClick && onLogClick(log)}
                     >
                       <div className="flex items-start justify-between">
@@ -603,14 +603,14 @@ export function LogsTable({
                       </div>
                       
                       {log.description && (
-                        <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                        <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                           <p className="text-xs text-gray-600 dark:text-gray-300 line-clamp-2" title={log.description}>
                             {log.description}
                           </p>
                         </div>
                       )}
                       
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="text-center">
                           <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Usuario</div>
                           <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={log.user_name || 'Desconocido'}>
@@ -622,7 +622,7 @@ export function LogsTable({
                           <div className="text-xs font-semibold text-gray-900 dark:text-white">{formatDate(log.created_at)}</div>
                         </div>
                       </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-700 flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-gray-400">
                         <Eye className="h-3 w-3" />
                         <span>Ver detalle</span>
                       </div>
@@ -632,9 +632,9 @@ export function LogsTable({
               </div>
 
               {/* Vista de Tabla para Desktop */}
-              <div className="hidden md:block overflow-x-auto logs-table-tablet-container">
+              <div className="hidden lg:block overflow-x-auto logs-table-tablet-container">
                 <table className="w-full table-fixed logs-table-tablet">
-                <thead className="bg-gray-50 dark:bg-gray-700">
+                <thead className="bg-gray-50 dark:bg-neutral-800">
                   <tr>
                     <th className="w-12 md:w-16 pl-3 md:pl-4 pr-1 md:pr-2 py-2 md:py-3 text-left text-xs md:text-sm font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
                       #
@@ -659,7 +659,7 @@ export function LogsTable({
                     </th>
                   </tr>
                 </thead>
-                <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+                <tbody className="bg-white dark:bg-neutral-900 divide-y divide-gray-200 dark:divide-gray-700">
                   {filteredLogs.map((log, index) => {
                     // Mapear el tipo basado en el módulo y acción
                     const getLogType = (log: any) => {
@@ -1052,7 +1052,7 @@ export function LogsTable({
 
       {/* Paginación */}
       {totalLogs > 20 && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-3 md:px-6 py-3 md:py-4 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg">
           {/* Información de página */}
           <div className="text-xs md:text-sm text-gray-600 dark:text-gray-400 text-center sm:text-left">
             <span className="hidden sm:inline">Mostrando </span>
@@ -1101,7 +1101,7 @@ export function LogsTable({
                         disabled={loading}
                         className={`px-2 md:px-3 py-1.5 text-xs md:text-sm rounded-md transition-colors min-w-[28px] md:min-w-[32px] active:scale-95 ${
                           page === currentPage 
-                            ? "bg-gray-100 dark:bg-gray-900 text-gray-700 dark:text-gray-300 font-medium" 
+                            ? "bg-gray-100 dark:bg-neutral-950 text-gray-700 dark:text-gray-300 font-medium" 
                             : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
                       >

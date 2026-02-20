@@ -9,16 +9,11 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
     qualities: [75, 90, 100],
   },
-  experimental: {
-    turbo: {
-      rules: {
-        '*.svg': {
-          loaders: ['@svgr/webpack'],
-          as: '*.js',
-        },
-      },
-    },
-  },
+  // Desactivado temporalmente: a veces bloquea el arranque del dev server
+  // experimental: {
+  //   optimizePackageImports: ['lucide-react', 'recharts'],
+  // },
+  // turbopack: { rules: { '*.svg': { loaders: ['@svgr/webpack'], as: '*.js' } } },
 }
 
 module.exports = nextConfig

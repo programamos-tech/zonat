@@ -70,9 +70,9 @@ export function ConfirmModal({
 
   return (
     <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:px-6">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-gray-700 flex flex-col">
+      <div className="bg-white dark:bg-neutral-950 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700 flex flex-col">
         {/* Header */}
-        <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-gray-700 ${styles.headerBg} flex-shrink-0`}>
+        <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 ${styles.headerBg} flex-shrink-0`}>
           <div className="flex items-center space-x-3">
             <div className={`p-2 rounded-full ${styles.iconBg}`}>
               <AlertTriangle className={`h-4 w-4 md:h-5 md:w-5 ${styles.iconColor}`} />
@@ -95,11 +95,11 @@ export function ConfirmModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
           <Button
             onClick={onClose}
             variant="outline"
-            className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
           >
             {cancelText}
           </Button>

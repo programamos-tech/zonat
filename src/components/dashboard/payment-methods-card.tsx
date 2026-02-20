@@ -85,7 +85,7 @@ export function PaymentMethodsCard({ paymentMethods }: PaymentMethodsCardProps) 
         }
       default:
         return {
-          bg: 'bg-gray-100 dark:bg-gray-700',
+          bg: 'bg-gray-100 dark:bg-neutral-800',
           text: 'text-gray-800 dark:text-gray-300',
           bar: 'bg-gray-500'
         }
@@ -129,7 +129,7 @@ export function PaymentMethodsCard({ paymentMethods }: PaymentMethodsCardProps) 
               const isTop = index === 0
               
               return (
-                <div key={method.method} className="p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200">
+                <div key={method.method} className="p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm hover:shadow-md transition-all duration-200">
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-4">
@@ -164,7 +164,7 @@ export function PaymentMethodsCard({ paymentMethods }: PaymentMethodsCardProps) 
                       </div>
                     </div>
                     
-                    <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                    <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
                       <div 
                         className={`h-2 rounded-full transition-all duration-700 ${colors.bar}`}
                         style={{ width: `${method.percentage}%` }}
@@ -176,7 +176,7 @@ export function PaymentMethodsCard({ paymentMethods }: PaymentMethodsCardProps) 
             })
           ) : (
             <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="p-4 rounded-full bg-gray-100 dark:bg-neutral-800 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <CreditCard className="h-8 w-8 text-gray-400" />
               </div>
               <p className="text-gray-500 dark:text-gray-400">

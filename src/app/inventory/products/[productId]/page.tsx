@@ -304,13 +304,13 @@ export default function ProductDetailPage() {
       case 'active':
         return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
       case 'inactive':
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
       case 'discontinued':
         return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
       case 'out_of_stock':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
     }
   }
 
@@ -543,7 +543,7 @@ export default function ProductDetailPage() {
   if (isLoading) {
     return (
       <RoleProtectedRoute module="products" requiredAction="view">
-        <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
+        <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen flex items-center justify-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
         </div>
       </RoleProtectedRoute>
@@ -558,9 +558,9 @@ export default function ProductDetailPage() {
 
   return (
     <RoleProtectedRoute module="products" requiredAction="view">
-      <div className="p-3 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen pb-20 lg:pb-6">
+      <div className="p-3 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen pb-20 lg:pb-6">
         {/* Header */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
           <CardContent className="p-3 md:p-6">
             <div className="flex flex-col gap-4">
               <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
@@ -583,7 +583,7 @@ export default function ProductDetailPage() {
                         <Button
                           variant="outline"
                           onClick={() => router.push('/inventory/products')}
-                          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600 text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 h-auto flex-shrink-0"
+                          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600 text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 h-auto flex-shrink-0"
                         >
                           <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
                           <span className="hidden md:inline">Volver</span>
@@ -599,19 +599,19 @@ export default function ProductDetailPage() {
                   <div className={`grid ${isMainStore ? 'grid-cols-3' : 'grid-cols-1'} gap-2 md:gap-4 mt-3 md:mt-4`}>
                     {isMainStore ? (
                       <>
-                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                           <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
                           <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                             {formatNumber(product.stock.warehouse)}
                           </div>
                         </div>
-                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                           <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
                           <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                             {formatNumber(product.stock.store)}
                           </div>
                         </div>
-                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                           <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
                           <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                             {formatNumber(product.stock.total)}
@@ -619,7 +619,7 @@ export default function ProductDetailPage() {
                         </div>
                       </>
                     ) : (
-                      <div className="p-2 md:p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
                         <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Stock</div>
                         <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
                           {formatNumber(product.stock.store)}
@@ -698,7 +698,7 @@ export default function ProductDetailPage() {
         </Card>
 
         {/* Información Detallada */}
-        <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
           <CardHeader className="p-3 md:p-6 pb-3 md:pb-6">
             <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white">
               Información del Producto
@@ -761,7 +761,7 @@ export default function ProductDetailPage() {
 
         {/* Análisis de Rotación y Márgenes - Solo para Super Admin */}
         {isSuperAdmin && (
-          <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
             <CardHeader className="p-3 md:p-6 pb-3 md:pb-6">
               <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
                 <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-cyan-600" />

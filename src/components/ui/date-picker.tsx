@@ -131,7 +131,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
       {/* Input trigger */}
       <div 
         onClick={handleOpenCalendar}
-        className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 cursor-pointer"
+        className="w-full flex items-center justify-between px-3 py-2 bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:border-emerald-500 focus-within:ring-2 focus-within:ring-emerald-500 focus-within:border-emerald-500 cursor-pointer"
       >
         <div className="flex items-center gap-2">
           <Calendar className="h-4 w-4 text-gray-400" />
@@ -165,7 +165,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
 
       {/* Calendar dropdown */}
       {isOpen && (
-        <div className={`absolute ${showAbove ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg z-[100] p-4 min-w-[280px] max-w-[280px]`}>
+        <div className={`absolute ${showAbove ? 'bottom-full mb-1' : 'top-full mt-1'} right-0 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-lg z-[100] p-4 min-w-[280px] max-w-[280px]`}>
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
             <button
@@ -212,7 +212,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
                   className={`
                     w-8 h-8 text-xs rounded transition-colors
                     ${isDisabled 
-                      ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed bg-gray-100 dark:bg-gray-800' 
+                      ? 'text-gray-300 dark:text-gray-700 cursor-not-allowed bg-gray-100 dark:bg-neutral-900' 
                       : isCurrentMonth 
                         ? 'text-gray-900 dark:text-white hover:bg-emerald-100 dark:hover:bg-emerald-900/30' 
                         : 'text-gray-400 dark:text-gray-600'
@@ -234,7 +234,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
           </div>
 
           {/* Quick actions */}
-          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-4 pt-3 border-t border-gray-200 dark:border-neutral-700">
             <div className="flex gap-2">
               <button
                 onClick={() => {
@@ -246,7 +246,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
                 disabled={isDateDisabled(new Date())}
                 className={`flex-1 px-3 py-1 text-xs rounded transition-colors ${
                   isDateDisabled(new Date())
-                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed bg-gray-100 dark:bg-gray-800'
+                    ? 'text-gray-400 dark:text-gray-600 cursor-not-allowed bg-gray-100 dark:bg-neutral-900'
                     : 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50'
                 }`}
               >
@@ -254,7 +254,7 @@ export function DatePicker({ selectedDate, onDateSelect, placeholder = "Seleccio
               </button>
               <button
                 onClick={handleClearDate}
-                className="flex-1 px-3 py-1 text-xs bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-gray-600"
+                className="flex-1 px-3 py-1 text-xs bg-gray-100 dark:bg-neutral-800 text-gray-700 dark:text-gray-300 rounded hover:bg-gray-200 dark:hover:bg-neutral-700"
               >
                 Limpiar
               </button>

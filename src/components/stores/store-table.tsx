@@ -49,10 +49,10 @@ function StoreCard({
   return (
     <Card
       onClick={onStoreClick}
-      className={`bg-white dark:bg-gray-800 transition-all duration-200 overflow-visible group relative ${
+      className={`bg-white dark:bg-neutral-900 transition-all duration-200 overflow-visible group relative ${
         isCurrentStore 
           ? 'ring-2 ring-emerald-400 dark:ring-emerald-500 shadow-md' 
-          : 'border border-gray-200 dark:border-gray-700'
+          : 'border border-gray-200 dark:border-neutral-700'
       } ${
         isSuperAdmin 
           ? 'cursor-pointer hover:shadow-lg' 
@@ -99,7 +99,7 @@ function StoreCard({
             )}
             {/* Icono de Tienda Principal - Corona */}
             {isMainStore && (
-              <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 dark:bg-emerald-400 text-white rounded-full p-1 shadow-sm border-2 border-white dark:border-gray-800">
+              <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 dark:bg-emerald-400 text-white rounded-full p-1 shadow-sm border-2 border-white dark:border-neutral-800">
                 <Crown className="h-2.5 w-2.5" />
               </div>
             )}
@@ -239,8 +239,8 @@ export function StoreTable({
   }
 
   return (
-    <Card className="bg-white dark:bg-gray-800 shadow-sm">
-      <CardHeader className="border-b border-gray-200 dark:border-gray-700">
+    <Card className="bg-white dark:bg-neutral-900 shadow-sm">
+      <CardHeader className="border-b border-gray-200 dark:border-neutral-700">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">

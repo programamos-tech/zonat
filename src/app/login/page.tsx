@@ -62,11 +62,11 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black flex items-center justify-center p-4">
       <div className="w-full max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:min-h-[680px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-gray-800">
+        <div className="flex flex-col md:flex-row md:min-h-[680px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-neutral-900">
           {/* Panel Izquierdo con Logo */}
-          <div className="hidden md:flex md:w-1/2 bg-gray-900 dark:bg-gray-800 items-center justify-center p-10 md:p-16">
+          <div className="hidden md:flex md:w-1/2 bg-black dark:bg-neutral-900 items-center justify-center p-10 md:p-16">
             <div className="relative w-[200px] h-[200px] flex items-center justify-center">
               <img
                 src="/zonat-logo.png"
@@ -78,7 +78,7 @@ export default function LoginPage() {
           </div>
 
           {/* Panel Derecho con Formulario */}
-          <div className="w-full md:w-1/2 bg-white dark:bg-gray-800 flex items-center justify-center p-6 md:p-16">
+          <div className="w-full md:w-1/2 bg-white dark:bg-neutral-900 flex items-center justify-center p-6 md:p-16">
             <div className="w-full max-w-md">
               {/* Logo en Mobile */}
               <div className="md:hidden text-center mb-6">
@@ -109,8 +109,8 @@ export default function LoginPage() {
                     <Input
                       id="email"
                       type="email"
-                      placeholder="diego@zonat.com"
-                      className="pl-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white"
+                      placeholder="tu@correo.com"
+                      className="pl-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-neutral-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-neutral-800 dark:text-white"
                       {...register('email')}
                     />
                   </div>
@@ -132,7 +132,7 @@ export default function LoginPage() {
                       id="password"
                       type={showPassword ? 'text' : 'password'}
                       placeholder="••••••••"
-                      className="pl-12 pr-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-gray-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-gray-700 dark:text-white"
+                      className="pl-12 pr-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-neutral-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-neutral-800 dark:text-white"
                       {...register('password')}
                     />
                     <button
@@ -184,16 +184,16 @@ export default function LoginPage() {
                 <p className="text-gray-400 dark:text-gray-500 text-xs">
                   Desarrollado por{' '}
                   <a 
-                    href="https://www.programamos.studio/" 
+                    href="https://andresruss.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
                   >
-                    programamos.st
+                    andresruss.st
                   </a>
                   {' '}•{' '}
                   <a 
-                    href="https://www.programamos.studio/" 
+                    href="https://andresruss.com" 
                     target="_blank" 
                     rel="noopener noreferrer"
                     className="text-emerald-600 hover:text-emerald-500 font-medium transition-colors"

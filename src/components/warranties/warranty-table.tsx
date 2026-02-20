@@ -55,9 +55,9 @@ export function WarrantyTable({
       case 'rejected':
         return 'bg-red-100 text-red-800 hover:bg-red-200 hover:text-red-900 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/30 dark:hover:text-red-300'
       case 'discarded':
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-200'
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700 dark:hover:text-gray-200'
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600 dark:hover:text-gray-200'
+        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700 dark:hover:text-gray-200'
     }
   }
 
@@ -115,7 +115,7 @@ export function WarrantyTable({
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardHeader className="p-3 md:p-6">
           <div className="flex flex-col gap-3 md:gap-4">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
@@ -164,7 +164,7 @@ export function WarrantyTable({
       </Card>
 
       {/* Search */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-3 md:p-4">
           <div className="relative flex-1">
             <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -173,14 +173,14 @@ export function WarrantyTable({
               placeholder="Buscar garantía..."
               value={searchTerm}
               onChange={(e) => handleSearch(e.target.value)}
-              className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+              className="w-full pl-9 md:pl-10 pr-4 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
         </CardContent>
       </Card>
 
       {/* Table */}
-      <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-0">
           {loading ? (
             <div className="flex items-center justify-center py-12">
@@ -211,7 +211,7 @@ export function WarrantyTable({
                   return (
                     <div
                       key={warranty.id}
-                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all"
+                      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all"
                       onClick={() => onView(warranty)}
                     >
                       <div className="flex items-start justify-between">
@@ -240,12 +240,12 @@ export function WarrantyTable({
                         </Badge>
                       </div>
                       
-                      <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5 text-center">Fecha</div>
                         <div className="text-xs font-semibold text-gray-900 dark:text-white text-center">{formatDate(warranty.createdAt)}</div>
                       </div>
                       
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
                         <div className="flex-1 min-w-0">
                           <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={warranty.reason}>
                             {warranty.reason}
@@ -280,7 +280,7 @@ export function WarrantyTable({
                   return (
                     <Card
                       key={warranty.id}
-                      className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
+                      className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
                       onClick={() => onView(warranty)}
                     >
                       <CardContent className="p-4 md:p-6">

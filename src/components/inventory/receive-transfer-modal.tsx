@@ -113,7 +113,7 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
 
   return (
     <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 xl:pb-4">
-      <div className="bg-white dark:bg-gray-900 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-neutral-950 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-neutral-700">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
           <div className="flex items-center gap-2">
@@ -173,7 +173,7 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
                 const isOver = item.quantityReceived > item.expectedQuantity
 
                 return (
-                  <Card key={item.itemId} className={`border ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : isOver ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-gray-700'}`}>
+                  <Card key={item.itemId} className={`border ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : isOver ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-neutral-700'}`}>
                     <CardContent className="p-4 space-y-3">
                       {/* Información del Producto */}
                       <div>
@@ -227,7 +227,7 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
                                 }
                               }
                             }}
-                            className={`h-10 w-full px-3 text-sm border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white ${isOver ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                            className={`h-10 w-full px-3 text-sm border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white ${isOver ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                           />
                           {isPartial && (
                             <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
@@ -265,12 +265,12 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
           <Button
             variant="outline"
             onClick={onClose}
             disabled={isSaving}
-            className="border-gray-300 dark:border-gray-600"
+            className="border-gray-300 dark:border-neutral-600"
           >
             Cancelar
           </Button>

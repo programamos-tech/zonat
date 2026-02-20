@@ -82,7 +82,7 @@ export default function SelectStorePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black">
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300">Cargando tiendas...</p>
@@ -92,7 +92,7 @@ export default function SelectStorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black flex items-center justify-center p-4">
       <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">
@@ -117,10 +117,10 @@ export default function SelectStorePage() {
           {mainStore && (
             <Card
               onClick={() => handleSelectStore(mainStore)}
-              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-emerald-200 dark:border-emerald-800 bg-white dark:bg-gray-800"
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-emerald-200 dark:border-emerald-800 bg-white dark:bg-neutral-900"
             >
               <CardContent className="p-2 md:p-4 flex flex-col items-center text-center">
-                <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800 mb-1.5 md:mb-2">
+                <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-neutral-800 flex items-center justify-center shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800 mb-1.5 md:mb-2">
                   {mainStore.logo ? (
                     <Image
                       src={mainStore.logo}
@@ -132,7 +132,7 @@ export default function SelectStorePage() {
                   ) : (
                     <StoreIcon className="h-6 w-6 md:h-8 md:w-8 text-gray-400 dark:text-gray-500" />
                   )}
-                  <div className="absolute -top-0.5 -right-0.5 bg-yellow-500 dark:bg-yellow-400 text-white rounded-full p-0.5 md:p-1 shadow-lg border-2 border-white dark:border-gray-800">
+                  <div className="absolute -top-0.5 -right-0.5 bg-yellow-500 dark:bg-yellow-400 text-white rounded-full p-0.5 md:p-1 shadow-lg border-2 border-white dark:border-neutral-800">
                     <Crown className="h-2 w-2 md:h-2.5 md:w-2.5" />
                   </div>
                 </div>
@@ -150,10 +150,10 @@ export default function SelectStorePage() {
               onClick={() => !store.isActive ? null : handleSelectStore(store)}
               className={`cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${
                 !store.isActive ? 'opacity-50 cursor-not-allowed' : ''
-              } border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800`}
+              } border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900`}
             >
               <CardContent className="p-2 md:p-4 flex flex-col items-center text-center">
-                <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-md ring-2 ring-gray-200 dark:ring-gray-600 mb-1.5 md:mb-2">
+                <div className="relative w-12 h-12 md:w-16 md:h-16 rounded-full overflow-hidden bg-gray-100 dark:bg-neutral-800 flex items-center justify-center shadow-md ring-2 ring-gray-200 dark:ring-gray-600 mb-1.5 md:mb-2">
                   {store.logo ? (
                     <Image
                       src={store.logo}
@@ -185,10 +185,10 @@ export default function SelectStorePage() {
           {mainStore && (
             <Card
               onClick={() => handleSelectStore(mainStore)}
-              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-emerald-200 dark:border-emerald-800 bg-white dark:bg-gray-800"
+              className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 border-2 border-emerald-200 dark:border-emerald-800 bg-white dark:bg-neutral-900"
             >
               <CardContent className="p-4 md:p-6 flex flex-col items-center text-center">
-                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800 mb-2 md:mb-3">
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-neutral-800 flex items-center justify-center shadow-md ring-2 ring-emerald-200 dark:ring-emerald-800 mb-2 md:mb-3">
                   {mainStore.logo ? (
                     <Image
                       src={mainStore.logo}
@@ -200,7 +200,7 @@ export default function SelectStorePage() {
                   ) : (
                     <StoreIcon className="h-8 w-8 md:h-10 md:w-10 text-gray-400 dark:text-gray-500" />
                   )}
-                  <div className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 bg-yellow-500 dark:bg-yellow-400 text-white rounded-full p-1 md:p-1.5 shadow-lg border-2 border-white dark:border-gray-800">
+                  <div className="absolute -top-0.5 -right-0.5 md:-top-1 md:-right-1 bg-yellow-500 dark:bg-yellow-400 text-white rounded-full p-1 md:p-1.5 shadow-lg border-2 border-white dark:border-neutral-800">
                     <Crown className="h-2.5 w-2.5 md:h-4 md:w-4" />
                   </div>
                 </div>
@@ -218,10 +218,10 @@ export default function SelectStorePage() {
               onClick={() => !store.isActive ? null : handleSelectStore(store)}
               className={`cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-105 ${
                 !store.isActive ? 'opacity-50 cursor-not-allowed' : ''
-              } border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800`}
+              } border border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900`}
             >
               <CardContent className="p-4 md:p-6 flex flex-col items-center text-center">
-                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-gray-700 flex items-center justify-center shadow-md ring-2 ring-gray-200 dark:ring-gray-600 mb-2 md:mb-3">
+                <div className="relative w-16 h-16 md:w-20 md:h-20 rounded-full overflow-hidden bg-gray-100 dark:bg-neutral-800 flex items-center justify-center shadow-md ring-2 ring-gray-200 dark:ring-gray-600 mb-2 md:mb-3">
                   {store.logo ? (
                     <Image
                       src={store.logo}

@@ -125,7 +125,7 @@ export function ActivitiesSummaryCard({ activities, limit = 10 }: ActivitiesSumm
               const StatusIcon = statusColors.icon
               
               return (
-                <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm hover:shadow-md transition-all duration-200">
+                <div key={activity.id} className="flex items-start space-x-4 p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm hover:shadow-md transition-all duration-200">
                   <div className={`p-2 rounded-xl ${statusColors.bg} shadow-sm`}>
                     <div className={statusColors.iconColor}>
                       {getActivityIcon(activity.type)}
@@ -164,7 +164,7 @@ export function ActivitiesSummaryCard({ activities, limit = 10 }: ActivitiesSumm
             })
           ) : (
             <div className="text-center py-12">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="p-4 rounded-full bg-gray-100 dark:bg-neutral-800 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <Activity className="h-8 w-8 text-gray-400" />
               </div>
               <p className="text-gray-500 dark:text-gray-400">
@@ -175,7 +175,7 @@ export function ActivitiesSummaryCard({ activities, limit = 10 }: ActivitiesSumm
         </div>
         
         {activities.length > limit && (
-          <div className="pt-4 border-t border-gray-100 dark:border-gray-700 text-center">
+          <div className="pt-4 border-t border-gray-100 dark:border-neutral-700 text-center">
             <p className="text-sm text-gray-500 dark:text-gray-400">
               Mostrando {limit} de {activities.length} actividades
             </p>

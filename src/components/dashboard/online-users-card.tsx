@@ -49,7 +49,7 @@ export function OnlineUsersCard({ onlineUsers, totalUsers }: OnlineUsersCardProp
       case 'contador':
         return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-400'
+        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-400'
     }
   }
 
@@ -88,7 +88,7 @@ export function OnlineUsersCard({ onlineUsers, totalUsers }: OnlineUsersCardProp
           {onlineUsers.length > 0 ? (
             <div className="space-y-3">
               {onlineUsers.map((user) => (
-                <div key={user.id} className="p-4 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm border border-green-200 dark:border-green-800/30">
+                <div key={user.id} className="p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm border border-green-200 dark:border-green-800/30">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
                       <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
@@ -128,7 +128,7 @@ export function OnlineUsersCard({ onlineUsers, totalUsers }: OnlineUsersCardProp
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="p-4 rounded-full bg-gray-100 dark:bg-gray-700 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <div className="p-4 rounded-full bg-gray-100 dark:bg-neutral-800 w-16 h-16 mx-auto mb-4 flex items-center justify-center">
                 <WifiOff className="h-8 w-8 text-gray-400" />
               </div>
               <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
@@ -141,7 +141,7 @@ export function OnlineUsersCard({ onlineUsers, totalUsers }: OnlineUsersCardProp
           )}
 
           {/* Resumen */}
-          <div className="pt-4 border-t border-gray-100 dark:border-gray-700">
+          <div className="pt-4 border-t border-gray-100 dark:border-neutral-700">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Total de usuarios registrados

@@ -175,7 +175,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
 
   return (
     <div className="fixed top-0 right-0 bottom-0 left-64 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center pl-6 pr-4">
-      <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-neutral-950 rounded-2xl shadow-2xl w-full max-w-4xl max-h-[95vh] overflow-hidden flex flex-col border border-gray-200 dark:border-neutral-700">
         {/* Header */}
         <div className="flex items-center justify-between p-6 bg-cyan-50 dark:bg-cyan-900/20 border-b border-cyan-200 dark:border-cyan-800">
           <div className="flex items-center space-x-3">
@@ -199,7 +199,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
           </Button>
         </div>
 
-        <div className="p-6 flex-1 bg-white dark:bg-gray-900 overflow-y-auto">
+        <div className="p-6 flex-1 bg-white dark:bg-neutral-950 overflow-y-auto">
           <div className="space-y-6">
             {/* Instrucciones */}
             <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
@@ -211,7 +211,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
               </CardHeader>
               <CardContent className="text-cyan-700 dark:text-cyan-300">
                 <p className="mb-2">El archivo CSV debe tener el siguiente formato:</p>
-                <div className="bg-white dark:bg-gray-800 p-3 rounded border font-mono text-sm">
+                <div className="bg-white dark:bg-neutral-900 p-3 rounded border font-mono text-sm">
                   Referencia;Descripción;Precio Compra;Stock
                 </div>
                 <p className="mt-2 text-sm">
@@ -224,14 +224,14 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
             </Card>
 
             {/* Upload de archivo */}
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader>
                 <CardTitle className="text-lg text-gray-900 dark:text-white">
                   Seleccionar Archivo
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg p-6 text-center">
+                <div className="border-2 border-dashed border-gray-300 dark:border-neutral-600 rounded-lg p-6 text-center">
                   <input
                     ref={fileInputRef}
                     type="file"
@@ -278,7 +278,7 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
 
             {/* Preview de productos */}
             {parsedProducts.length > 0 && (
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader>
                   <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
                     <CheckCircle className="h-5 w-5 mr-2 text-cyan-500" />
@@ -286,10 +286,10 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="max-h-80 overflow-y-auto border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-800">
+                  <div className="max-h-80 overflow-y-auto border border-gray-200 dark:border-neutral-600 rounded-lg bg-gray-50 dark:bg-neutral-900">
                     <div className="space-y-1 p-3">
                       {parsedProducts.map((product, index) => (
-                        <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600">
+                        <div key={index} className="flex items-center justify-between p-2 bg-white dark:bg-neutral-800 rounded border border-gray-200 dark:border-neutral-600">
                           <div className="flex items-center space-x-2">
                             <Package className="h-3 w-3 text-cyan-500" />
                             <div>
@@ -320,11 +320,11 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900">
           <Button
             onClick={handleClose}
             variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
           >
             Cancelar
           </Button>

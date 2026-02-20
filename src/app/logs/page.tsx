@@ -93,7 +93,7 @@ export default function LogsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+      <div className="p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
         <div className="flex items-center justify-center h-64">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
         </div>
@@ -102,7 +102,7 @@ export default function LogsPage() {
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900 min-h-screen">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
       <LogsTable
         logs={filteredLogs as any}
         searchTerm={searchTerm}

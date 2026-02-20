@@ -29,7 +29,7 @@ export function ActiveUsersCard({
       return {
         status: 'offline',
         color: 'text-gray-600 dark:text-gray-400',
-        bgColor: 'bg-gray-100 dark:bg-gray-700',
+        bgColor: 'bg-gray-100 dark:bg-neutral-800',
         label: 'Ningún usuario en línea'
       }
     }
@@ -54,7 +54,7 @@ export function ActiveUsersCard({
           <div className={`p-4 rounded-xl ${onlineStatus.bgColor} shadow-sm`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="p-2 rounded-lg bg-white dark:bg-gray-800 shadow-sm">
+                <div className="p-2 rounded-lg bg-white dark:bg-neutral-900 shadow-sm">
                   <Activity className={`h-4 w-4 ${onlineStatus.color}`} />
                 </div>
                 <span className={`font-medium ${onlineStatus.color}`}>
@@ -69,8 +69,8 @@ export function ActiveUsersCard({
 
           {/* Estadísticas de usuarios */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-600 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-neutral-700 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <Users className="h-6 w-6 text-gray-600 dark:text-gray-400" />
               </div>
               <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">
@@ -81,7 +81,7 @@ export function ActiveUsersCard({
               </p>
             </div>
 
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
               <div className="p-3 rounded-xl bg-green-50 dark:bg-green-900/20 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <UserCheck className="h-6 w-6 text-green-600" />
               </div>
@@ -93,8 +93,8 @@ export function ActiveUsersCard({
               </p>
             </div>
 
-            <div className="text-center p-5 rounded-xl bg-white dark:bg-gray-700/50 shadow-sm">
-              <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-600 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
+            <div className="text-center p-5 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm">
+              <div className="p-3 rounded-xl bg-gray-50 dark:bg-neutral-700 w-12 h-12 mx-auto mb-3 flex items-center justify-center">
                 <UserX className="h-6 w-6 text-gray-500" />
               </div>
               <p className="text-xl font-bold text-gray-900 dark:text-white mb-1">
@@ -112,7 +112,7 @@ export function ActiveUsersCard({
               <span>Usuarios en Línea</span>
               <span>{onlinePercentage.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-neutral-800 rounded-full h-2">
               <div 
                 className={`h-2 rounded-full transition-all duration-500 ${
                   onlineUsers > 0 ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gray-400'
@@ -124,7 +124,7 @@ export function ActiveUsersCard({
 
           {/* Última actividad */}
           {lastActivity && (
-            <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
               <div className="flex items-center space-x-2 text-sm text-gray-600 dark:text-gray-400">
                 <Clock className="h-4 w-4" />
                 <span>Última actividad: {lastActivity}</span>
@@ -133,7 +133,7 @@ export function ActiveUsersCard({
           )}
 
           {/* Resumen */}
-          <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
                 Estado Actual

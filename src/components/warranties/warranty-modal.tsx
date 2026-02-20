@@ -308,7 +308,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
 
   return (
     <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-gray-900 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-gray-700 relative z-[10000]">
+      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
         <div className="flex items-center justify-between p-3 md:p-4 border-b border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">
             <Shield className="h-5 w-5 md:h-6 md:w-6 text-purple-600 dark:text-purple-400" />
@@ -334,7 +334,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         <div className="flex-1 overflow-y-auto p-3 md:p-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 overflow-y-auto flex-1">
             <div className="space-y-3">
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="h-5 w-5 text-red-600" />
@@ -351,7 +351,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                         placeholder="Buscar producto defectuoso..."
                         value={defectiveSearch}
                         onChange={(e) => setDefectiveSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                       />
                     </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -369,7 +369,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           <button
                             key={product.id}
                             onClick={() => handleSelectDefective(product)}
-                            className="w-full text-left p-3 border border-gray-200 dark:border-gray-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="w-full text-left p-3 border border-gray-200 dark:border-neutral-600 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                           >
                               <div className="font-medium text-gray-900 dark:text-white">
                               {product.name}
@@ -427,7 +427,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           const value = parseInt(e.target.value) || 1
                           setFormData(prev => ({ ...prev, quantityReceived: Math.max(1, value) }))
                         }}
-                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                       />
                       {errors.quantityReceived && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
@@ -441,7 +441,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
               </CardContent>
             </Card>
 
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <Package className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -450,7 +450,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
               </CardHeader>
               <CardContent className="space-y-3 p-3 pt-2">
                 {!selectedDefectiveProduct ? (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-300">
+                  <div className="p-3 bg-gray-50 dark:bg-neutral-800 border border-gray-200 dark:border-neutral-600 rounded-lg text-sm text-gray-500 dark:text-gray-300">
                     Primero selecciona el producto defectuoso para elegir un reemplazo.
                   </div>
                 ) : !selectedReplacementProduct ? (
@@ -462,7 +462,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                             placeholder="Buscar producto de reemplazo..."
                         value={replacementSearch}
                         onChange={(e) => setReplacementSearch(e.target.value)}
-                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full pl-9 pr-3 py-1.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                           />
                         </div>
                     <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -485,7 +485,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                               onClick={() => void handleSelectReplacement(product)}
                               className={`w-full text-left p-3 border rounded-lg transition-colors ${
                                 hasStock
-                                  ? 'border-gray-200 dark:border-gray-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
+                                  ? 'border-gray-200 dark:border-neutral-600 hover:bg-purple-50 dark:hover:bg-purple-900/20'
                                   : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 cursor-not-allowed opacity-70'
                               }`}
                               disabled={!hasStock}
@@ -555,7 +555,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                           const maxStock = getProductStock(selectedReplacementProduct)
                           setFormData(prev => ({ ...prev, quantityDelivered: Math.max(1, Math.min(maxStock, value)) }))
                         }}
-                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                       />
                       {errors.quantityDelivered && (
                         <p className="text-xs text-red-600 dark:text-red-400 mt-1 flex items-center gap-1">
@@ -574,7 +574,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             </div>
 
             <div className="space-y-3">
-            <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
               <CardHeader className="p-3 pb-2">
                 <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <User className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -596,7 +596,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                       <select
                         value={selectedClientId}
                         onChange={(e) => handleSelectClient(e.target.value)}
-                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
+                        className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
                       >
                         <option value="">Selecciona un cliente...</option>
                         {filteredClients.map((client) => (
@@ -624,7 +624,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                 </div>
 
                 {selectedClient && (
-                  <div className="p-3 bg-gray-50 dark:bg-gray-700 rounded-lg text-sm text-gray-600 dark:text-gray-300">
+                  <div className="p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg text-sm text-gray-600 dark:text-gray-300">
                     <div className="font-medium text-gray-900 dark:text-white">{selectedClient.name}</div>
                     {selectedClient.email && <div>{selectedClient.email}</div>}
                     {selectedClient.phone && <div>{selectedClient.phone}</div>}
@@ -634,7 +634,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                  </CardContent>
                </Card>
 
-              <Card className="bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700">
+              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                 <CardHeader className="p-3 pb-2">
                   <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
                     <ClipboardList className="h-5 w-5 text-purple-600 dark:text-purple-400" />
@@ -650,7 +650,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
                     onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                     placeholder="Notas adicionales sobre la garantía..."
                     rows={3}
-                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-gray-700 text-gray-900 dark:text-white resize-none"
+                    className="w-full px-2.5 py-1.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white resize-none"
                   />
               </CardContent>
             </Card>
@@ -658,11 +658,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 sticky bottom-0 flex-shrink-0">
+        <div className="flex items-center justify-end gap-3 p-3 md:p-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 flex-shrink-0">
           <Button
             onClick={handleClose}
             variant="outline"
-            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-gray-600"
+            className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
           >
             Cancelar
           </Button>
