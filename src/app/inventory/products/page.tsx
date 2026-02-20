@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { ProductTable } from '@/components/products/product-table'
 import { ProductModal } from '@/components/products/product-modal'
 import { CategoryModal } from '@/components/categories/category-modal'
@@ -10,7 +10,6 @@ import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { useProducts } from '@/contexts/products-context'
 import { useCategories } from '@/contexts/categories-context'
-import { ProductsService } from '@/lib/products-service'
 import { Product, Category, StockTransfer } from '@/types'
 import { toast } from 'sonner'
 
@@ -27,16 +26,6 @@ export default function ProductsPage() {
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null)
-  const [totalStock, setTotalStock] = useState<number>(0)
-
-  // Obtener stock total de TODOS los productos (no solo los de la página actual)
-  useEffect(() => {
-    const fetchTotalStock = async () => {
-      const total = await ProductsService.getTotalStock()
-      setTotalStock(total)
-    }
-    fetchTotalStock()
-  }, [products, productsLastUpdated])
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product)
@@ -176,7 +165,6 @@ export default function ProductsPage() {
     <RoleProtectedRoute module="products" requiredAction="view">
       <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-gray-900">
       <ProductTable
-        totalStock={totalStock}
         products={products}
         categories={categories}
         loading={loading}

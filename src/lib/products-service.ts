@@ -644,10 +644,11 @@ export class ProductsService {
     }
   }
 
-  // Obtener el stock total de todos los productos (más eficiente que obtener todos los productos)
-  static async getTotalStock(): Promise<number> {
+  // Obtener el stock total de todos los productos (más eficiente que obtener todos los productos).
+  // storeIdOverride: opcional; si la página lo pasa (ej. user?.storeId) se usa para evitar race con auth.
+  static async getTotalStock(storeIdOverride?: string | null): Promise<number> {
     try {
-      const currentStoreId = getCurrentUserStoreId()
+      const currentStoreId = storeIdOverride !== undefined ? storeIdOverride : getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
 
@@ -693,13 +694,14 @@ export class ProductsService {
 
         return totalStock
       } else {
-        // Para micro tiendas, sumar stock de store_stock
-        const { data, error } = await supabaseAdmin
+        // Para micro tiendas, sumar stock de store_stock (usar supabase con sesión del usuario para RLS)
+        const { data, error } = await supabase
           .from('store_stock')
           .select('quantity')
           .eq('store_id', currentStoreId)
 
         if (error) {
+          console.error('[getTotalStock] Error store_stock:', error)
           return 0
         }
 
@@ -792,6 +794,33 @@ export class ProductsService {
       // console.error('[PRODUCTS SERVICE] Exception in getProductById:', error)
       return null
     }
+  }
+
+  /**
+   * Obtener varios productos por IDs en una o pocas peticiones (batch).
+   * Devuelve solo id, name, reference para uso en listados/dashboard.
+   */
+  static async getProductsByIds(ids: string[]): Promise<Array<{ id: string; name: string; reference: string | null }>> {
+    if (ids.length === 0) return []
+    const uniqueIds = Array.from(new Set(ids))
+    const CHUNK = 100
+    const results: Array<{ id: string; name: string; reference: string | null }> = []
+    for (let i = 0; i < uniqueIds.length; i += CHUNK) {
+      const chunk = uniqueIds.slice(i, i + CHUNK)
+      const { data, error } = await supabaseAdmin
+        .from('products')
+        .select('id, name, reference')
+        .in('id', chunk)
+      if (error) continue
+      if (data?.length) {
+        results.push(...data.map((row: any) => ({
+          id: row.id,
+          name: row.name ?? '',
+          reference: row.reference ?? null
+        })))
+      }
+    }
+    return results
   }
 
   // Crear nuevo producto
@@ -1693,8 +1722,10 @@ export class ProductsService {
   }
 
   /**
- * Obtiene métricas básicas de inventario optimizadas con soporte para grandes volúmenes
- */
+   * Obtiene métricas básicas de inventario optimizadas con soporte para grandes volúmenes.
+   * - Tienda principal (Sincelejo): suma stock de products (stock_warehouse + stock_store).
+   * - Microtiendas: suma solo el stock de esa tienda desde store_stock (quantity * cost).
+   */
   static async getInventoryMetrics(): Promise<{
     totalStockUnits: number,
     totalStockInvestment: number,
@@ -1702,52 +1733,74 @@ export class ProductsService {
   }> {
     try {
       const { supabase } = await import('@/lib/supabase')
-      const storeId = await getCurrentUserStoreId()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
       let totalStockUnits = 0
       let totalStockInvestment = 0
       let lowStockCount = 0
-      let hasMore = true
-      let offset = 0
-      const limit = 1000
 
-      while (hasMore) {
-        // Consultar productos activos en lotes
-        let query = supabase
-          .from('products')
-          .select('cost, stock_warehouse, stock_store')
-          .neq('status', 'discontinued')
-          .range(offset, offset + limit - 1)
+      if (isMainStore) {
+        // Tienda principal: sumar stock desde products (bodega + local)
+        let hasMore = true
+        let offset = 0
+        const limit = 1000
+        while (hasMore) {
+          const { data: products, error } = await supabase
+            .from('products')
+            .select('cost, stock_warehouse, stock_store')
+            .neq('status', 'discontinued')
+            .range(offset, offset + limit - 1)
 
-        // Por ahora el esquema no parece usar storeId para sumar stock total en productos,
-        // pero incluimos la estructura por si fuera necesario filtrar por tienda en el futuro.
-        // if (storeId && storeId !== 'main') { ... }
-
-        const { data: products, error } = await query
-
-        if (error) {
-          console.error('Error fetching inventory metrics batch:', error)
-          throw error
-        }
-
-        if (!products || products.length === 0) {
-          hasMore = false
-          break
-        }
-
-        products.forEach(p => {
-          const stock = (p.stock_store || 0) + (p.stock_warehouse || 0)
-          totalStockUnits += stock
-          totalStockInvestment += (p.cost || 0) * stock
-          if (stock > 0 && stock <= 5) {
-            lowStockCount++
+          if (error) {
+            console.error('Error fetching inventory metrics batch:', error)
+            throw error
           }
-        })
+          if (!products || products.length === 0) {
+            hasMore = false
+            break
+          }
+          products.forEach(p => {
+            const stock = (p.stock_store || 0) + (p.stock_warehouse || 0)
+            totalStockUnits += stock
+            totalStockInvestment += (p.cost || 0) * stock
+            if (stock > 0 && stock <= 5) lowStockCount++
+          })
+          if (products.length < limit) hasMore = false
+          else offset += limit
+        }
+      } else {
+        // Microtienda: sumar solo stock de esta tienda desde store_stock
+        let hasMore = true
+        let offset = 0
+        const limit = 1000
+        while (hasMore) {
+          const { data: rows, error } = await supabase
+            .from('store_stock')
+            .select('quantity, cost, product_id, products(cost)')
+            .eq('store_id', storeId)
+            .range(offset, offset + limit - 1)
 
-        if (products.length < limit) {
-          hasMore = false
-        } else {
-          offset += limit
+          if (error) {
+            console.error('Error fetching store_stock metrics batch:', error)
+            throw error
+          }
+          if (!rows || rows.length === 0) {
+            hasMore = false
+            break
+          }
+          rows.forEach((row: { quantity: number; cost?: number | null; products?: { cost: number } | null }) => {
+            const qty = row.quantity || 0
+            const cost = row.cost != null && row.cost > 0
+              ? Number(row.cost)
+              : (row.products?.cost != null ? Number(row.products.cost) : 0)
+            totalStockUnits += qty
+            totalStockInvestment += cost * qty
+            if (qty > 0 && qty <= 5) lowStockCount++
+          })
+          if (rows.length < limit) hasMore = false
+          else offset += limit
         }
       }
 

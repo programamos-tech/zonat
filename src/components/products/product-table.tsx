@@ -56,7 +56,6 @@ interface ProductTableProps {
   onRefresh?: () => void
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Product[]>
-  totalStock?: number
   onView?: (product: Product) => void
 }
 
@@ -78,7 +77,6 @@ export function ProductTable({
   onCreate,
   onManageCategories,
   onStockAdjustment,
-  totalStock,
   onStockTransfer,
   onRefresh,
   onPageChange,
@@ -290,14 +288,6 @@ export function ProductTable({
                     </Badge>
                   )}
                 </CardTitle>
-                  {totalStock !== undefined && (
-                    <div className="text-xs md:text-base font-normal text-gray-600 dark:text-gray-400 mt-1">
-                      <span className="hidden md:inline">Stock Total: </span>
-                      <span className="font-semibold">{new Intl.NumberFormat('es-CO').format(totalStock)}</span>
-                      <span className="hidden md:inline"> unidades</span>
-                      <span className="md:hidden"> u.</span>
-                    </div>
-                  )}
                   <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
                   {isSearching 
                     ? `Mostrando resultados de búsqueda (${products.length} productos)`
@@ -318,7 +308,7 @@ export function ProductTable({
                       Solo puedes crear productos en la tienda de Sincelejo
                     </span>
                   )}
-                  {canEdit && (
+                  {isSincelejoStore && canEdit && (
                     <Button 
                       onClick={onManageCategories} 
                         className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
