@@ -5,6 +5,7 @@ export interface Store {
   logo?: string
   address?: string
   city?: string
+  phone?: string
   isActive: boolean
   deletedAt?: string
   createdAt: string

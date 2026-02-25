@@ -320,35 +320,31 @@ export default function SaleDetailModal({
       return
     }
 
-    // Obtener información de la tienda actual
-    const storeId = getCurrentUserStoreId()
+    // Factura siempre con datos de la tienda de la venta (ej. ToroCell - Corozal / Sahagún), sin Zonat/Sincelejo
     const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-    
+    const storeIdForInvoice = sale.storeId || getCurrentUserStoreId()
+
     let currentStore
-    if (!storeId || storeId === MAIN_STORE_ID) {
-      // Obtener tienda principal
+    if (!storeIdForInvoice || storeIdForInvoice === MAIN_STORE_ID) {
       currentStore = await StoresService.getMainStore()
     } else {
-      // Obtener micro tienda
-      currentStore = await StoresService.getStoreById(storeId)
+      currentStore = await StoresService.getStoreById(storeIdForInvoice)
     }
 
-    // Usar valores por defecto si no hay configuración de empresa o tienda
-    const defaultCompanyConfig = {
-      id: 'default',
-      name: currentStore?.name || 'Zona T',
-      nit: currentStore?.nit || '1035770226-9',
-      address: currentStore?.address ? `${currentStore.address}${currentStore.city ? `, ${currentStore.city}` : ''}` : 'Carrera 20 #22-02, Sincelejo, Sucre',
-      phone: '3135206736',
-      email: 'info@zonat.com',
-      logo: currentStore?.logo || '/zonat-logo.png',
+    const addressLine = [currentStore?.address, currentStore?.city].filter(Boolean).join(', ') || ''
+    const config: CompanyConfig = {
+      id: currentStore?.id ?? 'default',
+      name: currentStore?.name ?? '',
+      nit: currentStore?.nit ?? '',
+      address: addressLine,
+      phone: currentStore?.phone ?? '',
+      email: '',
+      logo: currentStore?.logo ?? undefined,
       dianResolution: undefined,
       numberingRange: undefined,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      createdAt: currentStore?.createdAt ?? new Date().toISOString(),
+      updatedAt: currentStore?.updatedAt ?? new Date().toISOString()
     }
-
-    const config = companyConfig || defaultCompanyConfig
 
     setIsLoadingPrint(true)
     

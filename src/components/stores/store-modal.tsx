@@ -13,7 +13,8 @@ import {
   MapPin,
   FileText,
   Upload,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Phone
 } from 'lucide-react'
 import { Store } from '@/types'
 
@@ -30,7 +31,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
     nit: store?.nit || '',
     logo: store?.logo || '',
     address: store?.address || '',
-    city: store?.city || ''
+    city: store?.city || '',
+    phone: store?.phone || ''
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
@@ -44,7 +46,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
         nit: store.nit || '',
         logo: store.logo || '',
         address: store.address || '',
-        city: store.city || ''
+        city: store.city || '',
+        phone: store.phone || ''
       })
     } else {
       setFormData({
@@ -52,7 +55,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
         nit: '',
         logo: '',
         address: '',
-        city: ''
+        city: '',
+        phone: ''
       })
     }
     setErrors({})
@@ -77,7 +81,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
         nit: formData.nit.trim() || undefined,
         logo: formData.logo.trim() || undefined,
         address: formData.address.trim() || undefined,
-        city: formData.city.trim() || undefined
+        city: formData.city.trim() || undefined,
+        phone: formData.phone.trim() || undefined
       }
       onSave(storeData)
     }
@@ -332,6 +337,21 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
             />
           </div>
 
+          {/* Teléfono */}
+          <div className="space-y-2">
+            <Label htmlFor="phone" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
+              <Phone className="h-4 w-4" />
+              Teléfono
+            </Label>
+            <Input
+              id="phone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="Ej: 300 123 4567"
+            />
+          </div>
+
           {/* Dirección */}
           <div className="space-y-2">
             <Label htmlFor="address" className="text-sm font-medium text-gray-700 dark:text-gray-300 flex items-center gap-2">
@@ -344,6 +364,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
               onChange={(e) => setFormData({ ...formData, address: e.target.value })}
               placeholder="Ej: Calle 10 # 20-30"
               rows={3}
+              className="bg-white dark:bg-neutral-800 text-gray-900 dark:text-white border-gray-300 dark:border-neutral-600 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus-visible:ring-2 focus-visible:ring-purple-500"
             />
           </div>
 

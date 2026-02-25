@@ -60,6 +60,7 @@ export class StoresService {
           logo_url: storeData.logo || null,
           address: storeData.address || null,
           city: storeData.city || null,
+          phone: storeData.phone || null,
           is_active: true
         })
         .select()
@@ -116,6 +117,7 @@ export class StoresService {
       if (storeData.logo !== undefined) updateData.logo_url = storeData.logo || null
       if (storeData.address !== undefined) updateData.address = storeData.address || null
       if (storeData.city !== undefined) updateData.city = storeData.city || null
+      if (storeData.phone !== undefined) updateData.phone = storeData.phone || null
       if (storeData.isActive !== undefined) updateData.is_active = storeData.isActive
 
       const { data, error } = await supabaseAdmin
@@ -220,9 +222,10 @@ export class StoresService {
       id: data.id,
       name: data.name,
       nit: data.nit || undefined,
-      logo: data.logo_url || data.logo || undefined, // Soporta ambos nombres por compatibilidad
+      logo: data.logo_url || data.logo || undefined,
       address: data.address || undefined,
       city: data.city || undefined,
+      phone: data.phone || undefined,
       isActive: data.is_active ?? true,
       deletedAt: data.deleted_at || undefined,
       createdAt: data.created_at,

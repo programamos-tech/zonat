@@ -100,9 +100,12 @@ export function BottomNav() {
   }, [visibleItems.length, isMounted])
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden supports-[padding:max(0px,env(safe-area-inset-bottom))]:pb-[max(0px,env(safe-area-inset-bottom))]">
-      {/* Barra transparente: difuminado en la parte de arriba, esquinas redondeadas */}
-      <div className="relative flex flex-col pt-1.5 md:pt-2 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-gradient-to-b from-transparent via-white/50 dark:via-neutral-950/55 to-white/85 dark:to-neutral-950/90 backdrop-blur-xl shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_30px_-4px_rgba(0,0,0,0.35)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-40 xl:hidden">
+      {/* Barra pegada al borde inferior: padding seguro dentro del contenedor para que el fondo llegue hasta abajo */}
+      <div
+        className="relative flex flex-col pt-1.5 md:pt-2 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-gradient-to-b from-transparent via-white/50 dark:via-neutral-950/55 to-white/85 dark:to-neutral-950/90 backdrop-blur-xl shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_30px_-4px_rgba(0,0,0,0.35)]"
+        style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
+      >
         <div className="flex items-stretch h-12 md:h-14 flex-shrink-0">
         {/* Contenedor de scroll: siempre empezando por Dashboard a la izquierda */}
         <ul 

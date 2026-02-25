@@ -127,28 +127,27 @@ export default function SalesPage() {
 
   const handlePrint = async (sale: Sale) => {
     try {
-      // Obtener información de la tienda actual
-      const storeId = getCurrentUserStoreId()
+      // Usar la tienda de la venta para el ticket (nombre, logo, etc.)
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      
+      const storeIdForTicket = sale.storeId || getCurrentUserStoreId()
+
       let currentStore
-      if (!storeId || storeId === MAIN_STORE_ID) {
-        // Obtener tienda principal
+      if (!storeIdForTicket || storeIdForTicket === MAIN_STORE_ID) {
         currentStore = await StoresService.getMainStore()
       } else {
-        // Obtener micro tienda
-        currentStore = await StoresService.getStoreById(storeId)
+        currentStore = await StoresService.getStoreById(storeIdForTicket)
       }
 
-      // Si no se encuentra la tienda, usar valores por defecto
+      const storeName = currentStore?.name ?? 'ZONA T'
+      // Fallback por si no hay tienda (header del ticket usa currentStore)
       if (!currentStore) {
         currentStore = {
           id: MAIN_STORE_ID,
-          name: 'ZONA T',
-          nit: '1035770226-9',
+          name: storeName,
+          nit: '',
           logo: '/zonat-logo.png',
-          address: 'Carrera 20#22-02, Sincelejo, Colombia.',
-          city: 'Sincelejo',
+          address: '',
+          city: '',
           isActive: true,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString()
@@ -196,7 +195,7 @@ export default function SalesPage() {
         <html>
         <head>
           <meta charset="utf-8">
-          <title>ZONA T - Factura</title>
+          <title>${storeName} - Factura</title>
           <style>
             body { 
               font-family: 'Courier New', monospace; 
@@ -537,7 +536,7 @@ export default function SalesPage() {
               <div class="separator">═══════════════════════════════</div>
               <div><strong>Factura: ${sale.invoiceNumber}</strong></div>
               <div>¡Gracias por su compra!</div>
-              <div>ZONA T</div>
+              <div>${storeName}</div>
               <div class="separator">═══════════════════════════════</div>
             </div>
           </div>
