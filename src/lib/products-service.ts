@@ -1280,8 +1280,13 @@ export class ProductsService {
   }
 
   // Descontar stock para venta (primero del local, luego de bodega)
+  // En microtienda descuenta de store_stock; en tienda principal de products.
   static async deductStockForSale(productId: string, quantity: number, currentUserId?: string): Promise<{ success: boolean, stockInfo?: { storeDeduction: number, warehouseDeduction: number, previousStoreStock: number, previousWarehouseStock: number, newStoreStock: number, newWarehouseStock: number } }> {
     try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const storeId = getCurrentUserStoreId()
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
+
       const product = await this.getProductById(productId)
       if (!product) return { success: false }
 
@@ -1289,7 +1294,6 @@ export class ProductsService {
       const totalAvailable = warehouse + store
 
       if (totalAvailable < quantity) {
-        // Error silencioso en producción
         return { success: false }
       }
 
@@ -1303,27 +1307,40 @@ export class ProductsService {
         remainingToDeduct -= storeDeduction
       }
 
-      // Si aún falta, descontar de bodega (warehouse)
+      // Si aún falta, descontar de bodega (solo en tienda principal)
       if (remainingToDeduct > 0) {
         warehouseDeduction = Math.min(warehouse, remainingToDeduct)
         remainingToDeduct -= warehouseDeduction
       }
 
-      // Actualizar el stock en la base de datos
-      const { error } = await supabase
-        .from('products')
-        .update({
-          stock_warehouse: warehouse - warehouseDeduction,
-          stock_store: store - storeDeduction
-        })
-        .eq('id', productId)
+      if (isMainStore) {
+        // Tienda principal: actualizar tabla products
+        const { error } = await supabase
+          .from('products')
+          .update({
+            stock_warehouse: warehouse - warehouseDeduction,
+            stock_store: store - storeDeduction
+          })
+          .eq('id', productId)
 
-      if (error) {
-        // Error silencioso en producción
-        return { success: false }
+        if (error) return { success: false }
+      } else {
+        // Microtienda: actualizar tabla store_stock (descontar del stock de esta tienda)
+        const newStoreQuantity = store - storeDeduction
+        const { error } = await supabaseAdmin
+          .from('store_stock')
+          .upsert({
+            store_id: storeId!,
+            product_id: productId,
+            quantity: newStoreQuantity,
+            location: 'local'
+          }, {
+            onConflict: 'store_id,product_id'
+          })
+
+        if (error) return { success: false }
       }
 
-      // Retornar información del descuento (NO crear log aquí, se hará en el log de la venta)
       return {
         success: true,
         stockInfo: {
@@ -1336,161 +1353,189 @@ export class ProductsService {
         }
       }
     } catch (error) {
-      // Error silencioso en producción
       return { success: false }
     }
   }
 
-  // Devolver stock de una venta cancelada
-  static async returnStockFromSale(productId: string, quantity: number, currentUserId?: string): Promise<boolean> {
+  // Devolver stock de una venta cancelada.
+  // En microtienda devuelve a store_stock; en tienda principal a products.
+  static async returnStockFromSale(productId: string, quantity: number, currentUserId?: string, storeIdOverride?: string | null): Promise<boolean> {
     try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const storeId = storeIdOverride !== undefined ? storeIdOverride : getCurrentUserStoreId()
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
       const product = await this.getProductById(productId)
-      if (!product) {
-        // Error silencioso en producción
-        return false
+      if (!product) return false
+
+      const previousStoreStock = product.stock.store || 0
+      const newStockStore = previousStoreStock + quantity
+
+      if (isMainStore) {
+        const { error } = await supabase
+          .from('products')
+          .update({ stock_store: newStockStore })
+          .eq('id', productId)
+
+        if (error) return false
+      } else {
+        const { error } = await supabaseAdmin
+          .from('store_stock')
+          .upsert({
+            store_id: storeId!,
+            product_id: productId,
+            quantity: newStockStore,
+            location: 'local'
+          }, {
+            onConflict: 'store_id,product_id'
+          })
+
+        if (error) return false
       }
 
-      // Devolver el stock al local (store) por defecto
-      const newStockStore = (product.stock.store || 0) + quantity
-
-      const { error } = await supabase
-        .from('products')
-        .update({
-          stock_store: newStockStore
-        })
-        .eq('id', productId)
-
-      if (error) {
-        // Error silencioso en producción
-        return false
-      }
-
-      // Registrar la actividad
       if (currentUserId) {
-        const description = `Cancelación de venta: Se devolvieron ${quantity} unidades del producto "${product.name}" al local`
-
         try {
           await AuthService.logActivity(
             currentUserId,
             'sale_cancellation_stock_return',
             'products',
             {
-              description,
-              productId: productId,
+              description: `Cancelación de venta: Se devolvieron ${quantity} unidades del producto "${product.name}" al local`,
+              productId,
               productName: product.name,
               productReference: product.reference,
               quantityReturned: quantity,
-              previousStoreStock: product.stock.store,
-              newStoreStock: (product.stock.store || 0) + quantity,
+              previousStoreStock,
+              newStoreStock: newStockStore,
               location: 'store',
               reason: 'Venta cancelada'
             }
           )
-
-        } catch (logError) {
-          // Error silencioso en producción
+        } catch {
+          // ignorar error de log
         }
-      } else {
-
       }
 
       return true
     } catch (error) {
-      // Error silencioso en producción
       return false
     }
   }
 
-  // 🚀 NUEVA FUNCIÓN: Devolver stock de múltiples productos en lote (OPTIMIZADA)
-  static async returnStockFromSaleBatch(items: Array<{ productId: string, quantity: number, productName?: string }>, currentUserId?: string): Promise<{ success: boolean, results: Array<{ productId: string, success: boolean, error?: any }> }> {
+  // 🚀 Devolver stock de múltiples productos en lote.
+  // storeIdOverride: si se pasa (ej. venta cancelada), se devuelve a esa tienda; si no, se usa la tienda actual.
+  static async returnStockFromSaleBatch(
+    items: Array<{ productId: string, quantity: number, productName?: string }>,
+    currentUserId?: string,
+    storeIdOverride?: string | null
+  ): Promise<{ success: boolean, results: Array<{ productId: string, success: boolean, productName?: string, productReference?: string, quantity?: number, previousStock?: number, newStock?: number, error?: any }> }> {
     try {
-
       if (!items || items.length === 0) {
-
         return { success: true, results: [] }
       }
 
-      // 1. Obtener todos los productos de una vez
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const storeId = storeIdOverride !== undefined ? storeIdOverride : getCurrentUserStoreId()
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
       const productIds = items.map(item => item.productId)
 
-      const { data: products, error: productsError } = await supabase
-        .from('products')
-        .select('id, name, reference, stock_store')
-        .in('id', productIds)
+      if (isMainStore) {
+        // Tienda principal: actualizar products
+        const { data: products, error: productsError } = await supabase
+          .from('products')
+          .select('id, name, reference, stock_store')
+          .in('id', productIds)
 
-      if (productsError) {
-        // Error silencioso en producción
-        throw productsError
-      }
+        if (productsError) throw productsError
 
-      // 2. Preparar actualizaciones masivas
-      const updates = items.map(item => {
-        const product = products?.find(p => p.id === item.productId)
-        if (!product) {
-          // Error silencioso en producción
-          return null
+        const updates = items.map(item => {
+          const product = products?.find(p => p.id === item.productId)
+          if (!product) return null
+          const currentStock = product.stock_store || 0
+          return {
+            id: item.productId,
+            stock_store: currentStock + item.quantity,
+            productName: product.name,
+            productReference: product.reference,
+            quantity: item.quantity,
+            previousStock: currentStock
+          }
+        }).filter(Boolean) as Array<{ id: string, stock_store: number, productName: string, productReference: string | null, quantity: number, previousStock: number }>
+
+        if (updates.length === 0) {
+          return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error: 'Producto no encontrado' })) }
         }
 
-        const currentStock = product.stock_store || 0
-        const newStock = currentStock + item.quantity
-
-        return {
-          id: item.productId,
-          stock_store: newStock,
-          productName: product.name,
-          productReference: product.reference,
-          quantity: item.quantity,
-          previousStock: currentStock
-        }
-      }).filter(Boolean)
-
-      if (updates.length === 0) {
-        // Error silencioso en producción
-        return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error: 'Producto no encontrado' })) }
-      }
-
-      // 3. Actualización masiva usando Promise.all
-
-      const updatePromises = updates.map(async (update) => {
-        try {
-          const { error } = await supabase
-            .from('products')
-            .update({ stock_store: update.stock_store })
-            .eq('id', update.id)
-
-          if (error) {
-            // Error silencioso en producción
+        const updatePromises = updates.map(async (update) => {
+          try {
+            const { error } = await supabase
+              .from('products')
+              .update({ stock_store: update.stock_store })
+              .eq('id', update.id)
+            if (error) return { productId: update.id, success: false, error }
+            return {
+              productId: update.id,
+              success: true,
+              productName: update.productName,
+              productReference: update.productReference,
+              quantity: update.quantity,
+              previousStock: update.previousStock,
+              newStock: update.stock_store
+            }
+          } catch (error) {
             return { productId: update.id, success: false, error }
           }
+        })
 
-          return {
-            productId: update.id,
-            success: true,
-            productName: update.productName,
-            productReference: update.productReference,
-            quantity: update.quantity,
-            previousStock: update.previousStock,
-            newStock: update.stock_store
+        const results = await Promise.all(updatePromises)
+        return { success: results.every(r => r.success), results }
+      }
+
+      // Microtienda: actualizar store_stock por cada producto
+      const { data: storeStocks } = await supabaseAdmin
+        .from('store_stock')
+        .select('product_id, quantity')
+        .eq('store_id', storeId!)
+        .in('product_id', productIds)
+
+      const { data: products } = await supabase
+        .from('products')
+        .select('id, name, reference')
+        .in('id', productIds)
+
+      const stockByProduct = new Map((storeStocks || []).map(s => [s.product_id, Number(s.quantity) || 0]))
+      const results = await Promise.all(
+        items.map(async (item) => {
+          const previousStock = stockByProduct.get(item.productId) ?? 0
+          const newQuantity = previousStock + item.quantity
+          const product = products?.find(p => p.id === item.productId)
+          try {
+            const { error } = await supabaseAdmin
+              .from('store_stock')
+              .upsert({
+                store_id: storeId!,
+                product_id: item.productId,
+                quantity: newQuantity,
+                location: 'local'
+              }, { onConflict: 'store_id,product_id' })
+            if (error) return { productId: item.productId, success: false, error }
+            stockByProduct.set(item.productId, newQuantity)
+            return {
+              productId: item.productId,
+              success: true,
+              productName: product?.name,
+              productReference: product?.reference ?? undefined,
+              quantity: item.quantity,
+              previousStock,
+              newStock: newQuantity
+            }
+          } catch (error) {
+            return { productId: item.productId, success: false, error }
           }
-        } catch (error) {
-          // Error silencioso en producción
-          return { productId: update.id, success: false, error }
-        }
-      })
-
-      const results = await Promise.all(updatePromises)
-
-      // NOTA: No creamos log aquí porque cuando se cancela una venta, 
-      // el log de 'sale_cancel' ya incluye toda la información del stock devuelto.
-      // Este log solo se crearía si se devuelve stock fuera del contexto de cancelación de venta,
-      // pero actualmente no hay ese caso de uso.
-
-      const allSuccessful = results.every(r => r.success)
-
-      return { success: allSuccessful, results }
+        })
+      )
+      return { success: results.every(r => r.success), results }
     } catch (error) {
-      // Error silencioso en producción
       return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error })) }
     }
   }

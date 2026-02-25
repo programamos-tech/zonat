@@ -604,7 +604,22 @@ export class AuthService {
         .single()
 
       if (error || !dbUser) {
-        // Si el usuario no existe o no está activo, limpiar localStorage
+        // Si la consulta a la BD falla (RLS, red, etc.), usar usuario de localStorage
+        // para no bloquear a vendedores al crear créditos o agregar abonos
+        if (user?.id) {
+          return {
+            id: user.id,
+            name: user.name ?? 'Usuario',
+            email: user.email ?? '',
+            role: user.role,
+            permissions: Array.isArray(user.permissions) ? user.permissions : [],
+            isActive: true,
+            storeId: user.storeId ?? undefined,
+            lastLogin: user.last_login ?? user.lastLogin,
+            createdAt: user.created_at ?? user.createdAt,
+            updatedAt: user.updated_at ?? user.updatedAt
+          }
+        }
         localStorage.removeItem('zonat_user')
         return null
       }
@@ -641,7 +656,31 @@ export class AuthService {
         updatedAt: dbUser.updated_at
       }
     } catch (error) {
-      // Error silencioso en producción
+      // Si hay excepción, intentar devolver usuario de localStorage para no bloquear flujos
+      if (typeof window !== 'undefined') {
+        try {
+          const userData = localStorage.getItem('zonat_user')
+          if (userData) {
+            const user = JSON.parse(userData)
+            if (user?.id) {
+              return {
+                id: user.id,
+                name: user.name ?? 'Usuario',
+                email: user.email ?? '',
+                role: user.role,
+                permissions: Array.isArray(user.permissions) ? user.permissions : [],
+                isActive: true,
+                storeId: user.storeId ?? undefined,
+                lastLogin: user.last_login ?? user.lastLogin,
+                createdAt: user.created_at ?? user.createdAt,
+                updatedAt: user.updated_at ?? user.updatedAt
+              }
+            }
+          }
+        } catch {
+          // ignorar
+        }
+      }
       return null
     }
   }

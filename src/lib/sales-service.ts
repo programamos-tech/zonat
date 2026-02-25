@@ -1121,9 +1121,8 @@ export class SalesService {
         productName: item.productName
       }))
 
-      // Devolver stock al local (siempre hacer esto para ventas canceladas)
-      // 🚀 OPTIMIZACIÓN: Usar procesamiento en lote en lugar de loop secuencial
-      const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId)
+      // Devolver stock a la tienda que hizo la venta (microtienda o principal)
+      const stockReturnResult = await ProductsService.returnStockFromSaleBatch(stockReturnItems, currentUserId, sale.storeId ?? null)
 
       // Capturar información del stock devuelto para el log
       let stockReturnInfo = null

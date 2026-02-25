@@ -613,28 +613,30 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                             'border-b border-gray-200 dark:border-neutral-600 last:border-b-0',
                             'rounded-lg',
                             'transition-colors duration-150 ease-in-out',
-                            hasStock ? 'cursor-pointer' : 'cursor-not-allowed opacity-60',
-                            isHighlighted
+                            hasStock ? 'cursor-pointer' : 'cursor-not-allowed',
+                            isHighlighted && hasStock
                               ? 'bg-orange-500/15 dark:bg-orange-500/25 border-orange-300 dark:border-orange-500'
                               : hasStock
                                 ? 'bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700'
-                                : 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
+                                : 'bg-red-50 dark:bg-red-900/20 border-red-200/50 dark:border-red-800/50'
                           ].join(' ')
 
                           const nameClasses = [
                             'font-medium',
-                            isHighlighted
+                            isHighlighted && hasStock
                               ? 'text-orange-700 dark:text-orange-200'
                               : hasStock
                                 ? 'text-gray-900 dark:text-white'
-                                : 'text-red-600 dark:text-red-400'
+                                : 'text-red-700 dark:text-red-300'
                           ].join(' ')
 
                           const detailsClasses = [
-                            'text-sm',
-                            isHighlighted
+                            'text-sm mt-0.5',
+                            isHighlighted && hasStock
                               ? 'text-orange-600 dark:text-orange-300'
-                              : 'text-gray-600 dark:text-gray-300'
+                              : hasStock
+                                ? 'text-gray-600 dark:text-gray-400'
+                                : 'text-red-600 dark:text-red-400'
                           ].join(' ')
                           
                           return (
@@ -647,19 +649,21 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                           onMouseEnter={() => setHighlightedProductIndex(index)}
                           className={containerClasses}
                         >
-                          <div className={nameClasses}>
-                            {product.name}
-                          </div>
-                          <div className={detailsClasses}>
-                            Ref: {product.reference || 'N/A'} | 
-                            Stock: {(product.stock?.warehouse || 0) + (product.stock?.store || 0)} | 
-                            Precio: ${(product.price || 0).toLocaleString('es-CO')}
-                          </div>
-                          {!hasStock && (
-                            <div className="mt-2 px-2 py-1 bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 text-xs font-medium rounded">
-                              Sin Stock
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className={nameClasses}>
+                                {product.name}
+                              </div>
+                              <div className={detailsClasses}>
+                                Ref: {product.reference || 'N/A'} · Stock: {(product.stock?.warehouse || 0) + (product.stock?.store || 0)} · ${(product.price || 0).toLocaleString('es-CO')}
+                              </div>
                             </div>
-                          )}
+                            {!hasStock && (
+                              <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 border border-red-200 dark:border-red-700/50">
+                                Sin stock
+                              </span>
+                            )}
+                          </div>
                         </div>
                       )})
                       )}

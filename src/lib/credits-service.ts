@@ -4,12 +4,62 @@ import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
 export class CreditsService {
-  // Crear un nuevo crédito
+  // Crear un nuevo crédito (en navegador usa API para evitar fallos por RLS con vendedores)
   static async createCredit(creditData: Omit<Credit, 'id' | 'createdAt' | 'updatedAt'>): Promise<Credit> {
-    // Obtener store_id del usuario actual o de la venta asociada
     const storeId = creditData.storeId || getCurrentUserStoreId() || '00000000-0000-0000-0000-000000000001'
 
-    const { data, error } = await supabase
+    if (typeof window !== 'undefined') {
+      try {
+        const res = await fetch('/api/credits', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            saleId: creditData.saleId,
+            clientId: creditData.clientId,
+            clientName: creditData.clientName,
+            invoiceNumber: creditData.invoiceNumber,
+            totalAmount: creditData.totalAmount,
+            paidAmount: creditData.paidAmount,
+            pendingAmount: creditData.pendingAmount,
+            status: creditData.status,
+            dueDate: creditData.dueDate,
+            lastPaymentAmount: creditData.lastPaymentAmount,
+            lastPaymentDate: creditData.lastPaymentDate,
+            lastPaymentUser: creditData.lastPaymentUser,
+            createdBy: creditData.createdBy,
+            createdByName: creditData.createdByName,
+            storeId
+          })
+        })
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}))
+          throw new Error(err.error || res.statusText || 'Error al crear el crédito')
+        }
+        const newCredit = await res.json()
+        if (creditData.createdBy && (!creditData.saleId || creditData.saleId === null)) {
+          await AuthService.logActivity(
+            creditData.createdBy,
+            'credit_create',
+            'credits',
+            {
+              description: `Crédito creado: ${creditData.clientName} - Factura: ${creditData.invoiceNumber} - Monto: $${creditData.totalAmount.toLocaleString('es-CO')}`,
+              creditId: newCredit.id,
+              invoiceNumber: creditData.invoiceNumber,
+              clientName: creditData.clientName,
+              clientId: creditData.clientId,
+              totalAmount: creditData.totalAmount,
+              pendingAmount: creditData.pendingAmount,
+              dueDate: creditData.dueDate || null
+            }
+          )
+        }
+        return newCredit
+      } catch (e) {
+        throw e
+      }
+    }
+
+    const { data, error } = await supabaseAdmin
       .from('credits')
       .insert([{
         sale_id: creditData.saleId,
@@ -54,8 +104,6 @@ export class CreditsService {
       updatedAt: data.updated_at
     }
 
-    // Log de actividad solo si el crédito se crea directamente (no desde venta)
-    // Si saleId es null o no existe, significa que es un crédito directo
     if (creditData.createdBy && (!creditData.saleId || creditData.saleId === null)) {
       await AuthService.logActivity(
         creditData.createdBy,
@@ -413,18 +461,27 @@ export class CreditsService {
 
   // Crear registro de pago
   static async createPaymentRecord(paymentData: Omit<PaymentRecord, 'id' | 'createdAt'>): Promise<PaymentRecord> {
-    // Validar y obtener userId válido
+    // Validar y obtener userId válido (evitar que falle para vendedoras por sesión/RLS)
     let userId = paymentData.userId
     let userName = paymentData.userName
-    
-    // Si el userId no es válido (es 'current-user-id' o undefined), obtenerlo del usuario actual
-    if (!userId || userId === 'current-user-id' || !userId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+    if (!userId || userId === 'current-user-id' || !uuidRegex.test(userId)) {
       const currentUser = await AuthService.getCurrentUser()
-      if (!currentUser) {
-        throw new Error('No se pudo obtener el usuario actual. Por favor, inicia sesión nuevamente.')
+      if (currentUser?.id && uuidRegex.test(currentUser.id)) {
+        userId = currentUser.id
+        userName = currentUser.name || userName || 'Usuario'
+      } else {
+        // Fallback: usuario desde localStorage (store-helper) por si AuthService falló por RLS/red
+        const localUser = getCurrentUser()
+        if (localUser?.id && uuidRegex.test(localUser.id)) {
+          userId = localUser.id
+          userName = localUser.name || userName || 'Usuario'
+        }
       }
-      userId = currentUser.id
-      userName = currentUser.name || userName || 'Usuario Actual'
+      if (!userId || !uuidRegex.test(userId)) {
+        throw new Error('No se pudo obtener el usuario actual. Por favor, cierra sesión e inicia sesión nuevamente.')
+      }
     }
     
     // Obtener el crédito para crear un registro en la tabla payments
