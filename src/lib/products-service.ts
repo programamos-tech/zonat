@@ -308,7 +308,11 @@ export class ProductsService {
       // Para filtros de stock, necesitamos obtener más productos y filtrar después
       // porque el stock real puede venir de store_stock (microtiendas)
       const needsStockFilter = stockFilter && stockFilter !== 'all'
-      const fetchLimit = needsStockFilter ? limit * 5 : limit // Obtener más si hay filtro
+      // En microtienda con filtro hace falta un pool mayor: el stock viene de store_stock
+      // y solo una parte del catálogo tiene fila en esa tienda
+      const fetchLimit = needsStockFilter
+        ? (isMainStore ? limit * 5 : Math.max(limit * 10, 500))
+        : limit
       const from = (page - 1) * (needsStockFilter ? fetchLimit : limit)
       const to = from + fetchLimit - 1
 
