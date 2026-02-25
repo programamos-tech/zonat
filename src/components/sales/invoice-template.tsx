@@ -90,7 +90,7 @@ export function InvoiceTemplate({ sale, company, client }: InvoiceTemplateProps)
             <img 
               src={company.logo} 
               alt={company.name}
-              className="h-16 mb-4"
+              className="w-20 h-20 rounded-full object-cover mb-4"
             />
           )}
           <h1 className="text-3xl font-bold text-gray-900 mb-2">{company.name}</h1>

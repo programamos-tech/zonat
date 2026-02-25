@@ -237,7 +237,8 @@ export default function SalesPage() {
             .logo {
               width: 64px;
               height: 64px;
-              object-fit: contain;
+              border-radius: 50%;
+              object-fit: cover;
               margin: 0 auto 6px auto;
               display: block;
             }
@@ -420,6 +421,7 @@ export default function SalesPage() {
               <div class="company-info">
                 ${currentStore.nit ? `<strong>NIT ${currentStore.nit}</strong><br>` : ''}
                 ${currentStore.address ? `<strong>${currentStore.address}${currentStore.city ? `, ${currentStore.city}` : ''}</strong><br>` : ''}
+                ${currentStore.phone ? `<strong>Tel: ${currentStore.phone}</strong>` : ''}
               </div>
             </div>
 

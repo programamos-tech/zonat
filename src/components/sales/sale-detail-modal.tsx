@@ -495,7 +495,7 @@ export default function SaleDetailModal({
             <!-- Header -->
             <div class="header">
               <div class="company-info">
-                ${config.logo ? `<img src="${config.logo}" alt="${config.name}" style="max-width: 100px; max-height: 100px; margin-bottom: 10px;" />` : ''}
+                ${config.logo ? `<img src="${config.logo}" alt="${config.name}" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; display: block; margin-bottom: 10px;" />` : ''}
                 <h1>${config.name}</h1>
                 ${config.nit ? `<p><strong>NIT:</strong> ${config.nit}</p>` : ''}
                 ${config.address ? `<p><strong>Dirección:</strong> ${config.address}</p>` : ''}
