@@ -12,7 +12,7 @@ interface ClientsContextType {
   getClientById: (id: string) => Promise<Client | null>
   createClient: (clientData: Omit<Client, 'id' | 'createdAt'>) => Promise<{ client: Client | null, error: string | null }>
   updateClient: (id: string, updates: Partial<Client>) => Promise<boolean>
-  deleteClient: (id: string) => Promise<boolean>
+  deleteClient: (id: string) => Promise<{ success: boolean; error?: string }>
   searchClients: (query: string) => Promise<Client[]>
 }
 
@@ -76,17 +76,16 @@ export function ClientsProvider({ children }: { children: ReactNode }) {
     }
   }
 
-  const deleteClient = async (id: string): Promise<boolean> => {
+  const deleteClient = async (id: string): Promise<{ success: boolean; error?: string }> => {
     try {
-      const success = await ClientsService.deleteClient(id, user?.id)
-      if (success) {
+      const result = await ClientsService.deleteClient(id, user?.id)
+      if (result.success) {
         setClients(prev => prev.filter(client => client.id !== id))
-        return true
+        return { success: true }
       }
-      return false
+      return { success: false, error: result.error }
     } catch (error) {
-      // Error silencioso en producción
-      return false
+      return { success: false, error: 'Error inesperado al eliminar' }
     }
   }
 

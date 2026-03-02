@@ -28,13 +28,13 @@ export default function ClientsPage() {
 
   const confirmDelete = async () => {
     if (clientToDelete) {
-      const success = await deleteClient(clientToDelete.id)
-      if (success) {
+      const result = await deleteClient(clientToDelete.id)
+      if (result.success) {
         toast.success('Cliente eliminado exitosamente')
         setIsDeleteModalOpen(false)
         setClientToDelete(null)
       } else {
-        toast.error('Error eliminando cliente')
+        toast.error(result.error || 'Error eliminando cliente')
       }
     }
   }

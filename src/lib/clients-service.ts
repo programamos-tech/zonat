@@ -273,33 +273,45 @@ export class ClientsService {
     }
   }
 
-  // Eliminar cliente
-  static async deleteClient(id: string, currentUserId?: string): Promise<boolean> {
+  // Eliminar cliente (no se permite si tiene facturas/ventas registradas)
+  static async deleteClient(id: string, currentUserId?: string): Promise<{ success: boolean; error?: string }> {
     try {
-      // Obtener información del cliente antes de eliminarlo para el log
       const clientToDelete = await this.getClientById(id)
       if (!clientToDelete) {
-        return false
+        return { success: false, error: 'Cliente no encontrado' }
       }
 
-      // Verificar que el cliente pertenece a la tienda del usuario (si no es admin principal)
       const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
       if (storeId && !canAccessAllStores(user) && clientToDelete.storeId !== storeId) {
-        return false
+        return { success: false, error: 'No tienes permiso para eliminar este cliente' }
       }
-      
+
+      // No permitir eliminar si tiene ventas (facturas) registradas
+      const { count, error: countError } = await supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true })
+        .eq('client_id', id)
+
+      if (countError) {
+        return { success: false, error: 'Error al verificar facturas' }
+      }
+      if (count != null && count > 0) {
+        return {
+          success: false,
+          error: 'No se puede eliminar un cliente con facturas registradas. Tiene ventas asociadas.'
+        }
+      }
+
       const { error } = await supabase
         .from('clients')
         .delete()
         .eq('id', id)
 
       if (error) {
-      // Error silencioso en producción
-        return false
+        return { success: false, error: 'Error al eliminar el cliente' }
       }
 
-      // Registrar la actividad
       if (currentUserId && clientToDelete) {
         await AuthService.logActivity(
           currentUserId,
@@ -315,10 +327,9 @@ export class ClientsService {
         )
       }
 
-      return true
+      return { success: true }
     } catch (error) {
-      // Error silencioso en producción
-      return false
+      return { success: false, error: 'Error inesperado al eliminar' }
     }
   }
 
