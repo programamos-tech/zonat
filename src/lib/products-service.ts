@@ -802,28 +802,74 @@ export class ProductsService {
 
   /**
    * Obtener varios productos por IDs en una o pocas peticiones (batch).
-   * Devuelve solo id, name, reference para uso en listados/dashboard.
+   * Devuelve id, name, reference, cost y price para uso en listados/dashboard (p. ej. cálculo de ganancia bruta).
+   * En microtiendas aplica cost/price de store_stock igual que getProductById.
    */
-  static async getProductsByIds(ids: string[]): Promise<Array<{ id: string; name: string; reference: string | null }>> {
+  static async getProductsByIds(ids: string[]): Promise<Array<{ id: string; name: string; reference: string | null; cost: number; price: number }>> {
     if (ids.length === 0) return []
     const uniqueIds = Array.from(new Set(ids))
     const CHUNK = 100
-    const results: Array<{ id: string; name: string; reference: string | null }> = []
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const currentStoreId = getCurrentUserStoreId()
+    const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+
+    const rawResults: Array<{ id: string; name: string; reference: string | null; cost: number | null; price: number | null }> = []
     for (let i = 0; i < uniqueIds.length; i += CHUNK) {
       const chunk = uniqueIds.slice(i, i + CHUNK)
       const { data, error } = await supabaseAdmin
         .from('products')
-        .select('id, name, reference')
+        .select('id, name, reference, cost, price')
         .in('id', chunk)
       if (error) continue
       if (data?.length) {
-        results.push(...data.map((row: any) => ({
+        rawResults.push(...data.map((row: any) => ({
           id: row.id,
           name: row.name ?? '',
-          reference: row.reference ?? null
+          reference: row.reference ?? null,
+          cost: row.cost ?? null,
+          price: row.price ?? null
         })))
       }
     }
+
+    let costPriceMap = new Map<string, { cost: number | null; price: number | null }>()
+    if (!isMainStore && currentStoreId && rawResults.length > 0) {
+      const productIds = rawResults.map(p => p.id)
+      const { data: storeStockData } = await supabaseAdmin
+        .from('store_stock')
+        .select('product_id, cost, price')
+        .eq('store_id', currentStoreId)
+        .in('product_id', productIds)
+      if (storeStockData) {
+        storeStockData.forEach((item: { product_id: string; cost: number | null; price: number | null }) => {
+          costPriceMap.set(item.product_id, { cost: item.cost, price: item.price })
+        })
+      }
+    }
+
+    const results = rawResults.map((product: { id: string; name: string; reference: string | null; cost: number | null; price: number | null }) => {
+      let productCost = product.cost != null ? Number(product.cost) : 0
+      let productPrice = product.price != null ? Number(product.price) : 0
+      if (!isMainStore && currentStoreId) {
+        const storeStockCostPrice = costPriceMap.get(product.id)
+        if (storeStockCostPrice) {
+          productCost = (storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0)
+            ? storeStockCostPrice.cost
+            : (product.price != null ? Number(product.price) : 0)
+          productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
+        } else {
+          productCost = product.price != null ? Number(product.price) : 0
+          productPrice = 0
+        }
+      }
+      return {
+        id: product.id,
+        name: product.name,
+        reference: product.reference,
+        cost: productCost,
+        price: productPrice
+      }
+    })
     return results
   }
 
