@@ -683,9 +683,9 @@ export default function NewSalePage() {
       setIsCreating(true)
       setInvoiceNumber('Generando...')
       await createSale(saleData)
-      setTimeout(() => {
-        router.push('/sales')
-      }, 500)
+      setInvoiceNumber('Pendiente')
+      setIsCreating(false)
+      router.push('/sales')
     } catch (error) {
       console.error('Error creating sale:', error)
       setInvoiceNumber('Pendiente')

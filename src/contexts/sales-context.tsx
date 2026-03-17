@@ -65,11 +65,9 @@ export function SalesProvider({ children }: { children: ReactNode }) {
 
     try {
       const newSale = await SalesService.createSale(saleData, currentUser.id)
-      
       setSales(prev => [newSale, ...prev])
-      
-      // Actualizar listado de productos en segundo plano (no bloquear ni esperar)
-      refreshProducts().catch(() => {})
+      // No refrescar productos aquí: evita setLoading(true) y re-renders en cascada que bloquean la vista.
+      // El stock se actualizará al entrar a inventario o al abrir de nuevo la página de nueva venta.
     } catch (error) {
       // Error silencioso en producción
       throw error

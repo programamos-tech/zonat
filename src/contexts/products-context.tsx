@@ -20,7 +20,7 @@ interface ProductsContextType {
   deleteProduct: (id: string) => Promise<{ success: boolean, error?: string }>
   searchProducts: (searchTerm: string) => Promise<Product[]>
   clearSearch: () => Promise<void>
-  refreshProducts: () => Promise<void>
+  refreshProducts: (filter?: StockFilter, options?: { silent?: boolean }) => Promise<void>
   goToPage: (page: number) => Promise<void>
   transferStock: (productId: string, from: 'warehouse' | 'store', to: 'warehouse' | 'store', quantity: number) => Promise<boolean>
   adjustStock: (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => Promise<boolean>
@@ -45,9 +45,10 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const [productsLastUpdated, setProductsLastUpdated] = useState(Date.now()) // Timestamp para notificar cambios
   const { user: currentUser } = useAuth()
 
-  const refreshProducts = useCallback(async (filter?: StockFilter) => {
+  const refreshProducts = useCallback(async (filter?: StockFilter, options?: { silent?: boolean }) => {
     const activeFilter = filter ?? stockFilter
-    setLoading(true)
+    const silent = options?.silent === true
+    if (!silent) setLoading(true)
     try {
       const result = await ProductsService.getAllProducts(1, ITEMS_PER_PAGE, activeFilter)
       setProducts(result.products)
@@ -58,7 +59,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       // Error silencioso en producción
     } finally {
-      setLoading(false)
+      if (!silent) setLoading(false)
     }
   }, [currentUser?.storeId, stockFilter]) // Recargar cuando cambie el storeId o el filtro
 
