@@ -66,11 +66,10 @@ export function SalesProvider({ children }: { children: ReactNode }) {
     try {
       const newSale = await SalesService.createSale(saleData, currentUser.id)
       
-      // Añadir la venta completa al estado (ya viene con todos los datos del getSaleById)
       setSales(prev => [newSale, ...prev])
       
-      // Refrescar productos para actualizar el stock
-      await refreshProducts()
+      // Actualizar listado de productos en segundo plano (no bloquear ni esperar)
+      refreshProducts().catch(() => {})
     } catch (error) {
       // Error silencioso en producción
       throw error

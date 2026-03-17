@@ -578,47 +578,37 @@ export class SalesService {
       }
 
       // Crear los items de la venta y descontar stock (solo si no es borrador)
-      const itemsWithStockInfo: Array<any> = []
+      let itemsWithStockInfo: Array<any> = []
+      let insertedItems: Array<{ id: string; product_id: string; product_name: string; product_reference_code: string | null; quantity: number; unit_price: number; discount: number; total: number }> = []
       if (saleData.items && saleData.items.length > 0) {
-        // Si NO es borrador, descontar stock de todos los productos
         if (saleData.status !== 'draft') {
-          // Primero descontar stock de todos los productos
-          for (const item of saleData.items) {
-            const stockResult = await ProductsService.deductStockForSale(
-              item.productId,
-              item.quantity,
-              currentUserId
-            )
-
-            if (!stockResult.success || !stockResult.stockInfo) {
-              // Si no se pudo descontar stock, revertir la venta
-              await supabase.from('sales').delete().eq('id', sale.id)
-              throw new Error(`No hay suficiente stock para el producto: ${item.productName}`)
-            }
-
-            // Guardar información del item con su descuento de stock
-            itemsWithStockInfo.push({
-              productName: item.productName,
-              productReference: item.productReferenceCode,
+          const batchResult = await ProductsService.deductStockForSaleBatch(
+            saleData.items.map((item) => ({
+              productId: item.productId,
               quantity: item.quantity,
+              productName: item.productName,
+              productReferenceCode: item.productReferenceCode,
               unitPrice: item.unitPrice,
-              totalPrice: item.totalPrice,
-              stockInfo: stockResult.stockInfo
-            })
+              totalPrice: item.totalPrice
+            })),
+            currentUserId
+          )
+          if (!batchResult.success || !batchResult.itemsWithStockInfo) {
+            await supabase.from('sales').delete().eq('id', sale.id)
+            throw new Error(`No hay suficiente stock para el producto: ${batchResult.failedProductName ?? 'desconocido'}`)
           }
+          itemsWithStockInfo = batchResult.itemsWithStockInfo
         } else {
-          // Si es borrador, solo guardar información básica sin descuento de stock
-          itemsWithStockInfo.push(...saleData.items.map(item => ({
+          itemsWithStockInfo = saleData.items.map((item) => ({
             productName: item.productName,
             productReference: item.productReferenceCode,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
             totalPrice: item.totalPrice
-          })))
+          }))
         }
 
-        // Si todo el stock se descontó correctamente, crear los items de la venta
-        const saleItems = saleData.items.map(item => ({
+        const saleItems = saleData.items.map((item) => ({
           sale_id: sale.id,
           product_id: item.productId,
           product_name: item.productName,
@@ -629,14 +619,13 @@ export class SalesService {
           total: item.total
         }))
 
-        const { error: itemsError } = await supabase
+        const { data: insertedItemsData, error: itemsError } = await supabase
           .from('sale_items')
           .insert(saleItems)
+          .select('id, product_id, product_name, product_reference_code, quantity, unit_price, discount, total')
 
-        if (itemsError) {
-          // Error silencioso en producción
-          throw itemsError
-        }
+        if (itemsError) throw itemsError
+        insertedItems = insertedItemsData ?? []
       }
 
       // Crear registros de pago según el método (solo si NO es borrador)
@@ -751,18 +740,49 @@ export class SalesService {
           status: saleData.status,
           itemsCount: itemsWithStockInfo.length,
           items: itemsWithStockInfo,
-          // Incluir fecha de vencimiento si es una venta a crédito
           dueDate: creditDueDate
         }
       )
 
-      // Obtener la venta completa con toda la información (códigos de referencia, vendedor, etc.)
-      const completeSale = await this.getSaleById(sale.id)
-
-      if (!completeSale) {
-        throw new Error('Error al obtener la venta creada')
+      const now = new Date().toISOString()
+      const completeSale: Sale = {
+        id: sale.id,
+        clientId: sale.client_id,
+        clientName: sale.client_name,
+        total: sale.total,
+        subtotal: sale.subtotal,
+        tax: sale.tax,
+        discount: sale.discount,
+        discountType: (sale as any).discount_type || 'amount',
+        status: sale.status,
+        paymentMethod: sale.payment_method,
+        invoiceNumber: sale.invoice_number,
+        sellerId: sale.seller_id,
+        sellerName: sale.seller_name,
+        sellerEmail: sale.seller_email,
+        storeId: sale.store_id ?? undefined,
+        createdAt: sale.created_at,
+        items: insertedItems.map((row) => ({
+          id: row.id,
+          productId: row.product_id,
+          productName: row.product_name,
+          productReferenceCode: row.product_reference_code ?? undefined,
+          quantity: row.quantity,
+          unitPrice: row.unit_price,
+          discount: row.discount ?? 0,
+          total: row.total
+        })),
+        payments: saleData.paymentMethod === 'mixed' && saleData.payments?.length
+          ? saleData.payments.map((p, i) => ({
+              id: `temp-${sale.id}-${i}`,
+              saleId: sale.id,
+              paymentType: p.paymentType,
+              amount: p.amount,
+              createdAt: now,
+              updatedAt: now
+            }))
+          : undefined
       }
-
       return completeSale
     } catch (error) {
       // Error silencioso en producción

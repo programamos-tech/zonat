@@ -1407,6 +1407,112 @@ export class ProductsService {
     }
   }
 
+  /**
+   * Descontar stock para varios ítems de una venta en batch.
+   * Una sola lectura de stock para todos los productos, luego actualizaciones (en paralelo cuando es seguro).
+   * Reduce drásticamente el tiempo al crear una venta con muchos ítems.
+   */
+  static async deductStockForSaleBatch(
+    items: Array<{ productId: string; quantity: number; productName: string; productReferenceCode?: string; unitPrice: number; totalPrice: number }>,
+    currentUserId?: string
+  ): Promise<{
+    success: boolean
+    itemsWithStockInfo?: Array<{ productName: string; productReference?: string; quantity: number; unitPrice: number; totalPrice: number; stockInfo: { storeDeduction: number; warehouseDeduction: number; previousStoreStock: number; previousWarehouseStock: number; newStoreStock: number; newWarehouseStock: number } }>
+    failedProductName?: string
+  }> {
+    if (items.length === 0) {
+      return { success: true, itemsWithStockInfo: [] }
+    }
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const storeId = getCurrentUserStoreId()
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
+
+      // Agregar cantidades por producto (mismo producto puede estar en varias líneas)
+      const byProduct = new Map<string, { totalQty: number; productName: string }>()
+      for (const item of items) {
+        const existing = byProduct.get(item.productId)
+        if (existing) {
+          existing.totalQty += item.quantity
+        } else {
+          byProduct.set(item.productId, { totalQty: item.quantity, productName: item.productName })
+        }
+      }
+      const productIds = Array.from(byProduct.keys())
+
+      // Una sola lectura de stock para todos los productos
+      const stockMap = await this.getProductsStockForStore(productIds, storeId)
+
+      const deductions = new Map<string, { storeDeduction: number; warehouseDeduction: number; previousStoreStock: number; previousWarehouseStock: number; newStoreStock: number; newWarehouseStock: number }>()
+      for (const [productId, { totalQty, productName }] of byProduct) {
+        const stock = stockMap.get(productId) || { warehouse: 0, store: 0, total: 0 }
+        const { warehouse, store } = stock
+        if (warehouse + store < totalQty) {
+          return { success: false, failedProductName: productName }
+        }
+        let remaining = totalQty
+        let storeDeduction = 0
+        let warehouseDeduction = 0
+        if (store > 0 && remaining > 0) {
+          storeDeduction = Math.min(store, remaining)
+          remaining -= storeDeduction
+        }
+        if (remaining > 0) {
+          warehouseDeduction = Math.min(warehouse, remaining)
+        }
+        deductions.set(productId, {
+          storeDeduction,
+          warehouseDeduction,
+          previousStoreStock: store,
+          previousWarehouseStock: warehouse,
+          newStoreStock: store - storeDeduction,
+          newWarehouseStock: warehouse - warehouseDeduction
+        })
+      }
+
+      // Aplicar actualizaciones en paralelo (todas son por producto distinto)
+      const updatePromises = productIds.map(async (productId) => {
+        const d = deductions.get(productId)!
+        if (isMainStore) {
+          const { error } = await supabase
+            .from('products')
+            .update({
+              stock_warehouse: d.newWarehouseStock,
+              stock_store: d.newStoreStock
+            })
+            .eq('id', productId)
+          if (error) throw error
+        } else {
+          const { error } = await supabaseAdmin
+            .from('store_stock')
+            .upsert({
+              store_id: storeId!,
+              product_id: productId,
+              quantity: d.newStoreStock,
+              location: 'local'
+            }, { onConflict: 'store_id,product_id' })
+          if (error) throw error
+        }
+      })
+      await Promise.all(updatePromises)
+
+      const itemsWithStockInfo = items.map((item) => {
+        const d = deductions.get(item.productId)!
+        return {
+          productName: item.productName,
+          productReference: item.productReferenceCode,
+          quantity: item.quantity,
+          unitPrice: item.unitPrice,
+          totalPrice: item.totalPrice,
+          stockInfo: d
+        }
+      })
+      return { success: true, itemsWithStockInfo }
+    } catch (error) {
+      return { success: false, failedProductName: items[0]?.productName }
+    }
+  }
+
   // Devolver stock de una venta cancelada.
   // En microtienda devuelve a store_stock; en tienda principal a products.
   static async returnStockFromSale(productId: string, quantity: number, currentUserId?: string, storeIdOverride?: string | null): Promise<boolean> {
