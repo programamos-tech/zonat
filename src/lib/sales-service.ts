@@ -112,89 +112,117 @@ export class SalesService {
         .range(offset, offset + limit - 1)
 
       if (error) {
-        // Error silencioso en producción
         throw error
       }
 
-      // Obtener referencias de productos para items que no las tienen
-      // Y obtener información de créditos para ventas a crédito
-      const sales = await Promise.all(
-        (data || []).map(async (sale) => {
-          const itemsWithReferences = await Promise.all(
-            (sale.sale_items || []).map(async (item: any) => {
-              let productReference = item.product_reference_code
-
-              // Si no hay referencia guardada, obtenerla desde la tabla products
-              if (!productReference || productReference === 'N/A' || productReference === null) {
-                const { data: product } = await supabase
-                  .from('products')
-                  .select('reference')
-                  .eq('id', item.product_id)
-                  .single()
-
-                productReference = product?.reference || 'N/A'
-              }
-
-              return {
-                id: item.id,
-                productId: item.product_id,
-                productName: item.product_name,
-                productReferenceCode: productReference,
-                quantity: item.quantity,
-                unitPrice: item.unit_price,
-                discount: item.discount || 0,
-                discountType: item.discount_type || 'amount',
-                tax: item.tax || 0,
-                total: item.total
-              }
-            })
-          )
-
-          // Obtener información del crédito si es una venta a crédito
-          let creditStatus = null
-          if (sale.payment_method === 'credit' && sale.invoice_number) {
-            try {
-              const { CreditsService } = await import('./credits-service')
-              const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoice_number)
-              if (credit) {
-                creditStatus = credit.status
-              }
-            } catch (error) {
-              // Error silencioso - continuar sin información de crédito
-            }
+      // OPTIMIZADO: Batch queries en lugar de N+1
+      // 1. Recolectar product_ids que necesitan referencia
+      const productIdsNeedingRef = new Set<string>()
+      for (const sale of data || []) {
+        for (const item of sale.sale_items || []) {
+          if (!item.product_reference_code || item.product_reference_code === 'N/A' || item.product_reference_code === null) {
+            productIdsNeedingRef.add(item.product_id)
           }
+        }
+      }
 
+      // 2. Una sola query para obtener todas las referencias faltantes
+      const productRefsMap = new Map<string, string>()
+      if (productIdsNeedingRef.size > 0) {
+        const { data: productsData } = await supabase
+          .from('products')
+          .select('id, reference')
+          .in('id', Array.from(productIdsNeedingRef))
+        if (productsData) {
+          for (const p of productsData) {
+            productRefsMap.set(p.id, p.reference || 'N/A')
+          }
+        }
+      }
+
+      // 3. Recolectar invoice_numbers de ventas a crédito
+      const creditInvoiceNumbers: string[] = []
+      for (const sale of data || []) {
+        if (sale.payment_method === 'credit' && sale.invoice_number) {
+          creditInvoiceNumbers.push(sale.invoice_number)
+        }
+      }
+
+      // 4. Una sola query para obtener todos los créditos
+      const creditStatusMap = new Map<string, string>()
+      if (creditInvoiceNumbers.length > 0) {
+        let creditQuery = supabase
+          .from('credits')
+          .select('invoice_number, status')
+          .in('invoice_number', creditInvoiceNumbers)
+        if (!storeId || storeId === MAIN_STORE_ID) {
+          creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        } else {
+          creditQuery = creditQuery.eq('store_id', storeId)
+        }
+        const { data: creditsData } = await creditQuery
+        if (creditsData) {
+          for (const c of creditsData) {
+            creditStatusMap.set(c.invoice_number, c.status)
+          }
+        }
+      }
+
+      // 5. Mapear ventas sin queries adicionales
+      const sales = (data || []).map((sale) => {
+        const itemsWithReferences = (sale.sale_items || []).map((item: any) => {
+          let productReference = item.product_reference_code
+          if (!productReference || productReference === 'N/A' || productReference === null) {
+            productReference = productRefsMap.get(item.product_id) || 'N/A'
+          }
           return {
-            id: sale.id,
-            clientId: sale.client_id,
-            clientName: sale.client_name,
-            total: sale.total,
-            subtotal: sale.subtotal,
-            tax: sale.tax,
-            discount: sale.discount,
-            discountType: sale.discount_type || 'amount',
-            status: sale.status,
-            paymentMethod: sale.payment_method,
-            payments: sale.sale_payments?.map((payment: any) => ({
-              id: payment.id,
-              saleId: payment.sale_id,
-              paymentType: payment.payment_type,
-              amount: payment.amount,
-              createdAt: payment.created_at,
-              updatedAt: payment.updated_at || payment.created_at
-            })) || [],
-            invoiceNumber: sale.invoice_number,
-            sellerId: sale.seller_id,
-            sellerName: sale.seller_name,
-            sellerEmail: sale.seller_email,
-            storeId: sale.store_id || undefined,
-            createdAt: sale.created_at,
-            items: itemsWithReferences,
-            creditStatus: creditStatus, // Estado del crédito asociado
-            cancellationReason: sale.cancellation_reason || undefined
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: productReference,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
           }
         })
-      )
+
+        const creditStatus = sale.payment_method === 'credit' && sale.invoice_number
+          ? creditStatusMap.get(sale.invoice_number) || null
+          : null
+
+        return {
+          id: sale.id,
+          clientId: sale.client_id,
+          clientName: sale.client_name,
+          total: sale.total,
+          subtotal: sale.subtotal,
+          tax: sale.tax,
+          discount: sale.discount,
+          discountType: sale.discount_type || 'amount',
+          status: sale.status,
+          paymentMethod: sale.payment_method,
+          payments: sale.sale_payments?.map((payment: any) => ({
+            id: payment.id,
+            saleId: payment.sale_id,
+            paymentType: payment.payment_type,
+            amount: payment.amount,
+            createdAt: payment.created_at,
+            updatedAt: payment.updated_at || payment.created_at
+          })) || [],
+          invoiceNumber: sale.invoice_number,
+          sellerId: sale.seller_id,
+          sellerName: sale.seller_name,
+          sellerEmail: sale.seller_email,
+          storeId: sale.store_id || undefined,
+          createdAt: sale.created_at,
+          items: itemsWithReferences,
+          creditStatus: creditStatus,
+          cancellationReason: sale.cancellation_reason || undefined
+        }
+      })
 
       return {
         sales,
@@ -361,68 +389,83 @@ export class SalesService {
         }
       }
 
-      // Procesar referencias de productos (mismo código que getAllSales)
-      const sales = await Promise.all(
-        allSales.map(async (sale) => {
-          const itemsWithReferences = await Promise.all(
-            (sale.sale_items || []).map(async (item: any) => {
-              let productReference = item.product_reference_code
+      // OPTIMIZADO: Batch query para todas las referencias faltantes
+      const productIdsNeedingRef = new Set<string>()
+      for (const sale of allSales) {
+        for (const item of sale.sale_items || []) {
+          if (!item.product_reference_code || item.product_reference_code === 'N/A' || item.product_reference_code === null) {
+            productIdsNeedingRef.add(item.product_id)
+          }
+        }
+      }
 
-              if (!productReference || productReference === 'N/A' || productReference === null) {
-                const { data: product } = await supabase
-                  .from('products')
-                  .select('reference')
-                  .eq('id', item.product_id)
-                  .single()
+      const productRefsMap = new Map<string, string>()
+      if (productIdsNeedingRef.size > 0) {
+        const idsArray = Array.from(productIdsNeedingRef)
+        const BATCH_SIZE = 100
+        for (let i = 0; i < idsArray.length; i += BATCH_SIZE) {
+          const batch = idsArray.slice(i, i + BATCH_SIZE)
+          const { data: productsData } = await supabase
+            .from('products')
+            .select('id, reference')
+            .in('id', batch)
+          if (productsData) {
+            for (const p of productsData) {
+              productRefsMap.set(p.id, p.reference || 'N/A')
+            }
+          }
+        }
+      }
 
-                productReference = product?.reference || 'N/A'
-              }
-
-              return {
-                id: item.id,
-                productId: item.product_id,
-                productName: item.product_name,
-                productReferenceCode: productReference,
-                quantity: item.quantity,
-                unitPrice: item.unit_price,
-                discount: item.discount || 0,
-                discountType: item.discount_type || 'amount',
-                tax: item.tax || 0,
-                total: item.total
-              }
-            })
-          )
-
+      const sales = allSales.map((sale) => {
+        const itemsWithReferences = (sale.sale_items || []).map((item: any) => {
+          let productReference = item.product_reference_code
+          if (!productReference || productReference === 'N/A' || productReference === null) {
+            productReference = productRefsMap.get(item.product_id) || 'N/A'
+          }
           return {
-            id: sale.id,
-            clientId: sale.client_id,
-            clientName: sale.client_name,
-            total: sale.total,
-            subtotal: sale.subtotal,
-            tax: sale.tax,
-            discount: sale.discount,
-            discountType: sale.discount_type || 'amount',
-            status: sale.status,
-            paymentMethod: sale.payment_method,
-            payments: sale.sale_payments?.map((payment: any) => ({
-              id: payment.id,
-              saleId: payment.sale_id,
-              paymentType: payment.payment_type,
-              amount: payment.amount,
-              createdAt: payment.created_at,
-              updatedAt: payment.updated_at || payment.created_at
-            })) || [],
-            invoiceNumber: sale.invoice_number,
-            sellerId: sale.seller_id,
-            sellerName: sale.seller_name,
-            sellerEmail: sale.seller_email,
-            storeId: sale.store_id || undefined,
-            createdAt: sale.created_at,
-            items: itemsWithReferences,
-            cancellationReason: sale.cancellation_reason || undefined
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: productReference,
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total
           }
         })
-      )
+
+        return {
+          id: sale.id,
+          clientId: sale.client_id,
+          clientName: sale.client_name,
+          total: sale.total,
+          subtotal: sale.subtotal,
+          tax: sale.tax,
+          discount: sale.discount,
+          discountType: sale.discount_type || 'amount',
+          status: sale.status,
+          paymentMethod: sale.payment_method,
+          payments: sale.sale_payments?.map((payment: any) => ({
+            id: payment.id,
+            saleId: payment.sale_id,
+            paymentType: payment.payment_type,
+            amount: payment.amount,
+            createdAt: payment.created_at,
+            updatedAt: payment.updated_at || payment.created_at
+          })) || [],
+          invoiceNumber: sale.invoice_number,
+          sellerId: sale.seller_id,
+          sellerName: sale.seller_name,
+          sellerEmail: sale.seller_email,
+          storeId: sale.store_id || undefined,
+          createdAt: sale.created_at,
+          items: itemsWithReferences,
+          cancellationReason: sale.cancellation_reason || undefined
+        }
+      })
 
       return sales
     } catch (error) {
@@ -473,36 +516,45 @@ export class SalesService {
 
       if (!data) return null
 
-      // Obtener referencias de productos si no están en sale_items (para ventas antiguas)
-      const itemsWithReferences = await Promise.all(
-        (data.sale_items || []).map(async (item: any) => {
-          let productReference = item.product_reference_code
+      // OPTIMIZADO: Batch query para referencias faltantes
+      const productIdsNeedingRef: string[] = []
+      for (const item of data.sale_items || []) {
+        if (!item.product_reference_code || item.product_reference_code === 'N/A' || item.product_reference_code === null) {
+          productIdsNeedingRef.push(item.product_id)
+        }
+      }
 
-          // Si no hay referencia guardada, obtenerla desde la tabla products
-          if (!productReference || productReference === 'N/A' || productReference === null) {
-            const { data: product } = await supabase
-              .from('products')
-              .select('reference')
-              .eq('id', item.product_id)
-              .single()
-
-            productReference = product?.reference || 'N/A'
+      const productRefsMap = new Map<string, string>()
+      if (productIdsNeedingRef.length > 0) {
+        const { data: productsData } = await supabase
+          .from('products')
+          .select('id, reference')
+          .in('id', productIdsNeedingRef)
+        if (productsData) {
+          for (const p of productsData) {
+            productRefsMap.set(p.id, p.reference || 'N/A')
           }
+        }
+      }
 
-          return {
-            id: item.id,
-            productId: item.product_id,
-            productName: item.product_name,
-            productReferenceCode: productReference,
-            quantity: item.quantity,
-            unitPrice: item.unit_price,
-            discount: item.discount || 0,
-            discountType: item.discount_type || 'amount',
-            tax: item.tax || 0,
-            total: item.total
-          }
-        })
-      )
+      const itemsWithReferences = (data.sale_items || []).map((item: any) => {
+        let productReference = item.product_reference_code
+        if (!productReference || productReference === 'N/A' || productReference === null) {
+          productReference = productRefsMap.get(item.product_id) || 'N/A'
+        }
+        return {
+          id: item.id,
+          productId: item.product_id,
+          productName: item.product_name,
+          productReferenceCode: productReference,
+          quantity: item.quantity,
+          unitPrice: item.unit_price,
+          discount: item.discount || 0,
+          discountType: item.discount_type || 'amount',
+          tax: item.tax || 0,
+          total: item.total
+        }
+      })
 
       const result = {
         id: data.id,
