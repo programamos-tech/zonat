@@ -281,6 +281,41 @@ export function SupplierInvoiceDetailView({
         </CardContent>
       </Card>
 
+      {invoice.imageUrl ? (
+        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 overflow-hidden">
+          <CardHeader className="pb-2 pt-4 px-4 md:px-6">
+            <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
+              <ImageIcon className="h-5 w-5 text-orange-600 shrink-0" />
+              Comprobante
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-4 pt-0 md:px-6 md:pb-5">
+            <div className="rounded-xl border border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-950 overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={invoice.imageUrl}
+                alt={`Comprobante ${invoice.invoiceNumber}`}
+                className="w-full max-h-[min(70vh,640px)] object-contain mx-auto block"
+              />
+            </div>
+            <a
+              href={invoice.imageUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 mt-3 text-sm text-orange-600 dark:text-orange-400 hover:underline"
+            >
+              <ExternalLink className="h-4 w-4 shrink-0" />
+              Abrir en pestaña nueva
+            </a>
+          </CardContent>
+        </Card>
+      ) : (
+        <p className="text-sm text-gray-500 dark:text-gray-400 px-1">
+          Sin comprobante ·{' '}
+          {canEditInvoice ? 'Edita la factura para subir una foto.' : 'No hay imagen registrada.'}
+        </p>
+      )}
+
       {/* Acciones */}
       <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
         <CardContent className="p-4 md:p-5">
@@ -309,30 +344,6 @@ export function SupplierInvoiceDetailView({
                 <Ban className="h-4 w-4 mr-2" />
                 Anular factura
               </Button>
-            )}
-            {invoice.imageUrl ? (
-              <a
-                href={invoice.imageUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-semibold bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700"
-              >
-                <ExternalLink className="h-4 w-4 mr-2" />
-                Ver imagen del comprobante
-              </a>
-            ) : (
-              <div
-                className="inline-flex items-center h-9 px-4 rounded-lg text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/60 border border-dashed border-gray-200 dark:border-neutral-600"
-                title="No hay archivo en la factura"
-              >
-                <ImageIcon className="h-4 w-4 mr-2 shrink-0 opacity-70" />
-                <span>Sin imagen adjunta</span>
-                {canEditInvoice && (
-                  <span className="ml-2 hidden sm:inline text-xs opacity-90">
-                    (Editar para subir)
-                  </span>
-                )}
-              </div>
             )}
           </div>
         </CardContent>
@@ -389,32 +400,6 @@ export function SupplierInvoiceDetailView({
                 <div className="font-medium text-gray-900 dark:text-white">
                   {formatDate(invoice.issueDate)}
                 </div>
-              </div>
-            </div>
-            <div className="flex items-start gap-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
-              <ImageIcon className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
-              <div className="min-w-0">
-                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                  Comprobante (foto)
-                </div>
-                {invoice.imageUrl ? (
-                  <a
-                    href={invoice.imageUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex items-center text-sm font-semibold text-orange-600 dark:text-orange-400 hover:underline"
-                  >
-                    <ExternalLink className="h-4 w-4 mr-1.5 shrink-0" />
-                    Ver imagen
-                  </a>
-                ) : (
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Sin archivo ·{' '}
-                    {canEditInvoice
-                      ? 'edita la factura para subir una foto.'
-                      : 'no se registró imagen al crear la factura.'}
-                  </p>
-                )}
               </div>
             </div>
             {invoice.dueDate && (
