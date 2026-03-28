@@ -281,6 +281,60 @@ export interface Credit {
   credits?: Credit[] // Para créditos agrupados, contiene los créditos individuales
 }
 
+export interface Supplier {
+  id: string
+  name: string
+  contact?: string
+  phone?: string
+  email?: string
+  document?: string
+  storeId: string
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type SupplierInvoiceStatus = 'pending' | 'partial' | 'paid' | 'cancelled'
+
+export interface SupplierInvoice {
+  id: string
+  supplierId: string
+  supplierName?: string
+  storeId: string
+  invoiceNumber: string
+  issueDate: string
+  dueDate?: string
+  totalAmount: number
+  paidAmount: number
+  status: SupplierInvoiceStatus
+  imageUrl?: string
+  notes?: string
+  /** Motivo de anulación (solo si status === cancelled) */
+  cancellationReason?: string
+  createdBy?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface SupplierPaymentRecord {
+  id: string
+  invoiceId: string
+  amount: number
+  paymentDate: string
+  paymentMethod: 'cash' | 'transfer' | 'mixed'
+  /** Solo cuando paymentMethod === 'mixed' */
+  cashAmount?: number
+  /** Solo cuando paymentMethod === 'mixed' */
+  transferAmount?: number
+  notes?: string
+  userId: string
+  userName: string
+  storeId?: string
+  status?: 'active' | 'cancelled'
+  createdAt: string
+  updatedAt?: string
+}
+
 export interface PaymentRecord {
   id: string
   creditId: string

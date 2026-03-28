@@ -307,7 +307,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
       <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
         <div className="flex items-center justify-between p-3 md:p-4 border-b border-purple-200 dark:border-purple-800 bg-purple-50 dark:bg-purple-900/20 flex-shrink-0">
           <div className="flex items-center gap-3">

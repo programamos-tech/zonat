@@ -41,7 +41,7 @@ export function CancelTransferModal({
   }
 
   return (
-    <div className="fixed inset-0 xl:left-64 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:px-6">
+    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:px-6">
       <div className="bg-white dark:bg-neutral-950 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 flex-shrink-0">

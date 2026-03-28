@@ -31,6 +31,7 @@ const moduleOptions = [
   { value: 'clients', label: 'Clientes' },
   { value: 'sales', label: 'Ventas' },
   { value: 'payments', label: 'Créditos' },
+  { value: 'supplier_invoices', label: 'Facturador' },
   { value: 'warranties', label: 'Garantías' },
   { value: 'roles', label: 'Roles' },
   { value: 'logs', label: 'Actividades' }
@@ -54,6 +55,7 @@ const rolePermissions = {
     { module: 'clients', actions: allActions },
     { module: 'sales', actions: allActions },
     { module: 'payments', actions: allActions },
+    { module: 'supplier_invoices', actions: allActions },
     { module: 'warranties', actions: allActions },
     { module: 'roles', actions: allActions },
     { module: 'logs', actions: allActions }
@@ -61,7 +63,8 @@ const rolePermissions = {
   'admin': [
     { module: 'dashboard', actions: allActions },
     { module: 'sales', actions: allActions },
-    { module: 'payments', actions: allActions }
+    { module: 'payments', actions: allActions },
+    { module: 'supplier_invoices', actions: allActions }
   ],
   'vendedor': [
     { module: 'dashboard', actions: allActions },
@@ -71,7 +74,8 @@ const rolePermissions = {
     { module: 'payments', actions: allActions }
   ],
   'inventario': [
-    { module: 'products', actions: allActions }
+    { module: 'products', actions: allActions },
+    { module: 'supplier_invoices', actions: allActions }
   ]
 }
 
@@ -475,7 +479,7 @@ export function UserManagement() {
 
       {/* Modal de creación */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
@@ -942,7 +946,7 @@ export function UserManagement() {
 
       {/* Modal de edición */}
       {isEditModalOpen && (
-        <div className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
+        <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
             {/* Header */}
             <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">

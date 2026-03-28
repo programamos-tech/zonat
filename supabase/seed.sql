@@ -176,10 +176,10 @@ ON CONFLICT (reference) DO NOTHING;
 -- ============================================
 -- 5. CREAR CLIENTES DE PRUEBA
 -- ============================================
-INSERT INTO clients (name, email, phone, address, city, type) VALUES
-('Juan Pérez', 'juan.perez@test.com', '809-555-0001', 'Calle Principal #123', 'Santo Domingo', 'regular'),
-('María García', 'maria.garcia@test.com', '809-555-0002', 'Av. Kennedy #456', 'Santo Domingo', 'vip'),
-('Carlos Rodríguez', 'carlos.rodriguez@test.com', '809-555-0003', 'Calle Duarte #789', 'Santiago', 'regular')
+INSERT INTO clients (name, email, phone, document, address, city, state, type, status) VALUES
+('Juan Pérez', 'juan.perez@test.com', '809-555-0001', '001-0000001-1', 'Calle Principal #123', 'Santo Domingo', 'Santo Domingo', 'minorista', 'active'),
+('María García', 'maria.garcia@test.com', '809-555-0002', '001-0000002-2', 'Av. Kennedy #456', 'Santo Domingo', 'Santo Domingo', 'mayorista', 'active'),
+('Carlos Rodríguez', 'carlos.rodriguez@test.com', '809-555-0003', '001-0000003-3', 'Calle Duarte #789', 'Santiago', 'Santiago', 'consumidor_final', 'active')
 ON CONFLICT DO NOTHING;
 
 -- ============================================

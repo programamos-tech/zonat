@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ArrowRightLeft, CheckCircle, Store } from 'lucide-react'
+import { LayoutDashboard, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, Shield, UserCircle, ArrowRightLeft, CheckCircle, Store, FileText } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
@@ -17,6 +17,7 @@ const items = [
   { href: '/sales', label: 'Ventas', icon: Receipt, module: 'sales' },
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
   { href: '/payments', label: 'Créditos', icon: CreditCard, module: 'payments' },
+  { href: '/purchases/invoices', label: 'Facturador', icon: FileText, module: 'supplier_invoices' },
   { href: '/stores', label: 'Tiendas', icon: Store, module: 'roles' },
   { href: '/roles', label: 'Roles', icon: Shield, module: 'roles' },
   { href: '/logs', label: 'Actividades', icon: Activity, module: 'logs' },
@@ -120,6 +121,7 @@ export function BottomNav() {
             const active = currentPathname === href || 
               (href !== '/dashboard' && currentPathname?.startsWith(href)) ||
               (href === '/payments' && currentPathname?.startsWith('/payments')) ||
+              (href === '/purchases/invoices' && currentPathname?.startsWith('/purchases')) ||
               (href === '/inventory/products' && currentPathname?.startsWith('/inventory/products')) ||
               (href === '/inventory/transfers' && currentPathname?.startsWith('/inventory/transfers')) ||
               (href === '/inventory/receptions' && currentPathname?.startsWith('/inventory/receptions')) ||
@@ -137,6 +139,7 @@ export function BottomNav() {
               if (module === 'sales') return 'text-emerald-500 dark:text-emerald-400'
               if (module === 'warranties') return 'text-purple-500 dark:text-purple-400'
               if (module === 'payments') return 'text-orange-500 dark:text-orange-400'
+              if (module === 'supplier_invoices') return 'text-orange-500 dark:text-orange-400'
               if (module === 'roles') return 'text-indigo-500 dark:text-indigo-400'
               if (module === 'logs') return 'text-blue-500 dark:text-blue-400'
               if (module === 'dashboard' || module === 'stores') return 'text-emerald-500 dark:text-emerald-400'

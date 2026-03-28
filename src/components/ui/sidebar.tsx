@@ -22,7 +22,8 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  Crown
+  Crown,
+  FileText
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -55,6 +56,7 @@ const navigation = [
       { name: 'Clientes', href: '/clients', icon: Users, module: 'clients' },
       { name: 'Ventas', href: '/sales', icon: Receipt, module: 'sales' },
       { name: 'Créditos', href: '/payments', icon: CreditCard, module: 'payments' },
+      { name: 'Facturador', href: '/purchases/invoices', icon: FileText, module: 'supplier_invoices' },
       { name: 'Garantías', href: '/warranties', icon: ShieldCheck, module: 'warranties' },
     ]
   },
@@ -92,7 +94,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
     if (pathname?.startsWith('/inventory')) {
       setExpandedMenus(prev => new Set([...prev, 'Inventario']))
     }
-    if (pathname?.startsWith('/clients') || pathname?.startsWith('/sales') || pathname?.startsWith('/payments') || pathname?.startsWith('/warranties')) {
+    if (pathname?.startsWith('/clients') || pathname?.startsWith('/sales') || pathname?.startsWith('/payments') || pathname?.startsWith('/purchases') || pathname?.startsWith('/warranties')) {
       setExpandedMenus(prev => new Set([...prev, 'Comercial']))
     }
     if (pathname?.startsWith('/stores') || pathname?.startsWith('/roles') || pathname?.startsWith('/logs')) {
@@ -201,7 +203,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto scrollbar-hide">
             {navigation.map((item) => {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
@@ -225,6 +227,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 if (subitem.href === '/clients' && pathname?.startsWith('/clients')) return true
                 if (subitem.href === '/sales' && pathname?.startsWith('/sales')) return true
                 if (subitem.href === '/payments' && pathname?.startsWith('/payments')) return true
+                if (subitem.href === '/purchases/invoices' && pathname?.startsWith('/purchases')) return true
                 if (subitem.href === '/warranties' && pathname?.startsWith('/warranties')) return true
                 if (subitem.href === '/stores' && pathname?.startsWith('/stores')) return true
                 if (subitem.href === '/roles' && pathname?.startsWith('/roles')) return true
@@ -236,7 +239,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               const isActive = pathname === item.href || 
                 (item.href === '/payments' && pathname?.startsWith('/payments')) ||
                 (item.href === '/inventory/products' && pathname?.startsWith('/inventory')) ||
-                (item.href === '/clients' && (pathname?.startsWith('/clients') || pathname?.startsWith('/sales') || pathname?.startsWith('/payments') || pathname?.startsWith('/warranties'))) ||
+                (item.href === '/clients' && (pathname?.startsWith('/clients') || pathname?.startsWith('/sales') || pathname?.startsWith('/payments') || pathname?.startsWith('/purchases') || pathname?.startsWith('/warranties'))) ||
                 (item.href === '/stores' && (pathname?.startsWith('/stores') || pathname?.startsWith('/roles') || pathname?.startsWith('/logs'))) ||
                 (item.href === '/stores' && pathname?.startsWith('/stores')) ||
                 isSubmenuActive
@@ -312,6 +315,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                               (subitem.href === '/clients' && pathname?.startsWith('/clients')) ||
                               (subitem.href === '/sales' && pathname?.startsWith('/sales')) ||
                               (subitem.href === '/payments' && pathname?.startsWith('/payments')) ||
+                              (subitem.href === '/purchases/invoices' && pathname?.startsWith('/purchases')) ||
                               (subitem.href === '/warranties' && pathname?.startsWith('/warranties')) ||
                               (subitem.href === '/stores' && pathname?.startsWith('/stores')) ||
                               (subitem.href === '/roles' && pathname?.startsWith('/roles')) ||
@@ -323,6 +327,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                               if (href === '/clients') return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
                               if (href === '/sales') return isSubActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
                               if (href === '/payments') return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
+                              if (href.startsWith('/purchases')) return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
                               if (href === '/warranties') return isSubActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
                               if (href === '/stores') return isSubActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
                               if (href === '/roles') return isSubActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
