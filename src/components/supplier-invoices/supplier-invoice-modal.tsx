@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useLayoutEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -54,6 +54,8 @@ export function SupplierInvoiceModal({
   const [showNewSupplier, setShowNewSupplier] = useState(false)
   const [newSupplierName, setNewSupplierName] = useState('')
   const [mounted, setMounted] = useState(false)
+  /** Evita resetear el formulario (y borrar la foto subida) cuando el padre hace refetch y pasa otro objeto con el mismo id. */
+  const formHydratedSessionKeyRef = useRef<string | null>(null)
 
   useLayoutEffect(() => {
     setMounted(true)
@@ -82,7 +84,16 @@ export function SupplierInvoiceModal({
   }, [isOpen])
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {
+      formHydratedSessionKeyRef.current = null
+      return
+    }
+    const sessionKey = invoice?.id ?? '__new__'
+    if (formHydratedSessionKeyRef.current === sessionKey) {
+      return
+    }
+    formHydratedSessionKeyRef.current = sessionKey
+
     if (invoice) {
       setSupplierId(invoice.supplierId)
       setInvoiceNumber(invoice.invoiceNumber)
@@ -127,7 +138,9 @@ export function SupplierInvoiceModal({
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error || 'Error al subir')
-      setImageUrl(json.url)
+      const url = typeof json.url === 'string' ? json.url.trim() : ''
+      if (!url) throw new Error('El servidor no devolvió la URL de la imagen')
+      setImageUrl(url)
       toast.success('Imagen subida')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
@@ -214,7 +227,7 @@ export function SupplierInvoiceModal({
           issueDate: issueIso,
           dueDate: dueIso,
           totalAmount: total,
-          imageUrl: imageUrl || undefined,
+          imageUrl: imageUrl?.trim() || undefined,
           notes: notes.trim() || undefined,
           createdBy: user?.id
         })
