@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
-import { User, LogOut, Mail, Shield, Calendar, CheckCircle, XCircle, UserCircle, Clock, KeyRound } from 'lucide-react'
+import { User, LogOut, Mail, Shield, Calendar, CheckCircle, XCircle, Clock, KeyRound } from 'lucide-react'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 
 export default function ProfilePage() {
@@ -26,11 +27,6 @@ export default function ProfilePage() {
       contador: 'Contador'
     }
     return roles[role] || 'Usuario'
-  }
-
-  const getRoleColor = (role: string) => {
-    // Todos los avatares usan el verde esmeralda de la plataforma
-    return 'bg-emerald-500'
   }
 
   const formatDate = (dateString?: string) => {
@@ -64,7 +60,7 @@ export default function ProfilePage() {
         <div className="mb-4 md:mb-8">
           <div className="flex items-center gap-3 mb-2">
             <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <UserCircle className="h-5 w-5 text-white" />
+              <User className="h-5 w-5 text-white" />
             </div>
             <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Mi Perfil</h1>
           </div>
@@ -79,11 +75,7 @@ export default function ProfilePage() {
           <Card className="lg:col-span-1 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200">
             <CardContent className="p-6">
               <div className="flex flex-col items-center text-center space-y-4">
-                <div className="relative">
-                  <div className={`w-28 h-28 ${getRoleColor(user.role)} rounded-full flex items-center justify-center`}>
-                    <User className="h-14 w-14 text-white" />
-                  </div>
-                </div>
+                <UserAvatar name={user.name} seed={user.id} size="xl" />
                 <div className="space-y-1">
                   <h3 className="text-xl font-bold text-gray-900 dark:text-white">
                     {user.name}

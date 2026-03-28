@@ -259,7 +259,7 @@ export function SupplierInvoiceModal({
         >
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide px-1 sm:px-0">
           <Card className="border-0 shadow-none rounded-none">
-            <CardHeader className="pb-2 px-3 sm:px-6 pt-2 sm:pt-0">
+            <CardHeader className="px-3 pb-2 pt-4 sm:px-6 sm:pt-5">
               <CardTitle className="text-base text-gray-800 dark:text-gray-200">
                 Datos de la factura
               </CardTitle>

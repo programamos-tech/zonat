@@ -33,6 +33,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import type { Store } from '@/types/store'
+import { UserAvatar } from '@/components/ui/user-avatar'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
@@ -401,11 +402,12 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors">
               <div className="flex items-center flex-1 min-w-0">
                 <div className="flex-shrink-0">
-                  <div className="w-9 h-9 bg-gradient-to-br from-gray-400 to-gray-500 rounded-lg flex items-center justify-center shadow-sm">
-                    <span className="text-xs font-semibold text-white">
-                      {user?.name?.charAt(0) || 'D'}
-                    </span>
-                  </div>
+                  <UserAvatar
+                    name={user?.name || 'Usuario'}
+                    seed={user?.id}
+                    size="sm"
+                    className="shadow-sm ring-2 ring-white/10 dark:ring-neutral-700/80"
+                  />
                 </div>
                 <div className="ml-3 min-w-0 flex-1">
                   <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">

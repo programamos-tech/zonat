@@ -3,6 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Users, Wifi, WifiOff, Circle } from 'lucide-react'
+import { UserAvatar } from '@/components/ui/user-avatar'
 
 interface OnlineUser {
   id: string
@@ -91,9 +92,7 @@ export function OnlineUsersCard({ onlineUsers, totalUsers }: OnlineUsersCardProp
                 <div key={user.id} className="p-4 rounded-xl bg-white dark:bg-neutral-800/50 shadow-sm border border-green-200 dark:border-green-800/30">
                   <div className="flex items-center space-x-4">
                     <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-full flex items-center justify-center text-white font-bold text-lg">
-                        {user.name.charAt(0).toUpperCase()}
-                      </div>
+                      <UserAvatar name={user.name} seed={user.id} size="lg" />
                       <div className="absolute -bottom-1 -right-1">
                         <div className="p-1 rounded-full bg-green-500">
                           <Circle className="h-2 w-2 text-white fill-current" />

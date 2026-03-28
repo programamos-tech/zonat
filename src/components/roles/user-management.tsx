@@ -15,6 +15,7 @@ import { toast } from 'sonner'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 import { StoresService } from '@/lib/stores-service'
 import { canAccessAllStores } from '@/lib/store-helper'
+import { UserAvatar } from '@/components/ui/user-avatar'
 
 const roleOptions = [
   { value: 'superadmin', label: 'Super Admin' },
@@ -815,20 +816,43 @@ export function UserManagement() {
                       key={user.id}
                       className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2"
                     >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                            <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 truncate" title={user.email}>
-                              {user.email}
-                            </span>
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 gap-3">
+                          <UserAvatar
+                            name={user.name}
+                            seed={user.id}
+                            size="md"
+                            className="shrink-0 ring-2 ring-gray-200 dark:ring-neutral-600"
+                          />
+                          <div className="min-w-0 flex-1">
+                            <div className="mb-1 flex items-center gap-2">
+                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
+                                #{index + 1}
+                              </span>
+                              <span
+                                className="truncate text-xs font-semibold text-indigo-600 dark:text-indigo-400"
+                                title={user.email}
+                              >
+                                {user.email}
+                              </span>
+                            </div>
+                            <h3
+                              className="truncate text-sm font-semibold text-gray-900 dark:text-white"
+                              title={user.name}
+                            >
+                              {user.name}
+                            </h3>
+                            <p
+                              className="truncate text-xs text-gray-500 dark:text-gray-400"
+                              title={
+                                roleOptions.find((r) => r.value === user.role)?.label ||
+                                user.role
+                              }
+                            >
+                              {roleOptions.find((r) => r.value === user.role)?.label ||
+                                user.role}
+                            </p>
                           </div>
-                          <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={user.name}>
-                            {user.name}
-                          </h3>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={roleOptions.find(r => r.value === user.role)?.label || user.role}>
-                            {roleOptions.find(r => r.value === user.role)?.label || user.role}
-                          </p>
                         </div>
                         <Badge className={`${user.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'} text-xs shrink-0`}>
                           <div className="flex items-center space-x-1">
@@ -893,12 +917,22 @@ export function UserManagement() {
               <div className="hidden md:block divide-y divide-gray-200 dark:divide-gray-700">
                 {filteredUsers.map(user => (
                   <div key={user.id} className="p-4 md:p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
-                    <div className="flex items-center justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <div>
-                            <h3 className="font-semibold text-gray-900 dark:text-white">{user.name}</h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">{user.email}</p>
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-3">
+                          <UserAvatar
+                            name={user.name}
+                            seed={user.id}
+                            size="md"
+                            className="shrink-0 ring-2 ring-gray-200 dark:ring-neutral-600"
+                          />
+                          <div className="min-w-0">
+                            <h3 className="font-semibold text-gray-900 dark:text-white">
+                              {user.name}
+                            </h3>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {user.email}
+                            </p>
                           </div>
                           <Badge variant={user.isActive ? "default" : "secondary"}>
                             {user.isActive ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
