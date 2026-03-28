@@ -194,12 +194,16 @@ export function SupplierInvoiceModal({
     setSaving(true)
     try {
       if (invoice) {
+        const trimmedNew = imageUrl?.trim() || ''
+        const trimmedExisting = invoice.imageUrl?.trim() || ''
+        const nextImageUrl =
+          trimmedNew || trimmedExisting || null
         await SupplierInvoicesService.updateInvoice(invoice.id, {
           invoiceNumber: invoiceNumber.trim(),
           issueDate: issueIso,
           dueDate: dueIso ?? null,
           totalAmount: total,
-          imageUrl: imageUrl,
+          imageUrl: nextImageUrl,
           notes: notes.trim() || null
         })
         toast.success('Factura actualizada')

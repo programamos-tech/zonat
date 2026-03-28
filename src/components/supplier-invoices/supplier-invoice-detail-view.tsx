@@ -18,6 +18,7 @@ import {
   AlertTriangle,
   X,
   ExternalLink,
+  ImageIcon,
   Banknote,
   Shuffle
 } from 'lucide-react'
@@ -309,7 +310,7 @@ export function SupplierInvoiceDetailView({
                 Anular factura
               </Button>
             )}
-            {invoice.imageUrl && (
+            {invoice.imageUrl ? (
               <a
                 href={invoice.imageUrl}
                 target="_blank"
@@ -317,8 +318,21 @@ export function SupplierInvoiceDetailView({
                 className="inline-flex items-center justify-center h-9 px-4 rounded-lg text-sm font-semibold bg-gray-100 dark:bg-neutral-800 text-gray-900 dark:text-white hover:bg-gray-200 dark:hover:bg-neutral-700"
               >
                 <ExternalLink className="h-4 w-4 mr-2" />
-                Ver comprobante
+                Ver imagen del comprobante
               </a>
+            ) : (
+              <div
+                className="inline-flex items-center h-9 px-4 rounded-lg text-sm text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-neutral-800/60 border border-dashed border-gray-200 dark:border-neutral-600"
+                title="No hay archivo en la factura"
+              >
+                <ImageIcon className="h-4 w-4 mr-2 shrink-0 opacity-70" />
+                <span>Sin imagen adjunta</span>
+                {canEditInvoice && (
+                  <span className="ml-2 hidden sm:inline text-xs opacity-90">
+                    (Editar para subir)
+                  </span>
+                )}
+              </div>
             )}
           </div>
         </CardContent>
@@ -375,6 +389,32 @@ export function SupplierInvoiceDetailView({
                 <div className="font-medium text-gray-900 dark:text-white">
                   {formatDate(invoice.issueDate)}
                 </div>
+              </div>
+            </div>
+            <div className="flex items-start gap-3 pt-3 border-t border-gray-200 dark:border-neutral-600">
+              <ImageIcon className="h-5 w-5 text-orange-600 shrink-0 mt-0.5" />
+              <div className="min-w-0">
+                <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">
+                  Comprobante (foto)
+                </div>
+                {invoice.imageUrl ? (
+                  <a
+                    href={invoice.imageUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center text-sm font-semibold text-orange-600 dark:text-orange-400 hover:underline"
+                  >
+                    <ExternalLink className="h-4 w-4 mr-1.5 shrink-0" />
+                    Ver imagen
+                  </a>
+                ) : (
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Sin archivo ·{' '}
+                    {canEditInvoice
+                      ? 'edita la factura para subir una foto.'
+                      : 'no se registró imagen al crear la factura.'}
+                  </p>
+                )}
               </div>
             </div>
             {invoice.dueDate && (

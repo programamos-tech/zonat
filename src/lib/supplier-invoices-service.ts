@@ -9,6 +9,18 @@ import { getCurrentUserStoreId, getCurrentUser } from './store-helper'
 
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
+/** URL pública completa o ruta dentro del bucket `supplier-invoices` (p. ej. invoices/xxx.jpg). */
+function resolveSupplierInvoiceImageUrl(raw: unknown): string | undefined {
+  if (raw == null) return undefined
+  const s = String(raw).trim()
+  if (!s) return undefined
+  if (/^https?:\/\//i.test(s)) return s
+  const path = s.replace(/^\/+/, '').replace(/^supplier-invoices\//, '')
+  if (!path) return undefined
+  const { data } = supabase.storage.from('supplier-invoices').getPublicUrl(path)
+  return data.publicUrl
+}
+
 function supabaseErrorMessage(err: {
   message?: string
   details?: string | null
@@ -89,7 +101,7 @@ function mapInvoice(
     totalAmount: Number(row.total_amount),
     paidAmount: Number(row.paid_amount ?? 0),
     status: row.status as SupplierInvoiceStatus,
-    imageUrl: (row.image_url as string) || undefined,
+    imageUrl: resolveSupplierInvoiceImageUrl(row.image_url),
     notes: (row.notes as string) || undefined,
     cancellationReason: (row.cancellation_reason as string) || undefined,
     createdBy: (row.created_by as string) || undefined,
