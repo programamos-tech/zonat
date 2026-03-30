@@ -135,15 +135,18 @@ export default function StoresPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+      <div className="flex min-h-[50vh] items-center justify-center bg-gradient-to-b from-zinc-50 via-white to-zinc-50/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-400"
+          aria-hidden
+        />
       </div>
     )
   }
 
   return (
     <RoleProtectedRoute module="roles" requiredAction="view">
-      <div className="p-4 md:p-6 pb-20 lg:pb-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
+      <div className="min-h-screen space-y-4 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 pb-20 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:space-y-6 md:py-6 lg:pb-6">
         <StoreTable
           stores={stores}
           onEdit={handleEdit}

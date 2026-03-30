@@ -1,13 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { X, Package, Tag, DollarSign, BarChart3, AlertTriangle, Store } from 'lucide-react'
+import { X, Package, Tag, DollarSign, BarChart3, AlertTriangle, Store, ImageIcon } from 'lucide-react'
 import { Product, Category } from '@/types'
 import { useProducts } from '@/contexts/products-context'
 import { useAuth } from '@/contexts/auth-context'
+import { toast } from 'sonner'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -23,7 +25,12 @@ interface ProductModalProps {
 export function ProductModal({ isOpen, onClose, onSave, product, categories }: ProductModalProps) {
   const { products } = useProducts()
   const { user } = useAuth()
-  
+  const [mounted, setMounted] = useState(false)
+
+  useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Detectar si es tienda principal o microtienda
   const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   const [formData, setFormData] = useState({
@@ -44,6 +51,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [catalogImageUrl, setCatalogImageUrl] = useState<string | null>(null)
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+  const catalogFileInputRef = useRef<HTMLInputElement>(null)
 
   // Actualizar formData cuando cambie el producto
   useEffect(() => {
@@ -64,7 +75,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         status: product.status || 'active',
         initialLocation: 'store' as 'warehouse' | 'store'
       })
+      setCatalogImageUrl(product.imageUrl?.trim() || null)
+    } else {
+      setCatalogImageUrl(null)
     }
+    setUploadPreview(null)
   }, [product])
 
   // Función para formatear números con separadores de miles
@@ -162,6 +177,32 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     return Object.keys(newErrors).length === 0
   }
 
+  const handleCatalogImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const blobUrl = URL.createObjectURL(file)
+    setUploadPreview(blobUrl)
+    setUploadingImage(true)
+    try {
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/storage/upload-product-image', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Error al subir')
+      const url = typeof json.url === 'string' ? json.url.trim() : ''
+      if (!url) throw new Error('El servidor no devolvió la URL de la imagen')
+      setCatalogImageUrl(url)
+      toast.success('Imagen del catálogo guardada')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
+    } finally {
+      URL.revokeObjectURL(blobUrl)
+      setUploadPreview(null)
+      setUploadingImage(false)
+      e.target.value = ''
+    }
+  }
+
   const handleInputChange = (field: string, value: string | number) => {
     if (field.includes('.')) {
       const [parent, child] = field.split('.')
@@ -198,6 +239,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         categoryId: formData.categoryId,
         brand: formData.brand.trim(),
         status: formData.status,
+        imageUrl: catalogImageUrl?.trim() || null,
         createdAt: product?.createdAt || new Date().toISOString(),
         updatedAt: new Date().toISOString()
       }
@@ -224,6 +266,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
       status: 'active',
       initialLocation: 'warehouse'
     })
+    setCatalogImageUrl(null)
+    setUploadPreview(null)
     setErrors({})
     onClose()
   }
@@ -234,11 +278,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
   if (!isOpen) return null
 
-  return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6">
-      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 bg-cyan-50 dark:bg-cyan-900/20 border-b border-cyan-200 dark:border-cyan-800 flex-shrink-0">
+  const modal = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-4 backdrop-blur-sm dark:bg-black/60 xl:left-56 xl:p-6">
+      <div className="flex h-full w-full max-h-[min(100dvh,100vh)] max-w-[min(1600px,calc(100vw-2rem))] flex-col overflow-hidden rounded-none border-0 border-gray-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-950 xl:h-[calc(98vh-4rem)] xl:max-h-[calc(98vh-4rem)] xl:rounded-2xl xl:border">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-white dark:bg-neutral-950">
+        <div className="flex items-center justify-between border-b border-cyan-200 bg-cyan-50 p-4 dark:border-cyan-800 dark:bg-cyan-900/20 md:p-6">
           <div className="flex items-center space-x-3">
             <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 dark:text-cyan-400" />
             <div>
@@ -251,6 +295,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </div>
           </div>
           <Button
+            type="button"
             onClick={handleClose}
             variant="ghost"
             size="sm"
@@ -260,8 +305,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto bg-white dark:bg-neutral-950" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
-          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="p-4 md:p-6">
+          <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="p-4 md:p-6 pb-8" style={{ paddingBottom: 'max(2rem, calc(env(safe-area-inset-bottom, 0px) + 1rem))' }}>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
               {/* Columna Izquierda */}
               <div className="space-y-6">
@@ -374,6 +418,65 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 </div>
               </CardContent>
             </Card>
+
+                <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
+                  <CardHeader>
+                    <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
+                      <ImageIcon className="h-5 w-5 mr-2 text-cyan-400" />
+                      Imagen del catálogo
+                    </CardTitle>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      Foto para mostrar el producto en la ficha y listados (máx. 5MB).
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-3">
+                    <div className="overflow-hidden rounded-lg border border-gray-200 bg-gray-50 dark:border-neutral-700 dark:bg-neutral-950/50">
+                      {(uploadPreview || catalogImageUrl) ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={uploadPreview || catalogImageUrl || ''}
+                          alt="Vista previa catálogo"
+                          className="mx-auto block max-h-56 w-full object-contain"
+                        />
+                      ) : (
+                        <div className="flex min-h-[140px] items-center justify-center px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400">
+                          Sin imagen · sube una foto del producto
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <input
+                        ref={catalogFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
+                        disabled={uploadingImage}
+                        onChange={handleCatalogImageFile}
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingImage}
+                        onClick={() => catalogFileInputRef.current?.click()}
+                      >
+                        {uploadingImage ? 'Subiendo…' : 'Subir imagen'}
+                      </Button>
+                      {catalogImageUrl && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-rose-600 dark:text-rose-400"
+                          disabled={uploadingImage}
+                          onClick={() => setCatalogImageUrl(null)}
+                        >
+                          Quitar imagen
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Información Financiera */}
                 <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
@@ -623,7 +726,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
             </div>
 
             {/* Botones dentro del form para que hagan scroll con el contenido */}
-            <div className="flex items-center justify-end gap-3 mt-6 pt-4 border-t border-gray-200 dark:border-neutral-700">
+            <div className="mt-8 flex items-center justify-end gap-3 pt-2">
               <Button
                 type="button"
                 onClick={handleClose}
@@ -645,4 +748,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
       </div>
     </div>
   )
+
+  if (!mounted || typeof document === 'undefined') return null
+  return createPortal(modal, document.body)
 }

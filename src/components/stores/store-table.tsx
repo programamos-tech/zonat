@@ -3,15 +3,8 @@
 import { Store } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Switch } from '@/components/ui/switch'
-import { 
-  Plus, 
-  Edit, 
-  Store as StoreIcon,
-  Crown,
-  Circle
-} from 'lucide-react'
+import { Plus, Edit, Store as StoreIcon, Crown } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -49,32 +42,32 @@ function StoreCard({
   return (
     <Card
       onClick={onStoreClick}
-      className={`bg-white dark:bg-neutral-900 transition-all duration-200 overflow-visible group relative ${
-        isCurrentStore 
-          ? 'ring-2 ring-emerald-400 dark:ring-emerald-500 shadow-md' 
-          : 'border border-gray-200 dark:border-neutral-700'
-      } ${
-        isSuperAdmin 
-          ? 'cursor-pointer hover:shadow-lg' 
-          : ''
-      }`}
+      className={`group relative overflow-visible rounded-xl border border-zinc-200/80 bg-white transition-all duration-200 dark:border-zinc-800 dark:bg-zinc-950/50 ${
+        isCurrentStore ? 'ring-1 ring-zinc-300/80 shadow-sm dark:ring-zinc-600' : ''
+      } ${isSuperAdmin ? 'cursor-pointer hover:shadow-md dark:hover:border-zinc-700' : ''}`}
       title={isSuperAdmin ? `Haz click para ver el dashboard de ${store.name}` : undefined}
     >
       <CardContent className="p-6">
         <div className="flex flex-col items-center text-center space-y-3">
           {/* Indicador de Tienda Actual - Sutil */}
           {isCurrentStore && (
-            <div className="absolute top-2 right-2">
-              <Circle className="h-2 w-2 fill-emerald-500 text-emerald-500" />
-            </div>
+            <div
+              className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-zinc-400 shadow-sm dark:bg-zinc-500"
+              title="Vista actual"
+              aria-hidden
+            />
           )}
           
           {/* Logo - Protagonista, Circular */}
           <div className="relative">
             {store.logo ? (
-              <div className={`relative w-20 h-20 rounded-full overflow-hidden transition-transform ${
-                isCurrentStore ? 'ring-2 ring-emerald-400 dark:ring-emerald-500' : ''
-              }`}>
+              <div
+                className={`relative h-20 w-20 overflow-hidden rounded-full ring-1 transition-transform ${
+                  isCurrentStore
+                    ? 'ring-zinc-300 dark:ring-zinc-600'
+                    : 'ring-zinc-200/80 dark:ring-zinc-700'
+                }`}
+              >
                 <Image
                   src={store.logo}
                   alt={store.name}
@@ -84,9 +77,11 @@ function StoreCard({
                 />
               </div>
             ) : (
-              <div className={`w-20 h-20 rounded-full bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/30 dark:to-emerald-800/30 flex items-center justify-center overflow-hidden ${
-                isCurrentStore ? 'ring-2 ring-emerald-400 dark:ring-emerald-500' : ''
-              }`}>
+              <div
+                className={`flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-zinc-100 ring-1 dark:bg-zinc-800/80 ${
+                  isCurrentStore ? 'ring-zinc-300 dark:ring-zinc-600' : 'ring-zinc-200/80 dark:ring-zinc-700'
+                }`}
+              >
                 <Image
                   src="/zonat-logo.png"
                   alt="Zona T Logo"
@@ -99,15 +94,15 @@ function StoreCard({
             )}
             {/* Icono de Tienda Principal - Corona */}
             {isMainStore && (
-              <div className="absolute -bottom-0.5 -right-0.5 bg-emerald-500 dark:bg-emerald-400 text-white rounded-full p-1 shadow-sm border-2 border-white dark:border-neutral-800">
-                <Crown className="h-2.5 w-2.5" />
+              <div className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white bg-zinc-900 p-1 text-white shadow-sm dark:border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900">
+                <Crown className="h-2.5 w-2.5" strokeWidth={2} />
               </div>
             )}
           </div>
           
           {/* Nombre de la Tienda */}
           <div className="w-full">
-            <h3 className="text-sm font-medium text-gray-900 dark:text-white line-clamp-2 leading-tight">
+            <h3 className="line-clamp-2 text-sm font-medium leading-tight text-zinc-900 dark:text-zinc-50">
               {store.name}
             </h3>
           </div>
@@ -134,7 +129,7 @@ function StoreCard({
               }}
               variant="ghost"
               size="sm"
-              className="h-8 px-3 text-gray-600 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400"
+              className="h-8 px-3 text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100"
               title="Editar"
             >
               <Edit className="h-4 w-4" />
@@ -151,7 +146,7 @@ function StoreCard({
             >
               <Switch
                 checked={store.isActive}
-                onCheckedChange={(checked) => {
+                onCheckedChange={() => {
                   onToggleStatus()
                 }}
                 onClick={(e) => {
@@ -162,6 +157,7 @@ function StoreCard({
                   e.stopPropagation()
                 }}
                 title={store.isActive ? 'Desactivar' : 'Activar'}
+                className="data-[state=checked]:bg-zinc-700 focus-visible:ring-zinc-400 dark:data-[state=checked]:bg-zinc-300 dark:focus-visible:ring-zinc-500"
               />
             </div>
           </div>
@@ -219,7 +215,7 @@ export function StoreTable({
     e.preventDefault()
 
     // Cambiar de tienda
-    const newStoreId = store.id === MAIN_STORE_ID ? undefined : store.id
+    const newStoreId = store.id === MAIN_STORE_ID ? MAIN_STORE_ID : store.id
     switchStore(newStoreId)
     
     // Crear slug de la tienda para la URL
@@ -239,24 +235,25 @@ export function StoreTable({
   }
 
   return (
-    <Card className="bg-white dark:bg-neutral-900 shadow-sm">
-      <CardHeader className="border-b border-gray-200 dark:border-neutral-700">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-              <StoreIcon className="h-6 w-6 text-emerald-600" />
+    <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+      <CardHeader className="space-y-0 p-4 md:p-6">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0 flex-1 space-y-1.5">
+            <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+              <StoreIcon className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
               Micro Tiendas
             </CardTitle>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
               Gestiona las micro tiendas del sistema
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
             <Button
               onClick={onCreate}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-2"
+              size="sm"
+              className="h-9 flex-1 bg-zinc-900 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white sm:flex-none"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="mr-1.5 h-3.5 w-3.5 shrink-0" />
               <span className="hidden sm:inline">Nueva Tienda</span>
               <span className="sm:hidden">Nueva</span>
             </Button>
@@ -266,11 +263,14 @@ export function StoreTable({
       <CardContent className="p-4 md:p-6">
         {stores.length === 0 ? (
           <div className="p-8 text-center">
-            <StoreIcon className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-500 dark:text-gray-400">No hay tiendas registradas</p>
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-zinc-300 dark:border-zinc-600">
+              <StoreIcon className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
+            </div>
+            <p className="text-zinc-500 dark:text-zinc-400">No hay tiendas registradas</p>
             <Button
               onClick={onCreate}
-              className="mt-4 bg-emerald-600 hover:bg-emerald-700 text-white"
+              size="sm"
+              className="mt-4 bg-zinc-900 text-white shadow-none hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
             >
               Crear Primera Tienda
             </Button>

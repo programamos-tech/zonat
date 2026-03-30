@@ -1,11 +1,18 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { useAuth } from '@/contexts/auth-context'
-import { User, LogOut, Mail, Shield, Calendar, CheckCircle, XCircle, Clock, KeyRound } from 'lucide-react'
+import {
+  User,
+  LogOut,
+  Mail,
+  Shield,
+  Calendar,
+  Clock,
+  KeyRound
+} from 'lucide-react'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 
@@ -31,7 +38,7 @@ export default function ProfilePage() {
 
   const formatDate = (dateString?: string) => {
     if (!dateString) return 'No disponible'
-    return new Date(dateString).toLocaleDateString('es-MX', {
+    return new Date(dateString).toLocaleDateString('es-CO', {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
@@ -43,10 +50,10 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="p-6 space-y-6 bg-white dark:bg-neutral-950 min-h-screen flex items-center justify-center">
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500 dark:border-emerald-500 mx-auto mb-4"></div>
-            <p className="text-gray-600 dark:text-gray-300">Cargando perfil...</p>
+            <div className="mx-auto mb-4 h-9 w-9 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">Cargando perfil…</p>
           </div>
         </div>
       </RoleProtectedRoute>
@@ -55,157 +62,153 @@ export default function ProfilePage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-4 md:p-6 bg-white dark:bg-neutral-950 min-h-screen">
-        {/* Header */}
-        <div className="mb-4 md:mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-emerald-600 rounded-lg flex items-center justify-center">
-              <User className="h-5 w-5 text-white" />
+      <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-24 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
+        <div className="py-4 md:py-8">
+          {/* Encabezado — misma jerarquía que facturador */}
+          <div className="mb-6 md:mb-8">
+            <div className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+              <User
+                className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <span>Mi perfil</span>
             </div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">Mi Perfil</h1>
+            <p className="mt-1 max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+              Información de tu cuenta y configuración
+            </p>
           </div>
-          <p className="text-gray-600 dark:text-gray-400 text-sm">
-            Información de tu cuenta y configuración
-          </p>
-        </div>
 
-        {/* Profile Information */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Profile Card */}
-          <Card className="lg:col-span-1 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-sm hover:shadow-lg transition-all duration-200">
-            <CardContent className="p-6">
-              <div className="flex flex-col items-center text-center space-y-4">
-                <UserAvatar name={user.name} seed={user.id} size="xl" />
-                <div className="space-y-1">
-                  <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-                    {user.name}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {getRoleLabel(user.role)}
-                  </p>
-                </div>
-                <div className="w-full pt-4 border-t border-gray-200 dark:border-neutral-700 flex justify-center">
-                  <Button
+          <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
+            {/* Tarjeta usuario */}
+            <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+              <CardContent className="flex flex-col items-center p-5 text-center md:p-6">
+                <UserAvatar
+                  name={user.name}
+                  seed={user.id}
+                  size="xl"
+                  className="ring-1 ring-zinc-200/80 dark:ring-zinc-700"
+                />
+                <h2 className="mt-4 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                  {user.name}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  {getRoleLabel(user.role)}
+                </p>
+                <div className="mt-6 w-full border-t border-zinc-200/80 pt-5 dark:border-zinc-800">
+                  <button
+                    type="button"
                     onClick={handleLogout}
-                    variant="outline"
-                    className="px-4 py-1.5 text-gray-600 dark:text-gray-400 border-gray-300 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-gray-800 text-sm font-medium rounded-lg transition-all duration-200"
-                    size="sm"
+                    className="inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-zinc-200/90 bg-zinc-50/80 text-sm font-medium text-zinc-700 shadow-none transition-colors hover:border-[#ff9568]/55 hover:bg-[#ff9568]/[0.07] hover:text-[#ff9568] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ff9568]/25 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200 dark:hover:border-[#ff9568]/45 dark:hover:bg-[#ff9568]/10 dark:hover:text-[#ffb090]"
                   >
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Cerrar Sesión
-                  </Button>
+                    <LogOut className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
+                    Cerrar sesión
+                  </button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Details Card */}
-          <Card className="lg:col-span-2 bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-sm">
-            <CardHeader className="pb-4">
-              <CardTitle className="text-lg md:text-xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                  <User className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                Información Personal
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 md:p-6 space-y-4 md:space-y-5">
-              {/* Email */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                    <Mail className="h-6 w-6 text-blue-600 dark:text-blue-400" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Correo Electrónico
-                  </p>
-                  <p className="text-base font-medium text-gray-900 dark:text-white break-words">
-                    {user.email}
-                  </p>
-                </div>
-              </div>
-
-              {/* Role */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
-                    <Shield className="h-6 w-6 text-purple-600 dark:text-purple-400" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Rol
-                  </p>
-                  <p className="text-base font-medium text-gray-900 dark:text-white">
-                    {getRoleLabel(user.role)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Last Login */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                    <Clock className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Último Inicio de Sesión
-                  </p>
-                  <p className="text-base font-medium text-gray-900 dark:text-white">
-                    {formatDate(user.lastLogin)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Account Created */}
-              <div className="flex items-start space-x-4 p-4 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                <div className="flex-shrink-0">
-                  <div className="w-12 h-12 rounded-lg bg-orange-100 dark:bg-orange-900/30 flex items-center justify-center">
-                    <Calendar className="h-6 w-6 text-orange-600 dark:text-orange-400" />
-                  </div>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">
-                    Cuenta Creada
-                  </p>
-                  <p className="text-base font-medium text-gray-900 dark:text-white">
-                    {formatDate(user.createdAt)}
-                  </p>
-                </div>
-              </div>
-
-              {/* Permissions */}
-              {user.permissions && user.permissions.length > 0 && (
-                <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
-                  <div className="flex items-center gap-2 mb-4">
-                    <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-lg">
-                      <KeyRound className="h-4 w-4 text-indigo-600 dark:text-indigo-400" />
+            {/* Detalle */}
+            <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 lg:col-span-2">
+              <CardHeader className="space-y-0 border-b border-zinc-200/80 px-4 pb-3 pt-4 dark:border-zinc-800 md:px-6 md:pb-4 md:pt-5">
+                <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">
+                  Información personal
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-0 p-0 md:px-2">
+                <div className="divide-y divide-zinc-100 dark:divide-zinc-800">
+                  <div className="flex gap-3 px-4 py-3.5 md:px-5">
+                    <Mail
+                      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        Correo electrónico
+                      </p>
+                      <p className="mt-0.5 break-words text-sm text-zinc-900 dark:text-zinc-100">
+                        {user.email}
+                      </p>
                     </div>
-                    <p className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
-                    Módulos Accesibles
-                  </p>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    {user.permissions.map((permission, index) => (
-                      <Badge
-                        key={index}
-                        className="px-3 py-1.5 bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-xs font-medium hover:bg-emerald-200 hover:border-emerald-300 dark:hover:bg-emerald-900/40 dark:hover:border-emerald-700 transition-colors"
-                      >
-                        {permission.module}
-                      </Badge>
-                    ))}
+                  <div className="flex gap-3 px-4 py-3.5 md:px-5">
+                    <Shield
+                      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        Rol
+                      </p>
+                      <p className="mt-0.5 text-sm text-zinc-900 dark:text-zinc-100">
+                        {getRoleLabel(user.role)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 px-4 py-3.5 md:px-5">
+                    <Clock
+                      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        Último inicio de sesión
+                      </p>
+                      <p className="mt-0.5 text-sm text-zinc-900 dark:text-zinc-100">
+                        {formatDate(user.lastLogin)}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex gap-3 px-4 py-3.5 md:px-5">
+                    <Calendar
+                      className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500"
+                      strokeWidth={1.5}
+                      aria-hidden
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                        Cuenta creada
+                      </p>
+                      <p className="mt-0.5 text-sm text-zinc-900 dark:text-zinc-100">
+                        {formatDate(user.createdAt)}
+                      </p>
+                    </div>
                   </div>
                 </div>
-              )}
-            </CardContent>
-          </Card>
+
+                {user.permissions && user.permissions.length > 0 && (
+                  <div className="border-t border-zinc-200/80 px-4 py-4 dark:border-zinc-800 md:px-6 md:py-5">
+                    <div className="mb-3 flex items-center gap-2">
+                      <KeyRound
+                        className="h-4 w-4 text-zinc-400 dark:text-zinc-500"
+                        strokeWidth={1.5}
+                        aria-hidden
+                      />
+                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                        Módulos accesibles
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {user.permissions.map((permission, index) => (
+                        <Badge
+                          key={index}
+                          variant="outline"
+                          className="rounded-md border-zinc-200/90 bg-zinc-50/90 px-2 py-0.5 text-xs font-medium normal-case text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800/60 dark:text-zinc-300"
+                        >
+                          {permission.module}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </RoleProtectedRoute>
   )
 }
-

@@ -10,7 +10,7 @@ import {
   Plus, 
   Minus, 
   Search,
-  Calculator,
+  FileText,
   User,
   Package,
   CreditCard,
@@ -20,6 +20,7 @@ import {
   ArrowLeft,
   ShoppingCart
 } from 'lucide-react'
+import { cn } from '@/lib/utils'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Sale, SaleItem, Product, Client, SalePayment } from '@/types'
 import { useClients } from '@/contexts/clients-context'
@@ -32,6 +33,12 @@ import { StoreBadge } from '@/components/ui/store-badge'
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 // Margen mínimo de ganancia para microtiendas (10%)
 const MIN_PROFIT_MARGIN = 0.10
+
+const cardShell =
+  'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
+
+const inputClass =
+  'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20'
 
 export default function NewSalePage() {
   const router = useRouter()
@@ -226,12 +233,9 @@ export default function NewSalePage() {
       })
     }
     
-    // Si hay búsqueda pero no hay resultados y no está buscando, mostrar vacío
-    if (searchTerm.length >= 2 && searchedProducts.length === 0 && !isSearchingProducts) {
-      return []
-    }
-    
-    // Si está buscando o no hay búsqueda, usar productos locales como fallback
+    // Si la API no devolvió nada (término >= 2), seguir con el filtro local — no vaciar la lista
+
+    // Filtro local (también respaldo si el servidor no encuentra coincidencias)
     return products.filter(product => {
       if (!product || product.status !== 'active') return false
       const searchTermLower = searchTerm.toLowerCase()
@@ -333,7 +337,7 @@ export default function NewSalePage() {
       quantity: 1,
       unitPrice: product.price,
       total: product.price,
-      addedAt: new Date().toISOString()
+      addedAt: Date.now()
     }
 
     setSelectedProducts([...selectedProducts, newItem])
@@ -699,64 +703,79 @@ export default function NewSalePage() {
     setClientSearch('')
   }
 
+  const saleBlockingAlert = stockAlert.show ? (
+    <div
+      role="alert"
+      className="mb-3 rounded-lg border border-red-200/80 bg-red-50/90 p-3 dark:border-red-900/40 dark:bg-red-950/30"
+    >
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-red-600 dark:text-red-400" />
+        <div className="min-w-0 text-sm font-medium leading-snug text-red-900 dark:text-red-200">
+          {stockAlert.message}
+        </div>
+      </div>
+    </div>
+  ) : null
+
   return (
     <RoleProtectedRoute module="sales" requiredAction="create">
-      <div className="min-h-screen bg-gray-50 dark:bg-neutral-950">
-        {/* Header Fijo - Compacto */}
-        <div className="sticky top-0 z-40 bg-white dark:bg-neutral-900 border-b border-gray-200 dark:border-neutral-700">
-          <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-2">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/sales')}
-                className="h-8 w-8 p-0"
-              >
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-              <div className="h-8 w-8 rounded-lg bg-green-600 dark:bg-green-700 flex items-center justify-center flex-shrink-0">
-                <Calculator className="h-4 w-4 text-white" />
-              </div>
-              <div className="flex-1 min-w-0 flex items-center gap-2 flex-wrap">
-                <h1 className="text-base font-semibold text-gray-900 dark:text-white truncate">
-                  Factura de Venta
+      <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
+        <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-4 md:px-6">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push('/sales')}
+              className="-ml-2 shrink-0"
+              aria-label="Volver a ventas"
+            >
+              <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
+            </Button>
+            <FileText className="h-6 w-6 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  Nueva factura de venta
                 </h1>
                 <StoreBadge />
               </div>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Agrega productos, elige cliente y método de pago.
+              </p>
               {invoiceNumber !== 'Pendiente' && invoiceNumber !== 'Generando...' && (
-                <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">
-                  {invoiceNumber}
-                </div>
+                <p className="mt-1 font-mono text-xs text-zinc-500 dark:text-zinc-400">{invoiceNumber}</p>
               )}
             </div>
           </div>
-        </div>
+        </header>
 
-        {/* Contenido Principal */}
-        <div className="max-w-[1920px] mx-auto px-4 md:px-6 py-6">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
             {/* Columna Izquierda - Productos (2/3 del ancho) */}
             <div className="xl:col-span-2 space-y-6">
               {/* Búsqueda y Selección de Productos */}
-              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
+              {/** sin overflow-hidden: el listado absoluto del buscador quedaría recortado */}
+              <Card className={cardShell}>
+                <CardHeader className="space-y-0 border-b border-zinc-200 p-4 dark:border-zinc-800">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    <Package className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-300" strokeWidth={1.5} />
                     Productos
                   </CardTitle>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    Busca por nombre, referencia o marca (desde 1 carácter en local; búsqueda amplia desde 2).
+                  </p>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Buscar Producto
+                <CardContent className="space-y-4 overflow-visible p-4 md:p-6 md:pt-4">
+                  <div className="relative z-0">
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Buscar producto
                     </label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                       <input
                         type="text"
-                        placeholder="Buscar por nombre, referencia o marca..."
+                        placeholder="Nombre, referencia o marca…"
                         value={productSearch}
                         onChange={(e) => {
                           setProductSearch(e.target.value)
@@ -764,18 +783,18 @@ export default function NewSalePage() {
                         }}
                         onKeyDown={handleProductSearchKeyDown}
                         onFocus={() => setShowProductDropdown(true)}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
+                        className={cn(inputClass, 'pl-10')}
                       />
                       
                       {showProductDropdown && productSearch && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg shadow-xl max-h-96 overflow-y-auto z-50">
+                        <div className="scrollbar-hide absolute left-0 right-0 top-full z-[100] mt-1 max-h-96 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 bg-white shadow-lg ring-1 ring-black/5 dark:border-zinc-700 dark:bg-zinc-900 dark:ring-white/10">
                           {isSearchingProducts ? (
                             <div className="p-4 text-center">
-                              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mx-auto mb-2"></div>
-                              <div className="text-sm text-gray-500">Buscando productos...</div>
+                              <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
+                              <div className="text-sm text-zinc-500 dark:text-zinc-400">Buscando productos…</div>
                             </div>
                           ) : visibleProducts.length === 0 ? (
-                            <div className="p-4 text-center text-gray-500 text-sm">
+                            <div className="p-4 text-center text-sm text-zinc-500 dark:text-zinc-400">
                               No se encontraron productos
                             </div>
                           ) : (
@@ -793,37 +812,41 @@ export default function NewSalePage() {
                                     }}
                                     onClick={() => hasStock ? handleAddProduct(product) : undefined}
                                     onMouseEnter={() => setHighlightedProductIndex(index)}
-                                    className={`p-3 border-b border-gray-200 dark:border-neutral-600 last:border-b-0 rounded-lg transition-colors duration-150 ease-in-out ${
+                                    className={cn(
+                                      'rounded-lg border p-3 transition-colors last:mb-0',
                                       isHighlighted && hasStock
-                                        ? 'bg-green-50 dark:bg-green-900/20 border-green-300 dark:border-green-600 cursor-pointer'
+                                        ? 'cursor-pointer border-zinc-300 bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-800/80'
                                         : hasStock
-                                          ? 'bg-white dark:bg-neutral-800 hover:bg-gray-50 dark:hover:bg-neutral-700 cursor-pointer'
-                                          : 'bg-red-50 dark:bg-red-900/20 border-red-200/50 dark:border-red-800/50 cursor-not-allowed'
-                                    }`}
+                                          ? 'cursor-pointer border-transparent hover:bg-zinc-50 dark:hover:bg-zinc-900/60'
+                                          : 'cursor-not-allowed border-red-200/60 bg-red-50/50 dark:border-red-900/40 dark:bg-red-950/20'
+                                    )}
                                   >
                                     <div className="flex items-start justify-between gap-2">
                                       <div className="min-w-0 flex-1">
-                                        <div className={`font-medium ${
-                                          isHighlighted && hasStock
-                                            ? 'text-green-700 dark:text-green-200'
-                                            : hasStock
-                                              ? 'text-gray-900 dark:text-white'
-                                              : 'text-red-700 dark:text-red-300'
-                                        }`}>
+                                        <div
+                                          className={cn(
+                                            'font-medium',
+                                            hasStock
+                                              ? 'text-zinc-900 dark:text-zinc-100'
+                                              : 'text-red-800 dark:text-red-300'
+                                          )}
+                                        >
                                           {product.name}
                                         </div>
-                                        <div className={`text-sm mt-0.5 ${
-                                          isHighlighted && hasStock
-                                            ? 'text-green-600 dark:text-green-300'
-                                            : hasStock
-                                              ? 'text-gray-600 dark:text-gray-400'
+                                        <div
+                                          className={cn(
+                                            'mt-0.5 text-sm',
+                                            hasStock
+                                              ? 'text-zinc-500 dark:text-zinc-400'
                                               : 'text-red-600 dark:text-red-400'
-                                        }`}>
-                                          Ref: {product.reference || 'N/A'} · Stock: {totalStock} · ${(product.price || 0).toLocaleString('es-CO')}
+                                          )}
+                                        >
+                                          Ref: {product.reference || 'N/A'} · Stock: {totalStock} · $
+                                          {(product.price || 0).toLocaleString('es-CO')}
                                         </div>
                                       </div>
                                       {!hasStock && (
-                                        <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/40 dark:text-red-200 border border-red-200 dark:border-red-700/50">
+                                        <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-red-200/80 bg-red-100/80 px-2 py-0.5 text-xs font-medium text-red-800 dark:border-red-800/50 dark:bg-red-950/50 dark:text-red-200">
                                           Sin stock
                                         </span>
                                       )}
@@ -838,24 +861,14 @@ export default function NewSalePage() {
                     </div>
                   </div>
 
-                  {/* Alerta de stock */}
-                  {stockAlert.show && (
-                    <div className="p-3 bg-red-100 dark:bg-red-900/40 border border-red-300 dark:border-red-600 rounded-lg shadow-sm">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0" />
-                        <div className="text-sm font-medium text-red-800 dark:text-red-200">
-                          {stockAlert.message}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Productos Seleccionados */}
                   {orderedSelectedProducts.length > 0 && (
-                    <div className="mt-4 pt-4 border-t border-gray-200 dark:border-neutral-700">
-                      <div className="flex items-center justify-between mb-3">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white">Productos Seleccionados</h3>
-                        <Badge className="bg-green-100 text-green-800 border-green-300 dark:bg-green-900/30 dark:text-green-300 dark:border-green-600 text-sm">
+                    <div className="mt-4 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                      <div className="mb-3 flex items-center justify-between">
+                        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Líneas en la factura</h3>
+                        <Badge
+                          variant="outline"
+                          className="border-zinc-200/90 text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                        >
                           {orderedSelectedProducts.length} producto{orderedSelectedProducts.length !== 1 ? 's' : ''}
                         </Badge>
                       </div>
@@ -867,17 +880,20 @@ export default function NewSalePage() {
                           const reference = item.productReferenceCode || product?.reference || 'N/A'
                           
                           return (
-                            <div key={item.id} className="bg-gray-50 dark:bg-neutral-800/50 border border-gray-200 dark:border-neutral-600 rounded-lg p-4">
-                              <div className="flex items-start justify-between mb-3">
-                                <div className="flex-1 min-w-0">
-                                  <h4 className="font-semibold text-gray-900 dark:text-white text-base mb-1">{item.productName}</h4>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-                                    Ref: {reference} | Bodega: {warehouseStock} | Local: {localStock}
+                            <div
+                              key={item.id}
+                              className="rounded-lg border border-zinc-200/90 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/40"
+                            >
+                              <div className="mb-3 flex items-start justify-between">
+                                <div className="min-w-0 flex-1">
+                                  <h4 className="mb-1 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                                    {item.productName}
+                                  </h4>
+                                  <div className="mb-2 text-sm text-zinc-500 dark:text-zinc-400">
+                                    Ref: {reference} · Bodega: {warehouseStock} · Local: {localStock}
                                   </div>
                                   <div className="flex items-center gap-2">
-                                    <label className="text-sm font-medium text-gray-600 dark:text-gray-400">
-                                      Precio:
-                                    </label>
+                                    <label className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Precio</label>
                                     <input
                                       type="text"
                                       inputMode="numeric"
@@ -889,28 +905,30 @@ export default function NewSalePage() {
                                         }
                                       }}
                                       onBlur={() => handlePriceBlur(item.id)}
-                                      className="w-32 h-8 text-sm text-gray-900 dark:text-white border rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-neutral-700 px-2"
+                                      className="h-8 w-32 rounded-md border border-zinc-200 bg-white px-2 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
                                       min={product?.cost || 0}
                                       step="100"
                                       placeholder="0"
                                     />
                                   </div>
                                 </div>
-                                <div className="text-right ml-3">
-                                  <div className="text-lg font-bold text-gray-900 dark:text-white">{formatCurrency(item.total)}</div>
-                                  <div className="text-sm text-gray-500 dark:text-gray-400">Total</div>
+                                <div className="ml-3 text-right">
+                                  <div className="text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                    {formatCurrency(item.total)}
+                                  </div>
+                                  <div className="text-sm text-zinc-500 dark:text-zinc-400">Subtotal línea</div>
                                 </div>
                               </div>
                               
-                              <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-600">
+                              <div className="flex items-center justify-between border-t border-zinc-200 pt-2 dark:border-zinc-700">
                                 <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">Cantidad:</span>
+                                  <span className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Cantidad</span>
                                   <div className="flex items-center gap-1">
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleUpdateQuantity(item.id, item.quantity - 1)}
-                                      className="h-8 w-8 p-0 border-gray-300 dark:border-neutral-600 hover:bg-gray-100 dark:hover:bg-neutral-700"
+                                      className="h-8 w-8 p-0"
                                     >
                                       <Minus className="h-4 w-4" />
                                     </Button>
@@ -918,14 +936,14 @@ export default function NewSalePage() {
                                       type="text"
                                       value={item.quantity}
                                       onChange={(e) => handleQuantityInputChange(item.id, e.target.value)}
-                                      className="w-16 h-8 text-center text-base font-semibold text-gray-900 dark:text-white border border-gray-300 dark:border-neutral-600 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500 bg-white dark:bg-neutral-700"
+                                      className="h-8 w-16 rounded-md border border-zinc-200 bg-white text-center text-base font-semibold text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
                                       min="1"
                                     />
                                     <Button
                                       size="sm"
                                       variant="outline"
                                       onClick={() => handleUpdateQuantity(item.id, item.quantity + 1)}
-                                      className="h-8 w-8 p-0 border-gray-300 dark:border-neutral-600 hover:bg-gray-100 dark:hover:bg-neutral-700"
+                                      className="h-8 w-8 p-0"
                                     >
                                       <Plus className="h-4 w-4" />
                                     </Button>
@@ -936,9 +954,9 @@ export default function NewSalePage() {
                                   size="sm"
                                   variant="ghost"
                                   onClick={() => handleRemoveProduct(item.id)}
-                                  className="h-8 px-3 text-sm text-red-600 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                                  className="h-8 px-3 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/50"
                                 >
-                                  <X className="h-4 w-4 mr-1" />
+                                  <X className="mr-1 h-4 w-4" />
                                   Quitar
                                 </Button>
                               </div>
@@ -953,27 +971,32 @@ export default function NewSalePage() {
             </div>
 
             {/* Columna Derecha - Cliente, Pago y Resumen (1/3 del ancho, Sticky) */}
-            <div className="xl:col-span-1 space-y-6">
-              {/* Cliente */}
-              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <User className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
+            <div className="space-y-6 xl:col-span-1">
+              {/** z-index alto solo con lista abierta: si no, la columna de abajo (pago/resumen) tapa el dropdown */}
+              <div
+                className={cn(
+                  'relative',
+                  showClientDropdown && !selectedClient ? 'z-[120]' : 'z-0'
+                )}
+              >
+              <Card className={cardShell}>
+                <CardHeader className="space-y-0 border-b border-zinc-200 p-4 dark:border-zinc-800">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    <User className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-300" strokeWidth={1.5} />
                     Cliente
                   </CardTitle>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Quién recibe la factura.</p>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 overflow-visible p-4 md:p-6 md:pt-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Buscar Cliente
+                    <label className="mb-2 block text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Buscar cliente
                     </label>
-                    <div className="relative">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 z-10" />
+                    <div className="relative isolate">
+                      <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                       <input
                         type="text"
-                        placeholder="Buscar por nombre, email o teléfono..."
+                        placeholder="Nombre, email o teléfono…"
                         value={clientSearch}
                         onChange={(e) => {
                           setClientSearch(e.target.value)
@@ -983,18 +1006,17 @@ export default function NewSalePage() {
                           setShowClientDropdown(true)
                         }}
                         onBlur={() => {
-                          // Cerrar dropdown después de un pequeño delay para permitir clicks
                           setTimeout(() => {
                             setShowClientDropdown(false)
                           }, 200)
                         }}
-                        className="w-full pl-10 pr-4 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        className={cn(inputClass, 'pl-10')}
                       />
                       
                       {showClientDropdown && !selectedClient && filteredClients.length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg shadow-xl max-h-80 overflow-y-auto z-50">
-                          <div className="p-2">
-                            {filteredClients.map((client, index) => (
+                        <div className="scrollbar-hide absolute left-0 right-0 top-full z-[130] mt-1 max-h-80 overflow-y-auto overscroll-contain rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-600 dark:bg-zinc-950">
+                          <div className="rounded-[inherit] bg-white p-2 dark:bg-zinc-950">
+                            {filteredClients.map((client) => (
                               <button
                                 key={client.id}
                                 type="button"
@@ -1004,26 +1026,26 @@ export default function NewSalePage() {
                                   setClientSearch(client.name)
                                   setShowClientDropdown(false)
                                 }}
-                                className="w-full px-3 py-3 text-left rounded-lg transition-all duration-150 hover:bg-green-50 dark:hover:bg-green-900/20 border border-transparent hover:border-green-200 dark:hover:border-green-700 mb-1 last:mb-0 group"
+                                className="group mb-1 w-full rounded-lg border border-transparent px-3 py-3 text-left transition-colors last:mb-0 hover:border-zinc-200 hover:bg-zinc-50 dark:hover:border-zinc-700 dark:hover:bg-zinc-900/60"
                               >
                                 <div className="flex items-start justify-between gap-3">
-                                  <div className="flex-1 min-w-0">
-                                    <div className="font-semibold text-gray-900 dark:text-white text-sm mb-1 group-hover:text-green-700 dark:group-hover:text-green-300 transition-colors">
+                                  <div className="min-w-0 flex-1">
+                                    <div className="mb-1 text-sm font-semibold text-zinc-900 dark:text-zinc-100">
                                       {client.name}
                                     </div>
                                     {client.email && (
-                                      <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                      <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                                         {client.email}
                                       </div>
                                     )}
                                     {client.phone && (
-                                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                      <div className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                                         {client.phone}
                                       </div>
                                     )}
                                   </div>
-                                  <div className="flex-shrink-0">
-                                    <Badge className={`${getClientTypeColor(client.type)} text-xs whitespace-nowrap`}>
+                                  <div className="shrink-0">
+                                    <Badge className={cn(getClientTypeColor(client.type), 'whitespace-nowrap text-xs')}>
                                       {client.type === 'mayorista' ? 'Mayorista' : 
                                        client.type === 'minorista' ? 'Minorista' : 'Consumidor Final'}
                                     </Badge>
@@ -1036,12 +1058,10 @@ export default function NewSalePage() {
                       )}
                       
                       {showClientDropdown && !selectedClient && filteredClients.length === 0 && clientSearch.trim().length > 0 && (
-                        <div className="absolute top-full left-0 right-0 mt-1 bg-white dark:bg-neutral-800 border border-gray-300 dark:border-neutral-600 rounded-lg shadow-xl z-50">
-                          <div className="p-4 text-center">
-                            <User className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
-                              No se encontraron clientes
-                            </div>
+                        <div className="absolute left-0 right-0 top-full z-[130] mt-1 rounded-xl border border-zinc-200 bg-white p-4 shadow-2xl dark:border-zinc-600 dark:bg-zinc-950">
+                          <div className="text-center">
+                            <User className="mx-auto mb-2 h-8 w-8 text-zinc-400" />
+                            <div className="text-sm text-zinc-500 dark:text-zinc-400">No se encontraron clientes</div>
                           </div>
                         </div>
                       )}
@@ -1049,25 +1069,25 @@ export default function NewSalePage() {
                   </div>
 
                   {selectedClient && (
-                    <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg border border-green-200 dark:border-green-500/30 shadow-sm">
+                    <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
                       <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2 flex-1 min-w-0">
-                          <div className="h-7 w-7 rounded-full bg-green-600 dark:bg-green-700 flex items-center justify-center flex-shrink-0">
-                            <User className="h-3.5 w-3.5 text-white" />
+                        <div className="flex min-w-0 flex-1 items-center gap-2">
+                          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-zinc-200 bg-white dark:border-zinc-600 dark:bg-zinc-800">
+                            <User className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="font-semibold text-gray-900 dark:text-white text-sm truncate">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                               {selectedClient.name}
                             </div>
                             {selectedClient.email && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                              <div className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                                 {selectedClient.email}
                               </div>
                             )}
                           </div>
                         </div>
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          <Badge className={`${getClientTypeColor(selectedClient.type)} text-xs whitespace-nowrap`}>
+                        <div className="flex shrink-0 items-center gap-2">
+                          <Badge className={cn(getClientTypeColor(selectedClient.type), 'whitespace-nowrap text-xs')}>
                             {selectedClient.type === 'mayorista' ? 'Mayorista' : 
                              selectedClient.type === 'minorista' ? 'Minorista' : 'Consumidor Final'}
                           </Badge>
@@ -1075,9 +1095,9 @@ export default function NewSalePage() {
                             onClick={handleRemoveClient}
                             size="sm"
                             variant="ghost"
-                            className="h-6 w-6 p-0 text-gray-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                            className="h-8 w-8 p-0 text-zinc-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/40"
                           >
-                            <X className="h-3.5 w-3.5" />
+                            <X className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -1086,27 +1106,26 @@ export default function NewSalePage() {
 
                 </CardContent>
               </Card>
+              </div>
 
-              {/* Método de Pago */}
-              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <CreditCard className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    Método de Pago
+              <Card className={cn(cardShell, 'relative z-0 overflow-hidden')}>
+                <CardHeader className="space-y-0 border-b border-zinc-200 p-4 dark:border-zinc-800">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    <CreditCard className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-300" strokeWidth={1.5} />
+                    Método de pago
                   </CardTitle>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Cómo se liquida la venta.</p>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 p-4 md:p-6 md:pt-4">
                     <select
                       value={paymentMethod}
                       onChange={(e) => {
-                        setPaymentMethod(e.target.value as any)
+                        setPaymentMethod(e.target.value as 'cash' | 'transfer' | 'warranty' | 'mixed' | '')
                         if (e.target.value !== 'cash') {
                           setReceivedAmount('')
                         }
                       }}
-                      className="w-full px-3 py-2.5 border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
+                      className={inputClass}
                     >
                       <option value="">Seleccionar método...</option>
                       <option value="cash">Efectivo</option>
@@ -1115,10 +1134,10 @@ export default function NewSalePage() {
                     </select>
 
                   {showMixedPayments && (
-                    <div className="space-y-2 p-3 bg-gray-50 dark:bg-neutral-800 rounded-lg">
+                    <div className="space-y-3 rounded-lg border border-zinc-200/90 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
                       {mixedPayments.map((payment, index) => (
                         <div key={index}>
-                          <label className="text-xs text-gray-600 dark:text-gray-400 mb-1 block">
+                          <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                             {getPaymentTypeLabel(payment.paymentType)}
                           </label>
                           <input
@@ -1126,30 +1145,33 @@ export default function NewSalePage() {
                             value={payment.amount ? payment.amount.toLocaleString('es-CO') : ''}
                             onChange={(e) => {
                               const cleanValue = e.target.value.replace(/[^\d]/g, '')
-                              updateMixedPayment(index, 'amount', parseInt(cleanValue) || 0)
+                              updateMixedPayment(index, 'amount', parseInt(cleanValue, 10) || 0)
                             }}
-                            className="w-full px-2 py-1.5 border border-gray-300 dark:border-neutral-600 rounded text-sm bg-white dark:bg-neutral-700 text-gray-900 dark:text-white"
+                            placeholder="0"
+                            className={cn(inputClass, 'py-2 text-sm')}
                           />
                         </div>
                       ))}
-                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-600">
+                      <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Total ingresado:</span>
-                          <span className="font-semibold">{formatCurrency(getTotalMixedPayments())}</span>
+                          <span className="text-zinc-500 dark:text-zinc-400">Total ingresado</span>
+                          <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                            {formatCurrency(getTotalMixedPayments())}
+                          </span>
                         </div>
                       </div>
                     </div>
                   )}
 
                   {paymentError && (
-                    <div className="p-2 bg-red-50 dark:bg-red-900/20 rounded text-xs text-red-600 dark:text-red-400">
+                    <div className="rounded-lg border border-red-200/80 bg-red-50/90 p-2 text-xs text-red-700 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
                       {paymentError}
                     </div>
                   )}
 
                   {paymentMethod === 'cash' && validProducts.length > 0 && (
-                    <div className="pt-3 border-t border-gray-200 dark:border-neutral-600 space-y-2">
-                      <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Dinero recibido:</label>
+                    <div className="space-y-2 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                      <label className="text-sm font-medium text-zinc-700 dark:text-zinc-300">Dinero recibido</label>
                       <input
                         type="text"
                         value={receivedAmount ? parseFloat(receivedAmount.replace(/[^\d]/g, '') || '0').toLocaleString('es-CO') : ''}
@@ -1159,33 +1181,39 @@ export default function NewSalePage() {
                         }}
                         onFocus={(e) => e.target.select()}
                         placeholder="0"
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-lg text-base font-semibold bg-white dark:bg-neutral-800 text-gray-900 dark:text-white"
+                        className={cn(inputClass, 'text-base font-semibold')}
                       />
                       {receivedAmount && parseFloat(receivedAmount.replace(/[^\d]/g, '')) > 0 && (
-                        <div className={`p-3 rounded-lg ${
-                          parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total
-                            ? 'bg-green-50 dark:bg-green-900/20'
-                            : 'bg-red-50 dark:bg-red-900/20'
-                        }`}>
-                          <div className="flex justify-between items-center">
-                            <span className="font-semibold text-sm">Vuelto:</span>
-                            <span className={`text-xl font-bold ${
-                              parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total
-                                ? 'text-green-600 dark:text-green-400'
-                                : 'text-red-600 dark:text-red-400'
-                            }`}>
+                        <div
+                          className={cn(
+                            'rounded-lg border p-3',
+                            parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total
+                              ? 'border-emerald-200/80 bg-emerald-50/80 dark:border-emerald-900/40 dark:bg-emerald-950/25'
+                              : 'border-red-200/80 bg-red-50/80 dark:border-red-900/40 dark:bg-red-950/25'
+                          )}
+                        >
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">Vuelto</span>
+                            <span
+                              className={cn(
+                                'text-xl font-bold tabular-nums',
+                                parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total
+                                  ? 'text-emerald-700 dark:text-emerald-400'
+                                  : 'text-red-600 dark:text-red-400'
+                              )}
+                            >
                               {formatCurrency(parseFloat(receivedAmount.replace(/[^\d]/g, '')) - total)}
                             </span>
                           </div>
                           {parseFloat(receivedAmount.replace(/[^\d]/g, '')) < total && (
-                            <div className="flex items-center gap-2 text-xs text-red-600 dark:text-red-400 mt-2">
-                              <AlertTriangle className="h-3.5 w-3.5" />
+                            <div className="mt-2 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
                               <span>Faltan {formatCurrency(total - parseFloat(receivedAmount.replace(/[^\d]/g, '')))}</span>
                             </div>
                           )}
                           {parseFloat(receivedAmount.replace(/[^\d]/g, '')) >= total && (
-                            <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 mt-2">
-                              <CheckCircle className="h-3.5 w-3.5" />
+                            <div className="mt-2 flex items-center gap-2 text-xs text-emerald-700 dark:text-emerald-400">
+                              <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                               <span>Pago completo</span>
                             </div>
                           )}
@@ -1196,44 +1224,61 @@ export default function NewSalePage() {
                 </CardContent>
               </Card>
 
-              {/* Resumen */}
-              <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 xl:sticky xl:top-24">
-                <CardHeader className="pb-3">
-                  <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
-                    <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
+              <Card className={cn(cardShell, 'relative z-0 overflow-hidden xl:sticky xl:top-24')}>
+                <CardHeader className="space-y-0 border-b border-zinc-200 p-4 dark:border-zinc-800">
+                  <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                    <DollarSign className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-300" strokeWidth={1.5} />
                     Resumen
                   </CardTitle>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Totales y confirmación.</p>
                 </CardHeader>
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-3 p-4 md:p-6 md:pt-4">
                   {orderedValidProducts.length === 0 ? (
-                    <div className="text-center py-8 text-gray-400">
-                      <Package className="h-10 w-10 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">Agrega productos</p>
-                    </div>
+                    <>
+                      {saleBlockingAlert}
+                      <div className="py-10 text-center text-zinc-500 dark:text-zinc-400">
+                        <Package className="mx-auto mb-2 h-10 w-10 opacity-40" strokeWidth={1.5} />
+                        <p className="text-sm">Agrega productos para ver el resumen</p>
+                      </div>
+                    </>
                   ) : (
                     <>
-                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                      <div className="scrollbar-hide max-h-64 space-y-2 overflow-y-auto overscroll-contain">
                         {orderedValidProducts.map((item) => {
                           const hasPrice = item.unitPrice > 0
                           return (
-                            <div key={item.id} className={`flex justify-between text-sm py-1.5 border-b border-gray-200 dark:border-neutral-700 last:border-b-0 ${!hasPrice ? 'opacity-60' : ''}`}>
-                              <div className="flex-1 min-w-0">
-                                <div className={`font-medium truncate flex items-center gap-2 ${!hasPrice ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                            <div
+                              key={item.id}
+                              className={cn(
+                                'flex justify-between border-b border-zinc-100 py-2 text-sm last:border-b-0 dark:border-zinc-800',
+                                !hasPrice && 'opacity-70'
+                              )}
+                            >
+                              <div className="min-w-0 flex-1">
+                                <div
+                                  className={cn(
+                                    'flex items-center gap-2 font-medium truncate',
+                                    !hasPrice && 'text-amber-700 dark:text-amber-400'
+                                  )}
+                                >
                                   {item.productName}
                                   {!hasPrice && (
-                                    <span className="flex items-center gap-1 text-xs">
+                                    <span className="inline-flex items-center gap-1 text-xs">
                                       <AlertTriangle className="h-3 w-3" />
                                       Sin precio
                                     </span>
                                   )}
                                 </div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
-                                  {item.quantity} x {formatCurrency(item.unitPrice || 0)}
+                                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                                  {item.quantity} × {formatCurrency(item.unitPrice || 0)}
                                 </div>
                               </div>
-                              <div className={`font-semibold ml-2 ${!hasPrice ? 'text-orange-600 dark:text-orange-400' : ''}`}>
+                              <div
+                                className={cn(
+                                  'ml-2 shrink-0 font-semibold tabular-nums',
+                                  !hasPrice && 'text-amber-700 dark:text-amber-400'
+                                )}
+                              >
                                 {formatCurrency(item.total)}
                               </div>
                             </div>
@@ -1241,37 +1286,40 @@ export default function NewSalePage() {
                         })}
                       </div>
 
-                      <div className="space-y-2 pt-3 border-t border-gray-200 dark:border-neutral-700">
+                      <div className="space-y-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
                         <div className="flex justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Subtotal:</span>
-                          <span className="font-semibold">{formatCurrency(subtotal)}</span>
+                          <span className="text-zinc-500 dark:text-zinc-400">Subtotal</span>
+                          <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                            {formatCurrency(subtotal)}
+                          </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">IVA (19%):</span>
+                          <span className="text-zinc-500 dark:text-zinc-400">IVA (19%)</span>
                           <div className="flex items-center gap-2">
                             <input
                               type="checkbox"
                               checked={includeTax}
                               onChange={(e) => setIncludeTax(e.target.checked)}
-                              className="h-3.5 w-3.5"
+                              className="h-3.5 w-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400 dark:border-zinc-600"
                             />
-                            <span className="text-xs">Incluir</span>
+                            <span className="text-xs text-zinc-500">Incluir</span>
                           </div>
                         </div>
                         {includeTax && (
-                          <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
-                            <span>IVA calculado:</span>
-                            <span>{formatCurrency(tax)}</span>
+                          <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
+                            <span>IVA calculado</span>
+                            <span className="tabular-nums">{formatCurrency(tax)}</span>
                           </div>
                         )}
-                        <div className="flex justify-between text-base font-bold pt-2 border-t border-gray-200 dark:border-neutral-700">
-                          <span>Total:</span>
-                          <span className="text-green-600 dark:text-green-400">{formatCurrency(total)}</span>
+                        <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-bold dark:border-zinc-800">
+                          <span className="text-zinc-900 dark:text-zinc-50">Total</span>
+                          <span className="tabular-nums text-emerald-700 dark:text-emerald-400">{formatCurrency(total)}</span>
                         </div>
                       </div>
-                      
-                      {/* Botón Crear Venta */}
-                      <div className="pt-4 border-t border-gray-200 dark:border-neutral-700">
+
+                      {saleBlockingAlert}
+
+                      <div className="border-t border-zinc-200 pt-4 dark:border-zinc-800">
                         <Button
                           onClick={handleSave}
                           disabled={
@@ -1282,25 +1330,25 @@ export default function NewSalePage() {
                             !paymentMethod ||
                             validProducts.some(item => !item.unitPrice || item.unitPrice <= 0)
                           }
-                          className="w-full bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full"
                           size="lg"
                         >
                           {isCreating ? (
                             <>
-                              <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                              Creando Venta...
+                              <div className="mr-2 h-5 w-5 animate-spin rounded-full border-2 border-zinc-300 border-t-zinc-700 dark:border-zinc-600 dark:border-t-zinc-200" />
+                              Creando venta…
                             </>
                           ) : (
                             <>
-                              <ShoppingCart className="h-5 w-5 mr-2" />
-                              Crear Venta
+                              <ShoppingCart className="mr-2 h-5 w-5" strokeWidth={1.5} />
+                              Crear venta
                             </>
                           )}
                         </Button>
                         {validProducts.some(item => !item.unitPrice || item.unitPrice <= 0) && (
-                          <div className="flex items-center justify-center gap-2 text-xs text-orange-600 dark:text-orange-400 mt-2">
-                            <AlertTriangle className="h-4 w-4" />
-                            <span>Asigna un precio a todos los productos para continuar</span>
+                          <div className="mt-2 flex items-center justify-center gap-2 text-xs text-amber-700 dark:text-amber-400">
+                            <AlertTriangle className="h-4 w-4 shrink-0" />
+                            <span>Asigna precio a todos los productos</span>
                           </div>
                         )}
                       </div>

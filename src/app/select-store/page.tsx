@@ -57,8 +57,8 @@ export default function SelectStorePage() {
     try {
       setSelecting(store.id)
       
-      // Si es la tienda principal, usar undefined
-      const newStoreId = store.id === MAIN_STORE_ID ? undefined : store.id
+      // Tienda principal: guardar UUID explícito para badges, recepciones y permisos (no null)
+      const newStoreId = store.id === MAIN_STORE_ID ? MAIN_STORE_ID : store.id
       switchStore(newStoreId)
       
       // Crear slug para la URL
@@ -102,7 +102,7 @@ export default function SelectStorePage() {
               alt="ZONA T Logo"
               width={80}
               height={80}
-              className="rounded-xl"
+              className="object-contain"
             />
           </div>
           <h1 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">

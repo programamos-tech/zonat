@@ -91,7 +91,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
         product.id === id ? { ...product, ...updates } as Product : product
       ))
       // Si se actualizó stock, costo o precio, notificar cambio para el dashboard
-      if (updates.stock || updates.cost || updates.price) {
+      if (updates.stock || updates.cost || updates.price || 'imageUrl' in updates) {
         setProductsLastUpdated(Date.now())
       }
       return true

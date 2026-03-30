@@ -1,10 +1,12 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { X, ArrowRightLeft, ShoppingCart, Package, Users, Tag, UserCheck, FileText, DollarSign, CreditCard, Receipt, TrendingUp, TrendingDown, User, Shield, CheckCircle, AlertCircle, Plus, Edit, Trash2, RefreshCw } from 'lucide-react'
+import { X, ArrowRightLeft, ShoppingCart, Package, Users, Tag, UserCheck, FileText, DollarSign, CreditCard, Receipt, TrendingUp, TrendingDown, User, Shield, CheckCircle, AlertCircle, Plus, Edit, Trash2, RefreshCw, Activity, Warehouse, Store } from 'lucide-react'
 import { LogEntry } from '@/types/logs'
+import { UserAvatar } from '@/components/ui/user-avatar'
 import { LogsService } from '@/lib/logs-service'
 import { SalesService } from '@/lib/sales-service'
 
@@ -81,6 +83,15 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       setSaleTotal(null)
     }
   }, [isOpen, log])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [isOpen])
 
   if (!isOpen || !log) return null
 
@@ -165,69 +176,9 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
     }
   }
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'transfer':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      case 'sale':
-      case 'sale_create':
-      case 'credit_sale_create':
-      case 'sale_cancel':
-      case 'credit_sale_cancel':
-      case 'sale_stock_deduction':
-      case 'sale_cancellation_stock_return':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      case 'product_create':
-      case 'product_update':
-      case 'product_edit':
-      case 'product_delete':
-      case 'adjustment':
-      case 'stock_adjustment':
-      case 'transfer':
-      case 'stock_transfer':
-      case 'transfer_created':
-      case 'transfer_received':
-        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
-      case 'client_create':
-      case 'client_edit':
-      case 'client_update':
-      case 'client_delete':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-      case 'category_create':
-        return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-900/20 dark:text-indigo-400'
-      case 'category_update':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
-      case 'category_edit':
-        return 'bg-pink-100 text-pink-800 dark:bg-pink-900/20 dark:text-pink-400'
-      case 'category_delete':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
-      case 'warranty_create':
-      case 'warranty_status_update':
-      case 'warranty_update':
-        return 'bg-purple-100 text-purple-800 dark:bg-purple-900/20 dark:text-purple-400'
-      case 'credit_create':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      case 'credit_payment':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      case 'credit_completed':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      case 'credit_cancelled':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
-      case 'roles':
-      case 'user_create':
-      case 'user_edit':
-      case 'user_update':
-      case 'user_delete':
-      case 'permissions_assigned':
-      case 'permissions_revoked':
-      case 'role_changed':
-      case 'user_deactivated':
-      case 'user_reactivated':
-        return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-gray-100 dark:bg-neutral-800 dark:text-gray-600 dark:text-gray-300'
-    }
-  }
+  /** Badges neutros + acento marca (coherente con listado de actividades). */
+  const getTypeColor = (_type: string) =>
+    'border border-zinc-200/90 bg-zinc-50 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-800/70 dark:text-zinc-100'
 
   const getActionLabel = (action: string, module: string, logDetails?: any) => {
     // Manejar acciones específicas de ventas
@@ -472,68 +423,116 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
   const logType = getLogType()
   const TypeIcon = getTypeIcon(logType)
 
-  return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6 overflow-y-auto">
-      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full min-h-full xl:min-h-0 xl:h-auto xl:max-h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-w-7xl flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000] my-4 xl:my-0">
-        {/* Header */}
-        <div className="relative flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-900/20 dark:to-gray-800/20 flex-shrink-0">
-          <div className="flex items-center gap-2 md:gap-3 min-w-0 flex-1">
-            <FileText className="h-5 w-5 md:h-8 md:w-8 text-gray-600 flex-shrink-0" />
+  const modal = (
+    <div
+      className="scrollbar-hide fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/45 px-3 backdrop-blur-sm dark:bg-black/65 sm:px-6"
+      style={{
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
+      }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="log-detail-title"
+      onClick={e => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
+      <div
+        className="my-4 flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95"
+        onClick={e => e.stopPropagation()}
+      >
+        {/* Header — misma línea visual que registro de actividades */}
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/80 bg-zinc-50/90 px-4 py-3.5 dark:border-zinc-800 dark:bg-zinc-900/60 md:px-6 md:py-4">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <Activity
+              className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400"
+              strokeWidth={1.5}
+              aria-hidden
+            />
             <div className="min-w-0 flex-1">
-              <h2 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
-                Detalles del Registro
+              <h2
+                id="log-detail-title"
+                className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl"
+              >
+                Detalle del registro
               </h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300 hidden md:block truncate">
-                Información completa de la actividad registrada
+              <p className="mt-0.5 hidden text-sm text-zinc-500 dark:text-zinc-400 md:block">
+                Información completa de la actividad
               </p>
             </div>
           </div>
           <Button
+            type="button"
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="flex relative z-10 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 flex-shrink-0 h-10 w-10 p-0 items-center justify-center bg-white dark:bg-neutral-900 rounded-full shadow-md border-2 border-gray-300 dark:border-neutral-600 hover:bg-gray-50 dark:hover:bg-gray-700"
+            className="h-9 w-9 shrink-0 rounded-lg border-0 p-0 text-zinc-500 shadow-none hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            aria-label="Cerrar"
           >
-            <X className="h-5 w-5" />
+            <X className="h-5 w-5" strokeWidth={1.5} />
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 p-4 md:p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
+        {/* Content: altura según contenido; scroll solo si supera el tope (sin barra visible) */}
+        <div className="max-h-[min(72dvh,560px)] overflow-y-auto overscroll-contain p-4 scrollbar-hide md:p-6">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
             {/* Información General */}
-            <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-sm">
-              <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 border-b border-gray-200 dark:border-neutral-700">
-                <FileText className="h-4 w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" />
-                <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Información General</h3>
+            <div className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+              <div className="flex items-center gap-2 border-b border-zinc-200/80 p-3 dark:border-zinc-800 md:gap-3 md:p-4">
+                <FileText
+                  className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 md:h-5 md:w-5"
+                  strokeWidth={1.5}
+                />
+                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 md:text-lg">
+                  Información general
+                </h3>
               </div>
-              <div className="p-3 md:p-4 space-y-3 md:space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Acción:</span>
+              <div className="space-y-3 p-3 md:space-y-4 md:p-4">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 md:text-sm">Acción</span>
                   <Badge className={`${getTypeColor(logType)} text-xs md:text-sm`}>
-                    <TypeIcon className="h-3 w-3 mr-1" />
-                    <span className="truncate">{getActionLabel(log.action, (log as any).module, log.details)}</span>
+                    <TypeIcon className="mr-1 h-3 w-3" />
+                    <span className="truncate">
+                      {getActionLabel(log.action, (log as any).module, log.details)}
+                    </span>
                   </Badge>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Realizado por:</span>
-                  <span className="text-sm md:text-base text-gray-900 dark:text-white font-medium truncate">{(log as any).user_name || 'Desconocido'}</span>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 md:text-sm">Realizado por</span>
+                  <div className="flex min-w-0 items-center gap-2 sm:justify-end">
+                    <UserAvatar
+                      name={(log as any).user_name || 'Desconocido'}
+                      seed={(log as any).user_id || (log as any).id}
+                      size="sm"
+                      className="ring-1 ring-zinc-200/80 dark:ring-zinc-700"
+                    />
+                    <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100 md:text-base">
+                      {(log as any).user_name || 'Desconocido'}
+                    </span>
+                  </div>
                 </div>
-                
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                  <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400">Fecha:</span>
-                  <span className="text-xs md:text-sm text-gray-900 dark:text-white">{formatDateTime((log as any).created_at)}</span>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400 md:text-sm">Fecha</span>
+                  <span className="text-xs tabular-nums text-zinc-900 dark:text-zinc-100 md:text-sm">
+                    {formatDateTime((log as any).created_at)}
+                  </span>
                 </div>
               </div>
             </div>
-              
+
             {/* Información específica según el tipo de acción */}
             {log.details && (
-              <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg shadow-sm">
-                <div className="flex items-center gap-2 md:gap-3 p-3 md:p-4 border-b border-gray-200 dark:border-neutral-700">
-                  <TypeIcon className="h-4 w-4 md:h-5 md:w-5 text-gray-600 flex-shrink-0" />
-                  <h3 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">Detalles de la Acción</h3>
+              <div className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                <div className="flex items-center gap-2 border-b border-zinc-200/80 p-3 dark:border-zinc-800 md:gap-3 md:p-4">
+                  <TypeIcon
+                    className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 md:h-5 md:w-5"
+                    strokeWidth={1.5}
+                  />
+                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 md:text-lg">
+                    Detalles de la acción
+                  </h3>
                 </div>
                 <div className="p-3 md:p-4 max-h-[60vh] md:max-h-96 xl:max-h-none xl:overflow-visible overflow-y-auto">
                   {/* Información específica para ventas */}
@@ -595,25 +594,31 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                 {item.stockInfo && (
                                   <div className="border-t border-gray-200 dark:border-neutral-600 pt-2 mt-2">
                                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Descuento de Stock:</div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                       {item.stockInfo.storeDeduction > 0 && (
-                                        <div className="bg-blue-50 dark:bg-blue-900/10 p-2 rounded">
-                                          <div className="text-[10px] text-blue-600 dark:text-blue-400">Local</div>
-                                          <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                                        <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                          <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                            <Store className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                                            Local
+                                          </div>
+                                          <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                                             -{item.stockInfo.storeDeduction} unidades
                                           </div>
-                                          <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                             {item.stockInfo.previousStoreStock} → {item.stockInfo.newStoreStock}
                                           </div>
                                         </div>
                                       )}
                                       {item.stockInfo.warehouseDeduction > 0 && (
-                                        <div className="bg-orange-50 dark:bg-orange-900/10 p-2 rounded">
-                                          <div className="text-[10px] text-orange-600 dark:text-orange-400">Bodega</div>
-                                          <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                                        <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                          <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                            <Warehouse className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                                            Bodega
+                                          </div>
+                                          <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                                             -{item.stockInfo.warehouseDeduction} unidades
                                           </div>
-                                          <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                             {item.stockInfo.previousWarehouseStock} → {item.stockInfo.newWarehouseStock}
                                           </div>
                                         </div>
@@ -716,25 +721,31 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                 {item.stockInfo && (
                                   <div className="border-t border-gray-200 dark:border-neutral-600 pt-2 mt-2">
                                     <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Descuento de Stock:</div>
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                       {item.stockInfo.storeDeduction > 0 && (
-                                        <div className="bg-blue-50 dark:bg-blue-900/10 p-2 rounded">
-                                          <div className="text-[10px] text-blue-600 dark:text-blue-400">Local</div>
-                                          <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                                        <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                          <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                            <Store className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                                            Local
+                                          </div>
+                                          <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                                             -{item.stockInfo.storeDeduction} unidades
                                           </div>
-                                          <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                             {item.stockInfo.previousStoreStock} → {item.stockInfo.newStoreStock}
                                           </div>
                                         </div>
                                       )}
                                       {item.stockInfo.warehouseDeduction > 0 && (
-                                        <div className="bg-orange-50 dark:bg-orange-900/10 p-2 rounded">
-                                          <div className="text-[10px] text-orange-600 dark:text-orange-400">Bodega</div>
-                                          <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                                        <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                          <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                            <Warehouse className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                                            Bodega
+                                          </div>
+                                          <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                                             -{item.stockInfo.warehouseDeduction} unidades
                                           </div>
-                                          <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                          <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                             {item.stockInfo.previousWarehouseStock} → {item.stockInfo.newWarehouseStock}
                                           </div>
                                         </div>
@@ -788,19 +799,29 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                       </div>
                       
                       <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                        <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Desglose del Descuento:</span>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                          <div className="bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
-                            <div className="text-blue-400 text-xs">Local</div>
-                            <div className="text-gray-900 dark:text-white font-bold text-lg">-{log.details.storeDeduction || 0} unidades</div>
-                            <div className="text-gray-600 dark:text-gray-300 text-xs">
+                        <span className="mb-2 block text-xs text-zinc-500 dark:text-zinc-400">Desglose del descuento</span>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+                          <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              <Store className="h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                              Local
+                            </div>
+                            <div className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                              -{log.details.storeDeduction || 0} unidades
+                            </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400">
                               {log.details.previousStoreStock || 0} → {log.details.newStoreStock || 0}
                             </div>
                           </div>
-                          <div className="bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
-                            <div className="text-orange-400 text-xs">Bodega</div>
-                            <div className="text-gray-900 dark:text-white font-bold text-lg">-{log.details.warehouseDeduction || 0} unidades</div>
-                            <div className="text-gray-600 dark:text-gray-300 text-xs">
+                          <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
+                            <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              <Warehouse className="h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                              Bodega
+                            </div>
+                            <div className="mt-1 text-lg font-bold text-zinc-900 dark:text-zinc-100">
+                              -{log.details.warehouseDeduction || 0} unidades
+                            </div>
+                            <div className="text-xs text-zinc-500 dark:text-zinc-400">
                               {log.details.previousWarehouseStock || 0} → {log.details.newWarehouseStock || 0}
                             </div>
                           </div>
@@ -836,10 +857,12 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
                       {/* Información de crédito si aplica */}
                       {(log.details as any)?.isCreditSale && (
-                        <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-700 rounded-lg p-3">
+                        <div className="rounded-lg border border-zinc-200/90 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
                           <div className="flex items-center gap-2 mb-2">
-                            <CreditCard className="h-4 w-4 text-orange-600 dark:text-orange-400" />
-                            <span className="text-orange-700 dark:text-orange-300 text-xs font-medium">Factura perteneciente a un crédito</span>
+                            <CreditCard className="h-4 w-4 text-zinc-500 dark:text-zinc-400" />
+                            <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                              Factura perteneciente a un crédito
+                            </span>
                           </div>
                           <div className="text-gray-900 dark:text-white text-sm">
                             Esta factura forma parte de un crédito. Al cancelarla, el crédito se actualizará automáticamente.
@@ -1316,63 +1339,103 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   {/* Información específica para productos */}
                   {log.action === 'product_create' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto creado:</span>
-                      <div className="text-gray-900 dark:text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg">
+                      <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Producto creado
+                      </span>
+                      <div className="rounded-xl border border-zinc-200/90 bg-zinc-50/95 p-4 text-sm dark:border-zinc-700 dark:bg-zinc-900/70">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
-                            <Package className="h-4 w-4" />
-                            <span>Resumen del Producto</span>
+                          <div className="mb-1 flex items-center gap-2 border-b border-zinc-200/90 pb-3 dark:border-zinc-700">
+                            <Package
+                              className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400"
+                              strokeWidth={1.5}
+                              aria-hidden
+                            />
+                            <span className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                              Resumen del producto
+                            </span>
                           </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
                             <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Nombre:</span>
-                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
-                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Marca:</span>
-                              <div className="text-gray-900 dark:text-white">{log.details.brand || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Categoría ID:</span>
-                              <div className="text-gray-900 dark:text-white font-mono text-xs">{log.details.category || 'N/A'}</div>
-                            </div>
-                          </div>
-                          
-                          <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Stock Inicial:</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                              <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-blue-400 text-xs">Bodega</div>
-                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.stockWarehouse || 0} unidades</div>
-                              </div>
-                              <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-green-600 text-xs">Local</div>
-                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.stockStore || 0} unidades</div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Nombre</span>
+                              <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                                {log.details.productName || 'N/A'}
                               </div>
                             </div>
-                            <div className="mt-2 text-center">
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Total: </span>
-                              <span className="text-gray-600 font-bold">
+                            <div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Referencia</span>
+                              <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                                {log.details.productReference || 'N/A'}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Marca</span>
+                              <div className="text-zinc-900 dark:text-zinc-100">{log.details.brand || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Categoría ID</span>
+                              <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                                {log.details.category || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-zinc-200/90 pt-3 dark:border-zinc-700">
+                            <span className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              Stock inicial
+                            </span>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+                              <div className="rounded-lg border border-zinc-200/80 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-950/50">
+                                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                  <Warehouse
+                                    className="h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400"
+                                    strokeWidth={1.5}
+                                    aria-hidden
+                                  />
+                                  Bodega
+                                </div>
+                                <div className="mt-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                  {log.details.stockWarehouse || 0} unidades
+                                </div>
+                              </div>
+                              <div className="rounded-lg border border-zinc-200/80 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-950/50">
+                                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                  <Store
+                                    className="h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400"
+                                    strokeWidth={1.5}
+                                    aria-hidden
+                                  />
+                                  Local
+                                </div>
+                                <div className="mt-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                  {log.details.stockStore || 0} unidades
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-3 rounded-lg border border-zinc-200/80 bg-zinc-100/90 px-3 py-2.5 text-center dark:border-zinc-600 dark:bg-zinc-800/90">
+                              <span className="text-sm text-zinc-600 dark:text-zinc-400">Total: </span>
+                              <span className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-zinc-50">
                                 {(log.details.stockWarehouse || 0) + (log.details.stockStore || 0)} unidades
                               </span>
                             </div>
                           </div>
-                          
-                          <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Precios:</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+
+                          <div className="border-t border-zinc-200/90 pt-3 dark:border-zinc-700">
+                            <span className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              Precios
+                            </span>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
                               <div>
-                                <span className="text-gray-400 text-xs">Precio de Venta:</span>
-                                <div className="text-gray-900 dark:text-white font-medium">${(log.details.price || 0).toLocaleString('es-CO')}</div>
+                                <span className="text-xs text-zinc-600 dark:text-zinc-400">Precio de venta</span>
+                                <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                                  ${(log.details.price || 0).toLocaleString('es-CO')}
+                                </div>
                               </div>
                               <div>
-                                <span className="text-gray-400 text-xs">Costo:</span>
-                                <div className="text-gray-900 dark:text-white font-medium">${(log.details.cost || 0).toLocaleString('es-CO')}</div>
+                                <span className="text-xs text-zinc-600 dark:text-zinc-400">Costo</span>
+                                <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                                  ${(log.details.cost || 0).toLocaleString('es-CO')}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1499,63 +1562,103 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                   
                   {log.action === 'product_delete' && log.details && (
                     <div>
-                      <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Producto eliminado:</span>
-                      <div className="text-gray-900 dark:text-white text-sm bg-gray-100 dark:bg-neutral-800 p-4 rounded-lg">
+                      <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Producto eliminado
+                      </span>
+                      <div className="rounded-xl border border-zinc-200/90 bg-zinc-50/95 p-4 text-sm dark:border-zinc-700 dark:bg-zinc-900/70">
                         <div className="space-y-3">
-                          <div className="flex items-center space-x-2 font-medium text-gray-600 mb-3">
-                            <Package className="h-4 w-4" />
-                            <span>Información del Producto Eliminado</span>
+                          <div className="mb-1 flex items-center gap-2 border-b border-zinc-200/90 pb-3 dark:border-zinc-700">
+                            <Package
+                              className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400"
+                              strokeWidth={1.5}
+                              aria-hidden
+                            />
+                            <span className="text-base font-semibold tracking-tight text-zinc-900 dark:text-zinc-50">
+                              Información del producto eliminado
+                            </span>
                           </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                          <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Nombre:</span>
-                              <div className="text-gray-900 dark:text-white font-medium">{log.details.productName || 'N/A'}</div>
-                          </div>
+
+                          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
                             <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Referencia:</span>
-                              <div className="text-gray-900 dark:text-white font-mono text-sm">{log.details.productReference || 'N/A'}</div>
-                        </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Marca:</span>
-                              <div className="text-gray-900 dark:text-white">{log.details.brand || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Categoría ID:</span>
-                              <div className="text-gray-900 dark:text-white font-mono text-xs">{log.details.category || 'N/A'}</div>
-                            </div>
-                          </div>
-                          
-                          <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Stock al momento de eliminación:</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                              <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-blue-400 text-xs">Bodega</div>
-                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.stockWarehouse || 0} unidades</div>
-                              </div>
-                              <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-green-600 text-xs">Local</div>
-                                <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.stockStore || 0} unidades</div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Nombre</span>
+                              <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                                {log.details.productName || 'N/A'}
                               </div>
                             </div>
-                            <div className="mt-2 text-center">
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Total: </span>
-                              <span className="text-gray-600 font-bold">
+                            <div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Referencia</span>
+                              <div className="font-mono text-sm text-zinc-900 dark:text-zinc-100">
+                                {log.details.productReference || 'N/A'}
+                              </div>
+                            </div>
+                            <div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Marca</span>
+                              <div className="text-zinc-900 dark:text-zinc-100">{log.details.brand || 'N/A'}</div>
+                            </div>
+                            <div>
+                              <span className="text-xs text-zinc-600 dark:text-zinc-400">Categoría ID</span>
+                              <div className="font-mono text-xs text-zinc-900 dark:text-zinc-100">
+                                {log.details.category || 'N/A'}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="border-t border-zinc-200/90 pt-3 dark:border-zinc-700">
+                            <span className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              Stock al momento de eliminación
+                            </span>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
+                              <div className="rounded-lg border border-zinc-200/80 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-950/50">
+                                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                  <Warehouse
+                                    className="h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400"
+                                    strokeWidth={1.5}
+                                    aria-hidden
+                                  />
+                                  Bodega
+                                </div>
+                                <div className="mt-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                  {log.details.stockWarehouse || 0} unidades
+                                </div>
+                              </div>
+                              <div className="rounded-lg border border-zinc-200/80 bg-white/80 p-3 dark:border-zinc-600 dark:bg-zinc-950/50">
+                                <div className="flex items-center gap-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                                  <Store
+                                    className="h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400"
+                                    strokeWidth={1.5}
+                                    aria-hidden
+                                  />
+                                  Local
+                                </div>
+                                <div className="mt-1 text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
+                                  {log.details.stockStore || 0} unidades
+                                </div>
+                              </div>
+                            </div>
+                            <div className="mt-3 rounded-lg border border-zinc-200/80 bg-zinc-100/90 px-3 py-2.5 text-center dark:border-zinc-600 dark:bg-zinc-800/90">
+                              <span className="text-sm text-zinc-600 dark:text-zinc-400">Total: </span>
+                              <span className="text-sm font-semibold tabular-nums text-zinc-950 dark:text-zinc-50">
                                 {(log.details.stockWarehouse || 0) + (log.details.stockStore || 0)} unidades
                               </span>
                             </div>
                           </div>
-                          
-                          <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                            <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Precios:</span>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
+
+                          <div className="border-t border-zinc-200/90 pt-3 dark:border-zinc-700">
+                            <span className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                              Precios
+                            </span>
+                            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:gap-4">
                               <div>
-                                <span className="text-gray-400 text-xs">Precio de Venta:</span>
-                                <div className="text-gray-900 dark:text-white font-medium">${(log.details.price || 0).toLocaleString('es-CO')}</div>
+                                <span className="text-xs text-zinc-600 dark:text-zinc-400">Precio de venta</span>
+                                <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                                  ${(log.details.price || 0).toLocaleString('es-CO')}
+                                </div>
                               </div>
                               <div>
-                                <span className="text-gray-400 text-xs">Costo:</span>
-                                <div className="text-gray-900 dark:text-white font-medium">${(log.details.cost || 0).toLocaleString('es-CO')}</div>
+                                <span className="text-xs text-zinc-600 dark:text-zinc-400">Costo</span>
+                                <div className="font-medium text-zinc-900 dark:text-zinc-100">
+                                  ${(log.details.cost || 0).toLocaleString('es-CO')}
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -1654,7 +1757,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Tiendas:</span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                               <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-orange-400 text-xs">Desde:</div>
+                                <div className="text-xs text-yellow-600 dark:text-yellow-400">Desde:</div>
                                 <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromStoreName || 'N/A'}</div>
                               </div>
                               <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
@@ -1757,7 +1860,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Detalles de la Recepción:</span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                               <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-orange-400 text-xs">Desde Tienda:</div>
+                                <div className="text-xs text-yellow-600 dark:text-yellow-400">Desde Tienda:</div>
                                 <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromStoreName || 'N/A'}</div>
                               </div>
                               <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
@@ -1818,7 +1921,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Tiendas:</span>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
                               <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
-                                <div className="text-orange-400 text-xs">Desde:</div>
+                                <div className="text-xs text-yellow-600 dark:text-yellow-400">Desde:</div>
                                 <div className="text-gray-900 dark:text-white font-bold text-lg">{log.details.fromStoreName || 'N/A'}</div>
                               </div>
                               <div className="bg-gray-200 dark:bg-neutral-700 p-3 rounded-lg">
@@ -2296,27 +2399,33 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                             
                             {/* Información de descuento de stock */}
                             {log.details.stockInfo && (
-                              <div className="mt-3 pt-3 border-t border-green-200 dark:border-green-700">
-                                <div className="text-xs text-gray-500 dark:text-gray-400 mb-2">Descuento de Stock:</div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              <div className="mt-3 border-t border-zinc-200/80 pt-3 dark:border-zinc-700">
+                                <div className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">Descuento de stock</div>
+                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                                   {log.details.stockInfo.storeDeduction > 0 && (
-                                    <div className="bg-purple-50 dark:bg-purple-900/10 p-2 rounded">
-                                      <div className="text-[10px] text-purple-600 dark:text-purple-400">Local</div>
-                                      <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                                    <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                      <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                        <Store className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                                        Local
+                                      </div>
+                                      <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                                         -{log.details.stockInfo.storeDeduction} unidad{log.details.stockInfo.storeDeduction !== 1 ? 'es' : ''}
                                       </div>
-                                      <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                         {log.details.stockInfo.previousStoreStock} → {log.details.stockInfo.newStoreStock}
                                       </div>
                                     </div>
                                   )}
                                   {log.details.stockInfo.warehouseDeduction > 0 && (
-                                    <div className="bg-orange-50 dark:bg-orange-900/10 p-2 rounded">
-                                      <div className="text-[10px] text-orange-600 dark:text-orange-400">Bodega</div>
-                                      <div className="text-xs font-semibold text-gray-900 dark:text-white">
+                                    <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                      <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
+                                        <Warehouse className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                                        Bodega
+                                      </div>
+                                      <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
                                         -{log.details.stockInfo.warehouseDeduction} unidad{log.details.stockInfo.warehouseDeduction !== 1 ? 'es' : ''}
                                       </div>
-                                      <div className="text-[10px] text-gray-500 dark:text-gray-400">
+                                      <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                         {log.details.stockInfo.previousWarehouseStock} → {log.details.stockInfo.newWarehouseStock}
                                       </div>
                                     </div>
@@ -2439,7 +2548,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                         <CreditCard className="h-4 w-4" />
                         <span>{log.details.isCompleted ? 'Detalles del Pago Completado' : 'Detalles del Abono'}</span>
                         {log.details.isCompleted && (
-                          <span className="ml-2 px-2 py-1 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-400">
+                          <span className="ml-2 rounded-full border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300">
                             Crédito Completado
                           </span>
                         )}
@@ -2456,7 +2565,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                         </div>
                         <div className="col-span-2">
                           <span className="text-gray-600 dark:text-gray-300 text-xs">{log.details.isCompleted ? 'Monto del Pago Final:' : 'Monto del Abono:'}</span>
-                          <div className="text-gray-900 dark:text-white font-bold text-xl text-green-600 dark:text-green-400">
+                          <div className="text-xl font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
                             ${(log.details.paymentAmount || 0).toLocaleString('es-CO')}
                           </div>
                         </div>
@@ -2510,7 +2619,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           </div>
                           <div className="bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
                             <span className="text-gray-600 dark:text-gray-300 text-xs block mb-1">Pagado Nuevo:</span>
-                            <div className="text-gray-900 dark:text-white font-semibold text-green-600 dark:text-green-400">
+                            <div className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
                               ${(log.details.newPaidAmount || 0).toLocaleString('es-CO')}
                             </div>
                           </div>
@@ -2521,20 +2630,20 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                         <div className="border-t border-gray-200 dark:border-neutral-600 pt-4">
                           <span className="text-gray-600 dark:text-gray-300 text-xs block mb-3 font-medium">Resumen del Crédito Completado:</span>
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-1">Monto Total del Crédito:</span>
-                              <div className="text-gray-900 dark:text-white font-bold text-lg">
+                            <div className="rounded-lg border border-zinc-200/90 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
+                              <span className="mb-1 block text-xs text-gray-600 dark:text-gray-300">Monto Total del Crédito:</span>
+                              <div className="text-lg font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
                                 ${(log.details.totalAmount || 0).toLocaleString('es-CO')}
                               </div>
                             </div>
-                            <div className="bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700">
-                              <span className="text-gray-600 dark:text-gray-300 text-xs block mb-1">Total Pagado:</span>
-                              <div className="text-gray-900 dark:text-white font-bold text-lg text-emerald-600 dark:text-emerald-400">
+                            <div className="rounded-lg border border-zinc-200/90 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
+                              <span className="mb-1 block text-xs text-gray-600 dark:text-gray-300">Total Pagado:</span>
+                              <div className="text-lg font-bold tabular-nums text-zinc-500 dark:text-zinc-400">
                                 ${(log.details.totalPaid || 0).toLocaleString('es-CO')}
                               </div>
                             </div>
                             {log.details.completedAt && (
-                              <div className="col-span-2 bg-emerald-50 dark:bg-emerald-900/20 p-3 rounded-lg border border-emerald-200 dark:border-emerald-700">
+                              <div className="col-span-2 rounded-lg border border-zinc-200/90 bg-zinc-50 p-3 dark:border-zinc-700 dark:bg-zinc-900/50">
                                 <span className="text-gray-600 dark:text-gray-300 text-xs block mb-1">Fecha de Completación:</span>
                                 <div className="text-gray-900 dark:text-white font-medium">
                                   {new Date(log.details.completedAt).toLocaleDateString('es-CO', {
@@ -2568,10 +2677,11 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 pb-8 md:pb-10 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
+        <div className="flex shrink-0 items-center justify-end border-t border-zinc-200/80 bg-zinc-50/90 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900/60 md:px-6">
           <Button
+            type="button"
             onClick={onClose}
-            className="bg-gray-600 hover:bg-gray-700 text-white"
+            className="h-9 rounded-lg border border-zinc-200/90 bg-white px-4 text-sm font-medium text-zinc-700 shadow-none hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200 dark:hover:bg-zinc-800"
           >
             Cerrar
           </Button>
@@ -2579,4 +2689,6 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       </div>
     </div>
   )
+
+  return typeof document !== 'undefined' ? createPortal(modal, document.body) : null
 }

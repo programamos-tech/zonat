@@ -3,9 +3,25 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Label } from '@/components/ui/label'
 import { X, Package, AlertTriangle, Warehouse, Store, TrendingUp, TrendingDown, FileText } from 'lucide-react'
 import { Product } from '@/types'
 import { useAuth } from '@/contexts/auth-context'
+import { cn } from '@/lib/utils'
+
+/** Misma caja secundaria que modales de abono (proveedor / crédito) */
+const panelInner =
+  'rounded-lg border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/40'
+
+/** Igual que supplier-payment-modal / payment-modal */
+const inputClass =
+  'w-full rounded-lg border border-zinc-300 bg-white px-4 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+
+const overlayClass =
+  'fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+
+const shellClass =
+  'max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -123,124 +139,154 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   if (!isOpen || !product) return null
 
   return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4 xl:p-6">
-      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <Package className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                Ajustar Stock
-              </h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                Modificar inventario del producto
-              </p>
-            </div>
+    <div className={overlayClass}>
+      <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="stock-adjust-title">
+        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Package className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
+            <h2 id="stock-adjust-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Ajustar stock
+            </h2>
           </div>
           <Button
-            onClick={onClose}
+            type="button"
             variant="ghost"
             size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
+            onClick={onClose}
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Content - Todo el contenido hace scroll, incluyendo los botones */}
-        <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(max(64px, env(safe-area-inset-bottom)) + 1rem)' }}>
-        <form onSubmit={handleSubmit} className="p-4 md:p-6">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+        <form onSubmit={handleSubmit}>
+          <div className="space-y-4 p-4">
+            <div className="space-y-1">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">Modificar inventario del producto</p>
+            </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-6">
             {/* Información del Producto */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-cyan-600" />
-                  Información del Producto
+            <Card className={cn('shadow-none', panelInner)}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                  <FileText className="h-5 w-5 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+                  Información del producto
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Producto:</span>
-                    <div className="text-gray-900 dark:text-white font-medium">{product.name}</div>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Producto</span>
+                    <div className="font-medium text-zinc-900 dark:text-zinc-50">{product.name}</div>
                   </div>
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Referencia:</span>
-                    <div className="text-gray-900 dark:text-white font-mono text-sm">{product.reference}</div>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Referencia</span>
+                    <div className="font-mono text-sm text-zinc-900 dark:text-zinc-50">{product.reference}</div>
                   </div>
                 </div>
                 <div className={`grid ${isMainStore ? 'grid-cols-2' : 'grid-cols-1'} gap-4`}>
                   {isMainStore && (
                     <div>
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Stock Actual - Bodega:</span>
-                      <div className="text-gray-900 dark:text-white font-medium">{formatNumber(product.stock.warehouse)} unidades</div>
+                      <span className="text-sm text-zinc-500 dark:text-zinc-400">Stock actual — Bodega</span>
+                      <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                        {formatNumber(product.stock.warehouse)} unidades
+                      </div>
                     </div>
                   )}
                   <div>
-                    <span className="text-sm text-gray-500 dark:text-gray-400">Stock Actual - Local:</span>
-                    <div className="text-gray-900 dark:text-white font-medium">{formatNumber(product.stock.store)} unidades</div>
+                    <span className="text-sm text-zinc-500 dark:text-zinc-400">Stock actual — Local</span>
+                    <div className="font-medium text-zinc-900 dark:text-zinc-50">
+                      {formatNumber(product.stock.store)} unidades
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Configuración del Ajuste */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-cyan-600" />
-                  Configuración del Ajuste
+            <Card className={cn('shadow-none', panelInner)}>
+              <CardHeader className="pb-3">
+                <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                  <AlertTriangle className="h-5 w-5 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+                  Configuración del ajuste
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {/* Location Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Ubicación a Ajustar *
-                  </label>
-                  <div className={`grid ${isMainStore ? 'grid-cols-2' : 'grid-cols-1'} gap-3`}>
+                  <Label className="mb-3 block text-zinc-700 dark:text-zinc-300">Ubicación a ajustar *</Label>
+                  <div className={`grid ${isMainStore ? 'grid-cols-2' : 'grid-cols-1'} gap-2`}>
                     <button
                       type="button"
                       onClick={() => handleInputChange('location', 'store')}
-                          className={`p-4 rounded-lg border-2 transition-all ${
-                            formData.location === 'store'
-                              ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                              : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500'
-                          }`}
+                      className={cn(
+                        'rounded-lg border p-3 text-left text-sm font-medium transition-colors',
+                        formData.location === 'store'
+                          ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-zinc-400 dark:bg-zinc-800 dark:text-zinc-50'
+                          : 'border-zinc-200 bg-transparent text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50'
+                      )}
                     >
                       <div className="flex items-center space-x-3">
-                        <Store className={`h-5 w-5 ${formData.location === 'store' ? 'text-cyan-600' : 'text-gray-400'}`} />
-                        <div className="text-left">
-                          <div className={`font-medium ${formData.location === 'store' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                        <Store
+                          className={cn(
+                            'h-5 w-5',
+                            formData.location === 'store'
+                              ? 'text-zinc-900 dark:text-zinc-100'
+                              : 'text-zinc-400 dark:text-zinc-500'
+                          )}
+                          strokeWidth={1.5}
+                        />
+                        <div>
+                          <div
+                            className={cn(
+                              'font-medium',
+                              formData.location === 'store'
+                                ? 'text-zinc-900 dark:text-zinc-50'
+                                : 'text-zinc-700 dark:text-zinc-300'
+                            )}
+                          >
                             Local
                           </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <div className="text-sm text-zinc-500 dark:text-zinc-400">
                             Stock actual: {formatNumber(product.stock.store)}
                           </div>
                         </div>
                       </div>
                     </button>
-                    
-                    {/* Bodega solo visible en tienda principal */}
+
                     {isMainStore && (
                       <button
                         type="button"
                         onClick={() => handleInputChange('location', 'warehouse')}
-                            className={`p-4 rounded-lg border-2 transition-all ${
-                              formData.location === 'warehouse'
-                                ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                                : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500'
-                            }`}
+                        className={cn(
+                          'rounded-lg border p-3 text-left text-sm font-medium transition-colors',
+                          formData.location === 'warehouse'
+                            ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-zinc-400 dark:bg-zinc-800 dark:text-zinc-50'
+                            : 'border-zinc-200 bg-transparent text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50'
+                        )}
                       >
                         <div className="flex items-center space-x-3">
-                          <Warehouse className={`h-5 w-5 ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-400'}`} />
-                          <div className="text-left">
-                            <div className={`font-medium ${formData.location === 'warehouse' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
+                          <Warehouse
+                            className={cn(
+                              'h-5 w-5',
+                              formData.location === 'warehouse'
+                                ? 'text-zinc-900 dark:text-zinc-100'
+                                : 'text-zinc-400 dark:text-zinc-500'
+                            )}
+                            strokeWidth={1.5}
+                          />
+                          <div>
+                            <div
+                              className={cn(
+                                'font-medium',
+                                formData.location === 'warehouse'
+                                  ? 'text-zinc-900 dark:text-zinc-50'
+                                  : 'text-zinc-700 dark:text-zinc-300'
+                              )}
+                            >
                               Bodega
                             </div>
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                            <div className="text-sm text-zinc-500 dark:text-zinc-400">
                               Stock actual: {formatNumber(product.stock.warehouse)}
                             </div>
                           </div>
@@ -250,11 +296,8 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   </div>
                 </div>
 
-                {/* New Quantity */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nueva Cantidad *
-                  </label>
+                  <Label className="text-zinc-700 dark:text-zinc-300">Nueva cantidad *</Label>
                   <input
                     type="text"
                     value={formatNumber(formData.newQuantity)}
@@ -262,35 +305,41 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       const numericValue = parseFormattedNumber(e.target.value)
                       handleInputChange('newQuantity', numericValue)
                     }}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
-                      errors.newQuantity ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
-                    }`}
+                    className={cn(
+                      inputClass,
+                      'mt-2 h-11 py-2 text-sm',
+                      errors.newQuantity && 'border-red-500 focus:border-red-500 focus:ring-red-500/25'
+                    )}
                     placeholder="Ingrese la nueva cantidad"
                   />
-                  {errors.newQuantity && (
-                    <p className="mt-1 text-sm text-red-400">{errors.newQuantity}</p>
-                  )}
+                  {errors.newQuantity && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.newQuantity}</p>}
                 </div>
 
-                {/* Reason */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Razón del Ajuste
-                  </label>
+                  <Label className="text-zinc-700 dark:text-zinc-300">Razón del ajuste</Label>
                   <textarea
                     value={formData.reason}
                     onChange={(e) => handleInputChange('reason', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900 ${
-                      errors.reason ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
-                    }`}
+                    className={cn(
+                      inputClass,
+                      'mt-2 min-h-[4rem] resize-y py-2.5 text-sm',
+                      errors.reason && 'border-red-500 focus:border-red-500 focus:ring-red-500/25'
+                    )}
                     placeholder="Ej: Inventario físico, producto dañado, corrección de error... (opcional)"
                     rows={3}
                   />
-                  <div className="mt-1 flex justify-between items-center">
+                  <div className="mt-1 flex items-center justify-between">
                     {errors.reason && (
-                      <p className="text-sm text-red-400">{errors.reason}</p>
+                      <p className="text-sm text-red-600 dark:text-red-400">{errors.reason}</p>
                     )}
-                    <span className={`text-xs ml-auto ${formData.reason.length > 0 && formData.reason.length < 10 ? 'text-red-500' : 'text-gray-500'}`}>
+                    <span
+                      className={cn(
+                        'ml-auto text-xs',
+                        formData.reason.length > 0 && formData.reason.length < 10
+                          ? 'text-red-600 dark:text-red-400'
+                          : 'text-zinc-500 dark:text-zinc-400'
+                      )}
+                    >
                       {formData.reason.length > 0 ? `${formData.reason.length}/10 caracteres mínimo` : 'Campo opcional'}
                     </span>
                   </div>
@@ -299,53 +348,45 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
             </Card>
           </div>
 
-          {/* Stock Difference Preview */}
           {formData.newQuantity !== getCurrentStock() && (
-            <div className="mt-6">
-              <Card className="bg-gray-50 dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Diferencia:</span>
-                    <div className="flex items-center space-x-2">
-                      {getStockDifference() > 0 ? (
-                        <TrendingUp className="h-4 w-4 text-cyan-600" />
-                      ) : (
-                        <TrendingDown className="h-4 w-4 text-red-600" />
-                      )}
-                      <span className={`text-lg font-bold ${
-                        getStockDifference() > 0 ? 'text-cyan-600' : 'text-red-600'
-                      }`}>
-                        {getStockDifference() > 0 ? '+' : ''}{formatNumber(getStockDifference())} unidades
-                      </span>
-                    </div>
-                  </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                    {getStockDifference() > 0 ? 'Incremento' : 'Reducción'} en {getLocationLabel(formData.location)}
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/40">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Diferencia</span>
+                <div className="flex items-center space-x-2">
+                  {getStockDifference() > 0 ? (
+                    <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
+                  ) : (
+                    <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-400" strokeWidth={1.5} />
+                  )}
+                  <span
+                    className={cn(
+                      'text-lg font-semibold tabular-nums',
+                      getStockDifference() > 0
+                        ? 'text-emerald-700 dark:text-emerald-400'
+                        : 'text-red-700 dark:text-red-400'
+                    )}
+                  >
+                    {getStockDifference() > 0 ? '+' : ''}
+                    {formatNumber(getStockDifference())} unidades
+                  </span>
+                </div>
+              </div>
+              <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                {getStockDifference() > 0 ? 'Incremento' : 'Reducción'} en {getLocationLabel(formData.location)}
+              </p>
             </div>
           )}
+          </div>
 
-          {/* Botones dentro del form para que hagan scroll con el contenido */}
-          <div className="flex items-center justify-end space-x-3 mt-6 pt-4 border-t border-gray-200 dark:border-neutral-700">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="outline"
-              className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-            >
+          <div className="flex flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              className="bg-cyan-600 hover:bg-cyan-700 text-white"
-            >
-              Ajustar Stock
+            <Button type="submit" size="sm">
+              Ajustar stock
             </Button>
           </div>
         </form>
-        </div>
       </div>
     </div>
   )

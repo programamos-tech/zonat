@@ -22,14 +22,12 @@ export function RoleProtectedRoute({
 
   useEffect(() => {
     if (!isLoading && user) {
-      // Verificar si el usuario tiene permisos para este módulo
       if (!hasPermission(module, requiredAction)) {
-        // Redirigir según el rol del usuario
         const roleNorm = (user?.role || '').toLowerCase().trim()
         const isSuperAdmin = roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))
         const isVendedor = roleNorm === 'vendedor' || roleNorm === 'vendedora'
         const isInventario = roleNorm === 'inventario'
-        
+
         if (isSuperAdmin) {
           router.push('/dashboard')
         } else if (isVendedor) {
@@ -41,7 +39,9 @@ export function RoleProtectedRoute({
         }
       }
     }
-  }, [user, isLoading, module, requiredAction, hasPermission, router])
+    // hasPermission cambia cada render; incluirlo dispara el efecto en bucle y puede tumbar la app.
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- solo reaccionar a usuario / módulo / acción
+  }, [user, isLoading, module, requiredAction, router])
 
   if (isLoading) {
     return (

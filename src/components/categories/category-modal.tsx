@@ -107,8 +107,8 @@ export function CategoryModal({
   return (
     <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center p-4">
       <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-cyan-50 to-cyan-100 dark:from-cyan-900/20 dark:to-cyan-800/20 flex-shrink-0">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain flex flex-col">
+        <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-cyan-50 to-cyan-100 p-4 dark:border-neutral-700 dark:from-cyan-900/20 dark:to-cyan-800/20 md:p-6">
           <div className="flex items-center gap-3">
             <Tag className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
             <div>
@@ -121,6 +121,7 @@ export function CategoryModal({
             </div>
           </div>
           <Button
+            type="button"
             onClick={handleClose}
             variant="ghost"
             size="sm"
@@ -130,8 +131,11 @@ export function CategoryModal({
           </Button>
         </div>
 
-        {/* Content */}
-        <form onSubmit={(e) => { e.preventDefault(); handleSave() }} className="flex-1 overflow-y-auto p-4 md:p-6">
+        <form
+          onSubmit={(e) => { e.preventDefault(); handleSave() }}
+          className="flex flex-col p-4 md:p-6"
+          style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}
+        >
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
             {/* Información de la Categoría */}
             <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
@@ -294,26 +298,22 @@ export function CategoryModal({
               </CardContent>
             </Card>
           </div>
-        </form>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0 sticky bottom-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
-          <Button
-            type="button"
-            onClick={handleClose}
-            variant="outline"
-            className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
-            Cancelar
-          </Button>
-          <Button
-            type="submit"
-            onClick={handleSave}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Crear Categoría
-          </Button>
+          <div className="mt-6 flex items-center justify-end space-x-3 pt-2">
+            <Button
+              type="button"
+              onClick={handleClose}
+              variant="outline"
+              className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Crear Categoría
+            </Button>
+          </div>
+        </form>
         </div>
       </div>
     </div>

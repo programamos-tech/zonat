@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { X, Plus, Trash2, Package, Store as StoreIcon, Warehouse, ArrowRightLeft, AlertTriangle, Search, CheckCircle, CreditCard } from 'lucide-react'
@@ -11,6 +11,26 @@ import { ProductsService } from '@/lib/products-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+import { Label } from '@/components/ui/label'
+
+const panelInner =
+  'rounded-lg border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/40'
+
+const inputClass =
+  'w-full rounded-lg border border-zinc-300 bg-white px-3 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+
+const selectTriggerClass =
+  'h-10 rounded-lg border-zinc-300 bg-white py-2 pl-3 pr-3 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+
+const overlayClass =
+  'fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+
+const shellClass =
+  'flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
+
+/** Por encima del overlay del modal (z-[100]); si no, el listado del Select queda invisible detrás. */
+const selectContentModalZ = 'z-[200]'
 
 interface TransferModalProps {
   isOpen: boolean
@@ -43,6 +63,11 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'transfer' | 'mixed'>('transfer')
   const [cashAmount, setCashAmount] = useState<string>('')
   const [transferAmount, setTransferAmount] = useState<string>('')
+  const [mounted, setMounted] = useState(false)
+
+  useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
   const [paymentError, setPaymentError] = useState<string>('')
   const [showStoreError, setShowStoreError] = useState(false)
 
@@ -362,41 +387,42 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
   const destinationStores = stores.filter(s => s.id !== fromStoreId && s.isActive)
 
-  return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 xl:pb-4">
-      <div className="bg-white dark:bg-neutral-950 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-neutral-700">
+  const modal = (
+    <div className={overlayClass}>
+      <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <ArrowRightLeft className="h-5 w-5 text-cyan-600" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <ArrowRightLeft className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+            <h2 id="transfer-modal-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               Nueva Transferencia
             </h2>
           </div>
           <Button
+            type="button"
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="min-h-0 flex-1 overflow-y-auto p-4">
           <div className="space-y-4">
             {/* Tienda Destino y Descripción en una fila */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
                   Tienda Destino <span className="text-red-500">*</span>
-                </label>
+                </Label>
                 <Select value={toStoreId} onValueChange={(value) => { setToStoreId(value); setShowStoreError(false); }}>
-                  <SelectTrigger className="w-full h-10 text-sm">
+                  <SelectTrigger className={cn('w-full border', selectTriggerClass)}>
                     <SelectValue placeholder="Seleccionar tienda destino" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className={selectContentModalZ}>
                     {destinationStores.map(store => (
                       <SelectItem key={store.id} value={store.id} className="text-sm">
                         {store.name} {store.city && `- ${store.city}`}
@@ -404,54 +430,61 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                     ))}
                   </SelectContent>
                 </Select>
+                {destinationStores.length === 0 && (
+                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    {stores.filter(s => s.isActive).length <= 1
+                      ? 'Para enviar a otra sede necesitas al menos dos tiendas activas. La tienda desde la que envías no puede ser destino.'
+                      : 'No hay otras tiendas activas disponibles como destino (ya se excluye la tienda de origen). Revisa que existan tiendas activas en Configuración.'}
+                  </p>
+                )}
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
                   Descripción (Opcional)
-                </label>
+                </Label>
                 <Input
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Ej: Envío mensual"
-                  className="w-full h-10 text-sm"
+                  className={cn(inputClass, 'h-10 py-2 text-sm')}
                 />
               </div>
             </div>
 
             {/* Productos */}
-            <div className="border border-gray-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-900">
-              <div className="flex items-center gap-2 mb-4">
-                <Package className="h-4 w-4 text-cyan-400" />
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+            <div className={cn('p-4', panelInner)}>
+              <div className="mb-4 flex items-center gap-2">
+                <Package className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                   Productos a Transferir
                 </h3>
               </div>
               <div className="space-y-4">
                 {/* Buscador global - siempre visible */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                  <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
                     Buscar Producto para Agregar
-                  </label>
+                  </Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
                     <Input
                       type="text"
                       placeholder="Buscar por referencia o nombre..."
                       value={globalProductSearch}
                       onChange={(e) => setGlobalProductSearch(e.target.value)}
-                      className="pl-10 h-10 text-sm"
+                      className={cn(inputClass, 'h-10 py-2 pl-10 pr-3 text-sm')}
                       disabled={loadingProducts}
                     />
                     {loadingProducts && (
-                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-cyan-600"></div>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-200 border-b-zinc-600 dark:border-zinc-700 dark:border-b-zinc-300" />
                       </div>
                     )}
                   </div>
                   
                   {/* Resultados de búsqueda */}
                   {globalProductSearch && !loadingProducts && (
-                    <div className="mt-2 max-h-60 overflow-y-auto border border-gray-200 dark:border-neutral-700 rounded-lg bg-white dark:bg-neutral-900">
+                    <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950/40">
                           {availableProducts
                             .filter(p => {
                               // Filtrar productos ya seleccionados
@@ -482,18 +515,29 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               return (
                                 <div
                                   key={product.id}
-                                  className={`w-full px-4 py-3 border-b border-gray-100 dark:border-neutral-700 last:border-b-0 transition-colors flex items-center justify-between gap-3 ${
-                                    !hasStock ? 'opacity-60' : ''
-                                  }`}
+                                  className={cn(
+                                    'flex w-full items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 transition-colors last:border-b-0 dark:border-zinc-800',
+                                    !hasStock && 'opacity-60'
+                                  )}
                                 >
-                                  <div className="flex flex-col flex-1 min-w-0">
-                                    <span className={`font-medium ${hasStock ? 'text-gray-900 dark:text-white' : 'text-gray-500 dark:text-gray-400'}`}>
+                                  <div className="flex min-w-0 flex-1 flex-col">
+                                    <span
+                                      className={cn(
+                                        'font-medium',
+                                        hasStock ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-400'
+                                      )}
+                                    >
                                       {product.name}
                                     </span>
-                                    <div className="flex items-center gap-2 mt-1">
-                                      <span className="text-xs text-gray-500 dark:text-gray-400">Ref: {product.reference}</span>
-                                      <span className="text-xs text-gray-400 dark:text-gray-500">•</span>
-                                      <span className={`text-xs ${hasStock ? 'text-gray-600 dark:text-gray-300' : 'text-red-500 dark:text-red-400'}`}>
+                                    <div className="mt-1 flex items-center gap-2">
+                                      <span className="text-xs text-zinc-500 dark:text-zinc-400">Ref: {product.reference}</span>
+                                      <span className="text-xs text-zinc-400 dark:text-zinc-500">•</span>
+                                      <span
+                                        className={cn(
+                                          'text-xs',
+                                          hasStock ? 'text-zinc-600 dark:text-zinc-300' : 'text-red-500 dark:text-red-400'
+                                        )}
+                                      >
                                         Bodega: {formatNumber(warehouseStock)} | Local: {formatNumber(storeStock)}
                                       </span>
                                     </div>
@@ -502,10 +546,10 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                     type="button"
                                     onClick={() => handleSelectProductFromSearch(product)}
                                     size="sm"
-                                    className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs px-3 py-1.5 h-auto flex-shrink-0"
+                                    className="h-auto flex-shrink-0 px-3 py-1.5 text-xs"
                                     disabled={!hasStock}
                                   >
-                                    <Plus className="h-3.5 w-3.5 mr-1" />
+                                    <Plus className="mr-1 h-3.5 w-3.5" />
                                     Agregar
                                   </Button>
                                 </div>
@@ -523,7 +567,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                             }
                             return false
                           }).length === 0 && (
-                            <div className="px-4 py-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+                            <div className="px-4 py-3 text-center text-sm text-zinc-500 dark:text-zinc-400">
                               No se encontraron productos con "{globalProductSearch}"
                             </div>
                           )}
@@ -548,18 +592,21 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                       const isComplete = item.quantity > 0 && item.productId && item.fromLocation
 
                       return (
-                        <div key={index} className="border border-gray-200 dark:border-neutral-700 rounded-lg p-3 bg-gray-50 dark:bg-neutral-800/50">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex-1 flex items-start gap-2">
+                        <div
+                          key={index}
+                          className={cn('rounded-lg border border-zinc-200 p-3 dark:border-zinc-700', panelInner)}
+                        >
+                          <div className="mb-3 flex items-start justify-between">
+                            <div className="flex flex-1 items-start gap-2">
                               {isComplete && (
-                                <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 mt-0.5 flex-shrink-0" />
+                                <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
                               )}
                               <div className="flex-1">
-                                <div className="font-medium text-sm text-gray-900 dark:text-white">
+                                <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                                   {item.productName || 'Seleccionar producto'}
                                 </div>
                                 {item.productReference && (
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                                     Ref: {item.productReference}
                                   </p>
                                 )}
@@ -570,7 +617,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRemoveItem(index)}
-                              className="h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -581,9 +628,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                             <div className="space-y-3">
                               {/* Stock y Selección de Ubicación */}
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                   Transferir desde
-                                </label>
+                                </Label>
                                 <div className="grid grid-cols-2 gap-2">
                                   {(['warehouse', 'store'] as const).map((location) => {
                                     const isSelected = item.fromLocation === location
@@ -599,21 +646,42 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                         type="button"
                                         onClick={() => !isDisabled && handleItemChange(index, 'fromLocation', location)}
                                         disabled={isDisabled}
-                                        className={`p-3 rounded-lg border-2 transition-all text-left ${
+                                        className={cn(
+                                          'rounded-lg border p-3 text-left text-sm transition-colors',
                                           isDisabled
-                                            ? 'border-gray-200 dark:border-neutral-700 text-gray-400 cursor-not-allowed opacity-50'
+                                            ? 'cursor-not-allowed border-zinc-200 text-zinc-400 opacity-50 dark:border-zinc-800'
                                             : isSelected
-                                            ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                                            : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400'
-                                        }`}
+                                              ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-zinc-400 dark:bg-zinc-800 dark:text-zinc-50'
+                                              : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50'
+                                        )}
                                       >
-                                        <div className="flex items-center gap-2 mb-1">
-                                          <Icon className={`h-4 w-4 ${isSelected ? 'text-cyan-600' : 'text-gray-400'}`} />
-                                          <span className={`text-sm font-medium ${isSelected ? 'text-cyan-700 dark:text-cyan-300' : 'text-gray-700 dark:text-gray-300'}`}>
+                                        <div className="mb-1 flex items-center gap-2">
+                                          <Icon
+                                            className={cn(
+                                              'h-4 w-4',
+                                              isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'
+                                            )}
+                                            strokeWidth={1.5}
+                                          />
+                                          <span
+                                            className={cn(
+                                              'text-sm font-medium',
+                                              isSelected
+                                                ? 'text-zinc-900 dark:text-zinc-50'
+                                                : 'text-zinc-700 dark:text-zinc-300'
+                                            )}
+                                          >
                                             {location === 'warehouse' ? 'Bodega' : 'Local'}
                                           </span>
                                         </div>
-                                        <div className={`text-xs ${isSelected ? 'text-cyan-600 dark:text-cyan-400' : 'text-gray-500 dark:text-gray-400'}`}>
+                                        <div
+                                          className={cn(
+                                            'text-xs',
+                                            isSelected
+                                              ? 'text-zinc-600 dark:text-zinc-300'
+                                              : 'text-zinc-500 dark:text-zinc-400'
+                                          )}
+                                        >
                                           Stock: {formatNumber(stock)} • Disponible: {formatNumber(remaining)}
                                         </div>
                                       </button>
@@ -626,9 +694,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               <div className="grid grid-cols-3 gap-3">
                                 {/* Cantidad */}
                                 <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                   Cantidad
-                                </label>
+                                </Label>
                                 <input
                                   type="text"
                                   inputMode="numeric"
@@ -663,16 +731,19 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                     }
                                   }}
                                   disabled={!item.productId || availableQty <= 0}
-                                  className="w-full h-10 px-3 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white disabled:opacity-50 disabled:cursor-not-allowed [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className={cn(
+                                    inputClass,
+                                    'h-10 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-50 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+                                  )}
                                   placeholder="0"
                                 />
                                 {stockAlerts[index] ? (
-                                  <div className="mt-1 p-2 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded text-xs text-red-700 dark:text-red-300 flex items-center gap-1.5">
+                                  <div className="mt-1 flex items-center gap-1.5 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
                                     <AlertTriangle className="h-3.5 w-3.5 flex-shrink-0" />
                                     <span>{stockAlerts[index]}</span>
                                   </div>
                                 ) : (
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                                     Max: {formatNumber(availableQty)}
                                   </p>
                                 )}
@@ -680,26 +751,29 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               
                               {/* Precio de venta (solo lectura, como referencia) */}
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                   Precio Venta (Ref.)
-                                </label>
+                                </Label>
                                 <Input
                                   type="text"
                                   value={formatCurrency(item.unitPrice || 0)}
                                   disabled
                                   readOnly
-                                  className="w-full h-10 text-sm bg-gray-100 dark:bg-neutral-900 text-gray-600 dark:text-gray-400 cursor-not-allowed"
+                                  className={cn(
+                                    inputClass,
+                                    'h-10 cursor-not-allowed bg-zinc-100 py-2 text-sm text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400'
+                                  )}
                                 />
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                                   Precio de venta
                                 </p>
                               </div>
                               
                               {/* Precio de venta */}
                               <div>
-                                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                                <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                   Precio Venta <span className="text-red-500">*</span>
-                                </label>
+                                </Label>
                                 <Input
                                   type="text"
                                   inputMode="decimal"
@@ -736,10 +810,10 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                       }
                                     }
                                   }}
-                                  className="w-full h-10 text-sm"
+                                  className={cn(inputClass, 'h-10 py-2 text-sm')}
                                   placeholder="0.00"
                                 />
-                                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                                   Subtotal: {formatCurrency((item.unitPrice || 0) * item.quantity)}
                                 </p>
                               </div>
@@ -753,22 +827,21 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                     )}
                   </div>
               </div>
-            </div>
 
             {/* Método de Pago */}
             {items.length > 0 && calculateTotal() > 0 && (
-              <div className="border border-gray-200 dark:border-neutral-700 rounded-lg p-4 bg-white dark:bg-neutral-900">
-                <div className="flex items-center gap-2 mb-3">
-                  <CreditCard className="h-4 w-4 text-cyan-400" />
-                  <h3 className="text-sm font-semibold text-gray-900 dark:text-white">
+              <div className={cn('p-4', panelInner)}>
+                <div className="mb-3 flex items-center gap-2">
+                  <CreditCard className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                     Método de Pago
                   </h3>
                 </div>
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
                       Método de Pago <span className="text-red-500">*</span>
-                    </label>
+                    </Label>
                     <Select value={paymentMethod} onValueChange={(value: 'cash' | 'transfer' | 'mixed') => {
                       setPaymentMethod(value)
                       setPaymentError('')
@@ -777,10 +850,10 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                         setTransferAmount('')
                       }
                     }}>
-                      <SelectTrigger className="w-full h-10 text-sm">
+                      <SelectTrigger className={cn('w-full border', selectTriggerClass)}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className={selectContentModalZ}>
                         <SelectItem value="cash">Efectivo</SelectItem>
                         <SelectItem value="transfer">Transferencia</SelectItem>
                         <SelectItem value="mixed">Mixto</SelectItem>
@@ -790,11 +863,11 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
                   {/* Campos para pago mixto */}
                   {paymentMethod === 'mixed' && (
-                    <div className="space-y-3 p-3 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
+                    <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/40">
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                           Efectivo
-                        </label>
+                        </Label>
                         <Input
                           type="text"
                           value={cashAmount ? parseFloat(cashAmount.replace(/[^\d]/g, '') || '0').toLocaleString('es-CO') : ''}
@@ -805,13 +878,13 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                           }}
                           onFocus={(e) => e.target.select()}
                           placeholder="0"
-                          className="w-full h-10 text-sm"
+                          className={cn(inputClass, 'h-10 py-2 text-sm')}
                         />
                       </div>
                       <div>
-                        <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                           Transferencia
-                        </label>
+                        </Label>
                         <Input
                           type="text"
                           value={transferAmount ? parseFloat(transferAmount.replace(/[^\d]/g, '') || '0').toLocaleString('es-CO') : ''}
@@ -822,19 +895,19 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                           }}
                           onFocus={(e) => e.target.select()}
                           placeholder="0"
-                          className="w-full h-10 text-sm"
+                          className={cn(inputClass, 'h-10 py-2 text-sm')}
                         />
                       </div>
-                      <div className="pt-2 border-t border-gray-200 dark:border-neutral-600">
-                        <div className="flex justify-between items-center text-sm">
-                          <span className="text-gray-600 dark:text-gray-400">Total ingresado:</span>
-                          <span className="font-semibold text-gray-900 dark:text-white">
+                      <div className="border-t border-zinc-200 pt-2 dark:border-zinc-600">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-zinc-600 dark:text-zinc-400">Total ingresado:</span>
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-50">
                             {formatCurrency((parseFloat(cashAmount.replace(/[^\d.]/g, '')) || 0) + (parseFloat(transferAmount.replace(/[^\d.]/g, '')) || 0))}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center text-sm mt-1">
-                          <span className="text-gray-600 dark:text-gray-400">Total requerido:</span>
-                          <span className="font-semibold text-cyan-700 dark:text-cyan-400">
+                        <div className="mt-1 flex items-center justify-between text-sm">
+                          <span className="text-zinc-600 dark:text-zinc-400">Total requerido:</span>
+                          <span className="font-semibold text-zinc-900 dark:text-zinc-50">
                             {formatCurrency(calculateTotal())}
                           </span>
                         </div>
@@ -853,27 +926,27 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
             {/* Resumen compacto */}
             {items.length > 0 && (
-              <div className="bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-200 dark:border-cyan-800 rounded-lg p-3">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-center">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-950/50">
+                <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4">
                   <div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">Productos</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{items.length}</div>
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Productos</div>
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{items.length}</div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">Total Unidades</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white">
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Total Unidades</div>
+                    <div className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                       {formatNumber(items.reduce((sum, item) => sum + item.quantity, 0))}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">Destino</div>
-                    <div className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Destino</div>
+                    <div className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                       {stores.find(s => s.id === toStoreId)?.name || '-'}
                     </div>
                   </div>
                   <div>
-                    <div className="text-xs text-gray-600 dark:text-gray-300">Total Ingreso</div>
-                    <div className="text-lg font-bold text-cyan-700 dark:text-cyan-400">
+                    <div className="text-xs text-zinc-600 dark:text-zinc-400">Total Ingreso</div>
+                    <div className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
                       {formatCurrency(calculateTotal())}
                     </div>
                   </div>
@@ -881,40 +954,35 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               </div>
             )}
           </div>
+        </div>
 
         {/* Footer */}
-        <div className="flex flex-col gap-3 p-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
+        <div className="flex flex-shrink-0 flex-col gap-3 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
           {/* Alerta si no hay tienda seleccionada (solo mostrar después de intentar guardar) */}
           {showStoreError && !toStoreId && (
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg">
-              <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 flex-shrink-0" />
-              <span className="text-sm text-yellow-700 dark:text-yellow-300">
+            <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
+              <AlertTriangle className="h-4 w-4 flex-shrink-0 text-yellow-600 dark:text-yellow-400" />
+              <span className="text-sm text-yellow-800 dark:text-yellow-200">
                 Debes seleccionar una tienda destino para crear la transferencia
               </span>
             </div>
           )}
           
-          <div className="flex items-center justify-end gap-3">
-            <Button
-              onClick={onClose}
-              variant="outline"
-              disabled={isSaving}
-              className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
-            >
+          <div className="flex flex-wrap items-center justify-end gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button
-              onClick={handleSave}
-              className="bg-cyan-600 hover:bg-cyan-700 text-white disabled:bg-gray-400 disabled:cursor-not-allowed"
-              disabled={isSaving}
-            >
+            <Button type="button" size="sm" onClick={handleSave} disabled={isSaving}>
               {isSaving ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <span className="flex items-center gap-2">
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-b-zinc-800 dark:border-zinc-600 dark:border-b-zinc-100" />
                   Creando...
-                </div>
+                </span>
               ) : (
-                'Crear Transferencia'
+                <>
+                  <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
+                  Crear Transferencia
+                </>
               )}
             </Button>
           </div>
@@ -922,4 +990,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       </div>
     </div>
   )
+
+  if (!mounted || typeof document === 'undefined') return null
+  return createPortal(modal, document.body)
 }

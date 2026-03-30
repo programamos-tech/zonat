@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { LogsTable } from '@/components/logs/logs-table'
 import { LogDetailModal } from '@/components/logs/log-detail-modal'
 import { LogsService, LogEntry } from '@/lib/logs-service'
@@ -93,16 +93,19 @@ export default function LogsPage() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
-        <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+      <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 pb-24 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:py-6 xl:pb-8">
+        <div className="flex h-64 items-center justify-center">
+          <div
+            className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-400"
+            aria-hidden
+          />
         </div>
       </div>
     )
   }
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 pb-24 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:py-6 xl:pb-8">
       <LogsTable
         logs={filteredLogs as any}
         searchTerm={searchTerm}
@@ -121,9 +124,7 @@ export default function LogsPage() {
       {/* Mensaje cuando no hay más logs */}
       {!hasMore && logs.length > 0 && (
         <div className="flex items-center justify-center py-8">
-          <div className="text-gray-500 dark:text-gray-400 text-sm">
-            No hay más actividades para mostrar
-          </div>
+          <p className="text-sm text-zinc-500 dark:text-zinc-400">No hay más actividades para mostrar</p>
         </div>
       )}
 

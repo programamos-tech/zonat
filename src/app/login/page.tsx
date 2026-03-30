@@ -4,19 +4,28 @@ import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Eye, EyeOff, Loader2, Mail, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
+import { cn } from '@/lib/utils'
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido').min(1, 'Email es requerido'),
-  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres')
+  password: z.string().min(6, 'La contraseña debe tener al menos 6 caracteres'),
 })
 
 type LoginFormData = z.infer<typeof loginSchema>
+
+const fieldLabel = 'text-[13px] font-medium text-zinc-400 dark:text-zinc-400'
+
+const inputShell =
+  'relative flex h-12 w-full items-center rounded-lg border border-zinc-700/90 bg-zinc-900/60 shadow-inner outline-none transition-colors focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950/70'
+
+const inputField =
+  'h-full w-full min-w-0 border-0 bg-transparent py-3 pl-10 pr-3 text-[15px] text-zinc-100 placeholder:text-zinc-500 outline-none focus:ring-0 dark:text-zinc-50'
+
+const inputFieldPassword = 'pr-11'
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
@@ -27,24 +36,26 @@ export default function LoginPage() {
   const {
     register,
     handleSubmit,
-    formState: { errors }
+    formState: { errors },
   } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema)
+    resolver: zodResolver(loginSchema),
   })
 
   const onSubmit = async (data: LoginFormData) => {
     setError('')
-    
+
     const success = await login(data.email, data.password)
-    
+
     if (success) {
-      // Verificar si el usuario es superadmin y redirigir a /select-store
       if (typeof window !== 'undefined') {
         const savedUser = localStorage.getItem('zonat_user')
         if (savedUser) {
           const userData = JSON.parse(savedUser)
-          const isSuperAdmin = userData.role === 'superadmin' || userData.role === 'Super Admin' || userData.role === 'Super Administrador'
-          
+          const isSuperAdmin =
+            userData.role === 'superadmin' ||
+            userData.role === 'Super Admin' ||
+            userData.role === 'Super Administrador'
+
           if (isSuperAdmin) {
             router.push('/select-store')
           } else {
@@ -62,147 +73,146 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black flex items-center justify-center p-4">
-      <div className="w-full max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:min-h-[680px] rounded-3xl overflow-hidden shadow-2xl bg-white dark:bg-neutral-900">
-          {/* Panel Izquierdo con Logo */}
-          <div className="hidden md:flex md:w-1/2 bg-black dark:bg-neutral-900 items-center justify-center p-10 md:p-16">
-            <div className="relative w-[200px] h-[200px] flex items-center justify-center">
-              <img
-                src="/zonat-logo.png"
-                alt="ZONA T Logo"
-                className="max-w-full max-h-full object-contain rounded-xl"
-                style={{ display: 'block' }}
-              />
-            </div>
+    <div className="relative min-h-screen bg-zinc-950 text-zinc-100">
+      {/* Brillo suave superior (marca) */}
+      <div
+        className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_100%_55%_at_50%_-15%,rgba(52,211,153,0.11),transparent_52%)]"
+        aria-hidden
+      />
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-6xl flex-col md:flex-row">
+        {/* Logo — desktop izquierda */}
+        <div className="flex flex-shrink-0 flex-col items-center justify-center px-8 pb-8 pt-12 md:w-[46%] md:pb-16 md:pt-16 lg:w-1/2">
+          <div className="relative flex h-28 w-28 items-center justify-center md:h-[220px] md:w-[220px]">
+            <img
+              src="/zonat-logo.png"
+              alt="ZONA T"
+              className="h-full w-full object-contain drop-shadow-[0_0_28px_rgba(52,211,153,0.12)]"
+            />
           </div>
+        </div>
 
-          {/* Panel Derecho con Formulario */}
-          <div className="w-full md:w-1/2 bg-white dark:bg-neutral-900 flex items-center justify-center p-6 md:p-16">
-            <div className="w-full max-w-md">
-              {/* Logo en Mobile */}
-              <div className="md:hidden text-center mb-6">
-                <div className="flex justify-center mb-4">
-                  <img
-                    src="/zonat-logo.png"
-                    alt="ZONA T Logo"
-                    className="w-20 h-20 object-contain rounded-xl"
+        {/* Formulario */}
+        <div className="flex flex-1 flex-col justify-center px-6 pb-16 pt-2 md:px-10 md:py-16 lg:px-16 xl:pl-8">
+          <div className="mx-auto w-full max-w-[400px]">
+            <div className="mb-10 text-left md:mb-12">
+              <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Bienvenido</h1>
+              <p className="mt-2 text-base leading-relaxed text-zinc-400">
+                Ingresa tus credenciales para acceder al sistema
+              </p>
+            </div>
+
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-7">
+              <div className="space-y-2">
+                <label htmlFor="email" className={fieldLabel}>
+                  Email
+                </label>
+                <div className={cn(inputShell, errors.email && 'border-red-500/50 ring-2 ring-red-500/15')}>
+                  <Mail
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <input
+                    id="email"
+                    type="email"
+                    autoComplete="email"
+                    placeholder="tu@correo.com"
+                    className={inputField}
+                    {...register('email')}
                   />
                 </div>
-              </div>
-
-              <div className="text-center mb-8 md:mb-12">
-                <h2 className="text-2xl md:text-4xl font-bold text-gray-900 dark:text-white mb-3">Bienvenido</h2>
-                <p className="text-gray-600 dark:text-gray-300 text-base md:text-lg">
-                  Ingresa tus credenciales para acceder al sistema
-                </p>
-              </div>
-
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 md:space-y-8">
-                {/* Email */}
-                <div className="space-y-3">
-                  <label htmlFor="email" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Email
-                  </label>
-                  <div className="relative">
-                    <Mail className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="tu@correo.com"
-                      className="pl-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-neutral-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-neutral-800 dark:text-white"
-                      {...register('email')}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      {errors.email.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Contraseña */}
-                <div className="space-y-3">
-                  <label htmlFor="password" className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-                    Contraseña
-                  </label>
-                  <div className="relative">
-                    <Lock className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                    <Input
-                      id="password"
-                      type={showPassword ? 'text' : 'password'}
-                      placeholder="••••••••"
-                      className="pl-12 pr-12 h-12 md:h-14 text-base md:text-lg border-2 border-gray-200 dark:border-neutral-600 focus:border-emerald-500 focus:ring-emerald-500 rounded-xl bg-gray-50 dark:bg-neutral-800 dark:text-white"
-                      {...register('password')}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                    >
-                      {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                    </button>
-                  </div>
-                  {errors.password && (
-                    <p className="text-sm text-red-600 dark:text-red-400">
-                      {errors.password.message}
-                    </p>
-                  )}
-                </div>
-
-                {/* Error Message */}
-                {error && (
-                  <Alert className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20 rounded-xl">
-                    <AlertDescription className="text-red-800 dark:text-red-200">
-                      {error}
-                    </AlertDescription>
-                  </Alert>
+                {errors.email && (
+                  <p className="text-sm text-red-400">{errors.email.message}</p>
                 )}
-
-                {/* Botón de Login */}
-                <Button
-                  type="submit"
-                  disabled={isLoading}
-                  className="w-full h-12 md:h-14 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white font-bold text-base md:text-lg rounded-xl transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
-                >
-                  {isLoading ? (
-                    <>
-                      <Loader2 className="h-5 w-5 mr-3 animate-spin" />
-                      Iniciando sesión...
-                    </>
-                  ) : (
-                    'Iniciar Sesión'
-                  )}
-                </Button>
-              </form>
-
-              {/* Footer */}
-              <div className="text-center mt-8 md:mt-12">
-                <p className="text-gray-500 dark:text-gray-400 text-sm mb-2">
-                  © 2026 ZONA T. Todos los derechos reservados.
-                </p>
-                <p className="text-gray-400 dark:text-gray-500 text-xs">
-                  Desarrollado por{' '}
-                  <a 
-                    href="https://andresruss.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
-                  >
-                    andresruss.st
-                  </a>
-                  {' '}•{' '}
-                  <a 
-                    href="https://andresruss.com" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-emerald-600 hover:text-emerald-500 font-medium transition-colors"
-                  >
-                    Descubre más aquí
-                  </a>
-                </p>
               </div>
-            </div>
+
+              <div className="space-y-2">
+                <label htmlFor="password" className={fieldLabel}>
+                  Contraseña
+                </label>
+                <div
+                  className={cn(
+                    inputShell,
+                    errors.password && 'border-red-500/50 ring-2 ring-red-500/15'
+                  )}
+                >
+                  <Lock
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-[18px] w-[18px] -translate-y-1/2 text-zinc-500"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    placeholder="••••••••"
+                    className={cn(inputField, inputFieldPassword)}
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-800/80 hover:text-zinc-300"
+                    aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                  >
+                    {showPassword ? <EyeOff className="h-[18px] w-[18px]" strokeWidth={1.5} /> : <Eye className="h-[18px] w-[18px]" strokeWidth={1.5} />}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-red-400">{errors.password.message}</p>
+                )}
+              </div>
+
+              {error && (
+                <Alert className="rounded-lg border-red-500/30 bg-red-950/40 text-red-100 dark:border-red-500/25">
+                  <AlertDescription className="text-sm text-red-200">{error}</AlertDescription>
+                </Alert>
+              )}
+
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={cn(
+                  'flex w-full min-h-12 items-center justify-center gap-2 rounded-lg px-4 text-base font-semibold transition-colors',
+                  'bg-emerald-500 text-zinc-950 hover:bg-emerald-400',
+                  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400/50 focus-visible:ring-offset-2 focus-visible:ring-offset-zinc-950',
+                  'disabled:cursor-not-allowed disabled:opacity-60'
+                )}
+              >
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-5 w-5 animate-spin shrink-0" strokeWidth={1.5} />
+                    Iniciando sesión…
+                  </>
+                ) : (
+                  'Iniciar Sesión'
+                )}
+              </button>
+            </form>
+
+            <footer className="mt-12 space-y-2 text-left text-sm text-zinc-500">
+              <p>© 2026 ZONA T. Todos los derechos reservados.</p>
+              <p className="text-xs leading-relaxed text-zinc-500">
+                Desarrollado por{' '}
+                <a
+                  href="https://programamos.st"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-emerald-400 transition-colors hover:text-emerald-300"
+                >
+                  programamos.st
+                </a>
+                {' · '}
+                <a
+                  href="https://programamos.st"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-emerald-400 transition-colors hover:text-emerald-300"
+                >
+                  Descubre más aquí
+                </a>
+              </p>
+            </footer>
           </div>
         </div>
       </div>

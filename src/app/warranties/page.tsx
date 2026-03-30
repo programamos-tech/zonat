@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useMemo } from 'react'
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { WarrantyTable } from '@/components/warranties/warranty-table'
-import { WarrantyDetailModal } from '@/components/warranties/warranty-detail-modal'
 import { WarrantyModal } from '@/components/warranties/warranty-modal'
 import { useWarranties } from '@/contexts/warranty-context'
 import { Warranty } from '@/types'
 
 export default function WarrantiesPage() {
+  const router = useRouter()
   const {
     warranties,
     loading,
@@ -34,8 +35,7 @@ export default function WarrantiesPage() {
   }
 
   const handleViewWarranty = (warranty: Warranty) => {
-    setSelectedWarranty(warranty)
-    setShowDetailModal(true)
+    router.push(`/warranties/${warranty.id}`)
   }
 
   const handleEditWarranty = (warranty: Warranty) => {
@@ -84,23 +84,9 @@ export default function WarrantiesPage() {
 
   const warrantiesToShow = searchResults.length > 0 ? searchResults : warranties
 
-  // Calcular cantidad de garantías creadas hoy
-  const todayWarrantiesCount = useMemo(() => {
-    const today = new Date()
-    today.setHours(0, 0, 0, 0)
-    const tomorrow = new Date(today)
-    tomorrow.setDate(tomorrow.getDate() + 1)
-
-    return warranties.filter(warranty => {
-      const warrantyDate = new Date(warranty.createdAt)
-      return warrantyDate >= today && warrantyDate < tomorrow
-    }).length
-  }, [warranties])
-
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
+    <div className="min-h-screen space-y-6 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-6 pb-24 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
       <WarrantyTable
-        todayWarrantiesCount={todayWarrantiesCount}
           warranties={warrantiesToShow}
           loading={loading || isSearching}
           onCreate={handleCreateWarranty}
@@ -126,16 +112,6 @@ export default function WarrantiesPage() {
             onClose={() => setShowEditModal(false)}
             onSave={handleSaveWarranty}
             warranty={selectedWarranty}
-          />
-        )}
-
-        {showDetailModal && selectedWarranty && (
-          <WarrantyDetailModal
-            warranty={selectedWarranty}
-            isOpen={showDetailModal}
-            onClose={() => setShowDetailModal(false)}
-            onEdit={handleEditWarranty}
-            onStatusChange={handleStatusChange}
           />
         )}
 

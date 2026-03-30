@@ -25,7 +25,7 @@ export function Logo({ className, showText = false, size = 'md' }: LogoProps) {
           alt="ZONA T Logo"
           width={logoSize}
           height={logoSize}
-          className="rounded-lg object-contain"
+          className="object-contain"
           style={{ width: logoSize, height: 'auto' }}
           priority
           unoptimized

@@ -406,7 +406,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-3 md:p-6 pb-16 md:pb-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 z-10 flex-shrink-0">
+        <div className="z-10 flex flex-shrink-0 items-center justify-end gap-3 bg-white p-3 pt-6 dark:bg-neutral-950 md:p-6 pb-16 md:pb-6 sticky bottom-0">
           <Button
             onClick={onClose}
             className="bg-red-500 hover:bg-red-600 text-white text-xs md:text-sm px-3 md:px-4 py-1.5 md:py-2"

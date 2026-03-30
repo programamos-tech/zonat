@@ -16,16 +16,24 @@ INSERT INTO roles (name, description, permissions, is_system) VALUES
 ON CONFLICT DO NOTHING;
 
 -- ============================================
--- 2. CREAR USUARIO SUPERADMIN
+-- 2. CREAR USUARIOS SUPERADMIN (local)
 -- ============================================
--- Email: ps@zonat.com
--- Password: admin123 (texto plano para desarrollo local)
--- NOTA: La app usa comparación de texto plano (ver auth-service.ts línea 23)
+-- Passwords: admin123 (texto plano para desarrollo local)
+-- NOTA: La app usa comparación de texto plano (ver api/auth/login)
+-- Emails: ps@zonat.com y diego@zonat.com (cualquiera sirve para entrar)
 INSERT INTO users (name, email, password, role, permissions, is_active) VALUES
 (
   'Super Admin',
   'ps@zonat.com',
-  'admin123', -- Contraseña en texto plano para desarrollo local
+  'admin123',
+  'superadmin',
+  '["all"]'::jsonb,
+  true
+),
+(
+  'Diego Admin',
+  'diego@zonat.com',
+  'admin123',
   'superadmin',
   '["all"]'::jsonb,
   true

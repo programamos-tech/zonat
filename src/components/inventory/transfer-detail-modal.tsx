@@ -337,7 +337,7 @@ export function TransferDetailModal({ isOpen, onClose, transfer }: TransferDetai
             </div>
           )}
         </CardContent>
-        <div className="flex justify-end p-4 border-t border-gray-200 dark:border-neutral-700 flex-shrink-0">
+        <div className="flex flex-shrink-0 justify-end bg-white p-4 pt-6 dark:bg-neutral-950">
           <Button variant="outline" onClick={onClose}>
             Cerrar
           </Button>

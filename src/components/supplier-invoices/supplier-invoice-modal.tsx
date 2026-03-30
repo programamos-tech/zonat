@@ -251,57 +251,61 @@ export function SupplierInvoiceModal({
   /* Portal + z-[100]: el <main> tiene z-10; la bottom nav del body es z-40 y robaba los toques en iPad. */
   const modal = (
     <div
-      className="fixed inset-0 xl:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-6 sm:py-10 lg:px-12"
+      className="fixed inset-0 md:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-6 sm:py-10 lg:px-12"
       style={{
         paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
         paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
       }}
     >
-      <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl w-full sm:max-w-2xl lg:max-w-3xl max-h-[min(88dvh,880px)] sm:max-h-[min(94vh,880px)] min-h-0 overflow-hidden flex flex-col border border-gray-200 dark:border-neutral-700">
-        <div className="flex shrink-0 items-center justify-between gap-2 px-4 py-3 sm:p-4 border-b border-gray-200 dark:border-neutral-600 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
-          <div className="flex items-center gap-2 min-w-0">
-            <FileText className="h-5 w-5 text-orange-600 shrink-0" />
-            <h2 className="text-base sm:text-lg font-bold text-gray-900 dark:text-white leading-tight line-clamp-2">
-              {isEdit ? 'Editar factura' : 'Nueva factura de proveedor'}
-            </h2>
+      <div className="flex max-h-[min(88dvh,880px)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-h-[min(94vh,880px)] sm:max-w-2xl lg:max-w-3xl">
+        {/* Un solo scroll: título, formulario y acciones van juntos */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <FileText className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+              <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
+                {isEdit ? 'Editar factura' : 'Nueva factura de proveedor'}
+              </h2>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 shrink-0 touch-manipulation rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none hover:translate-y-0 hover:bg-zinc-100 hover:shadow-none hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
-          <Button variant="ghost" size="sm" className="h-9 w-9 p-0 shrink-0 touch-manipulation" onClick={onClose}>
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
 
-        <form
-          onSubmit={handleSubmit}
-          className="flex flex-1 min-h-0 flex-col"
-        >
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide px-1 sm:px-0">
-          <Card className="border-0 shadow-none rounded-none">
+        <form onSubmit={handleSubmit} className="flex flex-col">
+          <Card className="rounded-none border-0 shadow-none">
             <CardHeader className="px-3 pb-2 pt-4 sm:px-6 sm:pt-5">
-              <CardTitle className="text-base text-gray-800 dark:text-gray-200">
+              <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">
                 Datos de la factura
               </CardTitle>
               {isEdit && invoiceNumber.trim() && (
-                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                   Folio:{' '}
-                  <span className="font-mono text-gray-700 dark:text-gray-300">
+                  <span className="font-mono text-zinc-800 dark:text-zinc-200">
                     {invoiceNumber}
                   </span>
                 </p>
               )}
             </CardHeader>
-            <CardContent className="space-y-4 pt-0 px-3 pb-4 sm:px-6">
+            <CardContent className="space-y-4 px-3 pb-4 pt-0 sm:px-6">
               {blocked && (
-                <p className="text-sm text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3">
+                <p className="rounded-lg border border-zinc-200/90 bg-zinc-50 p-3 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300">
                   Esta factura no se puede editar (pagada o anulada).
                 </p>
               )}
 
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <Label>Proveedor</Label>
+                <div className="flex items-center justify-between gap-2">
+                  <Label className="text-zinc-700 dark:text-zinc-300">Proveedor</Label>
                   <button
                     type="button"
-                    className="text-xs text-orange-600 dark:text-orange-400 flex items-center gap-1"
+                    className="flex items-center gap-1 text-xs font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
                     onClick={() => setShowNewSupplier((v) => !v)}
                   >
                     <Plus className="h-3 w-3" />
@@ -314,9 +318,14 @@ export function SupplierInvoiceModal({
                       placeholder="Nombre del proveedor"
                       value={newSupplierName}
                       onChange={(e) => setNewSupplierName(e.target.value)}
-                      className="text-base h-10"
+                      className="h-10 border-zinc-200 bg-white text-base dark:border-zinc-700 dark:bg-zinc-950"
                     />
-                    <Button type="button" variant="secondary" onClick={handleCreateSupplier}>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="shrink-0 border-zinc-300 dark:border-zinc-600"
+                      onClick={handleCreateSupplier}
+                    >
                       Crear
                     </Button>
                   </div>
@@ -325,7 +334,7 @@ export function SupplierInvoiceModal({
                   value={supplierId}
                   onChange={(e) => setSupplierId(e.target.value)}
                   disabled={blocked || isEdit}
-                  className="w-full h-12 rounded-xl border-2 border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800 px-3 text-gray-900 dark:text-white"
+                  className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20"
                 >
                   <option value="">Seleccionar…</option>
                   {suppliers.map((s) => (
@@ -336,9 +345,9 @@ export function SupplierInvoiceModal({
                 </select>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Emisión</Label>
+                  <Label className="text-zinc-700 dark:text-zinc-300">Emisión</Label>
                   <DatePicker
                     selectedDate={issueDate}
                     onDateSelect={setIssueDate}
@@ -347,7 +356,7 @@ export function SupplierInvoiceModal({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Vencimiento (opcional)</Label>
+                  <Label className="text-zinc-700 dark:text-zinc-300">Vencimiento (opcional)</Label>
                   <DatePicker
                     selectedDate={dueDate}
                     onDateSelect={setDueDate}
@@ -358,33 +367,33 @@ export function SupplierInvoiceModal({
               </div>
 
               <div className="space-y-2">
-                <Label>Total a pagar</Label>
+                <Label className="text-zinc-700 dark:text-zinc-300">Total a pagar</Label>
                 <Input
                   value={totalStr}
                   onChange={(e) => setTotalStr(formatNumber(e.target.value))}
                   disabled={blocked}
                   placeholder="0"
-                  className="text-base h-10"
+                  className="h-10 border-zinc-200 bg-white text-base tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Notas (opcional)</Label>
+                <Label className="text-zinc-700 dark:text-zinc-300">Notas (opcional)</Label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={blocked}
                   rows={2}
-                  className="w-full rounded-xl border-2 border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800 px-4 py-2 text-sm text-gray-900 dark:text-white"
+                  className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20"
                   placeholder="Orden de compra, observaciones…"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label>Comprobante (foto)</Label>
+                <Label className="text-zinc-700 dark:text-zinc-300">Comprobante (foto)</Label>
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border-2 border-dashed border-orange-300 dark:border-orange-700 cursor-pointer hover:bg-orange-50 dark:hover:bg-orange-900/20 text-sm text-orange-700 dark:text-orange-300">
-                    <Upload className="h-4 w-4" />
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50">
+                    <Upload className="h-4 w-4 text-zinc-500" />
                     {uploading ? 'Subiendo…' : 'Subir imagen'}
                     <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading || blocked} />
                   </label>
@@ -393,14 +402,14 @@ export function SupplierInvoiceModal({
                       href={imageUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm text-blue-600 dark:text-blue-400 underline"
+                      className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
                     >
                       Abrir en pestaña nueva
                     </a>
                   )}
                 </div>
                 {(imageUrl || uploadPreview) && (
-                  <div className="relative mt-2 rounded-xl border-2 border-gray-200 dark:border-neutral-600 overflow-hidden bg-gray-100 dark:bg-neutral-800/80">
+                  <div className="relative mt-2 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/80">
                     {uploading && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-sm font-medium text-white">
                         Subiendo…
@@ -417,10 +426,9 @@ export function SupplierInvoiceModal({
               </div>
             </CardContent>
           </Card>
-          </div>
 
           <div
-            className="shrink-0 flex gap-2 justify-end border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900/95 px-3 py-3 sm:p-4"
+            className="flex justify-end gap-2 bg-white px-3 pb-3 pt-4 dark:bg-neutral-950 sm:gap-2.5 sm:px-6 sm:pb-4"
             style={{
               paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
             }}
@@ -428,20 +436,23 @@ export function SupplierInvoiceModal({
             <Button
               type="button"
               variant="outline"
+              size="sm"
               onClick={onClose}
-              className="min-h-12 flex-1 sm:flex-none touch-manipulation"
+              className="h-9 w-full flex-1 touch-manipulation border border-zinc-300 bg-white text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto sm:flex-none"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
+              size="sm"
               disabled={saving || blocked}
-              className="min-h-12 flex-1 sm:flex-none touch-manipulation bg-orange-600 hover:bg-orange-700 text-white"
+              className="h-9 w-full flex-1 touch-manipulation bg-zinc-900 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white sm:w-auto sm:flex-none"
             >
               {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Registrar'}
             </Button>
           </div>
         </form>
+        </div>
       </div>
     </div>
   )

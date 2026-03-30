@@ -1,15 +1,22 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Store as StoreIcon, Crown } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { Building2 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { getCurrentUserStoreId, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
+import { cn } from '@/lib/utils'
 
 interface StoreBadgeProps {
   className?: string
 }
+
+const chipClass =
+  'inline-flex max-w-full items-center gap-1.5 rounded-md border border-zinc-200/90 bg-zinc-50/90 px-2 py-0.5 text-xs font-medium text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400'
+
+/** Tienda principal: mismo criterio que Facturas proveedor — verde muy sutil (fondo oscuro + texto verde suave). */
+const mainStoreChipClass =
+  'inline-flex max-w-full items-center gap-1.5 rounded-md border border-emerald-500/15 bg-emerald-500/[0.07] px-2 py-0.5 text-xs font-medium text-emerald-800 dark:border-emerald-500/20 dark:bg-emerald-950/55 dark:text-emerald-400/85'
 
 export function StoreBadge({ className = '' }: StoreBadgeProps) {
   const { user } = useAuth()
@@ -18,14 +25,13 @@ export function StoreBadge({ className = '' }: StoreBadgeProps) {
   useEffect(() => {
     const loadStoreInfo = async () => {
       const storeId = getCurrentUserStoreId()
-      
+
       if (storeId && !isMainStoreUser(user)) {
         try {
           const store = await StoresService.getStoreById(storeId)
           if (store) {
-            // Combinar nombre y ciudad si existe
-            const displayName = store.city 
-              ? `${store.name} - ${store.city}`
+            const displayName = store.city
+              ? `${store.name} — ${store.city}`
               : store.name
             setStoreName(displayName)
           }
@@ -34,27 +40,28 @@ export function StoreBadge({ className = '' }: StoreBadgeProps) {
         }
       }
     }
-    
+
     loadStoreInfo()
   }, [user])
 
-  // Si es tienda principal
   if (isMainStoreUser(user)) {
     return (
-      <Badge className={`bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-sm px-3 py-1.5 border border-emerald-300 dark:border-emerald-700 ${className}`}>
-        <Crown className="h-4 w-4 mr-1.5" />
-        Tienda Principal
-      </Badge>
+      <span className={cn(mainStoreChipClass, 'shrink-0', className)}>
+        <Building2 className="h-3 w-3 shrink-0 text-emerald-700/90 dark:text-emerald-400/80" aria-hidden />
+        Tienda principal
+      </span>
     )
   }
 
-  // Si es microtienda
   if (storeName) {
     return (
-      <Badge className={`bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-sm px-3 py-1.5 border border-green-300 dark:border-green-700 ${className}`}>
-        <StoreIcon className="h-4 w-4 mr-1.5" />
-        {storeName}
-      </Badge>
+      <span
+        className={cn(chipClass, 'min-w-0 max-w-[min(100%,16rem)] truncate', className)}
+        title={storeName}
+      >
+        <Building2 className="h-3 w-3 shrink-0 opacity-80" aria-hidden />
+        <span className="truncate">{storeName}</span>
+      </span>
     )
   }
 

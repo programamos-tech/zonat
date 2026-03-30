@@ -3,27 +3,26 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
-import { 
-  LayoutDashboard, 
-  Package, 
-  Users, 
-  Receipt, 
-  CreditCard, 
+import {
+  BarChart3,
+  Package,
+  Users,
+  Receipt,
+  CreditCard,
   Shield,
   Activity,
-  Menu,
-  X,
   LogOut,
   ShieldCheck,
   UserCircle,
+  UserCog,
   Store,
   Warehouse,
   ArrowRightLeft,
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  Crown,
-  FileText
+  FileText,
+  Zap
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -36,7 +35,7 @@ import type { Store } from '@/types/store'
 import { UserAvatar } from '@/components/ui/user-avatar'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard, module: 'dashboard' },
+  { name: 'Dashboard', href: '/dashboard', icon: BarChart3, module: 'dashboard' },
   { 
     name: 'Inventario', 
     href: '/inventory/products', 
@@ -68,7 +67,7 @@ const navigation = [
     module: 'roles',
     submenu: [
       { name: 'Tiendas', href: '/stores', icon: Store, module: 'roles', requiresAllStoresAccess: true },
-      { name: 'Roles', href: '/roles', icon: Shield, module: 'roles' },
+      { name: 'Roles', href: '/roles', icon: UserCog, module: 'roles' },
       { name: 'Actividades', href: '/logs', icon: Activity, module: 'logs' },
     ]
   },
@@ -162,49 +161,47 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
       <div 
         ref={sidebarRef}
         className={cn(
-          "fixed inset-y-0 left-0 z-40 overflow-hidden rounded-r-2xl xl:rounded-r-3xl shadow-[4px_0_24px_-4px_rgba(0,0,0,0.08)] dark:shadow-[4px_0_30px_-4px_rgba(0,0,0,0.4)] transform transition-all duration-300 ease-in-out xl:translate-x-0 w-56",
-          "bg-gradient-to-r from-transparent via-white/35 dark:via-neutral-950/40 to-white/70 dark:to-neutral-950/75 backdrop-blur-2xl border-r border-white/15 dark:border-neutral-600/30",
-          isMobileMenuOpen ? "translate-x-0" : "-translate-x-full",
+          'fixed inset-y-0 left-0 z-40 w-56 transform overflow-hidden rounded-r-xl border-r border-zinc-200/80 bg-white/95 shadow-sm backdrop-blur-xl transition-all duration-300 ease-in-out dark:border-zinc-800/90 dark:bg-zinc-950/95 dark:shadow-[2px_0_24px_-8px_rgba(0,0,0,0.5)] xl:translate-x-0 xl:rounded-r-2xl',
+          isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
+          /* Cerrado en móvil/tablet: sin pointer-events para que WebKit no intercepte toques en la barra inferior (z-40 compartida con bottom nav). */
+          !isMobileMenuOpen && 'max-xl:pointer-events-none',
           className
         )}
       >
         <div className="flex flex-col h-full">
           {/* Logo y Tienda */}
-          <div className={cn(
-            "px-4 py-4 border-b transition-all duration-300",
-            "border-white/30 dark:border-neutral-700/40"
-          )}>
-            <Link href="/dashboard" className="cursor-pointer hover:opacity-80 transition-opacity flex flex-col items-center relative">
+          <div
+            className={cn(
+              'border-b border-zinc-200/80 px-3 py-3 transition-colors dark:border-zinc-800'
+            )}
+          >
+            <Link
+              href="/dashboard"
+              className="relative flex flex-col items-center transition-opacity hover:opacity-90"
+            >
               <div className="relative">
-              {currentStore?.logo ? (
-                <img 
-                  src={currentStore.logo} 
-                  alt={currentStore.name}
-                  className="h-12 w-12 rounded-lg object-cover mb-2"
-                />
-              ) : (
-                  <div className="mb-2">
-                <Logo size="lg" />
+                {currentStore?.logo ? (
+                  <img
+                    src={currentStore.logo}
+                    alt={currentStore.name}
+                    className="mb-1.5 h-11 w-11 object-cover"
+                  />
+                ) : (
+                  <div className="mb-1.5">
+                    <Logo size="lg" />
                   </div>
                 )}
-                {isMainStoreUser(user) && (
-                  <div className="absolute -top-1 -right-1 bg-emerald-400 dark:bg-emerald-500 rounded-full p-1 shadow-md">
-                    <Crown className="h-3 w-3 text-white" />
-                  </div>
-              )}
               </div>
               {currentStore && (
-                <div className="mt-2 text-center">
-                  <p className="text-xs font-semibold truncate max-w-[180px] text-gray-800 dark:text-white transition-colors">
-                    {currentStore.name}
-                  </p>
-                </div>
+                <p className="max-w-[180px] truncate text-center text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                  {currentStore.name}
+                </p>
               )}
             </Link>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto scrollbar-hide">
+          <nav className="scrollbar-hide flex-1 space-y-0.5 overflow-y-auto px-2.5 py-3">
             {navigation.map((item) => {
               // Solo mostrar el item si el usuario tiene permisos para verlo
               if (!canView(item.module)) return null
@@ -245,18 +242,15 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 (item.href === '/stores' && pathname?.startsWith('/stores')) ||
                 isSubmenuActive
               
-              // Selector activo: solo gris/blanco
-              const getActiveColor = () =>
-                'bg-white/90 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
+              const rowActive =
+                'bg-zinc-100/95 text-zinc-900 dark:bg-white/[0.07] dark:text-zinc-50'
+              const rowInactive =
+                'text-zinc-600 hover:bg-zinc-50/90 dark:text-zinc-400 dark:hover:bg-white/[0.04] dark:hover:text-zinc-200'
 
-              // Color del icono según el módulo
-              const getIconColorForItem = (active: boolean) => {
-                if (item.name === 'Inventario') return active ? 'text-cyan-600 dark:text-cyan-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
-                if (item.name === 'Comercial') return active ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
-                if (item.name === 'Administración') return active ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                if (item.module === 'dashboard') return active ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
-                return active ? 'text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white'
-              }
+              const getIconColorForItem = (active: boolean) =>
+                active
+                  ? 'text-zinc-800 dark:text-zinc-100'
+                  : 'text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
 
               const toggleSubmenu = (e: React.MouseEvent) => {
                 e.preventDefault()
@@ -279,27 +273,28 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                       <button
                         onClick={toggleSubmenu}
                         className={cn(
-                          "group w-full flex items-center justify-between px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                          isActive || isSubmenuActive
-                            ? getActiveColor()
-                            : "text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
+                          'group flex w-full items-center justify-between rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                          isActive || isSubmenuActive ? rowActive : rowInactive
                         )}
                       >
-                        <div className="flex items-center flex-1">
-                          <item.icon className={cn(
-                            "h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3",
-                            getIconColorForItem(!!(isActive || isSubmenuActive))
-                          )} />
+                        <div className="flex flex-1 items-center">
+                          <item.icon
+                            strokeWidth={1.5}
+                            className={cn(
+                              'mr-2.5 h-4 w-4 shrink-0 transition-colors',
+                              getIconColorForItem(!!(isActive || isSubmenuActive))
+                            )}
+                          />
                           <span className="flex-1 truncate text-left">{item.name}</span>
                         </div>
                         {isExpanded ? (
-                          <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                          <ChevronDown strokeWidth={1.5} className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
                         ) : (
-                          <ChevronRight className="h-4 w-4 flex-shrink-0" />
+                          <ChevronRight strokeWidth={1.5} className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
                         )}
                       </button>
                       {isExpanded && item.submenu && (
-                        <div className="ml-4 mt-1 space-y-1">
+                        <div className="ml-2 mt-0.5 space-y-0.5 border-l border-zinc-200/70 pl-2 dark:border-zinc-800">
                           {item.submenu.map((subitem) => {
                             if (!canView(subitem.module)) return null
                             
@@ -322,18 +317,15 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                               (subitem.href === '/roles' && pathname?.startsWith('/roles')) ||
                               (subitem.href === '/logs' && pathname?.startsWith('/logs'))
 
-                            // Color del icono del subítem según módulo
                             const getSubitemIconColor = (href: string) => {
-                              if (href.startsWith('/inventory')) return isSubActive ? 'text-cyan-600 dark:text-cyan-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-cyan-600 dark:group-hover:text-cyan-400'
-                              if (href === '/clients') return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
-                              if (href === '/sales') return isSubActive ? 'text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400'
-                              if (href === '/payments') return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
-                              if (href.startsWith('/purchases')) return isSubActive ? 'text-orange-600 dark:text-orange-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-orange-600 dark:group-hover:text-orange-400'
-                              if (href === '/warranties') return isSubActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
-                              if (href === '/stores') return isSubActive ? 'text-purple-600 dark:text-purple-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-purple-600 dark:group-hover:text-purple-400'
-                              if (href === '/roles') return isSubActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400'
-                              if (href === '/logs') return isSubActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 group-hover:text-blue-600 dark:group-hover:text-blue-400'
-                              return isSubActive ? 'text-gray-800 dark:text-white' : 'text-gray-500 dark:text-gray-400 group-hover:text-gray-700 dark:group-hover:text-white'
+                              if (href === '/stores' && isMainStoreUser(user)) {
+                                return isSubActive
+                                  ? 'text-emerald-600 dark:text-emerald-400'
+                                  : 'text-zinc-500 dark:text-zinc-500 group-hover:text-emerald-600/90 dark:group-hover:text-emerald-400/85'
+                              }
+                              return isSubActive
+                                ? 'text-zinc-800 dark:text-zinc-100'
+                                : 'text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
                             }
                             
                             return (
@@ -342,16 +334,17 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                                 href={subitem.href}
                                 onClick={() => setIsMobileMenuOpen(false)}
                                 className={cn(
-                                  "group flex items-center px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200",
-                                  isSubActive
-                                    ? 'bg-white/90 dark:bg-white/10 text-gray-900 dark:text-white shadow-sm'
-                                    : 'text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white'
+                                  'group flex items-center rounded-md px-2 py-1.5 text-sm font-medium transition-colors',
+                                  isSubActive ? rowActive : rowInactive
                                 )}
                               >
-                                <subitem.icon className={cn(
-                                  "h-4 w-4 transition-all duration-200 flex-shrink-0 mr-2",
-                                  getSubitemIconColor(subitem.href)
-                                )} />
+                                <subitem.icon
+                                  strokeWidth={1.5}
+                                  className={cn(
+                                    'mr-2 h-3.5 w-3.5 shrink-0 transition-colors',
+                                    getSubitemIconColor(subitem.href)
+                                  )}
+                                />
                                 <span className="flex-1 truncate">{subitem.name}</span>
                               </Link>
                             )
@@ -364,12 +357,12 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                       {isStoresModule && !canAccessStores ? (
                         <div
                           className={cn(
-                            "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200 cursor-not-allowed opacity-50",
-                            "text-gray-600 dark:text-gray-400"
+                            'group flex cursor-not-allowed items-center rounded-md px-3 py-2 text-sm font-medium opacity-50 transition-colors',
+                            'text-zinc-500 dark:text-zinc-500'
                           )}
                           title="Solo disponible para Super Administradores"
                         >
-                          <item.icon className="h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3 text-purple-500 dark:text-purple-400" />
+                          <item.icon strokeWidth={1.5} className="mr-2.5 h-4 w-4 shrink-0 text-zinc-400" />
                           <span className="flex-1 truncate">{item.name}</span>
                         </div>
                   ) : (
@@ -377,16 +370,17 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                       href={item.href}
                       onClick={() => setIsMobileMenuOpen(false)}
                       className={cn(
-                        "group flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                        isActive
-                          ? getActiveColor()
-                          : "text-gray-700 dark:text-gray-200 hover:bg-white/50 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white"
+                        'group flex items-center rounded-md px-3 py-2 text-sm font-medium transition-colors',
+                        isActive ? rowActive : rowInactive
                       )}
                     >
-                      <item.icon className={cn(
-                        "h-5 w-5 transition-all duration-200 flex-shrink-0 mr-3",
-                        getIconColorForItem(isActive)
-                      )} />
+                      <item.icon
+                        strokeWidth={1.5}
+                        className={cn(
+                          'mr-2.5 h-4 w-4 shrink-0 transition-colors',
+                          getIconColorForItem(isActive)
+                        )}
+                      />
                       <span className="flex-1 truncate">{item.name}</span>
                     </Link>
                       )}
@@ -398,22 +392,22 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           </nav>
 
           {/* User info */}
-          <div className="p-4 border-t border-gray-100 dark:border-neutral-800">
-            <div className="flex items-center justify-between p-3 rounded-lg bg-gray-50 dark:bg-neutral-800/50 hover:bg-gray-100 dark:hover:bg-neutral-800 transition-colors">
-              <div className="flex items-center flex-1 min-w-0">
-                <div className="flex-shrink-0">
+          <div className="border-t border-zinc-200/80 p-2.5 dark:border-zinc-800">
+            <div className="flex items-center justify-between rounded-md px-2 py-0.5 transition-colors hover:bg-zinc-50/90 dark:hover:bg-white/[0.04]">
+              <div className="flex min-w-0 flex-1 items-center">
+                <div className="shrink-0">
                   <UserAvatar
                     name={user?.name || 'Usuario'}
                     seed={user?.id}
                     size="sm"
-                    className="shadow-sm ring-2 ring-white/10 dark:ring-neutral-700/80"
+                    className="ring-1 ring-zinc-200/80 dark:ring-zinc-700"
                   />
                 </div>
-                <div className="ml-3 min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                <div className="ml-2.5 min-w-0 flex-1">
+                  <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
                     {user?.name || 'Diego Admin'}
                   </p>
-                  <p className="text-xs text-gray-600 dark:text-gray-300 truncate">
+                  <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                     {user?.role === 'superadmin' ? 'Super Admin' : 
                      user?.role === 'admin' ? 'Admin' :
                      user?.role === 'vendedor' ? 'Vendedor' :
@@ -424,12 +418,36 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               </div>
               <button
                 onClick={logout}
-                className="ml-2 p-2 rounded-md text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-white/50 dark:hover:bg-white/10 transition-all duration-200"
+                className="ml-1 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-zinc-100"
                 title="Cerrar sesión"
+                type="button"
               >
-                <LogOut className="h-4 w-4" />
+                <LogOut strokeWidth={1.5} className="h-4 w-4" />
               </button>
             </div>
+          </div>
+
+          <div className="px-2.5 pb-3 pt-1">
+            <p className="text-center text-[10px] font-medium leading-snug tracking-wide text-zinc-500 dark:text-zinc-400">
+              powered by{' '}
+              <a
+                href="https://programamos.st"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-bold text-[#ff9568] underline-offset-2 hover:underline"
+              >
+                programamos.st
+              </a>
+              <span className="mx-1.5" aria-hidden>
+                ·
+              </span>
+              <Zap
+                className="mr-0.5 inline-block h-2.5 w-2.5 align-[-0.125em] text-zinc-400 dark:text-zinc-500"
+                strokeWidth={2}
+                aria-hidden
+              />
+              V2.5
+            </p>
           </div>
         </div>
       </div>

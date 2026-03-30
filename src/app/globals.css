@@ -61,21 +61,22 @@ body {
   display: none;
 }
 
-/* Ocultar barra de scroll en tablet y mobile en toda la app (scroll sigue funcionando) */
-@media (max-width: 1280px) {
-  html,
-  body,
-  * {
-    scrollbar-width: none !important;
-    -ms-overflow-style: none !important;
-  }
-  html::-webkit-scrollbar,
-  body::-webkit-scrollbar,
-  *::-webkit-scrollbar {
-    display: none !important;
-    width: 0 !important;
-    height: 0 !important;
-  }
+/*
+ * Sin barras de scroll visibles en ningún tamaño de viewport (scroll con rueda/trackpad/teclado sigue igual).
+ * Antes solo aplicaba bajo 1280px; en desktop xl aparecían barras claras del sistema.
+ */
+html,
+body,
+* {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Estilos específicos para tablets en la tabla de productos */

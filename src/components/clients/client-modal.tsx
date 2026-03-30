@@ -1,25 +1,48 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { 
-  X, 
-  User, 
+import { useState, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
+import {
+  X,
+  User,
   Building2,
   Mail,
   Phone,
   MapPin,
-  Users
+  UserPen,
+  ToggleLeft,
 } from 'lucide-react'
 import { Client } from '@/types'
+import { cn } from '@/lib/utils'
 
 interface ClientModalProps {
   isOpen: boolean
   onClose: () => void
   onSave: (client: Omit<Client, 'id'>) => void
   client?: Client | null
+}
+
+const inputBase =
+  'w-full rounded-lg border border-zinc-600/80 bg-zinc-800/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 transition-colors focus:border-red-500/60 focus:outline-none focus:ring-2 focus:ring-red-500/25'
+
+function SectionCard({
+  icon: Icon,
+  title,
+  children,
+}: {
+  icon: typeof User
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className="rounded-xl border border-zinc-700/70 bg-zinc-900/40 p-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/50 md:p-5">
+      <div className="mb-4 flex items-center gap-2">
+        <Icon className="h-5 w-5 shrink-0 text-red-500" strokeWidth={1.75} aria-hidden />
+        <h3 className="text-base font-semibold text-zinc-100">{title}</h3>
+      </div>
+      {children}
+    </div>
+  )
 }
 
 export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProps) {
@@ -32,12 +55,16 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
     city: client?.city || '',
     state: client?.state || '',
     type: client?.type || 'consumidor_final',
-    status: client?.status || 'active'
+    status: client?.status || 'active',
   })
 
   const [errors, setErrors] = useState<Record<string, string>>({})
+  const [mounted, setMounted] = useState(false)
 
-  // Actualizar formulario cuando cambie el cliente
+  useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
+
   useEffect(() => {
     if (client) {
       setFormData({
@@ -49,7 +76,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         city: client.city || '',
         state: client.state || '',
         type: client.type || 'consumidor_final',
-        status: client.status || 'active'
+        status: client.status || 'active',
       })
     } else {
       setFormData({
@@ -61,46 +88,17 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         city: '',
         state: '',
         type: 'consumidor_final',
-        status: 'active'
+        status: 'active',
       })
     }
     setErrors({})
   }, [client])
 
-  const getTypeColor = (type: string) => {
-    switch (type) {
-      case 'mayorista':
-        return 'bg-blue-100 text-blue-800 border-blue-300 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-600'
-      case 'minorista':
-        return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
-      case 'consumidor_final':
-        return 'bg-red-100 text-red-800 border-red-300 dark:bg-red-900/30 dark:text-red-300 dark:border-red-600'
-      default:
-        return 'bg-gray-100 text-gray-800 border-gray-300 dark:bg-neutral-800 dark:text-gray-300 dark:border-neutral-600'
-    }
-  }
-
-  const getTypeLabel = (type: string) => {
-    switch (type) {
-      case 'mayorista':
-        return 'Mayorista'
-      case 'minorista':
-        return 'Minorista'
-      case 'consumidor_final':
-        return 'Cliente Final'
-      default:
-        return type
-    }
-  }
-
   const getTypeIcon = (type: string) => {
     switch (type) {
       case 'mayorista':
-        return Building2
       case 'minorista':
         return Building2
-      case 'consumidor_final':
-        return User
       default:
         return User
     }
@@ -109,17 +107,14 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
 
-    // Nombre obligatorio
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre es requerido'
     }
 
-    // Cédula/NIT obligatorio
     if (!formData.document.trim()) {
       newErrors.document = 'La cédula/NIT es obligatoria'
     }
 
-    // Validar email solo si se proporciona y no es 'N/A'
     const emailValue = formData.email.trim()
     if (emailValue && emailValue.toLowerCase() !== 'n/a' && !/\S+@\S+\.\S+/.test(emailValue)) {
       newErrors.email = 'El email no es válido'
@@ -131,7 +126,6 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
 
   const handleSave = () => {
     if (validateForm()) {
-      // Manejar email vacío o 'N/A' - convertir a string vacío para que el servicio lo maneje
       const emailValue = formData.email.trim()
       const processedEmail = emailValue && emailValue.toLowerCase() !== 'n/a' ? emailValue : ''
 
@@ -143,11 +137,11 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         address: formData.address.trim(),
         city: formData.city.trim(),
         state: formData.state.trim(),
-        type: formData.type,
-        status: formData.status,
-        creditLimit: 0, // Se maneja en el módulo de pagos
-        currentDebt: 0, // Se maneja en el módulo de pagos
-        createdAt: new Date().toISOString()
+        type: formData.type as Client['type'],
+        status: formData.status as Client['status'],
+        creditLimit: 0,
+        currentDebt: 0,
+        createdAt: new Date().toISOString(),
       }
 
       onSave(clientData)
@@ -165,302 +159,252 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
       city: '',
       state: '',
       type: 'consumidor_final',
-      status: 'active'
+      status: 'active',
     })
     setErrors({})
     onClose()
   }
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+    setFormData((prev) => ({ ...prev, [field]: value }))
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
+      setErrors((prev) => ({ ...prev, [field]: '' }))
     }
   }
 
   if (!isOpen) return null
 
-  const TypeIcon = getTypeIcon(formData.type)
   const isEdit = !!client
 
-  return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 flex-shrink-0 bg-red-50 dark:bg-red-900/20">
-          <div className="flex items-center space-x-3">
-            <Users className="h-5 w-5 md:h-6 md:w-6 text-red-600" />
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+  const typeOptions = [
+    { value: 'mayorista' as const, label: 'Mayorista' },
+    { value: 'minorista' as const, label: 'Minorista' },
+    { value: 'consumidor_final' as const, label: 'Consumidor Final' },
+  ]
+
+  const modal = (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 backdrop-blur-md dark:bg-black/75 xl:left-56">
+      <div
+        className="flex max-h-[min(100dvh,100vh)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-zinc-700/60 bg-zinc-950 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="client-modal-title"
+      >
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-950 px-4 py-4 md:px-6 md:py-5">
+          <div className="flex min-w-0 items-start gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10">
+              <UserPen className="h-5 w-5 text-red-500" strokeWidth={1.75} aria-hidden />
+            </div>
+            <div className="min-w-0">
+              <h2 id="client-modal-title" className="text-lg font-bold tracking-tight text-white md:text-xl">
                 {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
               </h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
+              <p className="mt-0.5 text-sm text-zinc-400">
                 {isEdit ? 'Modifica la información del cliente' : 'Agrega un nuevo cliente al sistema'}
               </p>
             </div>
           </div>
-          <Button
+          <button
+            type="button"
             onClick={handleClose}
-            variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 hover:bg-gray-200 dark:hover:bg-gray-700"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+            aria-label="Cerrar"
           >
-            <X className="h-5 w-5 text-gray-500 dark:text-gray-300 hover:text-gray-700 dark:hover:text-white" />
-          </Button>
-        </div>
+            <X className="h-5 w-5" strokeWidth={1.75} />
+          </button>
+        </header>
 
-        <div className="p-4 md:p-6 overflow-y-auto flex-1 bg-white dark:bg-neutral-950 min-h-0">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {/* Información Básica */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <User className="h-5 w-5 mr-2 text-red-600" />
-                  Información Básica
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-950 px-4 py-4 md:px-6 md:py-5">
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
+            <SectionCard icon={User} title="Información Básica">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Nombre del Cliente *
+                  <label htmlFor="client-name" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                    Nombre del Cliente <span className="text-red-400">*</span>
                   </label>
                   <input
+                    id="client-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.name ? 'border-red-400' : 'border-gray-600'
-                    }`}
-                    placeholder="Ingresa el nombre del cliente"
+                    className={cn(inputBase, errors.name && 'border-red-500/70 ring-1 ring-red-500/30')}
                   />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-400">{errors.name}</p>
-                  )}
+                  {errors.name && <p className="mt-1.5 text-sm text-red-400">{errors.name}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Tipo de Cliente
-                  </label>
-                  <div className="flex space-x-3">
-                            {[
-                              { value: 'mayorista', label: 'Mayorista' },
-                              { value: 'minorista', label: 'Minorista' },
-                              { value: 'consumidor_final', label: 'Consumidor Final' }
-                            ].map((type) => {
-                              const Icon = getTypeIcon(type.value)
-                              return (
-                                <button
-                                  key={type.value}
-                                  onClick={() => handleInputChange('type', type.value)}
-                                  className={`flex items-center space-x-2 px-4 py-2 rounded-lg border transition-all ${
-                                    formData.type === type.value
-                                      ? 'border-red-500 bg-red-600 text-white'
-                                      : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white bg-white dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700'
-                                  }`}
-                                >
-                                  <Icon className={`h-4 w-4 ${
-                                    formData.type === type.value ? 'text-white' : 'text-gray-500 dark:text-gray-400'
-                                  }`} />
-                                  <span className="text-sm font-medium">{type.label}</span>
-                                </button>
-                              )
-                            })}
+                  <span className="mb-2 block text-sm font-medium text-zinc-300">Tipo de Cliente</span>
+                  <div className="flex rounded-xl bg-zinc-800/90 p-1 ring-1 ring-zinc-700/80">
+                    {typeOptions.map((opt) => {
+                      const Icon = getTypeIcon(opt.value)
+                      const active = formData.type === opt.value
+                      return (
+                        <button
+                          key={opt.value}
+                          type="button"
+                          onClick={() => handleInputChange('type', opt.value)}
+                          className={cn(
+                            'flex min-h-[2.75rem] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-medium transition-all sm:flex-row sm:text-sm',
+                            active
+                              ? 'bg-red-600 text-white shadow-md shadow-red-900/30'
+                              : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200'
+                          )}
+                        >
+                          <Icon className={cn('h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4', active ? 'text-white' : 'text-zinc-500')} />
+                          <span className="leading-tight">{opt.label}</span>
+                        </button>
+                      )
+                    })}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
 
-            {/* Información de Contacto */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Mail className="h-5 w-5 mr-2 text-red-600" />
-                  Información de Contacto
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <SectionCard icon={Mail} title="Información de Contacto">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Cédula/NIT *
+                  <label htmlFor="client-document" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                    Cédula/NIT <span className="text-red-400">*</span>
                   </label>
                   <input
+                    id="client-document"
                     type="text"
                     value={formData.document}
                     onChange={(e) => handleInputChange('document', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.document ? 'border-red-400' : 'border-gray-600'
-                    }`}
-                    placeholder="12345678-9 o 900123456-7"
+                    className={cn(inputBase, errors.document && 'border-red-500/70')}
                   />
-                  {errors.document && (
-                    <p className="mt-1 text-sm text-red-400">{errors.document}</p>
-                  )}
+                  {errors.document && <p className="mt-1.5 text-sm text-red-400">{errors.document}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="client-phone" className="mb-1.5 block text-sm font-medium text-zinc-300">
                     Teléfono
                   </label>
                   <input
+                    id="client-phone"
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.phone ? 'border-red-400' : 'border-gray-600'
-                    }`}
-                    placeholder="+52 55 1234 5678"
+                    className={inputBase}
                   />
-                  {errors.phone && (
-                    <p className="mt-1 text-sm text-red-400">{errors.phone}</p>
-                  )}
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                    Email <span className="text-gray-500 text-xs">(opcional)</span>
+                  <label htmlFor="client-email" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                    Email <span className="font-normal text-zinc-500">(opcional)</span>
                   </label>
                   <input
+                    id="client-email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.email ? 'border-red-400' : 'border-gray-600'
-                    }`}
-                    placeholder="cliente@ejemplo.com o déjalo vacío"
+                    className={cn(inputBase, errors.email && 'border-red-500/70')}
                   />
-                  {errors.email && (
-                    <p className="mt-1 text-sm text-red-400">{errors.email}</p>
-                  )}
-                  <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                    Si no tienes email, déjalo vacío o escribe "N/A"
+                  {errors.email && <p className="mt-1.5 text-sm text-red-400">{errors.email}</p>}
+                  <p className="mt-1.5 text-xs leading-relaxed text-zinc-500">
+                    Si no tienes email, déjalo vacío o escribe &quot;N/A&quot;
                   </p>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
 
-            {/* Información de Ubicación */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <MapPin className="h-5 w-5 mr-2 text-red-600" />
-                  Información de Ubicación
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <SectionCard icon={MapPin} title="Información de Ubicación">
+              <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <label htmlFor="client-address" className="mb-1.5 block text-sm font-medium text-zinc-300">
                     Dirección
                   </label>
                   <input
+                    id="client-address"
                     type="text"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                      errors.address ? 'border-red-400' : 'border-gray-600'
-                    }`}
-                    placeholder="Calle 30 #25-15, Barrio La Palma"
+                    className={inputBase}
                   />
-                  {errors.address && (
-                    <p className="mt-1 text-sm text-red-400">{errors.address}</p>
-                  )}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label htmlFor="client-city" className="mb-1.5 block text-sm font-medium text-zinc-300">
                       Ciudad
                     </label>
                     <input
+                      id="client-city"
                       type="text"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                        errors.city ? 'border-red-400' : 'border-gray-600'
-                      }`}
-                      placeholder="Sincelejo"
+                      className={inputBase}
                     />
-                    {errors.city && (
-                      <p className="mt-1 text-sm text-red-400">{errors.city}</p>
-                    )}
                   </div>
-
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label htmlFor="client-state" className="mb-1.5 block text-sm font-medium text-zinc-300">
                       Estado
                     </label>
                     <input
+                      id="client-state"
                       type="text"
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-red-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 border-gray-300 dark:border-neutral-600 placeholder-gray-500 dark:placeholder-gray-400 ${
-                        errors.state ? 'border-red-400' : 'border-gray-600'
-                      }`}
-                      placeholder="Sucre"
+                      className={inputBase}
                     />
-                    {errors.state && (
-                      <p className="mt-1 text-sm text-red-400">{errors.state}</p>
-                    )}
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </SectionCard>
 
-            {/* Estado */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                  <Phone className="h-5 w-5 mr-2 text-red-600" />
-                  Estado del Cliente
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center space-x-4">
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="active"
-                      checked={formData.status === 'active'}
-                      onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Activo</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input
-                      type="radio"
-                      name="status"
-                      value="inactive"
-                      checked={formData.status === 'inactive'}
-                      onChange={(e) => handleInputChange('status', e.target.value)}
-                      className="h-4 w-4 text-red-600 focus:ring-red-500 border-gray-300 dark:border-neutral-600 bg-white dark:bg-neutral-800"
-                    />
-                    <span className="ml-2 text-sm font-medium text-gray-700 dark:text-gray-300">Inactivo</span>
-                  </label>
-                </div>
-              </CardContent>
-            </Card>
+            <SectionCard icon={ToggleLeft} title="Estado del Cliente">
+              <fieldset className="flex flex-wrap gap-6">
+                <legend className="sr-only">Estado del cliente</legend>
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="radio"
+                    name="client-status"
+                    value="active"
+                    checked={formData.status === 'active'}
+                    onChange={(e) => handleInputChange('status', e.target.value)}
+                    className="h-4 w-4 border-zinc-500 bg-zinc-800 text-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0 focus:ring-offset-zinc-950"
+                  />
+                  <span className="text-sm font-medium text-zinc-200">Activo</span>
+                </label>
+                <label className="flex cursor-pointer items-center gap-2.5">
+                  <input
+                    type="radio"
+                    name="client-status"
+                    value="inactive"
+                    checked={formData.status === 'inactive'}
+                    onChange={(e) => handleInputChange('status', e.target.value)}
+                    className="h-4 w-4 border-zinc-500 bg-zinc-800 text-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0 focus:ring-offset-zinc-950"
+                  />
+                  <span className="text-sm font-medium text-zinc-200">Inactivo</span>
+                </label>
+              </fieldset>
+            </SectionCard>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end space-x-4 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
-          <Button
+        <footer
+          className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-zinc-800 bg-zinc-950 px-4 py-4 md:px-6"
+          style={{ paddingBottom: `max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))` }}
+        >
+          <button
+            type="button"
             onClick={handleClose}
-            variant="outline"
-            className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-500/80 bg-transparent px-5 text-sm font-medium text-white transition-colors hover:bg-zinc-800/80"
           >
             Cancelar
-          </Button>
-          <Button
+          </button>
+          <button
+            type="button"
             onClick={handleSave}
-            className="bg-red-600 hover:bg-red-700 text-white font-medium px-6 py-2 shadow-md"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-white px-6 text-sm font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-zinc-100"
           >
             {isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
-          </Button>
-        </div>
+          </button>
+        </footer>
       </div>
     </div>
   )
+
+  if (!mounted || typeof document === 'undefined') return null
+  return createPortal(modal, document.body)
 }

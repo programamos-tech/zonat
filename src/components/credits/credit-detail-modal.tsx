@@ -502,7 +502,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-4 md:p-6 border-t border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-900 flex-shrink-0 sticky bottom-0">
+        <div className="flex flex-shrink-0 items-center justify-between bg-white p-4 pt-6 dark:bg-neutral-950 md:p-6 sticky bottom-0">
           <div className="flex-1"></div>
           <div className="flex space-x-3">
             <Button

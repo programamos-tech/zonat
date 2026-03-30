@@ -1517,7 +1517,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
         </div>
 
         {/* Footer - Sticky siempre visible */}
-        <div className="flex-shrink-0 border-t border-gray-200 dark:border-neutral-700 bg-white dark:bg-neutral-900 p-4 md:p-6" style={{ paddingBottom: 'calc(max(56px, env(safe-area-inset-bottom)) + 1rem)' }}>
+        <div className="flex-shrink-0 bg-white p-4 pt-6 dark:bg-neutral-950 md:p-6" style={{ paddingBottom: 'calc(max(56px, env(safe-area-inset-bottom)) + 1rem)' }}>
           <div className="flex items-center justify-end gap-3">
             <Button
               onClick={handleClose}

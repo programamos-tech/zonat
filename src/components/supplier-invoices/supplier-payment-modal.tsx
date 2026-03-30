@@ -2,13 +2,13 @@
 
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { X, DollarSign, CreditCard, Banknote, Shuffle } from 'lucide-react'
 import { SupplierInvoice } from '@/types'
 import { useAuth } from '@/contexts/auth-context'
 import { getCurrentUser } from '@/lib/store-helper'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
+import { cn } from '@/lib/utils'
 
 interface SupplierPaymentModalProps {
   isOpen: boolean
@@ -21,7 +21,7 @@ export function SupplierPaymentModal({
   isOpen,
   onClose,
   invoice,
-  onAddPayment
+  onAddPayment,
 }: SupplierPaymentModalProps) {
   const { user } = useAuth()
   const [amountStr, setAmountStr] = useState('')
@@ -38,8 +38,7 @@ export function SupplierPaymentModal({
     return parseInt(numeric, 10).toLocaleString('es-CO')
   }
 
-  const parseAmount = (value: string) =>
-    parseFloat(value.replace(/[^\d]/g, '')) || 0
+  const parseAmount = (value: string) => parseFloat(value.replace(/[^\d]/g, '')) || 0
 
   useEffect(() => {
     if (isOpen) {
@@ -106,7 +105,7 @@ export function SupplierPaymentModal({
         transferAmount,
         notes: notes.trim() || undefined,
         userId,
-        userName: userName || 'Usuario'
+        userName: userName || 'Usuario',
       })
       onAddPayment()
       onClose()
@@ -130,148 +129,161 @@ export function SupplierPaymentModal({
     new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
-      minimumFractionDigits: 0
+      minimumFractionDigits: 0,
     }).format(n)
 
+  const inputClass =
+    'w-full rounded-lg border border-zinc-300 bg-white px-4 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/70 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm dark:bg-black/60">
-      <div className="max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-md overflow-y-auto rounded-2xl border border-gray-200 bg-white shadow-2xl dark:border-neutral-700 dark:bg-neutral-900">
-        <div className="flex items-center justify-between p-4 border-b border-gray-200 dark:border-neutral-600 bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/30 dark:to-orange-800/30">
-          <div className="flex items-center gap-2">
-            <DollarSign className="h-5 w-5 text-orange-600" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Registrar abono</h2>
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm md:left-56">
+      <div
+        className="max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="payment-modal-title"
+      >
+        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <DollarSign className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
+            <h2 id="payment-modal-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              Registrar abono
+            </h2>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={onClose}>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
+            onClick={onClose}
+          >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <Card className="border-0 shadow-none">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-normal text-gray-600 dark:text-gray-400">
+          <div className="space-y-4 p-4">
+            <div className="space-y-1">
+              <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 {invoice.supplierName} · {invoice.invoiceNumber}
-              </CardTitle>
-              <p className="text-base font-semibold text-orange-600 dark:text-orange-400">
-                Pendiente: {formatCurrency(pending)}
               </p>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label>Monto del abono</Label>
-                <input
-                  value={amountStr}
-                  onChange={(e) => setAmountStr(formatNumber(e.target.value))}
-                  className="w-full h-12 rounded-xl border-2 border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800 px-4 text-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                  placeholder="0"
-                />
-              </div>
+              <p className="text-sm text-zinc-500 dark:text-zinc-500">
+                Pendiente:{' '}
+                <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                  {formatCurrency(pending)}
+                </span>
+              </p>
+            </div>
 
-              <div className="space-y-2">
-                <Label>Método</Label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(
-                    [
-                      { v: 'transfer' as const, label: 'Transferencia', Icon: CreditCard },
-                      { v: 'cash' as const, label: 'Efectivo', Icon: Banknote },
-                      { v: 'mixed' as const, label: 'Mixto', Icon: Shuffle }
-                    ] as const
-                  ).map(({ v, label, Icon }) => (
-                    <button
-                      key={v}
-                      type="button"
-                      onClick={() => {
-                        setPaymentMethod(v)
-                        if (v !== 'mixed') {
-                          setCashStr('')
-                          setTransferStr('')
-                        }
-                      }}
-                      className={`flex flex-col items-center gap-1 p-3 rounded-xl border-2 text-xs font-medium transition-all ${
-                        paymentMethod === v
-                          ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/30 text-orange-800 dark:text-orange-200'
-                          : 'border-gray-200 dark:border-neutral-600 text-gray-600 dark:text-gray-400'
-                      }`}
-                    >
-                      <Icon className="h-5 w-5" />
-                      {label}
-                    </button>
-                  ))}
+            <div className="space-y-2">
+              <Label className="text-zinc-700 dark:text-zinc-300">Monto del abono</Label>
+              <input
+                value={amountStr}
+                onChange={(e) => setAmountStr(formatNumber(e.target.value))}
+                className={cn(inputClass, 'h-12 text-lg')}
+                placeholder="0"
+                inputMode="numeric"
+                autoComplete="off"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-zinc-700 dark:text-zinc-300">Método</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { v: 'transfer' as const, label: 'Transferencia', Icon: CreditCard },
+                    { v: 'cash' as const, label: 'Efectivo', Icon: Banknote },
+                    { v: 'mixed' as const, label: 'Mixto', Icon: Shuffle },
+                  ] as const
+                ).map(({ v, label, Icon }) => (
+                  <button
+                    key={v}
+                    type="button"
+                    onClick={() => {
+                      setPaymentMethod(v)
+                      if (v !== 'mixed') {
+                        setCashStr('')
+                        setTransferStr('')
+                      }
+                    }}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 rounded-lg border p-3 text-xs font-medium transition-colors',
+                      paymentMethod === v
+                        ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-zinc-400 dark:bg-zinc-800 dark:text-zinc-50'
+                        : 'border-zinc-200 bg-transparent text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50'
+                    )}
+                  >
+                    <Icon className="h-5 w-5" strokeWidth={1.5} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {paymentMethod === 'mixed' && (
+              <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/40">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Desglose del abono mixto</p>
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                    <Banknote className="h-4 w-4" strokeWidth={1.5} />
+                    Monto en efectivo
+                  </Label>
+                  <input
+                    value={cashStr}
+                    onChange={(e) => setCashStr(formatNumber(e.target.value))}
+                    className={cn(inputClass, 'h-11 text-base')}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
                 </div>
-              </div>
-
-              {paymentMethod === 'mixed' && (
-                <div className="space-y-3 rounded-xl border-2 border-orange-200 dark:border-orange-800/50 bg-orange-50/50 dark:bg-orange-950/20 p-4">
-                  <p className="text-sm font-medium text-orange-900 dark:text-orange-200">
-                    Desglose del abono mixto
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                    <CreditCard className="h-4 w-4" strokeWidth={1.5} />
+                    Monto en transferencia
+                  </Label>
+                  <input
+                    value={transferStr}
+                    onChange={(e) => setTransferStr(formatNumber(e.target.value))}
+                    className={cn(inputClass, 'h-11 text-base')}
+                    placeholder="0"
+                    inputMode="numeric"
+                  />
+                </div>
+                {amountStr && (
+                  <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                    Total abono:{' '}
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(parseAmount(amountStr))}
+                    </span>
+                    {' · '}
+                    Suma desglose:{' '}
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">
+                      {formatCurrency(parseAmount(cashStr) + parseAmount(transferStr))}
+                    </span>
                   </p>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <Banknote className="h-4 w-4" />
-                      Monto en efectivo
-                    </Label>
-                    <input
-                      value={cashStr}
-                      onChange={(e) => setCashStr(formatNumber(e.target.value))}
-                      className="w-full h-11 rounded-xl border-2 border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-4 text-base text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="0"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="flex items-center gap-2">
-                      <CreditCard className="h-4 w-4" />
-                      Monto en transferencia
-                    </Label>
-                    <input
-                      value={transferStr}
-                      onChange={(e) => setTransferStr(formatNumber(e.target.value))}
-                      className="w-full h-11 rounded-xl border-2 border-gray-200 dark:border-neutral-600 bg-white dark:bg-neutral-800 px-4 text-base text-gray-900 dark:text-white focus:ring-2 focus:ring-orange-500"
-                      placeholder="0"
-                    />
-                  </div>
-                  {amountStr && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400">
-                      Total abono:{' '}
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(parseAmount(amountStr))}
-                      </span>
-                      {' · '}
-                      Suma desglose:{' '}
-                      <span className="font-semibold text-gray-900 dark:text-white">
-                        {formatCurrency(
-                          parseAmount(cashStr) + parseAmount(transferStr)
-                        )}
-                      </span>
-                    </p>
-                  )}
-                </div>
-              )}
-
-              <div className="space-y-2">
-                <Label>Notas (opcional)</Label>
-                <textarea
-                  value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
-                  rows={2}
-                  className="w-full rounded-xl border-2 border-gray-200 dark:border-neutral-600 bg-gray-50 dark:bg-neutral-800 px-4 py-2 text-sm text-gray-900 dark:text-white"
-                />
+                )}
               </div>
+            )}
 
-              {error && (
-                <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              )}
-            </CardContent>
-          </Card>
+            <div className="space-y-2">
+              <Label className="text-zinc-700 dark:text-zinc-300">Notas (opcional)</Label>
+              <textarea
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                rows={2}
+                className={cn(inputClass, 'min-h-[4rem] resize-y py-2.5 text-sm')}
+              />
+            </div>
 
-          <div className="p-4 border-t border-gray-200 dark:border-neutral-700 flex gap-2 justify-end bg-gray-50 dark:bg-neutral-900/80">
-            <Button type="button" variant="outline" onClick={onClose}>
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+          </div>
+
+          <div className="flex flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+            <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancelar
             </Button>
-            <Button
-              type="submit"
-              disabled={submitting}
-              className="bg-orange-600 hover:bg-orange-700 text-white"
-            >
+            <Button type="submit" size="sm" disabled={submitting}>
               {submitting ? 'Guardando…' : 'Registrar abono'}
             </Button>
           </div>

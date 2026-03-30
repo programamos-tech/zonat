@@ -42,6 +42,8 @@ export interface Product {
   categoryId: string
   brand: string
   status: 'active' | 'inactive' | 'discontinued' | 'out_of_stock'
+  /** URL pública (Storage) para catálogo / ficha del producto */
+  imageUrl?: string | null
   createdAt: string
   updatedAt: string
 }
@@ -84,7 +86,7 @@ export interface StoreStockTransfer {
   fromStoreName?: string
   toStoreId: string
   toStoreName?: string
-  status: 'pending' | 'in_transit' | 'received' | 'cancelled'
+  status: 'pending' | 'in_transit' | 'received' | 'partially_received' | 'cancelled'
   description?: string // Descripción general de la transferencia
   notes?: string
   createdBy?: string

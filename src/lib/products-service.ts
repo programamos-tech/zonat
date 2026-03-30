@@ -400,6 +400,7 @@ export class ProductsService {
           cost: productCost,
           stock: stock,
           status: product.status,
+          imageUrl: product.image_url || undefined,
           createdAt: product.created_at,
           updatedAt: product.updated_at
         }
@@ -596,6 +597,7 @@ export class ProductsService {
             cost: productCost,
             stock: stock,
             status: product.status,
+            imageUrl: product.image_url || undefined,
             createdAt: product.created_at,
             updatedAt: product.updated_at
           }
@@ -788,6 +790,7 @@ export class ProductsService {
         cost: productCost,
         stock: stock,
         status: data.status,
+        imageUrl: data.image_url || undefined,
         createdAt: data.created_at,
         updatedAt: data.updated_at
       }
@@ -887,7 +890,8 @@ export class ProductsService {
         cost: productData.cost,
         stock_warehouse: productData.stock.warehouse,
         stock_store: productData.stock.store,
-        status: productData.status
+        status: productData.status,
+        image_url: productData.imageUrl?.trim() || null,
       }
 
       const { data, error } = await supabase
@@ -959,6 +963,7 @@ export class ProductsService {
           total: (data.stock_warehouse || 0) + (data.stock_store || 0)
         },
         status: data.status,
+        imageUrl: data.image_url || undefined,
         createdAt: data.created_at,
         updatedAt: data.updated_at
       }
@@ -984,6 +989,9 @@ export class ProductsService {
       if (updates.brand !== undefined) updateData.brand = updates.brand || null
       if (updates.reference) updateData.reference = updates.reference
       if (updates.status) updateData.status = updates.status
+      if ('imageUrl' in updates) {
+        updateData.image_url = updates.imageUrl?.trim() ? updates.imageUrl.trim() : null
+      }
 
       // Cost y Price: en microtiendas se actualizan en store_stock, en tienda principal en products
       if (isMainStore) {
@@ -1160,7 +1168,7 @@ export class ProductsService {
       // Búsqueda simplificada sin timeout - buscar en referencia y nombre
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, created_at')
+        .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, image_url, created_at, updated_at')
         .or(`reference.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
         .order('created_at', { ascending: false })
         .limit(100)
@@ -1235,8 +1243,9 @@ export class ProductsService {
           cost: productCost,
           stock: stock,
           status: product.status,
+          imageUrl: product.image_url || undefined,
           createdAt: product.created_at,
-          updatedAt: product.created_at // Usar created_at como fallback
+          updatedAt: product.updated_at || product.created_at
         }
       })
 

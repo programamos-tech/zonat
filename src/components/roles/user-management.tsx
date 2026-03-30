@@ -1,16 +1,16 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '@/contexts/auth-context'
 import { User, Permission, Store } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Label } from '@/components/ui/label'
 import { Switch } from '@/components/ui/switch'
-import { Plus, Search, Edit, Trash2, Eye, UserCheck, UserX, X, User, Shield, Store as StoreIcon } from 'lucide-react'
+import { Plus, Search, Edit, Trash2, Eye, UserCheck, UserX, X, User, Shield, Store as StoreIcon, Users } from 'lucide-react'
 import { toast } from 'sonner'
 import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 import { StoresService } from '@/lib/stores-service'
@@ -88,8 +88,17 @@ const roleDescriptions = {
   'inventario': 'Solo productos (permisos según lo que marques abajo)'
 }
 
+/** Mismo patrón que facturador / búsqueda unificada (select nativo + chevron) */
+const nativeSelectChevronStyle = {
+  backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+  backgroundRepeat: 'no-repeat',
+  backgroundPosition: 'right 0.65rem center',
+  backgroundSize: '1rem'
+} as const
+
 export function UserManagement() {
   const { user: currentUser, getAllUsers, createUser, updateUser, deleteUser } = useAuth()
+  const [mounted, setMounted] = useState(false)
   const [users, setUsers] = useState<User[]>([])
   const [stores, setStores] = useState<Store[]>([])
   const [mainStore, setMainStore] = useState<Store | null>(null)
@@ -116,6 +125,9 @@ export function UserManagement() {
     storeId: '' // ID de la tienda asignada
   })
 
+  useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Aplicar permisos cuando se cambia el rol (solo al crear, no al editar)
   useEffect(() => {
@@ -440,83 +452,102 @@ export function UserManagement() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      <div className="flex h-64 items-center justify-center">
+        <div
+          className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-emerald-500 dark:border-zinc-700 dark:border-t-emerald-500"
+          aria-hidden
+        />
       </div>
     )
   }
 
+  const shellCard =
+    'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-        <CardHeader className="p-3 md:p-6">
-          <div className="flex flex-col gap-3 md:gap-4">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
-              <div className="flex-1 min-w-0">
-                <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                  <UserCheck className="h-5 w-5 md:h-6 md:w-6 text-indigo-600 flex-shrink-0" />
-                  <span className="flex-shrink-0">Gestión de Usuarios</span>
-                </CardTitle>
-                <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
-                  Administra los usuarios y sus permisos del sistema
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-300 mt-1 md:hidden">
-                  Administra los usuarios
-                </p>
-              </div>
-              <Button 
-                onClick={openCreateModal}
-                className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none"
-              >
-                <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
-                <span className="hidden sm:inline">Nuevo Usuario</span>
-                <span className="sm:hidden">Nuevo</span>
-              </Button>
+      <Card className={shellCard}>
+        <CardHeader className="p-4 md:p-6">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 flex-1">
+              <CardTitle className="flex flex-wrap items-center gap-2.5 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+                <Users
+                  className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400"
+                  strokeWidth={1.5}
+                  aria-hidden
+                />
+                <span>Gestión de usuarios</span>
+              </CardTitle>
+              <p className="mt-1.5 text-sm text-zinc-500 dark:text-zinc-400">
+                Administra los usuarios y sus permisos del sistema
+              </p>
             </div>
+            <Button
+              type="button"
+              variant="default"
+              size="sm"
+              onClick={openCreateModal}
+              className="h-9 shrink-0 gap-2 rounded-lg border-0 bg-emerald-600 px-4 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-emerald-700 hover:shadow-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/45 dark:hover:bg-emerald-500 [&_svg]:text-white"
+            >
+              <Plus className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+              <span className="hidden sm:inline">Nuevo usuario</span>
+              <span className="sm:hidden">Nuevo</span>
+            </Button>
           </div>
         </CardHeader>
       </Card>
 
       {/* Modal de creación */}
-      {isCreateModalOpen && (
-        <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                    Crear Nuevo Usuario
-                  </h2>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                    Completa la información del nuevo usuario y asigna los permisos correspondientes.
-                  </p>
-                </div>
-              </div>
-              <Button
-                onClick={() => {
-                  setIsCreateModalOpen(false)
-                  resetForm()
-                }}
-                variant="ghost"
-                size="sm"
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+      {isCreateModalOpen &&
+        mounted &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-3 backdrop-blur-sm dark:bg-black/60 sm:p-6 sm:py-10 lg:px-12 md:left-56"
+              style={{
+                paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
+              }}
+            >
+              <div className="flex max-h-[min(88dvh,920px)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-h-[min(94vh,920px)] sm:max-w-2xl lg:max-w-4xl">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+                  <div className="flex items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <UserCheck className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                      <div className="min-w-0">
+                        <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
+                          Crear usuario
+                        </h2>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+                          Datos, rol y permisos del nuevo usuario
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setIsCreateModalOpen(false)
+                        resetForm()
+                      }}
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 shrink-0 touch-manipulation rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none hover:translate-y-0 hover:bg-zinc-100 hover:shadow-none hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                    >
+                      <X className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+                    </Button>
+                  </div>
 
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div className="bg-zinc-50/50 px-3 pb-2 pt-4 dark:bg-zinc-950/80 sm:px-6 sm:pt-5">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-6">
                   {/* Información Básica */}
                   <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <UserCheck className="h-5 w-5 mr-2 text-blue-400" />
+                        <UserCheck className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
                         Información Básica
                       </CardTitle>
                     </CardHeader>
@@ -530,7 +561,7 @@ export function UserManagement() {
                                 type="text"
                                 value={formData.name}
                                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900"
+                                className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-gray-900 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
                                 placeholder="Ej: Juan Pérez"
                               />
                             </div>
@@ -542,7 +573,7 @@ export function UserManagement() {
                                 type="email"
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900"
+                                className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-gray-900 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
                                 placeholder="juan@zonat.com"
                               />
                             </div>
@@ -556,7 +587,7 @@ export function UserManagement() {
                                 type="password"
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900"
+                                className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-gray-900 focus:border-emerald-500/50 focus:outline-none focus:ring-2 focus:ring-emerald-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
                                 placeholder="Mínimo 6 caracteres"
                               />
                             </div>
@@ -565,7 +596,7 @@ export function UserManagement() {
                                 Rol *
                               </label>
                               <Select value={formData.role} onValueChange={applyRolePermissions}>
-                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900">
+                                <SelectTrigger className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-gray-900 focus:ring-emerald-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -592,7 +623,7 @@ export function UserManagement() {
                                   setFormData({ ...formData, storeId: value === MAIN_STORE_ID ? '' : value })
                                 }}
                               >
-                                <SelectTrigger className="w-full px-3 py-2 border border-gray-300 dark:border-neutral-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-900">
+                                <SelectTrigger className="w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-gray-900 focus:ring-emerald-500/30 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white">
                                   <SelectValue placeholder="Seleccionar tienda (opcional)" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -623,13 +654,13 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <Shield className="h-5 w-5 mr-2 text-blue-400" />
+                        <Shield className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
                         Descripción del Rol
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
-                            <p className="text-sm text-blue-700 dark:text-blue-300">
+                          <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/[0.06] p-4 dark:border-emerald-500/20 dark:bg-emerald-500/10">
+                            <p className="text-sm text-zinc-800 dark:text-zinc-200">
                               <span className="font-semibold">
                                 {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
                               </span>
@@ -642,19 +673,19 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <User className="h-5 w-5 mr-2 text-blue-400" />
+                        <User className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
                         Estado del Usuario
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                          <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                          <div className="flex items-center space-x-3 rounded-xl border border-zinc-200/90 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-900/40">
                             <Switch
                               id="isActive"
                               checked={formData.isActive}
                               onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                              className="data-[state=checked]:bg-blue-600"
+                              className="data-[state=checked]:bg-emerald-600"
                             />
-                            <Label htmlFor="isActive" className="text-base font-medium text-blue-700 dark:text-blue-300">
+                            <Label htmlFor="isActive" className="text-base font-medium text-zinc-800 dark:text-zinc-200">
                               Usuario Activo
                             </Label>
                           </div>
@@ -667,24 +698,24 @@ export function UserManagement() {
                   <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
                     <CardHeader>
                       <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center">
-                        <Shield className="h-5 w-5 mr-2 text-blue-400" />
+                        <Shield className="mr-2 h-5 w-5 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
                         Permisos del Sistema
                       </CardTitle>
-                      <div className="text-sm text-gray-600 dark:text-gray-400 bg-blue-100 dark:bg-blue-900/30 px-3 py-1 rounded-lg border border-blue-200 dark:border-blue-800 mt-2">
-                        Rol: <span className="font-semibold text-blue-600 dark:text-blue-400">
+                      <div className="mt-2 rounded-lg border border-zinc-200/90 bg-zinc-100/90 px-3 py-1 text-sm text-zinc-600 dark:border-zinc-700 dark:bg-zinc-800/80 dark:text-zinc-400">
+                        Rol: <span className="font-semibold text-zinc-900 dark:text-zinc-100">
                           {roleOptions.find(r => r.value === formData.role)?.label}
                         </span>
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-3">
                           {moduleOptions.map(module => (
-                            <div key={module.value} className="border border-gray-200 dark:border-neutral-600 rounded-xl p-4 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
-                              <label className="flex items-center space-x-3 cursor-pointer">
+                            <div key={module.value} className="rounded-xl border border-gray-200 bg-gray-50 p-4 transition-colors hover:bg-gray-100 dark:border-neutral-600 dark:bg-neutral-800 dark:hover:bg-neutral-700">
+                              <label className="flex cursor-pointer items-center space-x-3">
                                 <input
                                   type="checkbox"
                                   checked={hasModuleAccess(module.value)}
                                   onChange={() => toggleModule(module.value)}
-                                  className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                                  className="h-5 w-5 rounded border-zinc-300 bg-zinc-100 accent-emerald-600 focus:ring-2 focus:ring-emerald-500/40 dark:border-zinc-600 dark:bg-zinc-800"
                                 />
                                 <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
                               </label>
@@ -694,105 +725,120 @@ export function UserManagement() {
                   </Card>
                 </div>
               </div>
-            </div>
+                  </div>
 
-            {/* Footer */}
-            <div 
-              className="flex items-center justify-end gap-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0 sticky bottom-0"
-              style={{
-                paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)`
-              }}
-            >
-              <Button 
-                variant="outline" 
-                onClick={() => {
-                  setIsCreateModalOpen(false)
-                  resetForm()
-                }}
-                className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600"
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleCreateUser}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                <UserCheck className="h-4 w-4 mr-2" />
-                Crear Usuario
-              </Button>
+                  <div
+                    className="flex flex-col-reverse justify-end gap-2 border-t border-zinc-200/90 bg-white px-3 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-row sm:gap-2.5 sm:px-6 sm:pb-4"
+                    style={{
+                      paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
+                    }}
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setIsCreateModalOpen(false)
+                        resetForm()
+                      }}
+                      className="h-9 w-full touch-manipulation border border-zinc-300 bg-white text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto sm:flex-none"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleCreateUser}
+                      className="h-9 w-full touch-manipulation bg-emerald-600 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-emerald-700 dark:hover:bg-emerald-500 sm:w-auto sm:flex-none [&_svg]:text-white"
+                    >
+                      <UserCheck className="mr-2 h-4 w-4" strokeWidth={1.5} aria-hidden />
+                      Crear usuario
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          ),
+          document.body
+        )}
 
-      {/* Search and Filters */}
-      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
+      {/* Search and Filters — input nativo + selects nativos (misma línea base que facturador / logs) */}
+      <Card className={shellCard}>
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col gap-2 md:gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
+          <div className="flex flex-col gap-2 md:h-11 md:min-h-[2.75rem] md:flex-row md:gap-0 md:overflow-hidden md:rounded-xl md:border md:border-zinc-200/90 md:bg-white md:shadow-sm dark:md:border-zinc-700 dark:md:bg-zinc-950">
+            <div className="group relative min-w-0 flex-1">
+              <span className="sr-only">Buscar usuario</span>
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 z-[1] h-4 w-4 -translate-y-1/2 text-zinc-400 transition-colors group-focus-within:text-emerald-600 dark:group-focus-within:text-emerald-400"
+                strokeWidth={1.5}
+                aria-hidden
+              />
+              <input
                 id="search"
+                type="search"
+                autoComplete="off"
                 placeholder="Buscar usuario..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-9 md:pl-10 py-2 md:py-2.5 text-sm"
+                className="h-11 w-full min-w-0 rounded-lg border border-zinc-200/90 bg-white py-2 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-500/45 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 md:h-full md:rounded-none md:border-0 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-emerald-500/25 dark:md:bg-transparent dark:md:focus-visible:ring-emerald-500/20"
               />
             </div>
-            <div className="grid grid-cols-2 gap-2 md:gap-4">
-              <div>
-                <Label htmlFor="roleFilter" className="text-xs md:text-sm mb-1 md:mb-2 hidden md:block">Filtrar por rol</Label>
-                <Select value={roleFilter} onValueChange={setRoleFilter}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos los roles</SelectItem>
-                    {roleOptions.map(role => (
-                      <SelectItem key={role.value} value={role.value}>
-                        {role.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div>
-                <Label htmlFor="statusFilter" className="text-xs md:text-sm mb-1 md:mb-2 hidden md:block">Filtrar por estado</Label>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="active">Activos</SelectItem>
-                    <SelectItem value="inactive">Inactivos</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 md:contents">
+              <select
+                id="roleFilter"
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="h-11 w-full min-w-0 cursor-pointer appearance-none rounded-lg border border-zinc-200/90 bg-white px-3 py-2 pr-9 text-sm text-zinc-900 focus:border-emerald-500/45 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 md:h-full md:w-[min(18rem,32vw)] md:min-w-[14rem] md:shrink-0 md:rounded-none md:border-0 md:border-l md:border-zinc-200 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-emerald-500/25 dark:md:border-zinc-700 dark:md:bg-zinc-950 dark:md:focus-visible:ring-emerald-500/20"
+                style={nativeSelectChevronStyle}
+                aria-label="Filtrar por rol"
+              >
+                <option value="all">Todos los roles</option>
+                {roleOptions.map((role) => (
+                  <option key={role.value} value={role.value}>
+                    {role.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                id="statusFilter"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-11 w-full min-w-0 cursor-pointer appearance-none rounded-lg border border-zinc-200/90 bg-white px-3 py-2 pr-9 text-sm text-zinc-900 focus:border-emerald-500/45 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 md:h-full md:w-44 md:shrink-0 md:rounded-none md:border-0 md:border-l md:border-zinc-200 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-emerald-500/25 dark:md:border-zinc-700 dark:md:bg-zinc-950 dark:md:focus-visible:ring-emerald-500/20"
+                style={nativeSelectChevronStyle}
+                aria-label="Filtrar por estado"
+              >
+                <option value="all">Todos</option>
+                <option value="active">Activos</option>
+                <option value="inactive">Inactivos</option>
+              </select>
             </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Users List */}
-      <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
+      <Card className={shellCard}>
         <CardContent className="p-0">
           {filteredUsers.length === 0 ? (
-            <div className="text-center py-12">
-              <UserCheck className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
+            <div className="px-4 py-14 text-center md:px-6">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200/80 bg-zinc-50/80 text-zinc-400 dark:border-zinc-700 dark:bg-zinc-900/60">
+                <Users className="h-6 w-6" strokeWidth={1.5} aria-hidden />
+              </div>
+              <h3 className="mt-4 text-base font-semibold text-zinc-900 dark:text-zinc-100">
                 No se encontraron usuarios
               </h3>
-              <p className="text-gray-500 dark:text-gray-400 mb-4">
+              <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                 Comienza creando un nuevo usuario
               </p>
-              <Button 
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
                 onClick={openCreateModal}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
+                className="mt-4 h-9 gap-2 rounded-lg border-0 bg-emerald-600 px-4 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-emerald-700 hover:shadow-none focus-visible:ring-2 focus-visible:ring-emerald-500/45 dark:hover:bg-emerald-500 [&_svg]:text-white"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Nuevo Usuario
+                <Plus className="h-4 w-4" strokeWidth={1.5} aria-hidden />
+                Nuevo usuario
               </Button>
             </div>
           ) : (
@@ -814,96 +860,97 @@ export function UserManagement() {
                   return (
                     <div
                       key={user.id}
-                      className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2"
+                      className="space-y-3 rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30"
                     >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex min-w-0 flex-1 gap-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 flex-1 items-center gap-3">
                           <UserAvatar
                             name={user.name}
                             seed={user.id}
                             size="md"
-                            className="shrink-0 ring-2 ring-gray-200 dark:ring-neutral-600"
+                            className="shrink-0 ring-1 ring-zinc-200/80 dark:ring-zinc-700"
                           />
                           <div className="min-w-0 flex-1">
-                            <div className="mb-1 flex items-center gap-2">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">
-                                #{index + 1}
-                              </span>
-                              <span
-                                className="truncate text-xs font-semibold text-indigo-600 dark:text-indigo-400"
-                                title={user.email}
-                              >
-                                {user.email}
-                              </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs tabular-nums text-zinc-400 dark:text-zinc-500">#{index + 1}</span>
+                              <h3 className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50" title={user.name}>
+                                {user.name}
+                              </h3>
                             </div>
-                            <h3
-                              className="truncate text-sm font-semibold text-gray-900 dark:text-white"
-                              title={user.name}
-                            >
-                              {user.name}
-                            </h3>
+                            <p className="truncate text-xs text-zinc-500 dark:text-zinc-400" title={user.email}>
+                              {user.email}
+                            </p>
                             <p
-                              className="truncate text-xs text-gray-500 dark:text-gray-400"
-                              title={
-                                roleOptions.find((r) => r.value === user.role)?.label ||
-                                user.role
-                              }
+                              className="truncate text-xs text-zinc-500 dark:text-zinc-400"
+                              title={roleOptions.find(r => r.value === user.role)?.label || user.role}
                             >
-                              {roleOptions.find((r) => r.value === user.role)?.label ||
-                                user.role}
+                              {roleOptions.find(r => r.value === user.role)?.label || user.role}
                             </p>
                           </div>
                         </div>
-                        <Badge className={`${user.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400' : 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'} text-xs shrink-0`}>
-                          <div className="flex items-center space-x-1">
-                            {user.isActive ? (
-                              <span className="text-green-600 dark:text-green-400">●</span>
-                            ) : (
-                              <span className="text-red-600 dark:text-red-400">●</span>
-                            )}
-                            <span className="hidden sm:inline">{user.isActive ? 'Activo' : 'Inactivo'}</span>
-                          </div>
-                        </Badge>
+                        <span
+                          className={`inline-flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] font-medium ${
+                            user.isActive
+                              ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300'
+                              : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 dark:border-zinc-600'
+                          }`}
+                        >
+                          <UserCheck className="h-3 w-3" strokeWidth={1.5} aria-hidden />
+                          {user.isActive ? 'Activo' : 'Inactivo'}
+                        </span>
                       </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
+
+                      <div className="grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-2 dark:border-zinc-800">
                         <div className="text-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Rol</div>
-                          <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={roleOptions.find(r => r.value === user.role)?.label || user.role}>
+                          <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            Rol
+                          </div>
+                          <div
+                            className="truncate text-xs font-medium text-zinc-900 dark:text-zinc-100"
+                            title={roleOptions.find(r => r.value === user.role)?.label || user.role}
+                          >
                             {roleOptions.find(r => r.value === user.role)?.label || user.role}
                           </div>
                         </div>
                         <div className="text-center">
-                          <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Último Acceso</div>
-                          <div className="text-xs font-semibold text-gray-900 dark:text-white truncate" title={formatDateTime(user.lastLogin || '')}>
+                          <div className="mb-0.5 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                            Último acceso
+                          </div>
+                          <div
+                            className="truncate text-xs font-medium text-zinc-900 dark:text-zinc-100"
+                            title={formatDateTime(user.lastLogin || '')}
+                          >
                             {formatDateTime(user.lastLogin || '').split(',')[0]}
                           </div>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={formatDateTime(user.lastLogin || '')}>
-                            {user.lastLogin ? formatDateTime(user.lastLogin) : 'Nunca ha iniciado sesión'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1 shrink-0">
+
+                      <div className="flex items-center justify-between gap-2 border-t border-zinc-200/80 pt-2 dark:border-zinc-800">
+                        <p
+                          className="min-w-0 flex-1 truncate text-xs text-zinc-500 dark:text-zinc-400"
+                          title={user.lastLogin ? formatDateTime(user.lastLogin) : undefined}
+                        >
+                          {user.lastLogin ? formatDateTime(user.lastLogin) : 'Nunca ha iniciado sesión'}
+                        </p>
+                        <div className="flex shrink-0 items-center gap-0.5">
                           <Button
+                            type="button"
                             size="sm"
                             variant="ghost"
                             onClick={() => openEditModal(user)}
-                            className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
+                            className="h-9 w-9 shrink-0 rounded-lg p-0 text-zinc-600 hover:bg-zinc-100 hover:text-emerald-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-emerald-400"
                           >
-                            <Edit className="h-4 w-4" />
+                            <Edit className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                           </Button>
                           {user.id !== currentUser?.id && (
                             <Button
+                              type="button"
                               size="sm"
                               variant="ghost"
                               onClick={() => openDeleteModal(user)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
+                              className="h-9 w-9 shrink-0 rounded-lg p-0 text-zinc-600 hover:bg-red-500/10 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                             </Button>
                           )}
                         </div>
@@ -914,58 +961,69 @@ export function UserManagement() {
               </div>
 
               {/* Vista de Lista para Desktop */}
-              <div className="hidden md:block divide-y divide-gray-200 dark:divide-gray-700">
+              <div className="hidden md:block divide-y divide-zinc-200/80 dark:divide-zinc-800">
                 {filteredUsers.map(user => (
-                  <div key={user.id} className="p-4 md:p-6 hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <div
+                    key={user.id}
+                    className="p-4 transition-colors hover:bg-zinc-50/90 md:p-5 dark:hover:bg-zinc-800/40"
+                  >
                     <div className="flex items-center justify-between gap-4">
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <UserAvatar
-                            name={user.name}
-                            seed={user.id}
-                            size="md"
-                            className="shrink-0 ring-2 ring-gray-200 dark:ring-neutral-600"
-                          />
-                          <div className="min-w-0">
-                            <h3 className="font-semibold text-gray-900 dark:text-white">
-                              {user.name}
-                            </h3>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
-                              {user.email}
-                            </p>
+                      <div className="flex min-w-0 flex-1 items-center gap-3">
+                        <UserAvatar
+                          name={user.name}
+                          seed={user.id}
+                          size="md"
+                          className="shrink-0 ring-1 ring-zinc-200/80 dark:ring-zinc-700"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h3 className="font-semibold text-zinc-900 dark:text-zinc-50">{user.name}</h3>
+                            <span
+                              className={`inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs font-medium ${
+                                user.isActive
+                                  ? 'border-emerald-500/35 bg-emerald-500/10 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/15 dark:text-emerald-300'
+                                  : 'border-zinc-600 bg-zinc-800/60 text-zinc-400 dark:border-zinc-600'
+                              }`}
+                            >
+                              {user.isActive ? (
+                                <UserCheck className="h-3 w-3" strokeWidth={1.5} aria-hidden />
+                              ) : (
+                                <UserX className="h-3 w-3" strokeWidth={1.5} aria-hidden />
+                              )}
+                              {user.isActive ? 'Activo' : 'Inactivo'}
+                            </span>
+                            <span className="inline-flex items-center rounded-md border border-zinc-300/90 bg-transparent px-2 py-0.5 text-xs font-medium text-zinc-700 dark:border-zinc-600 dark:text-zinc-200">
+                              {roleOptions.find(r => r.value === user.role)?.label || user.role}
+                            </span>
                           </div>
-                          <Badge variant={user.isActive ? "default" : "secondary"}>
-                            {user.isActive ? <UserCheck className="h-3 w-3 mr-1" /> : <UserX className="h-3 w-3 mr-1" />}
-                            {user.isActive ? 'Activo' : 'Inactivo'}
-                          </Badge>
-                          <Badge variant="outline">
-                            {roleOptions.find(r => r.value === user.role)?.label || user.role}
-                          </Badge>
-                        </div>
-                        
-                        <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-                          Último acceso: {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                          <p className="truncate text-sm text-zinc-500 dark:text-zinc-400">{user.email}</p>
+                          <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                            Último acceso:{' '}
+                            {user.lastLogin ? new Date(user.lastLogin).toLocaleString() : 'Nunca'}
+                          </p>
                         </div>
                       </div>
-                      
-                      <div className="flex items-center space-x-2">
+
+                      <div className="flex shrink-0 items-center gap-0.5">
                         <Button
-                          variant="outline"
+                          type="button"
+                          variant="ghost"
                           size="sm"
                           onClick={() => openEditModal(user)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-100"
+                          className="h-9 w-9 shrink-0 rounded-lg p-0 text-zinc-600 hover:bg-zinc-100 hover:text-emerald-600 dark:text-zinc-500 dark:hover:bg-zinc-800 dark:hover:text-emerald-400"
                         >
-                          <Edit className="h-4 w-4" />
+                          <Edit className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                         </Button>
-                        
+
                         {user.id !== currentUser?.id && (
                           <Button
-                            variant="outline"
+                            type="button"
+                            variant="ghost"
                             size="sm"
                             onClick={() => openDeleteModal(user)}
-                            className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100"
+                            className="h-9 w-9 shrink-0 rounded-lg p-0 text-zinc-600 hover:bg-red-500/10 hover:text-red-600 dark:text-zinc-500 dark:hover:text-red-400"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <Trash2 className="h-4 w-4" strokeWidth={1.5} aria-hidden />
                           </Button>
                         )}
                       </div>
@@ -979,92 +1037,113 @@ export function UserManagement() {
       </Card>
 
       {/* Modal de edición */}
-      {isEditModalOpen && (
-        <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700 relative z-[10000]">
-            {/* Header */}
-            <div className="flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 flex-shrink-0">
-              <div className="flex items-center gap-3">
-                <UserCheck className="h-5 w-5 md:h-8 md:w-8 text-blue-600" />
-                <div>
-                  <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                    Editar Usuario
-                  </h2>
-                  <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                    Modifica la información del usuario y sus permisos
-                  </p>
-                </div>
-              </div>
-              <Button
-                onClick={() => setIsEditModalOpen(false)}
-                variant="ghost"
-                size="sm"
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-              >
-                <X className="h-5 w-5" />
-              </Button>
-            </div>
+      {isEditModalOpen &&
+        mounted &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          (
+            <div
+              className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-3 backdrop-blur-sm dark:bg-black/60 sm:p-6 sm:py-10 lg:px-12 md:left-56"
+              style={{
+                paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+                paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
+              }}
+            >
+              <div className="flex max-h-[min(88dvh,920px)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-h-[min(94vh,920px)] sm:max-w-2xl lg:max-w-4xl">
+                <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
+                  <div className="flex items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <UserCheck className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
+                      <div className="min-w-0">
+                        <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
+                          Editar usuario
+                        </h2>
+                        <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+                          Datos, rol y permisos
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      type="button"
+                      onClick={() => setIsEditModalOpen(false)}
+                      variant="ghost"
+                      size="sm"
+                      className="h-9 w-9 shrink-0 touch-manipulation rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none hover:translate-y-0 hover:bg-zinc-100 hover:shadow-none hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                    >
+                      <X className="h-5 w-5" strokeWidth={1.5} aria-hidden />
+                    </Button>
+                  </div>
 
-            {/* Content */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-6">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
+                  <div className="bg-zinc-50/50 px-3 pb-2 pt-4 dark:bg-zinc-950/80 sm:px-6 sm:pt-5">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
                 {/* Columna Izquierda - Información del Usuario */}
-                <div className="space-y-6">
+                <div className="space-y-4">
                   {/* Información Personal */}
-                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <User className="h-5 w-5 text-blue-600" />
-                        Información Personal
+                  <Card className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                    <CardHeader className="space-y-0 pb-2 pt-4 md:pt-5">
+                      <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                        <User className="h-5 w-5 text-zinc-500 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
+                        Información personal
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pb-5">
                       <div>
-                        <Label htmlFor="editName">Nombre Completo</Label>
+                        <Label htmlFor="editName" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                          Nombre completo
+                        </Label>
                         <Input
                           id="editName"
                           value={formData.name}
                           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5 h-11 rounded-lg border-2 border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 shadow-none transition-colors placeholder:text-zinc-400 focus:border-emerald-500/55 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950/80 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="editEmail">Email</Label>
+                        <Label htmlFor="editEmail" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                          Email
+                        </Label>
                         <Input
                           id="editEmail"
                           type="email"
                           value={formData.email}
                           onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                          className="mt-1"
+                          className="mt-1.5 h-11 rounded-lg border-2 border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 shadow-none transition-colors placeholder:text-zinc-400 focus:border-emerald-500/55 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950/80 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
                       </div>
                       <div>
-                        <Label htmlFor="editPassword">Nueva Contraseña (opcional)</Label>
+                        <Label htmlFor="editPassword" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                          Nueva contraseña (opcional)
+                        </Label>
                         <Input
                           id="editPassword"
                           type="password"
                           value={formData.password}
                           onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                           placeholder="Dejar vacío para mantener la actual"
-                          className="mt-1"
+                          className="mt-1.5 h-11 rounded-lg border-2 border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 shadow-none transition-colors placeholder:text-zinc-400 focus:border-emerald-500/55 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-950/80 dark:text-zinc-100 dark:placeholder:text-zinc-500"
                         />
                       </div>
                     </CardContent>
                   </Card>
 
                   {/* Rol y Estado */}
-                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-blue-600" />
-                        Rol y Estado
+                  <Card className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                    <CardHeader className="space-y-0 pb-2 pt-4 md:pt-5">
+                      <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                        <Shield className="h-5 w-5 text-zinc-500 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
+                        Rol y estado
                       </CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
+                    <CardContent className="space-y-4 pb-5">
                       <div>
-                        <Label htmlFor="editRole">Rol</Label>
+                        <Label htmlFor="editRole" className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                          Rol
+                        </Label>
                         <Select value={formData.role} onValueChange={applyRolePermissions}>
-                          <SelectTrigger className="mt-1">
+                          <SelectTrigger
+                            id="editRole"
+                            className="mt-1.5 h-11 rounded-lg border-2 border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm text-zinc-900 shadow-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-100 [&>svg]:text-zinc-500"
+                          >
                             <SelectValue />
                           </SelectTrigger>
                           <SelectContent>
@@ -1075,29 +1154,25 @@ export function UserManagement() {
                             ))}
                           </SelectContent>
                         </Select>
-                        <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3 mt-2">
-                          <div className="text-sm text-blue-800 dark:text-blue-300">
-                            <span className="font-semibold">
-                              {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
-                            </span>
-                          </div>
+                        <div className="mt-2 rounded-lg border border-zinc-200/90 bg-zinc-100/90 p-3 text-sm leading-relaxed text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800/90 dark:text-zinc-300">
+                          {roleDescriptions[formData.role as keyof typeof roleDescriptions]}
                         </div>
                       </div>
-                      <div className="flex items-center space-x-3 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-xl border border-blue-200 dark:border-blue-800">
+                      <div className="flex items-center gap-3 rounded-xl border border-zinc-200/90 bg-zinc-50/90 p-4 dark:border-zinc-700 dark:bg-zinc-900/50">
                         <Switch
                           id="editIsActive"
                           checked={formData.isActive}
                           onCheckedChange={(checked) => setFormData({ ...formData, isActive: checked })}
-                          className="data-[state=checked]:bg-blue-600"
+                          className="data-[state=checked]:bg-emerald-600"
                         />
-                        <Label htmlFor="editIsActive" className="text-base font-medium text-blue-700 dark:text-blue-300">
-                          Usuario Activo
+                        <Label htmlFor="editIsActive" className="text-sm font-medium text-zinc-800 dark:text-zinc-200">
+                          Usuario activo
                         </Label>
                       </div>
                       {canManageStores && (
                         <div>
-                          <Label htmlFor="editStore" className="flex items-center gap-2">
-                            <StoreIcon className="h-4 w-4" />
+                          <Label htmlFor="editStore" className="flex items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                            <StoreIcon className="h-4 w-4 text-zinc-500" aria-hidden />
                             Tienda
                           </Label>
                           <Select 
@@ -1108,7 +1183,10 @@ export function UserManagement() {
                               setFormData({ ...formData, storeId: value === MAIN_STORE_ID ? '' : value })
                             }}
                           >
-                            <SelectTrigger className="mt-1">
+                            <SelectTrigger
+                              id="editStore"
+                              className="mt-1.5 h-11 rounded-lg border-2 border-zinc-200 bg-zinc-50/80 px-3 py-2 text-sm text-zinc-900 shadow-none focus:border-emerald-500/50 focus:ring-2 focus:ring-emerald-500/20 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-100 [&>svg]:text-zinc-500"
+                            >
                               <SelectValue placeholder="Seleccionar tienda" />
                             </SelectTrigger>
                             <SelectContent>
@@ -1134,25 +1212,31 @@ export function UserManagement() {
                 </div>
 
                 {/* Columna Derecha - Permisos */}
-                <div className="space-y-6">
-                  <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-                    <CardHeader>
-                      <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                        <Shield className="h-5 w-5 text-blue-600" />
-                        Permisos del Sistema
+                <div className="space-y-4">
+                  <Card className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                    <CardHeader className="space-y-0 pb-2 pt-4 md:pt-5">
+                      <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
+                        <Shield className="h-5 w-5 text-zinc-500 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
+                        Permisos del sistema
                       </CardTitle>
+                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        Marca los módulos a los que puede acceder este usuario
+                      </p>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2 pb-5">
                       {moduleOptions.map(module => (
-                        <div key={module.value} className="border border-gray-200 dark:border-neutral-600 rounded-xl p-4 bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
-                          <label className="flex items-center space-x-3 cursor-pointer">
+                        <div
+                          key={module.value}
+                          className="rounded-lg border border-zinc-200/80 bg-zinc-50/90 p-3 transition-colors hover:bg-zinc-100/80 dark:border-zinc-700/90 dark:bg-zinc-900/35 dark:hover:bg-zinc-800/40"
+                        >
+                          <label className="flex cursor-pointer items-center gap-3">
                             <input
                               type="checkbox"
                               checked={hasModuleAccess(module.value)}
                               onChange={() => toggleModule(module.value)}
-                              className="w-5 h-5 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                              className="h-4 w-4 shrink-0 rounded border-zinc-300 bg-white accent-emerald-600 focus:ring-2 focus:ring-emerald-500/35 dark:border-zinc-600 dark:bg-zinc-800"
                             />
-                            <span className="font-semibold text-base text-gray-900 dark:text-white">{module.label}</span>
+                            <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{module.label}</span>
                           </label>
                         </div>
                       ))}
@@ -1160,26 +1244,38 @@ export function UserManagement() {
                   </Card>
                 </div>
               </div>
-            </div>
+                  </div>
 
-            {/* Footer */}
-            <div className="flex justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 sticky bottom-0 z-10 flex-shrink-0" style={{ paddingBottom: `calc(max(56px, env(safe-area-inset-bottom)) + 1rem)` }}>
-              <Button 
-                variant="outline" 
-                onClick={() => setIsEditModalOpen(false)}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                onClick={handleUpdateUser}
-                className="bg-blue-600 hover:bg-blue-700 text-white"
-              >
-                Actualizar Usuario
-              </Button>
+                  <div
+                    className="flex flex-col-reverse justify-end gap-2 border-t border-zinc-200/90 bg-white px-3 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-row sm:gap-2.5 sm:px-6 sm:pb-4"
+                    style={{
+                      paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
+                    }}
+                  >
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsEditModalOpen(false)}
+                      className="h-9 w-full touch-manipulation border border-zinc-300 bg-white text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto sm:flex-none"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleUpdateUser}
+                      className="h-9 w-full touch-manipulation bg-emerald-600 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-emerald-700 dark:hover:bg-emerald-500 sm:w-auto sm:flex-none"
+                    >
+                      Actualizar usuario
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      )}
+          ),
+          document.body
+        )}
 
       {/* Modal de confirmación de eliminación */}
       <ConfirmationModal

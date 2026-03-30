@@ -1,10 +1,8 @@
 'use client'
 
 import { Button } from '@/components/ui/button'
-import { 
-  AlertTriangle, 
-  X 
-} from 'lucide-react'
+import { AlertTriangle, Info, X } from 'lucide-react'
+import { cn } from '@/lib/utils'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -17,95 +15,75 @@ interface ConfirmModalProps {
   type?: 'danger' | 'warning' | 'info'
 }
 
-export function ConfirmModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
+const overlayClass =
+  'fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+
+const shellClass =
+  'w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
+
+export function ConfirmModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
   message,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
-  type = 'danger'
+  type = 'danger',
 }: ConfirmModalProps) {
   if (!isOpen) return null
 
-  const getTypeStyles = () => {
-    switch (type) {
-      case 'danger':
-        return {
-          iconColor: 'text-green-400',
-          iconBg: 'bg-green-900/20',
-          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
-          borderColor: 'border-green-700',
-          headerBg: 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
-        }
-      case 'warning':
-        return {
-          iconColor: 'text-orange-400',
-          iconBg: 'bg-orange-900/20',
-          confirmButton: 'bg-orange-600 hover:bg-orange-700 text-white',
-          borderColor: 'border-orange-700',
-          headerBg: 'bg-gradient-to-r from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20'
-        }
-      case 'info':
-        return {
-          iconColor: 'text-blue-400',
-          iconBg: 'bg-blue-900/20',
-          confirmButton: 'bg-blue-600 hover:bg-blue-700 text-white',
-          borderColor: 'border-blue-700',
-          headerBg: 'bg-gradient-to-r from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20'
-        }
-      default:
-        return {
-          iconColor: 'text-green-400',
-          iconBg: 'bg-green-900/20',
-          confirmButton: 'bg-green-600 hover:bg-green-700 text-white',
-          borderColor: 'border-green-700',
-          headerBg: 'bg-gradient-to-r from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20'
-        }
-    }
-  }
-
-  const styles = getTypeStyles()
+  const Icon = type === 'info' ? Info : AlertTriangle
+  const iconClass =
+    type === 'danger'
+      ? 'text-red-600 dark:text-red-400'
+      : type === 'warning'
+        ? 'text-amber-600 dark:text-amber-400'
+        : 'text-zinc-500 dark:text-zinc-400'
 
   return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 xl:px-6">
-      <div className="bg-white dark:bg-neutral-950 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200 dark:border-neutral-700 flex flex-col">
-        {/* Header */}
-        <div className={`flex items-center justify-between p-4 md:p-6 border-b border-gray-200 dark:border-neutral-700 ${styles.headerBg} flex-shrink-0`}>
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-full ${styles.iconBg}`}>
-              <AlertTriangle className={`h-4 w-4 md:h-5 md:w-5 ${styles.iconColor}`} />
-            </div>
-            <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">{title}</h2>
+    <div className={overlayClass} role="presentation">
+      <div
+        className={shellClass}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="confirm-modal-title"
+        aria-describedby="confirm-modal-desc"
+      >
+        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Icon className={cn('h-5 w-5 shrink-0', iconClass)} strokeWidth={1.5} />
+            <h2 id="confirm-modal-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+              {title}
+            </h2>
           </div>
           <Button
-            onClick={onClose}
+            type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
+            onClick={onClose}
           >
-            <X className="h-4 w-4" />
+            <X className="h-5 w-5" />
           </Button>
         </div>
 
-        {/* Content */}
-        <div className="p-4 md:p-6">
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">{message}</p>
+        <div className="p-4">
+          <p id="confirm-modal-desc" className="text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+            {message}
+          </p>
         </div>
 
-        {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
-          <Button
-            onClick={onClose}
-            variant="outline"
-            className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-          >
+        <div className="flex flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
             {cancelText}
           </Button>
           <Button
+            type="button"
+            size="sm"
+            variant={type === 'danger' ? 'destructive' : 'default'}
             onClick={onConfirm}
-            className={styles.confirmButton}
+            className={cn(type === 'warning' && 'border-amber-600/90 bg-amber-600 text-white hover:bg-amber-700 dark:bg-amber-600 dark:hover:bg-amber-700')}
           >
             {confirmText}
           </Button>

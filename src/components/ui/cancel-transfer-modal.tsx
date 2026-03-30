@@ -99,7 +99,7 @@ export function CancelTransferModal({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end space-x-3 p-4 md:p-6 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
+        <div className="flex flex-shrink-0 items-center justify-end space-x-3 bg-white p-4 pt-6 dark:bg-neutral-950 md:p-6">
           <Button
             onClick={onClose}
             variant="outline"

@@ -30,7 +30,7 @@ export function ZonatBadge({ className, size = 'md', showText = true }: ZonatBad
       <img 
         src="/zonat-logo.webp" 
         alt="ZONA T Logo" 
-        className={cn("rounded", logoSize[size])}
+        className={cn(logoSize[size])}
       />
       {showText && (
         <span>ZONA T</span>

@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
-  Package, 
-  Plus, 
-  Search, 
-  Edit, 
+import {
+  Package,
+  Plus,
+  Search,
+  Edit,
   Trash2,
   ArrowRightLeft,
   AlertTriangle,
@@ -19,23 +19,30 @@ import {
   Tag,
   X,
   RefreshCw,
-  Eye,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
 } from 'lucide-react'
 import { Product, Category } from '@/types'
 import type { StockFilter } from '@/lib/products-service'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { getCurrentUserStoreId, isStoreSincelejo } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
+import { cn } from '@/lib/utils'
+
+const cardShell =
+  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+
+const ITEMS_PER_PAGE = 15
+
+const actionIconBtnClass =
+  'h-9 w-9 p-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
+
+const actionDeleteBtnClass =
+  'h-9 w-9 p-0 text-zinc-500 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-red-400'
 
 interface ProductTableProps {
   products: Product[]
@@ -59,9 +66,6 @@ interface ProductTableProps {
   onView?: (product: Product) => void
 }
 
-// Número de productos por página
-const ITEMS_PER_PAGE = 15
-
 export function ProductTable({
   products,
   categories,
@@ -81,81 +85,76 @@ export function ProductTable({
   onRefresh,
   onPageChange,
   onSearch,
-  onView
+  onView,
 }: ProductTableProps) {
   const router = useRouter()
   const { hasPermission } = usePermissions()
   const { user } = useAuth()
-  
-  // Verificación adicional: si es vendedor, no puede editar/eliminar productos
-  const isVendedor = user?.role?.toLowerCase() === 'vendedor' || 
-                     user?.role === 'vendedor' || 
-                     user?.role === 'Vendedor'
+
+  const isVendedor =
+    user?.role?.toLowerCase() === 'vendedor' || user?.role === 'vendedor' || user?.role === 'Vendedor'
   const isInventario = user?.role?.toLowerCase() === 'inventario'
-  const isSuperAdmin = user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
+  const isSuperAdmin =
+    user?.role === 'superadmin' || user?.role === 'Super Admin' || user?.role === 'Super Administrador'
 
   const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
   const isMainStore = !user?.storeId || user?.storeId === MAIN_STORE_ID
 
-  // Solo en Sincelejo: Inventario o Super Admin pueden hacer acciones; en microtiendas todos solo ven
   const [isSincelejoStore, setIsSincelejoStore] = useState(false)
   useEffect(() => {
     const load = async () => {
       const storeId = getCurrentUserStoreId() || MAIN_STORE_ID
-      const store = storeId === MAIN_STORE_ID
-        ? await StoresService.getMainStore()
-        : await StoresService.getStoreById(storeId)
+      const store =
+        storeId === MAIN_STORE_ID
+          ? await StoresService.getMainStore()
+          : await StoresService.getStoreById(storeId)
       setIsSincelejoStore(isStoreSincelejo(store))
     }
     if (user) load()
   }, [user?.storeId])
 
-  // Sincelejo: Inventario y Super Admin pueden crear, editar, eliminar, ajustar, transferir bodega↔local
   const canDoProductActionsSincelejo = isSincelejoStore && (isInventario || isSuperAdmin)
-  // Super Admin en microtiendas: puede editar, actualizar stock y eliminar solo en esa tienda (sin afectar otras)
-  const canEdit = isVendedor ? false : ((canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit'))
-  const canAdjust = isVendedor ? false : ((canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit'))
-  const canCreate = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'create'))
-  const canDelete = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'delete'))
-  const canTransfer = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'edit'))
+  const canEdit = isVendedor ? false : (canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit')
+  const canAdjust = isVendedor ? false : (canDoProductActionsSincelejo || isSuperAdmin) && hasPermission('products', 'edit')
+  const canCreate = isVendedor ? false : canDoProductActionsSincelejo && hasPermission('products', 'create')
+  const canDelete = isVendedor ? false : canDoProductActionsSincelejo && hasPermission('products', 'delete')
+  const canTransfer = isVendedor ? false : canDoProductActionsSincelejo && hasPermission('products', 'edit')
 
   const [searchTerm, setSearchTerm] = useState('')
 
-  // Función simple para manejar búsqueda
   const handleSearch = (term: string) => {
     onSearch(term)
   }
 
-  // Debounce para búsqueda automática - solo cuando hay texto
   useEffect(() => {
-    if (!searchTerm.trim()) {
-      return
-    }
-
-    const timeoutId = setTimeout(() => {
-      handleSearch(searchTerm)
-    }, 500)
-
+    if (!searchTerm.trim()) return
+    const timeoutId = setTimeout(() => handleSearch(searchTerm), 500)
     return () => clearTimeout(timeoutId)
   }, [searchTerm])
 
+  const goProduct = (p: Product) => {
+    if (onView) onView(p)
+    else router.push(`/inventory/products/${p.id}`)
+  }
+
   const getCategoryName = (categoryId: string) => {
-    const category = categories.find(c => c.id === categoryId)
+    const category = categories.find((c) => c.id === categoryId)
     return category?.name || 'Sin categoría'
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 hover:text-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400'
+        /* Tono esmeralda Zonat (misma familia que ZonatBadge), muy contenido */
+        return 'border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300/95'
       case 'inactive':
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+        return 'border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-500'
       case 'discontinued':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+        return 'border-zinc-300 bg-zinc-100 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-400'
       case 'out_of_stock':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 hover:bg-orange-100 hover:text-orange-800 dark:hover:bg-orange-900/20 dark:hover:text-orange-400'
+        return 'border-amber-200/80 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-200/90'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
+        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
     }
   }
 
@@ -189,163 +188,118 @@ export function ProductTable({
     }
   }
 
-  // Nueva lógica para estados de stock más precisos
   const getStockStatusLabel = (product: Product) => {
     const { warehouse, store, total } = product.stock
-    
-    if (total === 0) {
-      return 'Sin Stock'
-    }
-    
+    if (total === 0) return 'Sin Stock'
     if (store > 0) {
-      if (store >= 10) {
-        return 'Disponible Local'
-      } else if (store >= 5) {
-        return 'Stock Local Bajo'
-      } else {
-        return 'Stock Local Muy Bajo'
-      }
+      if (store >= 10) return 'Disponible Local'
+      if (store >= 5) return 'Stock Local Bajo'
+      return 'Stock Local Muy Bajo'
     }
-    
     if (warehouse > 0) {
-      if (warehouse >= 20) {
-        return 'Solo Bodega'
-      } else if (warehouse >= 10) {
-        return 'Solo Bodega (Bajo)'
-      } else {
-        return 'Solo Bodega (Muy Bajo)'
-      }
+      if (warehouse >= 20) return 'Solo Bodega'
+      if (warehouse >= 10) return 'Solo Bodega (Bajo)'
+      return 'Solo Bodega (Muy Bajo)'
     }
-    
     return 'Sin Stock'
   }
 
-  const getStockStatusColor = (product: Product) => {
+  const getStockStatusBadgeClass = (product: Product) => {
     const { warehouse, store, total } = product.stock
-    
     if (total === 0) {
-      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+      return 'border-red-200/80 bg-red-50 text-red-900 dark:border-red-900/45 dark:bg-red-950/40 dark:text-red-200/90'
     }
-    
     if (store > 0) {
       if (store >= 10) {
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 hover:text-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400'
-      } else if (store >= 5) {
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 hover:bg-yellow-100 hover:text-yellow-800 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400'
-      } else {
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 hover:bg-orange-100 hover:text-orange-800 dark:hover:bg-orange-900/20 dark:hover:text-orange-400'
+        return 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-950/35 dark:text-emerald-400/90'
       }
+      if (store >= 5) {
+        return 'border-amber-200/80 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-200/90'
+      }
+      return 'border-amber-200/80 bg-amber-50/90 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200/90'
     }
-    
     if (warehouse > 0) {
-      return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400 hover:bg-cyan-100 hover:text-cyan-800 dark:hover:bg-cyan-900/20 dark:hover:text-cyan-400'
+      return 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/55 dark:text-zinc-400'
     }
-    
-    return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+    return 'border-red-200/80 bg-red-50 text-red-900 dark:border-red-900/45 dark:bg-red-950/40 dark:text-red-200/90'
   }
 
-  // Los productos ya vienen filtrados desde el contexto (filtro aplicado en backend)
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
-      style: 'currency',
-      currency: 'COP',
-      minimumFractionDigits: 0
-    }).format(amount)
-  }
-
-  // Opciones de estado de stock - las de bodega solo para tienda principal
   const stockStatusOptions = [
     { value: 'all', label: 'Todos los estados' },
     { value: 'Sin Stock', label: 'Sin Stock' },
     { value: 'Disponible Local', label: 'Disponible Local' },
     { value: 'Stock Local Bajo', label: 'Stock Local Bajo' },
     { value: 'Stock Local Muy Bajo', label: 'Stock Local Muy Bajo' },
-    // Solo mostrar opciones de bodega en tienda principal
-    ...(isMainStore ? [
-      { value: 'Solo Bodega', label: 'Solo Bodega' },
-      { value: 'Solo Bodega (Bajo)', label: 'Solo Bodega (Bajo)' },
-      { value: 'Solo Bodega (Muy Bajo)', label: 'Solo Bodega (Muy Bajo)' }
-    ] : [])
+    ...(isMainStore
+      ? [
+          { value: 'Solo Bodega', label: 'Solo Bodega' },
+          { value: 'Solo Bodega (Bajo)', label: 'Solo Bodega (Bajo)' },
+          { value: 'Solo Bodega (Muy Bajo)', label: 'Solo Bodega (Muy Bajo)' },
+        ]
+      : []),
   ]
+
+  const thClass =
+    'whitespace-nowrap bg-zinc-50/80 px-3 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500'
 
   return (
     <TooltipProvider>
       <div className="space-y-4 md:space-y-6">
-        {/* Header */}
-        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-          <CardHeader className="p-3 md:p-6">
-            <div className="flex flex-col gap-3 md:gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                    <Package className="h-5 w-5 md:h-6 md:w-6 text-cyan-600 flex-shrink-0" />
-                    <span className="flex-shrink-0">Gestión de Productos</span>
-                    <StoreBadge />
+        <Card className={cardShell}>
+          <CardHeader className="space-y-0 p-4 md:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  <Package className="h-5 w-5 shrink-0 text-emerald-600/85 dark:text-emerald-500/80" strokeWidth={1.5} aria-hidden />
+                  <span>Gestión de productos</span>
+                  <StoreBadge />
                   {isSearching && (
-                      <Badge className="bg-cyan-100 text-cyan-800 dark:bg-cyan-900 dark:text-cyan-200 text-xs flex-shrink-0">
+                    <Badge variant="outline" className="border-zinc-300 text-[11px] font-normal text-zinc-600 dark:border-zinc-600 dark:text-zinc-400">
                       Búsqueda activa
                     </Badge>
                   )}
                 </CardTitle>
-                  <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-1 hidden md:block">
-                  {isSearching 
-                    ? `Mostrando resultados de búsqueda (${products.length} productos)`
-                    : 'Administra tu inventario de productos'
-                  }
+                <p className="max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {isSearching
+                    ? `Resultados de búsqueda (${products.length} productos)`
+                    : 'Administra tu inventario de productos'}
                 </p>
               </div>
-              <div className="flex items-center gap-2 flex-wrap">
-                  {canCreate && (
-                    <Button onClick={onCreate} className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2 flex-1 sm:flex-none">
-                      <Plus className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-1" />
-                      <span className="hidden sm:inline">Nuevo Producto</span>
-                      <span className="sm:hidden">Nuevo</span>
-                    </Button>
-                  )}
-                  {!canCreate && hasPermission('products', 'create') && (
-                    <span className="text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2 py-1 rounded">
-                      Solo puedes crear productos en la tienda de Sincelejo
-                    </span>
-                  )}
-                  {isSincelejoStore && canEdit && (
-                    <Button 
-                      onClick={onManageCategories} 
-                        className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
-                    >
-                        <Tag className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
-                        <span className="hidden md:inline">Categorías</span>
-                    </Button>
-                  )}
-                {onRefresh && (
-                  <Button 
-                    onClick={onRefresh}
-                    disabled={loading}
-                    variant="outline"
-                      className="text-cyan-600 border-cyan-600 hover:bg-cyan-50 dark:text-cyan-400 dark:border-cyan-400 dark:hover:bg-cyan-900/20 disabled:opacity-50 text-xs md:text-sm px-2 md:px-4 py-1.5 md:py-2"
-                  >
-                      <RefreshCw className={`h-3.5 w-3.5 md:h-4 md:w-4 ${loading ? 'animate-spin' : ''}`} />
-                      <span className="hidden md:inline ml-2">Actualizar</span>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
+                {canCreate && (
+                  <Button onClick={onCreate} size="sm" className="flex-1 sm:flex-none">
+                    <Plus className="h-3.5 w-3.5 shrink-0" />
+                    <span className="hidden sm:inline">Nuevo producto</span>
+                    <span className="sm:hidden">Nuevo</span>
                   </Button>
                 )}
-                </div>
+                {!canCreate && hasPermission('products', 'create') && (
+                  <span className="rounded-md border border-amber-200/80 bg-amber-50 px-2 py-1 text-xs text-amber-800 dark:border-amber-900/50 dark:bg-amber-950/40 dark:text-amber-200">
+                    Solo puedes crear en la tienda de Sincelejo
+                  </span>
+                )}
+                {isSincelejoStore && canEdit && (
+                  <Button onClick={onManageCategories} size="sm" variant="secondary" className="flex-1 sm:flex-none">
+                    <Tag className="h-3.5 w-3.5 shrink-0" />
+                    <span className="hidden md:inline">Categorías</span>
+                  </Button>
+                )}
+                {onRefresh && (
+                  <Button onClick={onRefresh} disabled={loading} variant="outline" size="sm" className="flex-1 sm:flex-none">
+                    <RefreshCw className={cn('h-3.5 w-3.5 shrink-0', loading && 'animate-spin')} />
+                    <span className="hidden md:inline">Actualizar</span>
+                  </Button>
+                )}
               </div>
-              <p className="text-xs text-gray-600 dark:text-gray-300 md:hidden">
-                {isSearching 
-                  ? `${products.length} resultados`
-                  : 'Administra tu inventario'
-                }
-              </p>
             </div>
           </CardHeader>
         </Card>
 
-        {/* Search and Filters */}
-        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
+        <Card className={cardShell}>
           <CardContent className="p-3 md:p-4">
-            <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-2.5 md:left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <div className="flex min-h-11 flex-nowrap items-stretch overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-950">
+              <div className="relative min-w-0 flex-1">
+                <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" aria-hidden />
                 <input
                   type="text"
                   placeholder="Buscar producto..."
@@ -357,176 +311,153 @@ export function ProductTable({
                       handleSearch(searchTerm)
                     }
                   }}
-                  className="w-full pl-9 md:pl-10 pr-16 md:pr-20 py-2 md:py-2.5 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent bg-white dark:bg-neutral-800 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                  className="h-11 w-full min-w-0 border-0 bg-transparent py-2 pl-10 pr-20 text-sm text-zinc-900 placeholder:text-zinc-400 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-zinc-400/30 dark:text-zinc-100 dark:focus:ring-zinc-500/25"
                 />
-                {searchTerm && (
+                {searchTerm ? (
                   <button
-                    onClick={(e) => {
-                      e.preventDefault()
+                    type="button"
+                    onClick={() => {
                       setSearchTerm('')
                       handleSearch('')
                     }}
-                    className="absolute right-10 md:right-12 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
-                    title="Limpiar búsqueda"
+                    className="absolute right-11 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
+                    title="Limpiar"
                   >
                     <X className="h-4 w-4" />
                   </button>
-                )}
+                ) : null}
                 <button
-                  onClick={(e) => {
-                    e.preventDefault()
-                    handleSearch(searchTerm)
-                  }}
-                  className="absolute right-2 md:right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
+                  type="button"
+                  onClick={() => handleSearch(searchTerm)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200"
                   title="Buscar"
                 >
                   <Search className="h-4 w-4" />
                 </button>
               </div>
-              <select
-                value={stockFilter}
-                onChange={(e) => onFilterChange(e.target.value as StockFilter)}
-                className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
-              >
-                {stockStatusOptions.map(status => (
-                  <option key={status.value} value={status.value}>
-                    {status.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative flex shrink-0 items-stretch border-l border-zinc-200 dark:border-zinc-700">
+                <select
+                  value={stockFilter}
+                  onChange={(e) => onFilterChange(e.target.value as StockFilter)}
+                  aria-label="Filtrar por estado de stock"
+                  className="h-11 min-w-[10.25rem] max-w-[46vw] cursor-pointer appearance-none border-0 bg-transparent py-2 pl-3 pr-9 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-zinc-400/30 dark:text-zinc-100 dark:focus:ring-zinc-500/25 sm:min-w-[12.5rem] sm:max-w-none"
+                >
+                  {stockStatusOptions.map((s) => (
+                    <option key={s.value} value={s.value}>
+                      {s.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+                  aria-hidden
+                />
+              </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Table */}
-        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 relative overflow-hidden">
-          {/* Overlay de carga para búsquedas/refresh sin perder el contenido */}
+        <Card className={cn('relative overflow-hidden', cardShell)}>
           {loading && (
-            <div className="absolute inset-0 bg-white/60 dark:bg-neutral-950/50 backdrop-blur-sm flex items-center justify-center z-10">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+            <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 backdrop-blur-sm dark:bg-zinc-950/50">
+              <div className="h-9 w-9 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
             </div>
           )}
-          <CardContent className="p-0 m-0">
+          <CardContent className="p-0">
             {products.length === 0 ? (
-              <div className="text-center py-12">
-                <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
-                  No se encontraron productos
-                </h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-4">
-                  Comienza creando un nuevo producto
+              <div className="py-16 text-center">
+                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-zinc-300 dark:border-zinc-600">
+                  <Package className="h-5 w-5 text-zinc-400" strokeWidth={1.5} />
+                </div>
+                <h3 className="text-base font-medium text-zinc-900 dark:text-zinc-100">No hay productos</h3>
+                <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
+                  Ajusta filtros o crea uno con <span className="font-medium text-zinc-700 dark:text-zinc-300">Nuevo producto</span>
                 </p>
                 {canCreate && (
-                  <Button 
-                    onClick={onCreate}
-                    className="bg-cyan-600 hover:bg-cyan-700 text-white"
-                  >
-                    Nuevo Producto
+                  <Button onClick={onCreate} size="sm" className="mt-4">
+                    Nuevo producto
                   </Button>
                 )}
               </div>
             ) : (
               <>
-                {/* Vista de Tarjetas para Mobile */}
-                <div className="md:hidden space-y-3 p-3">
-                  {products.map((product, index) => {
+                <div className="space-y-2 p-3 md:hidden">
+                  {products.map((product) => {
                     const StatusIcon = getStatusIcon(product.status)
                     return (
                       <div
                         key={product.id}
-                        onClick={() => router.push(`/products/${product.id}`)}
-                        className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-3 space-y-2 cursor-pointer hover:shadow-md transition-all active:scale-[0.98]"
+                        role="button"
+                        tabIndex={0}
+                        className="cursor-pointer rounded-xl border border-zinc-200/90 bg-zinc-50/50 p-4 text-left transition-colors hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-950/30 dark:hover:bg-zinc-800/40"
+                        onClick={() => goProduct(product)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault()
+                            goProduct(product)
+                          }
+                        }}
                       >
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-xs font-medium text-gray-500 dark:text-gray-400">#{index + 1}</span>
-                              <span className="text-xs font-mono font-semibold text-gray-600 dark:text-gray-300">{product.reference}</span>
+                        <div className="min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                              <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">{product.reference}</span>
+                              <p className="mt-0.5 text-base font-semibold leading-snug text-zinc-900 dark:text-zinc-50">{product.name}</p>
+                              <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{getCategoryName(product.categoryId)}</p>
                             </div>
-                            <h3 className="font-semibold text-sm text-gray-900 dark:text-white truncate" title={product.name}>
-                              {product.name}
-                            </h3>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={getCategoryName(product.categoryId)}>
-                              {getCategoryName(product.categoryId)}
-                            </p>
+                            <Badge variant="outline" className={cn('shrink-0 border px-2 py-0.5 text-[11px] font-normal', getStatusBadgeClass(product.status))}>
+                              <span className="flex items-center gap-1">
+                                <StatusIcon className="h-3 w-3" />
+                                {getStatusLabel(product.status)}
+                              </span>
+                            </Badge>
                           </div>
-                          <Badge className={`${getStatusColor(product.status)} text-xs shrink-0`}>
-                            <div className="flex items-center space-x-1">
-                              <StatusIcon className="h-3 w-3 flex-shrink-0" />
-                              <span className="hidden sm:inline">{getStatusLabel(product.status)}</span>
+                          {isMainStore ? (
+                            <div className="mt-3 grid grid-cols-3 gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
+                              {(['Bodega', 'Local', 'Total'] as const).map((label, i) => (
+                                <div key={label} className="text-center">
+                                  <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">{label}</div>
+                                  <div className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                                    {i === 0 ? product.stock.warehouse : i === 1 ? product.stock.store : product.stock.total}
+                                  </div>
+                                </div>
+                              ))}
                             </div>
-                          </Badge>
-                        </div>
-                        
-                        {isMainStore ? (
-                          <div className="grid grid-cols-3 gap-2 pt-2 border-t border-gray-200 dark:border-neutral-700">
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Bodega</div>
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.warehouse}</div>
+                          ) : (
+                            <div className="mt-3 border-t border-zinc-200/80 pt-3 text-center dark:border-zinc-800">
+                              <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Stock</div>
+                              <div className="mt-0.5 text-sm font-semibold tabular-nums">{product.stock.store}</div>
                             </div>
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Local</div>
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
+                          )}
+                          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
+                            <Badge
+                              variant="outline"
+                              className={cn('border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}
+                            >
+                              {getStockStatusLabel(product)}
+                            </Badge>
+                            <div className="flex shrink-0 gap-0.5" role="none" onClick={(e) => e.stopPropagation()}>
+                              {canEdit && (
+                                <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onEdit(product)} title="Editar">
+                                  <Edit className="h-4 w-4" strokeWidth={1.5} />
+                                </Button>
+                              )}
+                              {canAdjust && onStockAdjustment && (
+                                <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockAdjustment(product)} title="Ajustar stock">
+                                  <Package className="h-4 w-4" strokeWidth={1.5} />
+                                </Button>
+                              )}
+                              {canTransfer && onStockTransfer && (
+                                <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockTransfer(product)} title="Transferir">
+                                  <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
+                                </Button>
+                              )}
+                              {canDelete && (
+                                <Button type="button" size="sm" variant="ghost" className={actionDeleteBtnClass} onClick={() => onDelete(product)} title="Eliminar">
+                                  <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                                </Button>
+                              )}
                             </div>
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Total</div>
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.total}</div>
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="flex justify-center pt-2 border-t border-gray-200 dark:border-neutral-700">
-                            <div className="text-center">
-                              <div className="text-xs text-gray-500 dark:text-gray-400 mb-0.5">Stock</div>
-                              <div className="text-sm font-semibold text-gray-900 dark:text-white">{product.stock.store}</div>
-                            </div>
-                          </div>
-                        )}
-                        
-                        <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-neutral-700">
-                          <Badge className={`${getStockStatusColor(product)} text-xs`} title={getStockStatusLabel(product)}>
-                            {getStockStatusLabel(product)}
-                          </Badge>
-                          <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
-                            {canEdit && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onEdit(product)}
-                                className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canAdjust && onStockAdjustment && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onStockAdjustment(product)}
-                                className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
-                              >
-                                <Package className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canTransfer && onStockTransfer && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onStockTransfer(product)}
-                                className="h-8 w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95"
-                              >
-                                <ArrowRightLeft className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {canDelete && (
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => onDelete(product)}
-                                className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
                           </div>
                         </div>
                       </div>
@@ -534,257 +465,175 @@ export function ProductTable({
                   })}
                 </div>
 
-                {/* Vista de Cards para Desktop */}
-                <div className="hidden md:block space-y-4 p-4 md:p-6">
-                  {products.map((product, index) => {
-                    const StatusIcon = getStatusIcon(product.status)
-                    const globalIndex = ((currentPage - 1) * ITEMS_PER_PAGE) + index + 1
-                    return (
-                      <Card
-                        key={product.id}
-                        className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 shadow-sm hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => {
-                          router.push(`/products/${product.id}`)
-                        }}
-                      >
-                        <CardContent className="p-4 md:p-6">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-3 mb-2">
-                                <Package className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0" />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2">
-                                    <div className="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-                                      {product.reference}
-                                    </div>
-                                    {product.status === 'active' && (
-                                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                                    )}
-                                  </div>
-                                  <div className="text-lg font-bold text-gray-900 dark:text-white mt-1">
-                                    {product.name}
-                                  </div>
+                <div className="hidden md:block">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[760px] border-collapse text-sm">
+                      <thead>
+                        <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                          <th className={cn(thClass, 'pl-4')}>Producto</th>
+                          {isMainStore ? (
+                            <>
+                              <th className={thClass}>Bodega</th>
+                              <th className={thClass}>Local</th>
+                              <th className={thClass}>Total</th>
+                            </>
+                          ) : (
+                            <th className={thClass}>Stock</th>
+                          )}
+                          <th className={thClass}>Estado stock</th>
+                          <th className={thClass}>Catálogo</th>
+                          <th className="w-[11rem] bg-zinc-50/80 px-2 py-3 dark:bg-zinc-900/50" />
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                        {products.map((product) => {
+                          const StatusIcon = getStatusIcon(product.status)
+                          return (
+                            <tr
+                              key={product.id}
+                              className="cursor-pointer transition-colors hover:bg-zinc-50/90 dark:hover:bg-zinc-800/25"
+                              onClick={() => goProduct(product)}
+                            >
+                              <td className="max-w-[min(24rem,40vw)] px-4 py-3">
+                                <div className="min-w-0">
+                                  <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">{product.reference}</span>
+                                  <p className="mt-0.5 truncate font-semibold text-zinc-900 dark:text-zinc-100">{product.name}</p>
+                                  <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{getCategoryName(product.categoryId)}</p>
                                 </div>
-                              </div>
-                              
+                              </td>
                               {isMainStore ? (
-                                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                                  <div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
-                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                      {product.stock.warehouse}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
-                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                      {product.stock.store}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
-                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                      {product.stock.total}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado Stock</div>
-                                    <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
-                                      {getStockStatusLabel(product)}
-                                    </Badge>
-                                  </div>
-                                </div>
+                                <>
+                                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-zinc-800 dark:text-zinc-200">{product.stock.warehouse}</td>
+                                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-zinc-800 dark:text-zinc-200">{product.stock.store}</td>
+                                  <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-zinc-900 dark:text-zinc-100">{product.stock.total}</td>
+                                </>
                               ) : (
-                                <div className="grid grid-cols-2 gap-4 mt-4">
-                                  <div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Stock</div>
-                                    <div className="text-base font-semibold text-gray-900 dark:text-white">
-                                      {product.stock.store}
-                                    </div>
-                                  </div>
-                                  <div>
-                                    <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Estado Stock</div>
-                                    <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-sm whitespace-nowrap`}>
-                                      {getStockStatusLabel(product)}
-                                    </Badge>
-                                  </div>
+                                <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-zinc-900 dark:text-zinc-100">{product.stock.store}</td>
+                              )}
+                              <td className="px-3 py-3">
+                                <Badge variant="outline" className={cn('inline-flex border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}>
+                                  {getStockStatusLabel(product)}
+                                </Badge>
+                              </td>
+                              <td className="px-3 py-3">
+                                <Badge variant="outline" className={cn('inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] font-normal', getStatusBadgeClass(product.status))}>
+                                  <StatusIcon className="h-3 w-3 shrink-0" />
+                                  {getStatusLabel(product.status)}
+                                </Badge>
+                              </td>
+                              <td className="px-1 py-2" onClick={(e) => e.stopPropagation()}>
+                                <div className="flex flex-wrap items-center justify-end gap-0.5">
+                                  {canEdit && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onEdit(product)}>
+                                          <Edit className="h-4 w-4" strokeWidth={1.5} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="z-[200]">
+                                        Editar producto
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {canAdjust && onStockAdjustment && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockAdjustment(product)}>
+                                          <Package className="h-4 w-4" strokeWidth={1.5} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="z-[200]">
+                                        Ajustar stock
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {canTransfer && onStockTransfer && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockTransfer(product)}>
+                                          <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="z-[200]">
+                                        Transferir bodega ↔ local
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
+                                  {canDelete && (
+                                    <Tooltip>
+                                      <TooltipTrigger asChild>
+                                        <Button type="button" size="sm" variant="ghost" className={actionDeleteBtnClass} onClick={() => onDelete(product)}>
+                                          <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+                                        </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent side="top" className="z-[200]">
+                                        Eliminar
+                                      </TooltipContent>
+                                    </Tooltip>
+                                  )}
                                 </div>
-                              )}
-                              
-                              {product.status !== 'active' && (
-                                <div className="mt-4 flex items-center gap-2">
-                                  <Badge className={`${getStatusColor(product.status)} flex items-center gap-1 w-fit text-xs`}>
-                                    <StatusIcon className="h-3 w-3 flex-shrink-0" />
-                                    {getStatusLabel(product.status)}
-                                  </Badge>
-                                </div>
-                              )}
-                            </div>
-                            
-                            <div className="flex items-center gap-2 ml-4">
-                              {canEdit && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        onEdit(product)
-                                      }}
-                                      className="h-8 w-8 p-0 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100 active:scale-95"
-                                    >
-                                      <Edit className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
-                                    <div className="text-center">
-                                      <p className="font-medium text-white">Editar Producto</p>
-                                      <p className="text-xs text-cyan-100">Modificar datos del producto</p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-
-                              {canAdjust && onStockAdjustment && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        onStockAdjustment(product)
-                                      }}
-                                      className="h-8 w-8 p-0 text-orange-600 hover:text-orange-900 dark:text-orange-400 dark:hover:text-orange-100 active:scale-95"
-                                    >
-                                      <Package className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
-                                    <div className="text-center">
-                                      <p className="font-medium text-white">Ajustar Stock</p>
-                                      <p className="text-xs text-cyan-100">Modificar cantidad de inventario</p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-
-                              {canTransfer && onStockTransfer && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        onStockTransfer(product)
-                                      }}
-                                      className="h-8 w-8 p-0 text-purple-600 hover:text-purple-900 dark:text-purple-400 dark:hover:text-purple-100 active:scale-95"
-                                    >
-                                      <ArrowRightLeft className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
-                                    <div className="text-center">
-                                      <p className="font-medium text-white">Transferir Stock</p>
-                                      <p className="text-xs text-cyan-100">Mover entre Bodega y Local</p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-
-                              {canDelete && (
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button
-                                      size="sm"
-                                      variant="ghost"
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        onDelete(product)
-                                      }}
-                                      className="h-8 w-8 p-0 text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-100 active:scale-95"
-                                    >
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="z-50 bg-cyan-600 text-white border-cyan-700 shadow-lg">
-                                    <div className="text-center">
-                                      <p className="font-medium text-white">Eliminar Producto</p>
-                                      <p className="text-xs text-cyan-100">Borrar producto permanentemente</p>
-                                    </div>
-                                  </TooltipContent>
-                                </Tooltip>
-                              )}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    )
-                  })}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </>
             )}
 
-            {/* Paginación - Solo mostrar cuando no está en modo búsqueda */}
             {!isSearching && totalProducts > ITEMS_PER_PAGE && (
-              <div className="flex items-center justify-center gap-1 mt-4 pt-4 border-t border-gray-100 dark:border-neutral-800 px-4 md:px-6">
+              <div className="flex items-center justify-center gap-1 border-t border-zinc-200 px-4 py-4 dark:border-zinc-800 md:px-6">
                 <button
+                  type="button"
                   onClick={() => onPageChange(currentPage - 1)}
                   disabled={currentPage === 1 || loading}
-                  className="h-7 w-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                 >
-                  <ChevronLeft className="h-3.5 w-3.5" />
+                  <ChevronLeft className="h-4 w-4" />
                 </button>
-                
                 <div className="flex items-center gap-0.5">
                   {Array.from({ length: Math.ceil(totalProducts / ITEMS_PER_PAGE) }, (_, i) => i + 1).map((page) => {
-                    // Mostrar siempre las primeras 2 páginas, la última, y las páginas alrededor de la actual
-                    if (
-                      page === 1 ||
-                      page === 2 ||
-                      page === Math.ceil(totalProducts / ITEMS_PER_PAGE) ||
-                      (page >= currentPage - 1 && page <= currentPage + 1)
-                    ) {
+                    const last = Math.ceil(totalProducts / ITEMS_PER_PAGE)
+                    if (page === 1 || page === 2 || page === last || (page >= currentPage - 1 && page <= currentPage + 1)) {
                       return (
                         <button
                           key={page}
+                          type="button"
                           onClick={() => onPageChange(page)}
                           disabled={loading}
-                          className={`h-7 w-7 flex items-center justify-center rounded-md text-sm transition-colors ${
+                          className={cn(
+                            'flex h-8 w-8 items-center justify-center rounded-md text-sm transition-colors',
                             currentPage === page
-                              ? 'bg-cyan-50 text-cyan-600 dark:bg-cyan-900/20 dark:text-cyan-400 font-medium'
-                              : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800'
-                          }`}
+                              ? 'bg-zinc-900 font-medium text-white dark:bg-zinc-100 dark:text-zinc-900'
+                              : 'text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
+                          )}
                         >
                           {page}
                         </button>
                       )
-                    } else if (
-                      page === currentPage - 2 ||
-                      page === currentPage + 2
-                    ) {
+                    }
+                    if (page === currentPage - 2 || page === currentPage + 2) {
                       return (
-                        <span key={page} className="px-1 text-gray-400 dark:text-gray-500 text-sm">
-                          ...
+                        <span key={page} className="px-1 text-sm text-zinc-400 dark:text-zinc-500">
+                          …
                         </span>
                       )
                     }
                     return null
                   })}
                 </div>
-                
                 <button
+                  type="button"
                   onClick={() => onPageChange(currentPage + 1)}
                   disabled={!hasMore || loading}
-                  className="h-7 w-7 flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-800 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
                 >
-                  <ChevronRight className="h-3.5 w-3.5" />
+                  <ChevronRight className="h-4 w-4" />
                 </button>
               </div>
             )}
-
           </CardContent>
         </Card>
       </div>

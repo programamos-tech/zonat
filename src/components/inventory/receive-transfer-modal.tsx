@@ -1,14 +1,32 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { X, CheckCircle, Package, AlertCircle } from 'lucide-react'
-import { StoreStockTransfer, TransferItem } from '@/types'
+import { StoreStockTransfer } from '@/types'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+const overlayClass =
+  'fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+
+const shellClass =
+  'flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-[min(720px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
+
+const inputClass =
+  'h-10 w-full rounded-lg border border-zinc-300 bg-white px-3 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none'
+
+const textareaClass =
+  'min-h-[80px] w-full resize-none rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+
+const panelClass =
+  'rounded-xl border border-zinc-200/90 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/40'
+
+const productCardClass =
+  'rounded-xl border border-zinc-200/90 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950/30'
 
 interface ReceiveTransferModalProps {
   isOpen: boolean
@@ -29,10 +47,14 @@ interface ReceivedItemForm {
 export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: ReceiveTransferModalProps) {
   const [receivedItems, setReceivedItems] = useState<ReceivedItemForm[]>([])
   const [isSaving, setIsSaving] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useLayoutEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (isOpen && transfer) {
-      // Inicializar formulario con los items de la transferencia
       if (transfer.items && transfer.items.length > 0) {
         setReceivedItems(
           transfer.items.map(item => ({
@@ -40,24 +62,22 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
             productName: item.productName,
             productReference: item.productReference,
             expectedQuantity: item.quantity,
-            quantityReceived: item.quantity, // Por defecto recibir todo
-            note: ''
+            quantityReceived: item.quantity,
+            note: '',
           }))
         )
       } else {
-        // Compatibilidad con transferencias legacy
         setReceivedItems([
           {
             itemId: transfer.id,
             productName: transfer.productName || 'Producto',
             expectedQuantity: transfer.quantity || 0,
             quantityReceived: transfer.quantity || 0,
-            note: ''
-          }
+            note: '',
+          },
         ])
       }
     } else if (!isOpen) {
-      // Limpiar al cerrar
       setReceivedItems([])
     }
   }, [isOpen, transfer])
@@ -71,19 +91,19 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
   const handleConfirm = async () => {
     if (!transfer) return
 
-    // Validar que las cantidades recibidas no excedan las esperadas
     for (const item of receivedItems) {
       if (item.quantityReceived < 0) {
         toast.error(`La cantidad recibida de ${item.productName} no puede ser negativa`)
         return
       }
       if (item.quantityReceived > item.expectedQuantity) {
-        toast.error(`La cantidad recibida de ${item.productName} no puede ser mayor a la esperada (${item.expectedQuantity})`)
+        toast.error(
+          `La cantidad recibida de ${item.productName} no puede ser mayor a la esperada (${item.expectedQuantity})`
+        )
         return
       }
     }
 
-    // Verificar que al menos un item tenga cantidad recibida mayor a 0
     const hasAnyReceived = receivedItems.some(item => item.quantityReceived > 0)
     if (!hasAnyReceived) {
       toast.error('Debes recibir al menos una unidad de algún producto')
@@ -94,8 +114,8 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
     try {
       const receivedItemsData = receivedItems.map(item => ({
         itemId: item.itemId,
-        quantityReceived: item.quantityReceived, // Puede ser 0 para recepciones parciales
-        note: item.note.trim() || undefined
+        quantityReceived: item.quantityReceived,
+        note: item.note.trim() || undefined,
       }))
 
       await onConfirm(receivedItemsData)
@@ -106,188 +126,211 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
     }
   }
 
-  if (!isOpen || !transfer) return null
+  if (!mounted || !isOpen || !transfer) return null
 
   const totalExpected = receivedItems.reduce((sum, item) => sum + item.expectedQuantity, 0)
   const totalReceived = receivedItems.reduce((sum, item) => sum + item.quantityReceived, 0)
+  const transferTitle = transfer.transferNumber || `TRF-${transfer.id.substring(0, 8)}`
 
-  return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 pb-20 xl:pb-4">
-      <div className="bg-white dark:bg-neutral-950 rounded-lg xl:rounded-xl shadow-2xl w-full max-h-[calc(100vh-6rem)] xl:h-[calc(98vh-4rem)] xl:w-[calc(100vw-18rem)] xl:max-h-[calc(98vh-4rem)] xl:max-w-[calc(100vw-18rem)] overflow-hidden flex flex-col border border-gray-200 dark:border-neutral-700">
+  const modal = (
+    <div className={overlayClass} role="dialog" aria-modal="true" aria-labelledby="receive-transfer-title">
+      <div className={shellClass}>
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-cyan-200 dark:border-cyan-800 bg-cyan-50 dark:bg-cyan-900/20 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-cyan-600" />
-            <h2 className="text-lg font-bold text-gray-900 dark:text-white">
-              Confirmar Recepción - {transfer.transferNumber || transfer.id.substring(0, 8)}
-            </h2>
-          </div>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200 px-4 py-4 dark:border-zinc-800 md:px-6">
+          <h2
+            id="receive-transfer-title"
+            className="min-w-0 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
+          >
+            Confirmar Recepción — {transferTitle}
+          </h2>
           <Button
+            type="button"
             onClick={onClose}
             variant="ghost"
-            size="sm"
-            className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            size="icon"
+            className="h-9 w-9 shrink-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            aria-label="Cerrar"
           >
-            <X className="h-4 w-4" />
+            <X className="h-4 w-4" strokeWidth={1.5} />
           </Button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-4">
-          <div className="space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 md:px-6">
+          <div className="space-y-5">
             {/* Resumen */}
-            <Card className="bg-cyan-50 dark:bg-cyan-900/20 border-cyan-200 dark:border-cyan-800">
-              <CardContent className="p-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label className="text-xs text-gray-500 dark:text-gray-400">Total Esperado</Label>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">{totalExpected} unidades</p>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-gray-500 dark:text-gray-400">Total a Recibir</Label>
-                    <p className={`text-lg font-bold ${totalReceived === totalExpected ? 'text-green-600 dark:text-green-400' : totalReceived < totalExpected ? 'text-yellow-600 dark:text-yellow-400' : 'text-red-600 dark:text-red-400'}`}>
-                      {totalReceived} unidades
-                    </p>
-                  </div>
+            <div className={cn(panelClass, 'px-4 py-4')}>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Total esperado
+                  </p>
+                  <p className="mt-1 text-xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+                    {totalExpected} <span className="text-base font-medium text-zinc-500">unidades</span>
+                  </p>
                 </div>
-                {totalReceived < totalExpected && (
-                  <div className="mt-3 pt-3 border-t border-cyan-200 dark:border-cyan-800 flex items-start gap-2">
-                    <AlertCircle className="h-4 w-4 text-yellow-600 dark:text-yellow-400 mt-0.5 flex-shrink-0" />
-                    <p className="text-xs text-yellow-700 dark:text-yellow-300">
-                      Estás recibiendo menos unidades de las esperadas. Esto se registrará como recepción parcial.
-                    </p>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                <div className="text-right">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Total a recibir
+                  </p>
+                  <p
+                    className={cn(
+                      'mt-1 text-xl font-semibold tabular-nums',
+                      totalReceived === totalExpected
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : totalReceived < totalExpected
+                          ? 'text-amber-600 dark:text-amber-400'
+                          : 'text-red-600 dark:text-red-400'
+                    )}
+                  >
+                    {totalReceived}{' '}
+                    <span className="text-base font-medium text-zinc-500 dark:text-zinc-400">unidades</span>
+                  </p>
+                </div>
+              </div>
+              {totalReceived < totalExpected && (
+                <div className="mt-4 flex items-start gap-2 border-t border-zinc-200 pt-4 dark:border-zinc-700">
+                  <AlertCircle className="mt-0.5 h-4 w-4 shrink-0 text-amber-500 dark:text-amber-400" strokeWidth={1.5} />
+                  <p className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    Estás recibiendo menos unidades de las esperadas. Se registrará como{' '}
+                    <span className="font-medium text-zinc-800 dark:text-zinc-300">recepción parcial</span>.
+                  </p>
+                </div>
+              )}
+            </div>
 
-            {/* Lista de Productos */}
-            <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                <Package className="h-4 w-4 text-cyan-600" />
-                Productos a Recibir
+            {/* Lista de productos */}
+            <div>
+              <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                <Package className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+                Productos a recibir
               </h3>
 
-              {receivedItems.map((item, index) => {
-                const isPartial = item.quantityReceived < item.expectedQuantity
-                const isOver = item.quantityReceived > item.expectedQuantity
+              <div className="space-y-3">
+                {receivedItems.map((item, index) => {
+                  const isPartial = item.quantityReceived < item.expectedQuantity
+                  const isOver = item.quantityReceived > item.expectedQuantity
 
-                return (
-                  <Card key={item.itemId} className={`border ${isPartial ? 'border-yellow-300 dark:border-yellow-700' : isOver ? 'border-red-300 dark:border-red-700' : 'border-gray-200 dark:border-neutral-700'}`}>
-                    <CardContent className="p-4 space-y-3">
-                      {/* Información del Producto */}
-                      <div>
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-white">{item.productName}</h4>
-                        {item.productReference && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">Ref: {item.productReference}</p>
-                        )}
-                      </div>
-
-                      {/* Cantidades */}
-                      <div className="grid grid-cols-2 gap-4">
+                  return (
+                    <div
+                      key={item.itemId}
+                      className={cn(
+                        productCardClass,
+                        isPartial && 'border-amber-500/35 dark:border-amber-500/25',
+                        isOver && 'border-red-500/40 dark:border-red-500/30'
+                      )}
+                    >
+                      <div className="space-y-4">
                         <div>
-                          <Label className="text-xs text-gray-500 dark:text-gray-400 mb-1">Cantidad Esperada</Label>
-                          <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {item.expectedQuantity} unidades
+                          <h4 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">{item.productName}</h4>
+                          {item.productReference && (
+                            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                              SKU: {item.productReference}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <div>
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                              Cantidad esperada
+                            </p>
+                            <p className="mt-1.5 text-sm font-medium tabular-nums text-zinc-800 dark:text-zinc-200">
+                              {item.expectedQuantity}{' '}
+                              {item.expectedQuantity === 1 ? 'unidad' : 'unidades'}
+                            </p>
+                          </div>
+                          <div>
+                            <Label htmlFor={`quantity-${index}`} className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                              Cantidad recibida <span className="text-red-500 dark:text-red-400">*</span>
+                            </Label>
+                            <input
+                              id={`quantity-${index}`}
+                              type="text"
+                              inputMode="numeric"
+                              value={item.quantityReceived.toString()}
+                              onChange={e => {
+                                const value = e.target.value.replace(/[^\d]/g, '')
+                                if (value === '') {
+                                  handleItemChange(index, 'quantityReceived', 0)
+                                } else {
+                                  const qty = parseInt(value, 10)
+                                  if (!isNaN(qty)) {
+                                    handleItemChange(index, 'quantityReceived', qty)
+                                  }
+                                }
+                              }}
+                              onBlur={e => {
+                                const value = e.target.value.trim()
+                                if (value === '') {
+                                  handleItemChange(index, 'quantityReceived', 0)
+                                } else {
+                                  const cleaned = value === '0' ? '0' : value.replace(/^0+/, '') || '0'
+                                  const qty = parseInt(cleaned, 10)
+                                  if (!isNaN(qty)) {
+                                    handleItemChange(index, 'quantityReceived', qty)
+                                  }
+                                }
+                              }}
+                              className={cn(inputClass, 'mt-1.5', isOver && 'border-red-500 dark:border-red-500')}
+                              aria-invalid={isOver}
+                            />
+                            {isPartial && item.quantityReceived >= 0 && (
+                              <p className="mt-1.5 text-xs text-amber-600 dark:text-amber-400">
+                                Faltan {item.expectedQuantity - item.quantityReceived} unidades
+                              </p>
+                            )}
+                            {isOver && (
+                              <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">
+                                Excede por {item.quantityReceived - item.expectedQuantity} unidades
+                              </p>
+                            )}
                           </div>
                         </div>
+
                         <div>
-                          <Label htmlFor={`quantity-${index}`} className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                            Cantidad Recibida <span className="text-red-500">*</span>
+                          <Label htmlFor={`note-${index}`} className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                            Nota (opcional)
                           </Label>
-                          <input
-                            id={`quantity-${index}`}
-                            type="text"
-                            inputMode="numeric"
-                            value={item.quantityReceived.toString()}
-                            onChange={(e) => {
-                              const value = e.target.value.replace(/[^\d]/g, '')
-                              // Permitir cadena vacía mientras se escribe
-                              if (value === '') {
-                                handleItemChange(index, 'quantityReceived', 0)
-                              } else {
-                                // Permitir "0" y otros números
-                                const qty = parseInt(value, 10)
-                                if (!isNaN(qty)) {
-                                  handleItemChange(index, 'quantityReceived', qty)
-                                }
-                              }
-                            }}
-                            onBlur={(e) => {
-                              const value = e.target.value.trim()
-                              if (value === '') {
-                                // Si está vacío al perder el foco, mantener como 0
-                                handleItemChange(index, 'quantityReceived', 0)
-                              } else {
-                                // Eliminar ceros iniciales excepto si es solo "0"
-                                const cleaned = value === '0' ? '0' : value.replace(/^0+/, '') || '0'
-                                const qty = parseInt(cleaned, 10)
-                                if (!isNaN(qty)) {
-                                  handleItemChange(index, 'quantityReceived', qty)
-                                }
-                              }
-                            }}
-                            className={`h-10 w-full px-3 text-sm border rounded-lg focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 bg-white dark:bg-neutral-800 text-gray-900 dark:text-white ${isOver ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'} [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                          <Textarea
+                            id={`note-${index}`}
+                            value={item.note}
+                            onChange={e => handleItemChange(index, 'note', e.target.value)}
+                            placeholder="Producto en buen estado, faltante por daño, etc."
+                            className={cn(textareaClass, 'mt-1.5')}
+                            rows={3}
                           />
-                          {isPartial && (
-                            <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1">
-                              Faltan {item.expectedQuantity - item.quantityReceived} unidades
-                            </p>
-                          )}
-                          {isOver && (
-                            <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                              Excede por {item.quantityReceived - item.expectedQuantity} unidades
-                            </p>
-                          )}
                         </div>
                       </div>
-
-                      {/* Nota */}
-                      <div>
-                        <Label htmlFor={`note-${index}`} className="text-xs text-gray-500 dark:text-gray-400 mb-1">
-                          Nota (Opcional)
-                        </Label>
-                        <Textarea
-                          id={`note-${index}`}
-                          value={item.note}
-                          onChange={(e) => handleItemChange(index, 'note', e.target.value)}
-                          placeholder="Ej: Producto en buen estado, faltante por daño, etc."
-                          className="h-20 text-sm resize-none"
-                          rows={3}
-                        />
-                      </div>
-                    </CardContent>
-                  </Card>
-                )
-              })}
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-3 p-4 border-t border-gray-200 dark:border-neutral-700 bg-gray-50 dark:bg-neutral-900 flex-shrink-0">
-          <Button
-            variant="outline"
-            onClick={onClose}
-            disabled={isSaving}
-            className="border-gray-300 dark:border-neutral-600"
-          >
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-zinc-200 px-4 py-4 dark:border-zinc-800 sm:flex-row sm:justify-end sm:gap-3 md:px-6">
+          <Button type="button" variant="outline" onClick={onClose} disabled={isSaving} className="w-full sm:w-auto">
             Cancelar
           </Button>
           <Button
+            type="button"
+            variant="default"
             onClick={handleConfirm}
-            disabled={isSaving || !receivedItems.some(item => item.quantityReceived > 0)}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
+            disabled={isSaving || !receivedItems.some(i => i.quantityReceived > 0)}
+            className="w-full sm:w-auto"
           >
             {isSaving ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                Confirmando...
+                <span className="inline-block h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-zinc-900 dark:border-zinc-500 dark:border-t-zinc-100" />
+                Confirmando…
               </>
             ) : (
               <>
-                <CheckCircle className="h-4 w-4 mr-2" />
-                Confirmar Recepción
+                <CheckCircle className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                Confirmar recepción
               </>
             )}
           </Button>
@@ -295,4 +338,6 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

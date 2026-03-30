@@ -25,39 +25,49 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Verificar sesión al cargar
   useEffect(() => {
     const checkAuth = async () => {
-      if (typeof window !== 'undefined') {
-        const savedUser = localStorage.getItem('zonat_user')
-        if (savedUser) {
-          const userData = JSON.parse(savedUser)
-          // Preservar el storeId del localStorage (puede haber sido cambiado por switchStore)
-          const savedStoreId = userData.storeId
-          
-          // Obtener el usuario actualizado (que incluye sincronización de permisos del rol)
-          const currentUser = await AuthService.getCurrentUser()
-          if (currentUser) {
-            // Preservar el storeId si estaba guardado en localStorage (incluso si es null para tienda principal)
-            // Esto permite mantener la tienda seleccionada al recargar
-            if (savedStoreId !== undefined) {
-              currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
+      try {
+        if (typeof window !== 'undefined') {
+          const savedUser = localStorage.getItem('zonat_user')
+          if (savedUser) {
+            let userData: { storeId?: unknown }
+            try {
+              userData = JSON.parse(savedUser)
+            } catch {
+              localStorage.removeItem('zonat_user')
+              return
             }
-            
-            setUser(currentUser)
-            // Actualizar localStorage con el usuario actualizado (incluye permisos sincronizados y storeId preservado)
-            // Convertir undefined a null para que se guarde correctamente en JSON
-            const userToSave = {
-              ...currentUser,
-              storeId: currentUser.storeId === undefined ? null : currentUser.storeId
+            const savedStoreId = userData.storeId
+
+            const currentUser = await AuthService.getCurrentUser()
+            if (currentUser) {
+              if (savedStoreId !== undefined) {
+                currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
+              }
+
+              setUser(currentUser)
+              const userToSave = {
+                ...currentUser,
+                storeId: currentUser.storeId === undefined ? null : currentUser.storeId
+              }
+              localStorage.setItem('zonat_user', JSON.stringify(userToSave))
+            } else {
+              localStorage.removeItem('zonat_user')
             }
-            localStorage.setItem('zonat_user', JSON.stringify(userToSave))
-          } else {
-            localStorage.removeItem('zonat_user')
           }
         }
+      } catch (e) {
+        console.error('[AuthProvider] checkAuth:', e)
+        try {
+          localStorage.removeItem('zonat_user')
+        } catch {
+          /* ignore */
+        }
+      } finally {
+        setIsLoading(false)
       }
-      setIsLoading(false)
     }
 
-    checkAuth()
+    void checkAuth()
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {

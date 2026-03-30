@@ -1,15 +1,16 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ClientTable } from '@/components/clients/client-table'
 import { ClientModal } from '@/components/clients/client-modal'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { useClients } from '@/contexts/clients-context'
 import { Client } from '@/types'
 import { toast } from 'sonner'
-import { Users } from 'lucide-react'
 
 export default function ClientsPage() {
+  const router = useRouter()
   const { clients, loading, createClient, updateClient, deleteClient, getAllClients } = useClients()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
@@ -81,9 +82,10 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen">
+    <div className="space-y-6 bg-gray-50 py-6 dark:bg-neutral-950 min-h-screen">
       <ClientTable
         clients={clients}
+        onView={(c) => router.push(`/clients/${c.id}`)}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onCreate={handleCreate}

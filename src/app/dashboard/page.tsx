@@ -21,18 +21,16 @@ import {
   Activity,
   XCircle,
   RefreshCw,
-  Store as StoreIcon,
   Home,
-  Crown,
   Eye,
-  EyeOff
+  EyeOff,
+  ChevronDown
 } from 'lucide-react'
 import {
   BarChart,
   Bar,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
   ResponsiveContainer,
   PieChart,
@@ -50,10 +48,37 @@ import { useAuth } from '@/contexts/auth-context'
 import { getCurrentUserStoreId, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
+import { StoreBadge } from '@/components/ui/store-badge'
 import { Sale } from '@/types'
 import { CancelledInvoicesModal } from '@/components/dashboard/cancelled-invoices-modal'
+import { cn } from '@/lib/utils'
 
 type DateFilter = 'today' | 'specific' | 'all' | 'range'
+
+/** Superficies y métricas alineadas con el resto de la app (zinc + toque esmeralda Zonat) */
+const cardShell =
+  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+const dashCardBase =
+  'rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 md:p-6'
+
+/** Celda dentro del panel único de métricas (sin card por KPI) */
+const dashMetricTile =
+  'flex w-full min-h-0 flex-col rounded-lg border border-transparent px-3 py-3 text-left transition-colors md:px-3.5 md:py-3.5'
+const dashMetricTileInteractive =
+  'cursor-pointer hover:border-zinc-200/80 hover:bg-zinc-50/90 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-800/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/35 dark:focus-visible:ring-zinc-500/25'
+
+const dashMetricIconEm =
+  'h-4 w-4 shrink-0 text-emerald-600/85 dark:text-emerald-500/80'
+const dashMetricRow = 'flex min-w-0 items-center gap-2'
+const dashMetricLabelClass =
+  'min-w-0 text-left text-[11px] font-medium uppercase leading-snug tracking-wide text-zinc-600 dark:text-zinc-400'
+
+/** Toolbar de filtros: mismo criterio que `Button` outline / selects de inventario */
+const dashFilterSelectClass =
+  'w-full appearance-none rounded-lg border border-zinc-300/90 bg-white px-3 py-2 pr-9 text-sm font-medium text-zinc-800 shadow-sm transition-colors hover:border-zinc-400/80 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:hover:border-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25 md:py-2 md:pr-8'
+
+const dashToolbarButtonClass =
+  'h-9 min-h-9 border-zinc-300/90 bg-white px-2.5 shadow-sm dark:border-zinc-600 dark:bg-zinc-950/40'
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -239,14 +264,14 @@ export default function DashboardPage() {
       let chartStartDate = startDate || new Date()
       if (currentFilter === 'specific' && dateToUse) {
         const extendedStart = new Date(dateToUse)
-        extendedStart.setDate(extendedStart.getDate() - 14)
+        extendedStart.setDate(extendedStart.getDate() - 6)
         extendedStart.setHours(0, 0, 0, 0)
         chartStartDate = extendedStart
       } else if (currentFilter === 'range' && rangeStart) {
         chartStartDate = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0)
       } else if (currentFilter === 'today' || !startDate) {
         const extendedStart = new Date()
-        extendedStart.setDate(extendedStart.getDate() - 14)
+        extendedStart.setDate(extendedStart.getDate() - 6)
         extendedStart.setHours(0, 0, 0, 0)
         chartStartDate = extendedStart
       }
@@ -523,7 +548,7 @@ export default function DashboardPage() {
     }
 
     // Para filtros específicos (today, specific), los datos YA vienen filtrados del backend
-    // PERO ahora cargamos 15 días para la gráfica, así que necesitamos filtrar solo el día seleccionado para las métricas
+    // PERO cargamos 7 días para la gráfica de tendencia, así que filtramos solo el día seleccionado para las métricas
     if (effectiveDateFilter === 'specific' && !specificDate) {
       // Si es 'specific' pero no hay fecha seleccionada, devolver vacío
       return {
@@ -535,7 +560,7 @@ export default function DashboardPage() {
     }
 
     // Para 'today' o 'specific' con fecha, necesitamos filtrar solo el día seleccionado para las métricas
-    // (aunque allSales tiene 15 días para la gráfica)
+    // (aunque allSales incluye la ventana de 7 días para la gráfica)
     if (effectiveDateFilter === 'today' || (effectiveDateFilter === 'specific' && specificDate)) {
       const targetDate = effectiveDateFilter === 'today' ? new Date() : new Date(specificDate!)
       targetDate.setHours(0, 0, 0, 0)
@@ -695,55 +720,6 @@ export default function DashboardPage() {
       .map(([id, data]) => ({ id, ...data }))
       .sort((a, b) => b.quantity - a.quantity)
       .slice(0, 5)
-
-    // Productos más vendidos recientemente con facturas asociadas
-    const recentProductSales: { [key: string]: { productId: string; productName: string; saleId: string; invoiceNumber: string | null; createdAt: string; quantity: number } } = {}
-    activeSales.forEach(sale => {
-      if (sale.items) {
-        sale.items.forEach(item => {
-          const key = item.productId
-          if (!recentProductSales[key] || new Date(sale.createdAt) > new Date(recentProductSales[key].createdAt)) {
-            recentProductSales[key] = {
-              productId: item.productId,
-              productName: item.productName,
-              saleId: sale.id,
-              invoiceNumber: sale.invoiceNumber || null,
-              createdAt: sale.createdAt,
-              quantity: item.quantity
-            }
-          }
-        })
-      }
-    })
-
-    const recentTopProducts = Object.values(recentProductSales)
-      .sort((a, b) => {
-        // Ordenar por fecha más reciente primero
-        const dateA = new Date(a.createdAt).getTime()
-        const dateB = new Date(b.createdAt).getTime()
-        return dateB - dateA
-      })
-      .slice(0, 3)
-      .map((item) => {
-        const saleDate = new Date(item.createdAt)
-        const dateLabel = saleDate.toLocaleDateString('es-CO', {
-          day: 'numeric',
-          month: 'short'
-        }).replace('.', '')
-        const timeLabel = saleDate.toLocaleTimeString('es-CO', {
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        })
-        return {
-          id: item.productId,
-          productName: item.productName,
-          invoiceNumber: item.invoiceNumber,
-          dateLabel,
-          timeLabel,
-          quantity: item.quantity
-        }
-      })
 
     // Garantías
     const completedWarranties = warranties.filter(w => w.status === 'completed').length
@@ -913,58 +889,6 @@ export default function DashboardPage() {
       return totalProfit + saleProfit
     }, 0)
 
-    // Calcular las ventas más rentables para mostrar en la lista
-    // Excluir ventas canceladas
-    // Para ventas a crédito: solo contar la ganancia cuando el crédito esté completado
-    const topProfitableSales = activeSales.map(sale => {
-      // Si es una venta a crédito, verificar si el crédito está completado
-      if (sale.paymentMethod === 'credit') {
-        // Buscar el crédito asociado a esta venta
-        const associatedCredit = allCredits.find(c => c.saleId === sale.id)
-
-        // Solo contar la ganancia si el crédito está completado
-        // Si no hay crédito asociado o no está completado, retornar ganancia 0
-        if (!associatedCredit || associatedCredit.status !== 'completed') {
-          return { ...sale, profit: 0 }
-        }
-      }
-
-      if (!sale.items) return { ...sale, profit: 0 }
-
-      const saleProfit = sale.items.reduce((itemProfit, item) => {
-        const product = specificProductsCache.get(item.productId) || allProducts.find(p => p.id === item.productId)
-        const cost = product?.cost || 0
-
-        // Calcular el precio real de venta después de descuentos
-        const baseTotal = item.quantity * item.unitPrice
-        const discountAmount = item.discountType === 'percentage'
-          ? (baseTotal * (item.discount || 0)) / 100
-          : (item.discount || 0)
-        const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
-
-        // El precio unitario real después de descuentos
-        const realUnitPrice = item.quantity > 0 ? salePriceAfterDiscount / item.quantity : 0
-
-        // Ganancia bruta = (precio de venta real - costo) * cantidad
-        const itemGrossProfit = (realUnitPrice - cost) * item.quantity
-
-        return itemProfit + itemGrossProfit
-      }, 0)
-
-      return { ...sale, profit: saleProfit }
-    })
-      .filter(sale => sale.profit > 0) // Solo ventas con ganancia positiva
-      .sort((a, b) => {
-        // Ordenar por ganancia descendente primero, luego por fecha más reciente
-        if (b.profit !== a.profit) {
-          return b.profit - a.profit // Mayor ganancia primero
-        }
-        const dateA = new Date(a.createdAt).getTime()
-        const dateB = new Date(b.createdAt).getTime()
-        return dateB - dateA // Si misma ganancia, más reciente primero
-      })
-      .slice(0, 5) // Tomar las 5 con mayor ganancia
-
     // Facturas anuladas en el período seleccionado
     const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
 
@@ -1124,9 +1048,9 @@ export default function DashboardPage() {
       .filter(day => day.amount > 0) // Solo mostrar días con ventas
 
     const paymentMethodData = [
-      { name: 'Efectivo', value: cashRevenue, color: '#52c42a' },
-      { name: 'Transferencia', value: transferRevenue, color: '#3B82F6' },
-      { name: 'Crédito', value: creditRevenue, color: '#F59E0B' }
+      { name: 'Efectivo', value: cashRevenue, color: '#3dab1f' },
+      { name: 'Transferencia', value: transferRevenue, color: '#52525b' },
+      { name: 'Crédito', value: creditRevenue, color: '#71717a' },
     ].filter(item => item.value > 0)
 
     const topProductsChart = topProducts.slice(0, 5).map(product => ({
@@ -1161,8 +1085,6 @@ export default function DashboardPage() {
       overdueCreditsDebt,
       uniqueClients,
       grossProfit,
-      topProfitableSales,
-      recentTopProducts,
       cancelledSales,
       lostValue,
       lowStockProducts: optimizedMetrics.inventorySummary?.lowStockCount ?? lowStockProducts,
@@ -1197,6 +1119,21 @@ export default function DashboardPage() {
     }
     return num.toLocaleString('es-CO')
   }
+
+  const periodLabelShort = useMemo(() => {
+    if (effectiveDateFilter === 'today') return 'Hoy'
+    if (effectiveDateFilter === 'specific') {
+      return specificDate
+        ? specificDate.toLocaleDateString('es-CO', { day: 'numeric', month: 'short', year: 'numeric' })
+        : 'Fecha específica'
+    }
+    if (effectiveDateFilter === 'range') {
+      return dateRangeStart && dateRangeEnd
+        ? `${dateRangeStart.toLocaleDateString('es-CO')} — ${dateRangeEnd.toLocaleDateString('es-CO')}`
+        : 'Rango de fechas'
+    }
+    return 'Todos los períodos'
+  }, [effectiveDateFilter, specificDate, dateRangeStart, dateRangeEnd])
 
   // Obtener etiqueta del filtro de fecha
   const getDateFilterLabel = (filter: DateFilter) => {
@@ -1302,7 +1239,7 @@ export default function DashboardPage() {
   if (isInitialLoading && allSales.length === 0) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="p-4 md:p-6 bg-white dark:bg-neutral-950 min-h-screen">
+        <div className="min-h-screen bg-white py-4 dark:bg-neutral-950 md:py-6">
           {/* Header Skeleton */}
           <div className="mb-4 md:mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -1316,18 +1253,24 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Cards Skeleton */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
-            {[...Array(4)].map((_, i) => (
-              <div key={i} className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-lg p-4 md:p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="w-10 h-10 bg-gray-200 dark:bg-neutral-800 rounded-lg animate-pulse"></div>
-                  <div className="h-4 w-20 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse mb-2"></div>
+          {/* Panel de métricas (misma forma que la vista cargada) */}
+          <div className={cn(cardShell, 'mb-4 overflow-hidden rounded-xl md:mb-8')}>
+            <div className="border-b border-zinc-200/80 px-4 py-3 dark:border-zinc-800 md:px-6 md:py-3.5">
+              <div className="h-3 w-28 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+              <div className="mt-2 h-4 w-44 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+            </div>
+            <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 sm:gap-2.5 sm:p-3 lg:grid-cols-4 lg:gap-3 lg:p-4">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="rounded-lg px-3 py-3 md:px-3.5 md:py-3.5">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <div className="h-4 w-4 shrink-0 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+                    <div className="h-3 min-w-0 flex-1 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+                  </div>
+                  <div className="mt-2.5 h-7 w-[70%] animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
+                  <div className="mt-1 h-3 w-1/2 animate-pulse rounded bg-zinc-200 dark:bg-zinc-800" />
                 </div>
-                <div className="h-8 w-32 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse mb-2"></div>
-                <div className="h-4 w-24 bg-gray-200 dark:bg-neutral-800 rounded animate-pulse"></div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
 
           {/* Loading indicator */}
@@ -1335,9 +1278,9 @@ export default function DashboardPage() {
             <div className="text-center">
               {/* Spinner minimalista */}
               <div className="w-16 h-16 mx-auto mb-6">
-                <div className="w-full h-full border-2 border-green-200 dark:border-green-900/30 rounded-full border-t-green-600 dark:border-t-green-400 animate-spin"></div>
+                <div className="h-full w-full animate-spin rounded-full border-2 border-zinc-200 border-t-emerald-600 dark:border-zinc-700 dark:border-t-emerald-500" />
               </div>
-              <p className="text-lg font-medium text-green-600 dark:text-green-400 mb-1">
+              <p className="mb-1 text-lg font-medium text-zinc-700 dark:text-zinc-300">
                 Cargando datos del dashboard...
               </p>
               <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -1352,66 +1295,62 @@ export default function DashboardPage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="p-4 md:p-6 bg-white dark:bg-neutral-950 min-h-screen relative">
+      <div className="relative min-h-screen bg-white py-4 dark:bg-neutral-950 md:py-6">
         {/* Overlay de carga para actualizaciones */}
         {(isRefreshing || isFiltering) && (
           <div className="absolute inset-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-50 flex items-center justify-center">
             <div className="flex flex-col items-center justify-center -mt-[200px]">
               {/* Spinner minimalista */}
               <div className="w-12 h-12 mb-4">
-                <div className="w-full h-full border-2 border-green-200 dark:border-green-900/30 rounded-full border-t-green-600 dark:border-t-green-400 animate-spin"></div>
+                <div className="h-full w-full animate-spin rounded-full border-2 border-zinc-200 border-t-emerald-600 dark:border-zinc-700 dark:border-t-emerald-500" />
               </div>
-              <p className="text-base font-medium text-green-600 dark:text-green-400">
+              <p className="text-base font-medium text-zinc-700 dark:text-zinc-300">
                 {isFiltering ? 'Cargando datos del día...' : 'Actualizando dashboard...'}
               </p>
             </div>
           </div>
         )}
 
-        {/* Header con estilo de las otras páginas */}
-        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700 mb-3 md:mb-6">
-          <CardHeader className="p-3 md:p-6">
-            <div className="flex flex-col gap-2 md:gap-4">
-              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 md:gap-4">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2 flex-wrap">
-                    <BarChart3 className="h-5 w-5 md:h-6 md:w-6 text-emerald-600 flex-shrink-0" />
-                    <span className="flex-shrink-0">Dashboard</span>
-                    {currentStoreName && !isMainStoreUser(user) && (
-                      <Badge className="bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300 text-sm md:text-base px-3 py-1.5 flex-shrink-0 border border-green-300 dark:border-green-700">
-                        <StoreIcon className="h-4 w-4 md:h-5 md:w-5 mr-1.5" />
-                        {currentStoreName}
-                      </Badge>
-                    )}
-                    {isMainStoreUser(user) && (
-                      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 text-sm md:text-base px-3 py-1.5 flex-shrink-0 border border-emerald-300 dark:border-emerald-700">
-                        <Crown className="h-4 w-4 md:h-5 md:w-5 mr-1.5" />
-                        Tienda Principal
-                      </Badge>
-                    )}
-                    {(isRefreshing || isFiltering) && (
-                      <Badge className="bg-emerald-100 text-emerald-800 dark:bg-emerald-900 dark:text-emerald-200 text-xs flex-shrink-0">
-                        Actualizando...
-                      </Badge>
-                    )}
-                  </CardTitle>
-                  <p className="text-xs md:text-base text-gray-600 dark:text-gray-300 mt-0.5 md:mt-1">
-                    {currentStoreName && !isMainStoreUser(user)
-                      ? 'Estás viendo el dashboard de esta micro tienda. Los datos mostrados corresponden únicamente a esta ubicación.'
-                      : isMainStoreUser(user)
-                        ? 'Resumen ejecutivo y métricas de rendimiento de la tienda principal'
-                        : 'Resumen ejecutivo y métricas de rendimiento'}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
+        {/* Header — mismos patrones que Ventas / Productos (cardShell + CardTitle + StoreBadge) */}
+        <Card className={cn(cardShell, 'mb-3 md:mb-6')}>
+          <CardHeader className="space-y-0 p-4 md:p-6">
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0 flex-1 space-y-1.5">
+                <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  <BarChart3
+                    className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500"
+                    strokeWidth={1.5}
+                    aria-hidden
+                  />
+                  <span>Dashboard</span>
+                  <StoreBadge />
+                  {(isRefreshing || isFiltering) && (
+                    <Badge
+                      variant="outline"
+                      className="shrink-0 border-zinc-200 bg-zinc-50 text-xs text-zinc-600 dark:border-zinc-600 dark:bg-zinc-800/50 dark:text-zinc-300"
+                    >
+                      Actualizando…
+                    </Badge>
+                  )}
+                </CardTitle>
+                <p className="max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {currentStoreName && !isMainStoreUser(user)
+                    ? 'Estás viendo el dashboard de esta micro tienda. Los datos mostrados corresponden únicamente a esta ubicación.'
+                    : isMainStoreUser(user)
+                      ? 'Resumen ejecutivo y métricas de rendimiento de la tienda principal'
+                      : 'Resumen ejecutivo y métricas de rendimiento'}
+                </p>
+              </div>
+              <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
                   {isSuperAdmin ? (
                     <>
                       {/* Selector de período simplificado */}
-                      <div className="relative w-full sm:w-auto">
+                      <div className="relative w-full sm:w-auto sm:min-w-[200px]">
                         <select
                           value={dateFilter}
                           onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
-                          className="w-full appearance-none bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                          className={dashFilterSelectClass}
+                          aria-label="Período del dashboard"
                         >
                           {(['today', 'specific', 'range', 'all'] as DateFilter[]).map((filter) => (
                             <option key={filter} value={filter}>
@@ -1419,20 +1358,19 @@ export default function DashboardPage() {
                             </option>
                           ))}
                         </select>
-                        <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 md:pr-2 pointer-events-none">
-                          <svg className="w-4 h-4 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 md:pr-2">
+                          <ChevronDown className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
                         </div>
                       </div>
 
                       {/* Selector de año cuando "Todo el Tiempo" está seleccionado */}
                       {dateFilter === 'all' && isSuperAdmin && (
-                        <div className="relative w-full sm:w-auto sm:ml-2">
+                        <div className="relative w-full sm:w-auto sm:ml-2 sm:min-w-[100px]">
                           <select
                             value={selectedYear}
                             onChange={(e) => handleYearChange(Number(e.target.value))}
-                            className="w-full appearance-none bg-white dark:bg-neutral-900 border border-gray-300 dark:border-neutral-600 rounded-lg px-3 py-2 md:px-3 md:py-2 pr-9 md:pr-8 text-sm md:text-sm font-medium text-gray-700 dark:text-gray-300 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            className={dashFilterSelectClass}
+                            aria-label="Año"
                           >
                             {availableYears.map((year) => (
                               <option key={year} value={year}>
@@ -1440,10 +1378,8 @@ export default function DashboardPage() {
                               </option>
                             ))}
                           </select>
-                          <div className="absolute inset-y-0 right-0 flex items-center pr-2.5 md:pr-2 pointer-events-none">
-                            <svg className="w-4 h-4 md:w-4 md:h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                            </svg>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2.5 md:pr-2">
+                            <ChevronDown className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
                           </div>
                         </div>
                       )}
@@ -1460,23 +1396,27 @@ export default function DashboardPage() {
 
                       {/* Rango de fechas: desde - hasta (solo super admin) */}
                       {dateFilter === 'range' && (
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Desde</span>
+                        <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                          <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                            <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                              Desde
+                            </span>
                             <DatePicker
                               selectedDate={dateRangeStart}
                               onDateSelect={handleRangeStartSelect}
                               placeholder="Inicio"
-                              className="w-full sm:w-36 text-xs md:text-sm"
+                              className="w-full min-w-[11rem] sm:w-40"
                             />
                           </div>
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Hasta</span>
+                          <div className="flex w-full min-w-0 flex-col gap-1 sm:w-auto sm:flex-row sm:items-center sm:gap-2">
+                            <span className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                              Hasta
+                            </span>
                             <DatePicker
                               selectedDate={dateRangeEnd}
                               onDateSelect={handleRangeEndSelect}
                               placeholder="Fin"
-                              className="w-full sm:w-36 text-xs md:text-sm"
+                              className="w-full min-w-[11rem] sm:w-40"
                               minDate={dateRangeStart ?? undefined}
                             />
                           </div>
@@ -1484,14 +1424,12 @@ export default function DashboardPage() {
                       )}
                     </>
                   ) : (
-                    <div className="flex items-center gap-2 px-2 md:px-3 py-1 md:py-1.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg">
-                      <Calendar className="h-3 w-3 md:h-4 md:w-4 text-emerald-600" />
-                      <span className="text-xs md:text-sm font-medium text-emerald-700 dark:text-emerald-300 hidden sm:inline">
+                    <div className="flex items-center gap-2 rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1 dark:border-zinc-700 dark:bg-zinc-800/40 md:px-3 md:py-1.5">
+                      <Calendar className="h-3 w-3 text-zinc-500 dark:text-zinc-400 md:h-4 md:w-4" strokeWidth={1.5} />
+                      <span className="hidden text-xs font-medium text-zinc-600 dark:text-zinc-300 sm:inline md:text-sm">
                         Vista del día actual
                       </span>
-                      <span className="text-xs font-medium text-emerald-700 dark:text-emerald-300 sm:hidden">
-                        Hoy
-                      </span>
+                      <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300 sm:hidden">Hoy</span>
                     </div>
                   )}
                   {/* Botones de acción agrupados */}
@@ -1499,384 +1437,268 @@ export default function DashboardPage() {
                     <Button
                       onClick={() => setHideNumbers(!hideNumbers)}
                       variant="outline"
-                      className="justify-center text-gray-600 border-gray-300 hover:bg-gray-50 dark:text-gray-400 dark:border-neutral-600 dark:hover:bg-gray-700 text-xs md:text-sm px-2.5 md:px-3 py-2"
+                      size="sm"
+                      className={cn(dashToolbarButtonClass, 'w-9 justify-center px-0 md:w-auto md:px-3')}
                       title={hideNumbers ? 'Mostrar números' : 'Ocultar números'}
                     >
-                      {hideNumbers ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      {hideNumbers ? <EyeOff className="h-4 w-4" strokeWidth={1.5} /> : <Eye className="h-4 w-4" strokeWidth={1.5} />}
                     </Button>
                     <Button
                       onClick={handleRefresh}
                       disabled={isRefreshing}
                       variant="outline"
-                      className="justify-center gap-2 text-emerald-600 border-emerald-600 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-400 dark:hover:bg-emerald-900/20 disabled:opacity-50 text-xs md:text-sm px-2.5 md:px-4 py-2"
+                      size="sm"
+                      className={cn(dashToolbarButtonClass, 'gap-2 px-3 text-xs disabled:opacity-50 md:px-4 md:text-sm')}
                     >
-                      <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                      <RefreshCw className={`h-4 w-4 shrink-0 ${isRefreshing ? 'animate-spin' : ''}`} strokeWidth={1.5} />
                       <span className="hidden md:inline">Actualizar</span>
                     </Button>
                   </div>
                 </div>
               </div>
-            </div>
           </CardHeader>
         </Card>
 
-        {/* Métricas principales - 3 o 4 cards según el rol */}
-        <div className={`grid grid-cols-1 sm:grid-cols-2 ${user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 md:gap-6 mb-6 md:mb-8`}>
-          {/* Total Ingresos */}
-          <div
-            onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-1.5 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                <BarChart3 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
-              </div>
-              <div className="text-right">
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Total Ingresos</span>
-                <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  {effectiveDateFilter === 'today' ? 'Hoy' :
-                    effectiveDateFilter === 'specific' ? 'Fecha Específica' :
-                      effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
-                        ? `${dateRangeStart.toLocaleDateString('es-CO')} - ${dateRangeEnd.toLocaleDateString('es-CO')}`
-                        : effectiveDateFilter === 'range' ? 'Rango' : 'Todos los Períodos'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {formatCurrency(metrics.totalRevenue)}
+        {/* Panel único de métricas: un borde, período arriba; celdas planas sin 8 cards sueltas */}
+        <div className={cn(cardShell, 'mb-6 overflow-hidden rounded-xl md:mb-8')}>
+          <div className="border-b border-zinc-200/80 px-4 py-3 dark:border-zinc-800 md:px-6 md:py-3.5">
+            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Resumen del período
             </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              {metrics.totalSales} ventas realizadas
-            </p>
+            <p className="mt-0.5 text-sm text-zinc-600 dark:text-zinc-300">{periodLabelShort}</p>
           </div>
+          <div className="grid grid-cols-2 gap-2 p-2 sm:grid-cols-3 sm:gap-2.5 sm:p-3 lg:grid-cols-4 lg:gap-3 lg:p-4">
+            <button
+              type="button"
+              onClick={() => router.push('/sales')}
+              className={cn(dashMetricTile, dashMetricTileInteractive)}
+            >
+              <div className={dashMetricRow}>
+                <BarChart3 className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                <span className={dashMetricLabelClass}>Total ingresos</span>
+              </div>
+              <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                {formatCurrency(metrics.totalRevenue)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{metrics.totalSales} ventas</p>
+            </button>
 
-          {/* Efectivo */}
-          <div
-            onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                <DollarSign className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+            <button
+              type="button"
+              onClick={() => router.push('/sales')}
+              className={cn(dashMetricTile, dashMetricTileInteractive)}
+            >
+              <div className={dashMetricRow}>
+                <DollarSign className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                <span className={dashMetricLabelClass}>Efectivo</span>
               </div>
-              <div className="text-right">
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Efectivo</span>
-                <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  {effectiveDateFilter === 'today' ? 'Hoy' :
-                    effectiveDateFilter === 'specific' ? 'Fecha Específica' :
-                      effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
-                        ? `${dateRangeStart.toLocaleDateString('es-CO')} - ${dateRangeEnd.toLocaleDateString('es-CO')}`
-                        : effectiveDateFilter === 'range' ? 'Rango' : 'Todos los Períodos'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {formatCurrency(metrics.cashRevenue)}
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
-            </p>
-          </div>
+              <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                {formatCurrency(metrics.cashRevenue)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                {(metrics.cashRevenue + metrics.transferRevenue) > 0
+                  ? `${((metrics.cashRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1)}% del total`
+                  : '0% del total'}
+              </p>
+            </button>
 
-          {/* Transferencia */}
-          <div
-            onClick={() => router.push('/sales')}
-            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-1.5 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                <TrendingUp className="h-3.5 w-3.5 text-blue-600 dark:text-blue-400" />
+            <button
+              type="button"
+              onClick={() => router.push('/sales')}
+              className={cn(dashMetricTile, dashMetricTileInteractive)}
+            >
+              <div className={dashMetricRow}>
+                <TrendingUp className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                <span className={dashMetricLabelClass}>Transferencia</span>
               </div>
-              <div className="text-right">
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Transferencia</span>
-                <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                  {effectiveDateFilter === 'today' ? 'Hoy' :
-                    effectiveDateFilter === 'specific' ? 'Fecha Específica' :
-                      effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
-                        ? `${dateRangeStart.toLocaleDateString('es-CO')} - ${dateRangeEnd.toLocaleDateString('es-CO')}`
-                        : effectiveDateFilter === 'range' ? 'Rango' : 'Todos los Períodos'}
-                </p>
-              </div>
-            </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {formatCurrency(metrics.transferRevenue)}
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              {(metrics.cashRevenue + metrics.transferRevenue) > 0 ? ((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1) : 0}% del total
-            </p>
-          </div>
+              <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                {formatCurrency(metrics.transferRevenue)}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                {(metrics.cashRevenue + metrics.transferRevenue) > 0
+                  ? `${((metrics.transferRevenue / (metrics.cashRevenue + metrics.transferRevenue)) * 100).toFixed(1)}% del total`
+                  : '0% del total'}
+              </p>
+            </button>
 
-          {/* Crédito o Facturas Anuladas - Depende del rol */}
-          {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
-            isSuperAdmin ? (
-              // Facturas Anuladas para Super Admin
-              <div
-                onClick={() => setShowCancelledModal(true)}
-                className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-1.5 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                    <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+            {user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? (
+              isSuperAdmin ? (
+                <button
+                  type="button"
+                  onClick={() => setShowCancelledModal(true)}
+                  className={cn(dashMetricTile, dashMetricTileInteractive)}
+                >
+                  <div className={dashMetricRow}>
+                    <XCircle className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                    <span className={dashMetricLabelClass}>Facturas anuladas</span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
-                    <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                      {effectiveDateFilter === 'today' ? 'Hoy' :
-                        effectiveDateFilter === 'specific' ? 'Fecha Específica' :
-                          effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
-                            ? `${dateRangeStart.toLocaleDateString('es-CO')} - ${dateRangeEnd.toLocaleDateString('es-CO')}`
-                            : effectiveDateFilter === 'range' ? 'Rango' : 'Todos los Períodos'}
-                    </p>
+                  <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                    {metrics.cancelledSales}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">de {metrics.totalSales} ventas</p>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => router.push('/payments')}
+                  className={cn(dashMetricTile, dashMetricTileInteractive)}
+                >
+                  <div className={dashMetricRow}>
+                    <CreditCard className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                    <span className={dashMetricLabelClass}>Crédito</span>
                   </div>
+                  <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                    {formatCurrency(metrics.creditRevenue)}
+                  </p>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {
+                      filteredData.credits.filter(
+                        (c: any) =>
+                          (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0
+                      ).length
+                    }{' '}
+                    créditos pendientes
+                  </p>
+                </button>
+              )
+            ) : null}
+
+            {canViewCredits && !isSuperAdmin && (
+              <button type="button" onClick={goToCredits} className={cn(dashMetricTile, dashMetricTileInteractive)}>
+                <div className={dashMetricRow}>
+                  <CreditCard className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                  <span className={dashMetricLabelClass}>Dinero afuera</span>
                 </div>
-                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
+                <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  {formatCurrency(metrics.dailyCreditsDebt || 0)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {metrics.dailyCreditsCount || 0} créditos del día
+                </p>
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={() => router.push('/warranties')}
+              className={cn(dashMetricTile, dashMetricTileInteractive)}
+            >
+              <div className={dashMetricRow}>
+                <Shield className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                <span className={dashMetricLabelClass}>Garantías</span>
+              </div>
+              <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                {metrics.completedWarranties}
+              </p>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Completadas</p>
+            </button>
+
+            {isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => router.push('/sales')}
+                className={cn(dashMetricTile, dashMetricTileInteractive)}
+              >
+                <div className={dashMetricRow}>
+                  <Activity className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                  <span className={dashMetricLabelClass}>Ganancia bruta</span>
+                </div>
+                <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  {formatCurrency(metrics.grossProfit)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Por ventas del período</p>
+              </button>
+            )}
+
+            {isSuperAdmin && (
+              <button
+                type="button"
+                onClick={() => router.push('/inventory/products')}
+                className={cn(dashMetricTile, dashMetricTileInteractive)}
+              >
+                <div className={dashMetricRow}>
+                  <Package className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                  <span className={dashMetricLabelClass}>Stock (inversión)</span>
+                </div>
+                <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  {formatCurrency(metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment : metrics.potentialInvestment)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {metrics.totalStockInvestment > 0 ? 'Inversión en stock' : 'Inversión potencial'}
+                </p>
+              </button>
+            )}
+
+            {isSuperAdmin ? (
+              <button type="button" onClick={goToCredits} className={cn(dashMetricTile, dashMetricTileInteractive)}>
+                <div className={dashMetricRow}>
+                  <CreditCard className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                  <span className={dashMetricLabelClass}>Créditos</span>
+                </div>
+                <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  {formatCurrency(metrics.totalDebt || 0)}
+                </p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Total adeudado</p>
+              </button>
+            ) : (
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => setShowCancelledModal(true)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault()
+                    setShowCancelledModal(true)
+                  }
+                }}
+                className={cn(dashMetricTile, dashMetricTileInteractive, 'sm:col-span-2 lg:col-span-2')}
+              >
+                <div className={dashMetricRow}>
+                  <XCircle className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                  <span className={dashMetricLabelClass}>Facturas anuladas</span>
+                </div>
+                <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
                   {metrics.cancelledSales}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  de {metrics.totalSales} ventas totales
-                </p>
-              </div>
-            ) : (
-              // Crédito para Admin (no Super Admin)
-              <div
-                onClick={() => router.push('/payments')}
-                className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                    <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">de {metrics.totalSales} ventas totales</p>
+                <div className="mt-3 space-y-1.5 border-t border-zinc-200/90 pt-3 dark:border-zinc-700/90">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-400">Tasa</span>
+                    <span className="font-medium tabular-nums text-red-600 dark:text-red-400">
+                      {metrics.totalSales > 0 ? ((metrics.cancelledSales / metrics.totalSales) * 100).toFixed(1) : 0}%
+                    </span>
                   </div>
-                  <div className="text-right">
-                    <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Crédito</span>
-                    <p className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">
-                      {effectiveDateFilter === 'today' ? 'Hoy' :
-                        effectiveDateFilter === 'specific' ? 'Fecha Específica' :
-                          effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
-                            ? `${dateRangeStart.toLocaleDateString('es-CO')} - ${dateRangeEnd.toLocaleDateString('es-CO')}`
-                            : effectiveDateFilter === 'range' ? 'Rango' : 'Todos los Períodos'}
-                    </p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-zinc-500 dark:text-zinc-400">Valor perdido</span>
+                    <span className="font-medium tabular-nums text-red-600/90 dark:text-red-400">
+                      {formatCurrency(metrics.lostValue)}
+                    </span>
                   </div>
-                </div>
-                <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                  {formatCurrency(metrics.creditRevenue)}
-                </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">
-                  {filteredData.credits.filter((c: any) => (c.status === 'pending' || c.status === 'partial') && (c.pendingAmount || 0) > 0).length} créditos pendientes
-                </p>
-              </div>
-            )
-          ) : null}
-
-        </div>
-
-        {/* Segunda fila de métricas - 4 cards abajo */}
-        <div className={`grid grid-cols-1 md:grid-cols-2 ${user && user.role !== 'vendedor' && user.role !== 'Vendedor' ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-4 md:gap-6 mb-6 md:mb-10 items-stretch`}>
-          {/* Dinero Afuera - Para usuarios con permisos de créditos, pero NO para Super Admin */}
-          {canViewCredits && !isSuperAdmin && (
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={goToCredits}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  goToCredits()
-                }
-              }}
-              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Dinero Afuera</span>
-              </div>
-              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {formatCurrency(isSuperAdmin ? metrics.totalDebt : metrics.dailyCreditsDebt || 0)}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                {isSuperAdmin
-                  ? `${metrics.pendingCreditsCount} créditos pendientes`
-                  : `${metrics.dailyCreditsCount || 0} créditos del día`
-                }
-              </p>
-            </div>
-          )}
-
-          {/* Garantías Completadas */}
-          <div
-            onClick={() => router.push('/warranties')}
-            className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="p-1.5 bg-purple-100 dark:bg-purple-900/30 rounded-lg">
-                <Shield className="h-3.5 w-3.5 text-purple-600 dark:text-purple-400" />
-              </div>
-              <div className="text-right">
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Garantías Completadas</span>
-              </div>
-            </div>
-            <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-              {metrics.completedWarranties}
-            </p>
-            <p className="text-xs text-gray-600 dark:text-gray-400">
-              Garantías completadas
-            </p>
-          </div>
-
-          {/* Ganancia Bruta */}
-          {isSuperAdmin && (
-            <div
-              onClick={() => router.push('/sales')}
-              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                  <TrendingUp className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="text-right">
-                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Ganancia Bruta</span>
-                  <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">
-                    {effectiveDateFilter === 'today' ? 'Hoy' :
-                      effectiveDateFilter === 'specific' ? 'Fecha Específica' :
-                        effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
-                          ? `${dateRangeStart.toLocaleDateString('es-CO')} - ${dateRangeEnd.toLocaleDateString('es-CO')}`
-                          : effectiveDateFilter === 'range' ? 'Rango' : 'Todos los Períodos'}
+                  <p className="pt-1 text-center text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
+                    <span className="inline-flex items-center gap-1">
+                      <BarChart3 className="h-3 w-3 shrink-0" aria-hidden />
+                      Clic para análisis detallado
+                    </span>
                   </p>
                 </div>
               </div>
-              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {formatCurrency(metrics.grossProfit)}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Beneficio por ventas realizadas
-              </p>
-            </div>
-          )}
-
-          {/* Productos en Stock - Solo para Super Admin */}
-          {isSuperAdmin && (
-            <div
-              onClick={() => router.push('/inventory/products')}
-              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 bg-cyan-100 dark:bg-cyan-900/30 rounded-lg">
-                  <Package className="h-3.5 w-3.5 text-cyan-600 dark:text-cyan-400" />
-                </div>
-                <div className="text-right">
-                  <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Productos en Stock</span>
-                  <p className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 mt-0.5">Stock Total</p>
-                </div>
-              </div>
-              <p className="text-xl md:text-2xl font-bold text-cyan-600 dark:text-cyan-400 mb-1">
-                {formatCurrency(metrics.totalStockInvestment > 0 ? metrics.totalStockInvestment : metrics.potentialInvestment)}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                {metrics.totalStockInvestment > 0 ? 'Inversión Total en Stock' : 'Inversión Potencial (Costo Total)'}
-              </p>
-            </div>
-          )}
-
-          {/* Créditos o Facturas Anuladas - Depende del rol */}
-          {isSuperAdmin ? (
-            // Créditos para Super Admin
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={goToCredits}
-              onKeyDown={(event) => {
-                if (event.key === 'Enter' || event.key === ' ') {
-                  event.preventDefault()
-                  goToCredits()
-                }
-              }}
-              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col h-full"
-            >
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-1.5 bg-orange-100 dark:bg-orange-900/30 rounded-lg">
-                  <CreditCard className="h-3.5 w-3.5 text-orange-600 dark:text-orange-400" />
-                </div>
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Créditos</span>
-              </div>
-              <p className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white mb-1">
-                {metrics.pendingCreditsCount || 0}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                créditos pendientes/parciales
-              </p>
-              <p className="text-lg font-bold text-orange-600 dark:text-orange-400">
-                {formatCurrency(metrics.totalDebt || 0)}
-              </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400">
-                Total a hoy
-              </p>
-            </div>
-          ) : (
-            // Facturas Anuladas para otros usuarios
-            <div
-              className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
-              onClick={() => setShowCancelledModal(true)}
-            >
-              <div className="flex items-center justify-between mb-2 md:mb-4">
-                <div className="p-1.5 md:p-2 bg-red-100 dark:bg-red-900/30 rounded-lg">
-                  <XCircle className="h-4 w-4 md:h-5 md:w-5 text-red-600 dark:text-red-400" />
-                </div>
-                <span className="text-xs md:text-sm text-gray-500 dark:text-gray-400 uppercase tracking-wide font-medium">Facturas Anuladas</span>
-              </div>
-              <p className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white mb-0.5 md:mb-1">
-                {metrics.cancelledSales}
-              </p>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-400 mb-2 md:mb-3">
-                de {metrics.totalSales} ventas totales
-              </p>
-
-              {/* Resumen adicional */}
-              <div className="pt-2 md:pt-3 border-t border-gray-200 dark:border-neutral-600 space-y-1.5 md:space-y-2 mt-auto">
-                <div className="flex items-center justify-between text-xs md:text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Tasa:</span>
-                  <span className="font-semibold text-red-600 dark:text-red-400">
-                    {metrics.totalSales > 0 ? ((metrics.cancelledSales / metrics.totalSales) * 100).toFixed(1) : 0}%
-                  </span>
-                </div>
-                <div className="flex items-center justify-between text-xs md:text-sm">
-                  <span className="text-gray-600 dark:text-gray-400">Valor perdido:</span>
-                  <span className="font-semibold text-orange-600 dark:text-orange-400">
-                    {formatCurrency(metrics.lostValue)}
-                  </span>
-                </div>
-                <div className="text-center pt-1 md:pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowCancelledModal(true)}
-                    className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium flex items-center justify-center gap-1 hover:underline focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400"
-                  >
-                    <BarChart3 className="h-2.5 w-2.5 md:h-3 md:w-3" />
-                    <span className="hidden sm:inline">Haz clic para ver análisis detallado</span>
-                    <span className="sm:hidden">Ver detalles</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Gráficos y estadísticas mejoradas */}
         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-          {/* Tendencia de Ingresos - Dinámica según filtros */}
+          {/* Tendencia de Ingresos + Ingresos por método (super admin, lado a lado en lg) */}
           {isSuperAdmin && (
-            <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-100 dark:bg-emerald-900/30 rounded-lg">
-                    <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-400" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Tendencia de Ingresos</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {effectiveDateFilter === 'all' ? 'Por mes' : effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd ? 'Por día (rango)' : 'Últimos 15 días'}
-                    </p>
-                  </div>
+            <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2 lg:items-stretch">
+            <div className={dashCardBase}>
+              <div className="mb-4 flex min-w-0 items-start gap-2">
+                <TrendingUp className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 md:text-base">Tendencia de Ingresos</h3>
+                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                    {effectiveDateFilter === 'all' ? 'Por mes' : effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd ? 'Por día (rango)' : 'Últimos 7 días'}
+                  </p>
                 </div>
               </div>
               <div className="h-[250px] md:h-[300px]">
@@ -1942,7 +1764,6 @@ export default function DashboardPage() {
                       })
 
                     // Colores adaptativos para modo oscuro
-                    const gridColor = isDarkMode ? '#111827' : '#f0f0f0' // Grid casi invisible en modo oscuro
                     const axisColor = isDarkMode ? '#6b7280' : '#666'
                     const lineColor = isDarkMode ? '#75dc45' : '#52c42a' // Verde de marca (theme)
                     const dotStrokeColor = isDarkMode ? '#111827' : '#fff'
@@ -1953,11 +1774,6 @@ export default function DashboardPage() {
                     return monthlyArray.length > 0 ? (
                       <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                         <LineChart data={monthlyArray}>
-                          <CartesianGrid
-                            strokeDasharray="3 3"
-                            stroke={gridColor}
-                            strokeOpacity={isDarkMode ? 0.3 : 1}
-                          />
                           <XAxis
                             dataKey="date"
                             stroke={axisColor}
@@ -2009,7 +1825,7 @@ export default function DashboardPage() {
                     )
                   }
 
-                  // Para fecha específica o hoy: últimos 15 días
+                  // Para fecha específica o hoy: últimos 7 días (incluye el día de referencia)
                   const getDateKey = (dateInput: Date | string): string => {
                     const date = new Date(dateInput)
                     const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -2036,7 +1852,7 @@ export default function DashboardPage() {
                       referenceDate = new Date()
                     }
                     referenceDate.setHours(0, 0, 0, 0)
-                    for (let i = 0; i < 15; i++) {
+                    for (let i = 0; i < 7; i++) {
                       const date = new Date(referenceDate)
                       date.setDate(date.getDate() - i)
                       chartDays.push(date)
@@ -2044,21 +1860,21 @@ export default function DashboardPage() {
                     chartDays.reverse()
                   }
 
-                  const last15Days = chartDays
+                  const chartWindowDays = chartDays
 
                   // Calcular ingresos por día desde TODOS los datos (no filteredData)
-                  // porque filteredData solo tiene el día seleccionado, pero necesitamos los 15 días
+                  // porque filteredData solo tiene el día seleccionado, pero necesitamos la ventana del gráfico
                   const dailyData: { [key: string]: number } = {}
 
                   // Inicializar todos los días con 0
-                  last15Days.forEach(date => {
+                  chartWindowDays.forEach(date => {
                     const dateKey = getDateKey(date)
                     dailyData[dateKey] = 0
                   })
 
                   // Crear un Set de timestamps para verificación rápida
                   const dayTimestamps = new Set<number>()
-                  last15Days.forEach(day => {
+                  chartWindowDays.forEach(day => {
                     const dayStart = new Date(day)
                     dayStart.setHours(0, 0, 0, 0)
                     dayTimestamps.add(dayStart.getTime())
@@ -2082,7 +1898,7 @@ export default function DashboardPage() {
                       const saleDate = new Date(sale.createdAt)
                       saleDate.setHours(0, 0, 0, 0)
 
-                      // Verificar si la venta está en el rango de los últimos 15 días
+                      // Verificar si la venta está en la ventana del gráfico (7 días)
                       if (dayTimestamps.has(saleDate.getTime())) {
                         const dateKey = getDateKey(saleDate)
 
@@ -2133,7 +1949,7 @@ export default function DashboardPage() {
                   })
 
                   // Convertir a array ordenado
-                  const chartData = last15Days.map(date => {
+                  const chartData = chartWindowDays.map(date => {
                     const dateKey = getDateKey(date)
                     return {
                       date: dateKey,
@@ -2144,7 +1960,6 @@ export default function DashboardPage() {
                   })
 
                   // Colores adaptativos para modo oscuro
-                  const gridColor = isDarkMode ? '#374151' : '#e5e7eb' // Grid más visible
                   const axisColor = isDarkMode ? '#9ca3af' : '#666'
                   const lineColor = isDarkMode ? '#75dc45' : '#52c42a' // Verde de marca (theme)
                   const dotStrokeColor = isDarkMode ? '#111827' : '#fff'
@@ -2155,11 +1970,6 @@ export default function DashboardPage() {
                   return chartData.length > 0 ? (
                     <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                       <LineChart data={chartData}>
-                        <CartesianGrid
-                          strokeDasharray="3 3"
-                          stroke={gridColor}
-                          strokeOpacity={isDarkMode ? 0.5 : 0.8}
-                        />
                         <XAxis
                           dataKey="date"
                           stroke={axisColor}
@@ -2212,149 +2022,17 @@ export default function DashboardPage() {
                 })()}
               </div>
             </div>
-          )}
 
-          {/* Gráficas lado a lado */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6">
-            {/* Top Productos Más Rentables */}
-            {isSuperAdmin && (
-              <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-green-100 dark:bg-green-900/30 rounded-lg">
-                      <Package className="h-4 w-4 text-green-600 dark:text-green-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Productos Más Rentables</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Por ganancia generada</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="h-[250px] md:h-[300px]">
-                  {(() => {
-                    // Calcular ganancia por producto
-                    const productProfits: { [key: string]: { name: string; profit: number; sales: number } } = {}
-
-                    // Usar productos del cache y allProducts combinados
-                    const allProductsCombined = Array.from(specificProductsCache.values()).concat(allProducts)
-                    const productsMap = new Map(allProductsCombined.map(p => [p.id, p]))
-
-                    filteredData.sales.forEach((sale: Sale) => {
-                      if (sale.status !== 'cancelled' && sale.items) {
-                        sale.items.forEach((item) => {
-                          const productName = item.productName || 'Producto desconocido'
-                          const product = productsMap.get(item.productId)
-                          const cost = product?.cost || 0
-                          const unitPrice = item.unitPrice || 0
-                          const quantity = item.quantity || 0
-
-                          // Calcular precio real después de descuentos (igual que en el cálculo de grossProfit)
-                          const baseTotal = quantity * unitPrice
-                          const discountAmount = item.discountType === 'percentage'
-                            ? (baseTotal * (item.discount || 0)) / 100
-                            : (item.discount || 0)
-                          const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
-                          const realUnitPrice = quantity > 0 ? salePriceAfterDiscount / quantity : 0
-
-                          const profit = (realUnitPrice - cost) * quantity
-
-                          if (!productProfits[productName]) {
-                            productProfits[productName] = { name: productName, profit: 0, sales: 0 }
-                          }
-                          productProfits[productName].profit += profit
-                          productProfits[productName].sales += 1
-                        })
-                      }
-                    })
-
-                    const topProducts = Object.values(productProfits)
-                      .filter(p => p.profit > 0) // Solo productos con ganancia positiva
-                      .sort((a, b) => b.profit - a.profit)
-                      .slice(0, 5)
-
-                    return topProducts.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minHeight={250}>
-                        <BarChart
-                          data={topProducts.map(p => ({ name: p.name.length > 15 ? p.name.substring(0, 15) + '...' : p.name, profit: p.profit }))}
-                          margin={{ top: 10, right: 10, left: 5, bottom: 40 }}
-                        >
-                          <defs>
-                            <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#52c42a" stopOpacity={0.9} />
-                              <stop offset="95%" stopColor="#3dab1f" stopOpacity={0.7} />
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                          <XAxis
-                            dataKey="name"
-                            stroke="#666"
-                            fontSize={11}
-                            tick={{ fontSize: 11 }}
-                            angle={-45}
-                            textAnchor="end"
-                            height={60}
-                          />
-                          <YAxis
-                            stroke="#666"
-                            fontSize={11}
-                            tick={{ fontSize: 11 }}
-                            tickFormatter={(value) => {
-                              if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
-                              if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
-                              return `$${value}`
-                            }}
-                          />
-                          <Tooltip
-                            formatter={(value: number) => [
-                              new Intl.NumberFormat('es-CO', {
-                                style: 'currency',
-                                currency: 'COP',
-                                minimumFractionDigits: 0
-                              }).format(value),
-                              'Ganancia'
-                            ]}
-                            contentStyle={{
-                              backgroundColor: 'white',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Bar
-                            dataKey="profit"
-                            fill="url(#colorProfit)"
-                            radius={[4, 4, 0, 0]}
-                            stroke="#3dab1f"
-                            strokeWidth={1}
-                          />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-sm text-gray-500">No hay datos disponibles</p>
-                      </div>
-                    )
-                  })()}
+            <div className={dashCardBase}>
+              <div className="mb-4 flex min-w-0 items-start gap-2">
+                <CreditCard className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
+                <div className="min-w-0">
+                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 md:text-base">Ingresos por Método de Pago</h3>
+                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Efectivo, Transferencia y Mixto</p>
                 </div>
               </div>
-            )}
-
-            {/* Ingresos por Método de Pago */}
-            {isSuperAdmin && (
-              <div className="bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-700 rounded-xl p-4 md:p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 dark:bg-blue-900/30 rounded-lg">
-                      <CreditCard className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    </div>
-                    <div>
-                      <h3 className="text-sm md:text-base font-bold text-gray-900 dark:text-white">Ingresos por Método de Pago</h3>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Efectivo, Transferencia y Mixto</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="h-[250px] md:h-[300px]">
-                  {(() => {
+              <div className="h-[250px] md:h-[300px]">
+                {(() => {
                     // Calcular ingresos por método de pago
                     let efectivoTotal = 0
                     let transferenciaTotal = 0
@@ -2391,9 +2069,9 @@ export default function DashboardPage() {
                     })
 
                     const paymentData = [
-                      { name: 'Efectivo', value: efectivoTotal, color: '#52c42a' },
-                      { name: 'Transferencia', value: transferenciaTotal, color: '#3B82F6' },
-                      { name: 'Mixto', value: mixtoTotal, color: '#F59E0B' }
+                      { name: 'Efectivo', value: efectivoTotal, color: '#3dab1f' },
+                      { name: 'Transferencia', value: transferenciaTotal, color: '#52525b' },
+                      { name: 'Mixto', value: mixtoTotal, color: '#71717a' },
                     ].filter(item => item.value > 0)
 
                     return paymentData.length > 0 ? (
@@ -2405,18 +2083,17 @@ export default function DashboardPage() {
                           <defs>
                             <linearGradient id="colorEfectivo" x1="0" y1="0" x2="0" y2="1">
                               <stop offset="5%" stopColor="#52c42a" stopOpacity={0.9} />
-                              <stop offset="95%" stopColor="#3dab1f" stopOpacity={0.7} />
+                              <stop offset="95%" stopColor="#2e8f1a" stopOpacity={0.75} />
                             </linearGradient>
                             <linearGradient id="colorTransferencia" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.9} />
-                              <stop offset="95%" stopColor="#2563EB" stopOpacity={0.7} />
+                              <stop offset="5%" stopColor="#71717a" stopOpacity={0.95} />
+                              <stop offset="95%" stopColor="#52525b" stopOpacity={0.85} />
                             </linearGradient>
                             <linearGradient id="colorMixto" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#F59E0B" stopOpacity={0.9} />
-                              <stop offset="95%" stopColor="#D97706" stopOpacity={0.7} />
+                              <stop offset="5%" stopColor="#a1a1aa" stopOpacity={0.95} />
+                              <stop offset="95%" stopColor="#71717a" stopOpacity={0.85} />
                             </linearGradient>
                           </defs>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
                           <XAxis
                             dataKey="name"
                             stroke="#666"
@@ -2474,8 +2151,8 @@ export default function DashboardPage() {
                   })()}
                 </div>
               </div>
-            )}
-          </div>
+            </div>
+          )}
         </div>
 
         {/* Modal de Facturas Anuladas - Disponible para todos */}

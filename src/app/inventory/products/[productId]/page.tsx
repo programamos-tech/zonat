@@ -1,42 +1,119 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, type ReactNode } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { 
+import {
   Package,
   Edit,
   Trash2,
   ArrowRightLeft,
   ArrowLeft,
-  Warehouse,
-  Store,
   CheckCircle,
   AlertTriangle,
   XCircle,
   Pause,
-  TrendingUp,
-  DollarSign,
-  BarChart3,
-  Calendar
+  Warehouse,
+  Store,
+  Boxes,
+  Hash,
+  ImageIcon,
+  ExternalLink,
+  X,
+  Check,
 } from 'lucide-react'
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Dot } from 'recharts'
+import { cn } from '@/lib/utils'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
-import { Product, Category, Sale } from '@/types'
+import { Product } from '@/types'
 import { ProductsService } from '@/lib/products-service'
-import { SalesService } from '@/lib/sales-service'
 import { useCategories } from '@/contexts/categories-context'
 import { useAuth } from '@/contexts/auth-context'
 import { usePermissions } from '@/hooks/usePermissions'
+import { useProducts } from '@/contexts/products-context'
 import { getCurrentUserStoreId, isStoreSincelejo } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import { StockAdjustmentModal } from '@/components/products/stock-adjustment-modal'
 import { StockTransferModal } from '@/components/products/stock-transfer-modal'
-import { ProductModal } from '@/components/products/product-modal'
 import { ConfirmModal } from '@/components/ui/confirm-modal'
 import { toast } from 'sonner'
+
+const panel =
+  'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
+
+const inputClass =
+  'mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20'
+
+type ProductDetailEditDraft = {
+  name: string
+  reference: string
+  description: string
+  price: number
+  cost: number
+  categoryId: string
+  brand: string
+  status: Product['status']
+  imageUrl: string | null
+}
+
+function draftFromProduct(p: Product): ProductDetailEditDraft {
+  return {
+    name: p.name || '',
+    reference: p.reference || '',
+    description: p.description || '',
+    price: p.price ?? 0,
+    cost: p.cost ?? 0,
+    categoryId: p.categoryId || '',
+    brand: p.brand || '',
+    status: p.status,
+    imageUrl: p.imageUrl?.trim() || null,
+  }
+}
+
+function Field({
+  label,
+  children,
+  className,
+}: {
+  label: string
+  children: ReactNode
+  className?: string
+}) {
+  return (
+    <div className={className}>
+      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">{label}</dt>
+      <dd className="mt-1 text-sm text-zinc-900 dark:text-zinc-100">{children}</dd>
+    </div>
+  )
+}
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  className,
+}: {
+  icon: LucideIcon
+  label: string
+  value: string
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-zinc-200/90 bg-zinc-50/80 p-4 dark:border-zinc-800 dark:bg-zinc-900/40',
+        className
+      )}
+    >
+      <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400">
+        <Icon className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+        <span className="text-[11px] font-medium uppercase tracking-wide">{label}</span>
+      </div>
+      <p className="mt-2 text-lg font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">{value}</p>
+    </div>
+  )
+}
 
 export default function ProductDetailPage() {
   const params = useParams()
@@ -45,6 +122,7 @@ export default function ProductDetailPage() {
   const { categories } = useCategories()
   const { user } = useAuth()
   const { hasPermission } = usePermissions()
+  const { products: catalogProducts, refreshProducts } = useProducts()
   
   // Verificación adicional: si es vendedor, no puede editar/eliminar productos
   const userRole = user?.role?.toLowerCase() || ''
@@ -75,20 +153,22 @@ export default function ProductDetailPage() {
   const canTransfer = isVendedor ? false : (canDoProductActionsSincelejo && hasPermission('products', 'edit'))
   
   const [product, setProduct] = useState<Product | null>(null)
-  const [sales, setSales] = useState<Sale[]>([]) // Todas las ventas desde la creación
   const [isLoading, setIsLoading] = useState(true)
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState<ProductDetailEditDraft | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [editErrors, setEditErrors] = useState<Record<string, string>>({})
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+  const catalogFileInputRef = useRef<HTMLInputElement>(null)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
 
   useEffect(() => {
-    console.log('[PRODUCT DETAIL] useEffect triggered, productId:', productId)
     if (productId) {
-      console.log('[PRODUCT DETAIL] Calling loadProduct...')
       loadProduct()
     } else {
-      console.warn('[PRODUCT DETAIL] No productId provided!')
       setIsLoading(false)
     }
   }, [productId])
@@ -96,86 +176,122 @@ export default function ProductDetailPage() {
   const loadProduct = async () => {
     try {
       setIsLoading(true)
-      console.log('[PRODUCT DETAIL] Loading product:', productId)
-      
-      // Agregar timeout de seguridad
-      const timeoutPromise = new Promise((_, reject) => {
-        setTimeout(() => reject(new Error('Timeout loading product')), 10000) // 10 segundos
+      const timeoutPromise = new Promise<null>((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout loading product')), 10000)
       })
-      
-      const productData = await Promise.race([
-        ProductsService.getProductById(productId),
-        timeoutPromise
-      ]) as Product | null
-      
-      console.log('[PRODUCT DETAIL] Product data received:', productData ? 'OK' : 'NULL')
-      
+
+      const productData = (await Promise.race([ProductsService.getProductById(productId), timeoutPromise])) as Product | null
+
       if (productData) {
         setProduct(productData)
-        setIsLoading(false) // Dejar de mostrar el loading una vez que el producto está cargado
-        console.log('[PRODUCT DETAIL] Product set, loading sales in background...')
-        
-        // Cargar todas las ventas del producto desde su creación de forma asíncrona (no bloquea)
-        // Esto se hace después de mostrar el producto para que no bloquee la UI
-        SalesService.getSalesByProductId(productId)
-          .then((allSalesData) => {
-            console.log('[PRODUCT DETAIL] Sales loaded:', productId, allSalesData.length)
-          setSales(allSalesData)
-          })
-          .catch((salesError) => {
-            console.error('[PRODUCT DETAIL] Error loading sales:', salesError)
-          setSales([])
-          })
+        setIsLoading(false)
       } else {
-        console.error('[PRODUCT DETAIL] Product not found:', productId)
         setIsLoading(false)
         toast.error('Producto no encontrado')
         router.push('/inventory/products')
       }
-    } catch (error) {
-      console.error('[PRODUCT DETAIL] Exception loading product:', error)
+    } catch {
       setIsLoading(false)
       toast.error('Error al cargar el producto. Por favor, intenta de nuevo.')
-      // No redirigir automáticamente, dejar que el usuario intente de nuevo
     }
   }
 
-  const handleEdit = () => {
-    setIsEditModalOpen(true)
+  const beginEdit = () => {
+    if (!product) return
+    setDraft(draftFromProduct(product))
+    setEditErrors({})
+    setUploadPreview(null)
+    setEditing(true)
   }
 
-  const handleSaveProduct = async (productData: Omit<Product, 'id'>) => {
-    if (!product) return
-    
+  const cancelEdit = () => {
+    setEditing(false)
+    setDraft(null)
+    setEditErrors({})
+    setUploadPreview(null)
+  }
+
+  const validateDraft = (d: ProductDetailEditDraft, currentProductId: string) => {
+    const err: Record<string, string> = {}
+    if (!d.name.trim()) err.name = 'El nombre es requerido'
+    if (!d.reference.trim()) err.reference = 'La referencia es requerida'
+    else if (
+      catalogProducts.some(
+        (p) =>
+          p.id !== currentProductId &&
+          p.reference.toLowerCase() === d.reference.trim().toLowerCase()
+      )
+    ) {
+      err.reference = 'Esta referencia ya existe en otro producto'
+    }
+    if (d.price <= 0) err.price = 'El precio debe ser mayor a 0'
+    if (d.cost < 0) err.cost = 'El costo no puede ser negativo'
+    return err
+  }
+
+  const handleCatalogImageFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const blobUrl = URL.createObjectURL(file)
+    setUploadPreview(blobUrl)
+    setUploadingImage(true)
     try {
-      console.log('[PRODUCT DETAIL] Starting product update:', {
-        productId: product.id,
-        updates: productData,
-        userId: user?.id
-      })
-      
-      const success = await ProductsService.updateProduct(product.id, productData, user?.id)
-      
-      console.log('[PRODUCT DETAIL] Product update result:', success)
-      
+      const fd = new FormData()
+      fd.append('file', file)
+      const res = await fetch('/api/storage/upload-product-image', { method: 'POST', body: fd })
+      const json = await res.json()
+      if (!res.ok) throw new Error(json.error || 'Error al subir')
+      const url = typeof json.url === 'string' ? json.url.trim() : ''
+      if (!url) throw new Error('El servidor no devolvió la URL de la imagen')
+      setDraft((prev) => (prev ? { ...prev, imageUrl: url } : null))
+      toast.success('Imagen del catálogo lista — guarda los cambios para aplicar')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
+    } finally {
+      URL.revokeObjectURL(blobUrl)
+      setUploadPreview(null)
+      setUploadingImage(false)
+      e.target.value = ''
+    }
+  }
+
+  const saveEdit = async () => {
+    if (!product || !draft) return
+    const err = validateDraft(draft, product.id)
+    setEditErrors(err)
+    if (Object.keys(err).length > 0) return
+
+    setSaving(true)
+    try {
+      const success = await ProductsService.updateProduct(
+        product.id,
+        {
+          name: draft.name.trim(),
+          reference: draft.reference.trim(),
+          description: draft.description.trim(),
+          price: draft.price,
+          cost: draft.cost,
+          categoryId: draft.categoryId,
+          brand: draft.brand.trim(),
+          status: draft.status,
+          imageUrl: draft.imageUrl?.trim() || null,
+        },
+        user?.id
+      )
+
       if (success) {
-        toast.success('Producto actualizado exitosamente')
-        setIsEditModalOpen(false)
-        // Esperar un momento antes de recargar para asegurar que la actualización se complete
-        setTimeout(async () => {
-          try {
-            await loadProduct()
-          } catch (loadError) {
-            console.error('[PRODUCT DETAIL] Error reloading product after update:', loadError)
-            toast.error('Producto actualizado pero hubo un error al recargar. Por favor, recarga la página.')
-          }
-        }, 500)
+        toast.success('Producto actualizado')
+        setEditing(false)
+        setDraft(null)
+        await loadProduct()
+        await refreshProducts(undefined, { silent: true })
       } else {
-        toast.error('Error actualizando producto. Por favor, verifica los datos e intenta nuevamente.')
+        toast.error('No se pudo guardar. Revisa los datos e intenta de nuevo.')
       }
-    } catch (error) {
-      console.error('[PRODUCT DETAIL] Exception updating product:', error)
-      toast.error('Error actualizando producto. Por favor, intenta nuevamente.')
+    } catch {
+      toast.error('Error al guardar')
+    } finally {
+      setSaving(false)
     }
   }
 
@@ -299,18 +415,18 @@ export default function ProductDetailPage() {
     return category?.name || 'Sin categoría'
   }
 
-  const getStatusColor = (status: string) => {
+  const getProductStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'active':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
+        return 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-950/40 dark:text-emerald-300/90'
       case 'inactive':
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
+        return 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400'
       case 'discontinued':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+        return 'border-rose-500/25 bg-rose-500/[0.06] text-rose-950 dark:border-rose-500/30 dark:bg-rose-950/40 dark:text-rose-300/90'
       case 'out_of_stock':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+        return 'border-amber-500/25 bg-amber-500/[0.06] text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-300/90'
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300'
+        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
     }
   }
 
@@ -374,28 +490,28 @@ export default function ProductDetailPage() {
     return 'Sin Stock'
   }
 
-  const getStockStatusColor = (product: Product) => {
+  const getStockStatusBadgeClass = (product: Product) => {
     const { warehouse, store, total } = product.stock
-    
+
     if (total === 0) {
-      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+      return 'border-rose-500/25 bg-rose-500/[0.06] text-rose-950 dark:border-rose-500/30 dark:bg-rose-950/40 dark:text-rose-300/90'
     }
-    
+
     if (store > 0) {
       if (store >= 10) {
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-      } else if (store >= 5) {
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-      } else {
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400'
+        return 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-950/40 dark:text-emerald-300/90'
       }
+      if (store >= 5) {
+        return 'border-amber-500/25 bg-amber-500/[0.06] text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-300/90'
+      }
+      return 'border-orange-500/25 bg-orange-500/[0.06] text-orange-950 dark:border-orange-500/30 dark:bg-orange-950/40 dark:text-orange-300/90'
     }
-    
+
     if (warehouse > 0) {
-      return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
+      return 'border-sky-500/25 bg-sky-500/[0.06] text-sky-950 dark:border-sky-500/30 dark:bg-sky-950/40 dark:text-sky-300/90'
     }
-    
-    return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400'
+
+    return 'border-rose-500/25 bg-rose-500/[0.06] text-rose-950 dark:border-rose-500/30 dark:bg-rose-950/40 dark:text-rose-300/90'
   }
 
   const formatCurrency = (amount: number) => {
@@ -421,130 +537,11 @@ export default function ProductDetailPage() {
     })
   }
 
-  // Calcular métricas de rotación y márgenes
-  const calculateMetrics = () => {
-    console.log('Calculando métricas - Product:', product?.id, 'Sales:', sales.length)
-    
-    if (!product || sales.length === 0) {
-      return {
-        totalSold: 0,
-        totalRevenue: 0,
-        totalCost: 0,
-        totalProfit: 0,
-        profitMargin: 0,
-        averageDailySales: 0,
-        daysToStockOut: null,
-        salesByDay: []
-      }
-    }
-
-    // Calcular métricas totales desde que se creó el producto
-    let totalSold = 0
-    let totalRevenue = 0
-    let totalCost = 0
-    
-    // Obtener fecha de creación del producto
-    const productCreatedAt = new Date(product.createdAt)
-    const today = new Date()
-    
-    // Agrupar todas las ventas por día (para métricas totales)
-    const allSalesByDayMap: Record<string, number> = {}
-    
-    sales.forEach(sale => {
-      if (!sale.items) return
-      
-      sale.items.forEach(item => {
-        if (item.productId === product.id) {
-          totalSold += item.quantity
-          totalRevenue += item.total
-          totalCost += (product.cost * item.quantity)
-          
-          // Agrupar por día
-          const saleDate = new Date(sale.createdAt)
-          const dayKey = saleDate.toISOString().split('T')[0]
-          allSalesByDayMap[dayKey] = (allSalesByDayMap[dayKey] || 0) + item.quantity
-        }
-      })
-    })
-
-    const totalProfit = totalRevenue - totalCost
-    const profitMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0
-
-    // Calcular promedio diario de ventas desde la creación
-    const daysSinceCreation = Math.max(1, Math.ceil(
-      (today.getTime() - productCreatedAt.getTime()) / (1000 * 60 * 60 * 24)
-    ))
-    const averageDailySales = totalSold / daysSinceCreation
-
-    // Calcular días hasta agotar stock (basado en velocidad de venta promedio)
-    let daysToStockOut: number | null = null
-    if (averageDailySales > 0 && product.stock.total > 0) {
-      daysToStockOut = Math.ceil(product.stock.total / averageDailySales)
-    }
-
-    // Para el gráfico: mostrar solo los últimos 30 días (o menos si el producto es más nuevo)
-    const daysToShow = Math.min(30, daysSinceCreation)
-    const startDate = new Date(today)
-    startDate.setDate(startDate.getDate() - daysToShow + 1)
-    
-    // Generar días para el gráfico (últimos 30 días o desde creación si es más nuevo)
-    const salesByDayMap: Record<string, number> = {}
-    const days: Date[] = []
-    const chartStartDate = productCreatedAt > startDate ? productCreatedAt : startDate
-    
-    for (let d = new Date(chartStartDate); d <= today; d.setDate(d.getDate() + 1)) {
-      days.push(new Date(d))
-      const dayKey = d.toISOString().split('T')[0]
-      salesByDayMap[dayKey] = allSalesByDayMap[dayKey] || 0
-    }
-
-    // Convertir mapa a array ordenado para el gráfico
-    // Limitar etiquetas del eje X para que no se vea confuso
-    const salesByDay = Object.entries(salesByDayMap)
-      .map(([date, quantity], index) => {
-        const dateObj = new Date(date)
-        const totalDays = days.length
-        
-        // Mostrar etiqueta solo en ciertos intervalos para evitar saturación
-        // Mostrar primera, última, y algunas intermedias
-        const showLabel = index === 0 || 
-                         index === totalDays - 1 || 
-                         (totalDays <= 7 && index % 1 === 0) || // Si son 7 días o menos, mostrar todos
-                         (totalDays <= 14 && index % 2 === 0) || // Si son 14 días o menos, cada 2 días
-                         (totalDays <= 30 && index % 3 === 0) // Si son 30 días, cada 3 días
-        
-        return {
-          date,
-          quantity,
-          dayLabel: showLabel 
-            ? dateObj.toLocaleDateString('es-CO', { 
-                day: 'numeric', 
-                month: 'short'
-              })
-            : ''
-        }
-      })
-      .sort((a, b) => a.date.localeCompare(b.date))
-
-    return {
-      totalSold,
-      totalRevenue,
-      totalCost,
-      totalProfit,
-      profitMargin,
-      averageDailySales,
-      daysToStockOut,
-      salesByDay
-    }
-  }
-
-  const metrics = calculateMetrics()
-
   if (isLoading) {
     return (
       <RoleProtectedRoute module="products" requiredAction="view">
-        <div className="p-4 md:p-6 space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen flex items-center justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-cyan-600"></div>
+        <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:py-6">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-b-zinc-600 dark:border-zinc-800 dark:border-b-zinc-300" />
         </div>
       </RoleProtectedRoute>
     )
@@ -554,358 +551,413 @@ export default function ProductDetailPage() {
     return null
   }
 
-  const StatusIcon = getStatusIcon(product.status)
+  const displayProduct = editing && draft ? { ...product, ...draft, stock: product.stock } : product
+  const StatusIcon = getStatusIcon(displayProduct.status)
 
   return (
     <RoleProtectedRoute module="products" requiredAction="view">
-      <div className="p-3 md:p-6 space-y-4 md:space-y-6 bg-gray-50 dark:bg-neutral-950 min-h-screen pb-20 lg:pb-6">
-        {/* Header */}
-        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-          <CardContent className="p-3 md:p-6">
-            <div className="flex flex-col gap-4">
-              <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
-                    <Package className="h-5 w-5 md:h-8 md:w-8 text-cyan-600 flex-shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 md:gap-3 flex-wrap">
-                        <h1 className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white truncate">
-                          {product.name}
-                        </h1>
-                        {product.status === 'active' && (
-                          <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between gap-2 mt-1">
-                        <div className="text-xs md:text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-                          {product.reference}
-                        </div>
-                        <Button
-                          variant="outline"
-                          onClick={() => router.push('/inventory/products')}
-                          className="text-gray-600 dark:text-gray-300 border-gray-300 dark:border-neutral-600 text-xs md:text-sm px-2 md:px-3 py-1 md:py-1.5 h-auto flex-shrink-0"
-                        >
-                          <ArrowLeft className="h-3.5 w-3.5 md:h-4 md:w-4 md:mr-2" />
-                          <span className="hidden md:inline">Volver</span>
-                        </Button>
-                      </div>
-                      <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mt-1">
-                        {getCategoryName(product.categoryId)}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Resumen - En microtiendas solo Stock */}
-                  <div className={`grid ${isMainStore ? 'grid-cols-3' : 'grid-cols-1'} gap-2 md:gap-4 mt-3 md:mt-4`}>
-                    {isMainStore ? (
-                      <>
-                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
-                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Bodega</div>
-                          <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                            {formatNumber(product.stock.warehouse)}
-                          </div>
-                        </div>
-                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
-                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Local</div>
-                          <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                            {formatNumber(product.stock.store)}
-                          </div>
-                        </div>
-                        <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
-                          <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
-                          <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                            {formatNumber(product.stock.total)}
-                          </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="p-2 md:p-4 bg-gray-50 dark:bg-neutral-800/50 rounded-lg">
-                        <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Stock</div>
-                        <div className="text-lg md:text-2xl font-bold text-gray-900 dark:text-white">
-                          {formatNumber(product.stock.store)}
-                        </div>
-                      </div>
+      <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
+        <div className="border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
+          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:py-5 md:px-6">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                Ficha del producto
+              </p>
+              {editing && draft ? (
+                <>
+                  <label htmlFor="detail-product-name" className="sr-only">
+                    Nombre
+                  </label>
+                  <input
+                    id="detail-product-name"
+                    type="text"
+                    value={draft.name}
+                    onChange={(e) => setDraft((d) => (d ? { ...d, name: e.target.value } : null))}
+                    className={cn(
+                      inputClass,
+                      'mt-2 text-lg font-semibold',
+                      editErrors.name && 'border-red-500 ring-1 ring-red-200 dark:ring-red-900/50'
+                    )}
+                    placeholder="Nombre del producto"
+                  />
+                  {editErrors.name && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editErrors.name}</p>}
+                  <label htmlFor="detail-product-ref" className="sr-only">
+                    Referencia
+                  </label>
+                  <input
+                    id="detail-product-ref"
+                    type="text"
+                    value={draft.reference}
+                    onChange={(e) => setDraft((d) => (d ? { ...d, reference: e.target.value } : null))}
+                    className={cn(
+                      inputClass,
+                      'font-mono text-sm',
+                      editErrors.reference && 'border-red-500 ring-1 ring-red-200 dark:ring-red-900/50'
+                    )}
+                    placeholder="Referencia"
+                  />
+                  {editErrors.reference && (
+                    <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editErrors.reference}</p>
+                  )}
+                  <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                    Categoría y demás datos en la sección inferior.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <div className="mt-0.5 flex flex-wrap items-center gap-2">
+                    <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
+                      {product.name}
+                    </h1>
+                    {product.status === 'active' && (
+                      <CheckCircle className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" strokeWidth={1.5} />
                     )}
                   </div>
+                  <p className="mt-0.5 font-mono text-sm text-zinc-600 dark:text-zinc-300">{product.reference}</p>
+                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">{getCategoryName(product.categoryId)}</p>
+                </>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Badge
+                  variant="outline"
+                  className={cn(
+                    'inline-flex items-center gap-1 border px-2.5 py-0.5 text-[11px] font-normal whitespace-nowrap',
+                    getStockStatusBadgeClass(product)
+                  )}
+                >
+                  {getStockStatusLabel(product)}
+                </Badge>
+                {displayProduct.status !== 'active' && (
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      'inline-flex items-center gap-1 border px-2.5 py-0.5 text-[11px] font-normal',
+                      getProductStatusBadgeClass(displayProduct.status)
+                    )}
+                  >
+                    <StatusIcon className="h-3 w-3 shrink-0" strokeWidth={1.5} />
+                    {getStatusLabel(displayProduct.status)}
+                  </Badge>
+                )}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => router.push('/inventory/products')}
+                className="flex-1 sm:flex-none"
+                disabled={saving}
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                Volver
+              </Button>
+              {canEdit && editing && (
+                <>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={cancelEdit}
+                    disabled={saving}
+                    className="flex-1 sm:flex-none"
+                  >
+                    <X className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                    Cancelar
+                  </Button>
+                  <Button type="button" size="sm" onClick={saveEdit} disabled={saving} className="flex-1 sm:flex-none">
+                    <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                    {saving ? 'Guardando…' : 'Guardar cambios'}
+                  </Button>
+                </>
+              )}
+              {canEdit && !editing && (
+                <Button type="button" size="sm" variant="outline" onClick={beginEdit} className="flex-1 sm:flex-none">
+                  <Edit className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  Editar
+                </Button>
+              )}
+              {canAdjust && !editing && (
+                <Button type="button" size="sm" variant="outline" onClick={handleStockAdjustment} className="flex-1 sm:flex-none">
+                  <Package className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  Ajustar
+                </Button>
+              )}
+              {canTransfer && !editing && (
+                <Button type="button" size="sm" variant="outline" onClick={handleStockTransfer} className="flex-1 sm:flex-none">
+                  <ArrowRightLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  Transferir
+                </Button>
+              )}
+              {canDelete && !editing && (
+                <Button type="button" size="sm" variant="destructive" onClick={handleDelete} className="flex-1 sm:flex-none">
+                  <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                  Eliminar
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
 
-                  {/* Estados y Botones de Acción */}
-                  <div className="flex flex-col gap-3 mt-3 md:mt-4">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge className={`${getStockStatusColor(product)} flex items-center gap-1 w-fit text-xs md:text-sm whitespace-nowrap`}>
-                        {getStockStatusLabel(product)}
-                      </Badge>
-                      {product.status !== 'active' && (
-                        <Badge className={`${getStatusColor(product.status)} flex items-center gap-1 w-fit text-xs md:text-sm`}>
-                          <StatusIcon className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
-                          {getStatusLabel(product.status)}
-                        </Badge>
+        <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 md:space-y-5 md:px-6">
+          <section className={cn('grid gap-3', isMainStore ? 'sm:grid-cols-3' : 'sm:grid-cols-1')}>
+            {isMainStore ? (
+              <>
+                <StatCard icon={Warehouse} label="Bodega" value={formatNumber(product.stock.warehouse)} />
+                <StatCard icon={Store} label="Local" value={formatNumber(product.stock.store)} />
+                <StatCard icon={Boxes} label="Total" value={formatNumber(product.stock.total)} />
+              </>
+            ) : (
+              <StatCard icon={Store} label="Stock en tienda" value={formatNumber(product.stock.store)} />
+            )}
+          </section>
+
+          <section className={cn(panel, 'overflow-hidden p-4 md:p-6')}>
+            <h2 className="mb-4 flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+              <Hash className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+              Información del producto
+            </h2>
+            {editing && draft ? (
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Descripción</dt>
+                  <dd className="mt-1">
+                    <textarea
+                      value={draft.description}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, description: e.target.value } : null))}
+                      rows={3}
+                      className={cn(inputClass, 'mt-0 resize-y')}
+                      placeholder="Descripción (opcional)"
+                    />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Marca</dt>
+                  <dd className="mt-1">
+                    <input
+                      type="text"
+                      value={draft.brand}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, brand: e.target.value } : null))}
+                      className={cn(inputClass, 'mt-0')}
+                      placeholder="Marca (opcional)"
+                    />
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Categoría</dt>
+                  <dd className="mt-1">
+                    <select
+                      value={draft.categoryId}
+                      onChange={(e) => setDraft((d) => (d ? { ...d, categoryId: e.target.value } : null))}
+                      className={cn(inputClass, 'mt-0')}
+                    >
+                      <option value="">Sin categoría</option>
+                      {categories.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Precio de venta</dt>
+                  <dd className="mt-1">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={draft.price || ''}
+                      onChange={(e) =>
+                        setDraft((d) => (d ? { ...d, price: parseFloat(e.target.value) || 0 } : null))
+                      }
+                      className={cn(
+                        inputClass,
+                        'mt-0 tabular-nums',
+                        editErrors.price && 'border-red-500 ring-1 ring-red-200 dark:ring-red-900/50'
                       )}
-                    </div>
-                    
-                    {/* Botones en grid para mobile */}
-                    {(canEdit || canAdjust || canTransfer || canDelete) && (
-                      <div className="grid grid-cols-2 md:flex md:items-center md:gap-2 gap-2 md:mt-0">
-                        {canEdit && (
-                          <Button
-                            onClick={handleEdit}
-                            className="bg-cyan-600 hover:bg-cyan-700 text-white text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                          >
-                            <Edit className="h-3.5 w-3.5 md:mr-1.5" />
-                            <span className="hidden md:inline">Editar</span>
-                            <span className="md:hidden">Editar</span>
-                          </Button>
-                        )}
-                        {canAdjust && (
-                          <Button
-                            onClick={handleStockAdjustment}
-                            variant="outline"
-                            className="text-orange-600 border-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:border-orange-400 dark:hover:bg-orange-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                          >
-                            <Package className="h-3.5 w-3.5 md:mr-1.5" />
-                            <span className="hidden md:inline">Ajustar</span>
-                            <span className="md:hidden">Ajustar</span>
-                          </Button>
-                        )}
-                        {canTransfer && (
-                          <Button
-                            onClick={handleStockTransfer}
-                            variant="outline"
-                            className="text-purple-600 border-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:border-purple-400 dark:hover:bg-purple-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                          >
-                            <ArrowRightLeft className="h-3.5 w-3.5 md:mr-1.5" />
-                            <span className="hidden md:inline">Transferir</span>
-                            <span className="md:hidden">Transferir</span>
-                          </Button>
-                        )}
-                        {canDelete && (
-                          <Button
-                            onClick={handleDelete}
-                            variant="outline"
-                            className="text-red-600 border-red-600 hover:bg-red-50 dark:text-red-400 dark:border-red-400 dark:hover:bg-red-900/20 text-xs md:text-sm px-2 md:px-3 py-1.5 md:py-1 h-auto w-full md:w-auto"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 md:mr-1.5" />
-                            <span className="hidden md:inline">Eliminar</span>
-                            <span className="md:hidden">Eliminar</span>
-                          </Button>
-                        )}
+                    />
+                    {editErrors.price && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editErrors.price}</p>
+                    )}
+                  </dd>
+                </div>
+                <div>
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Costo</dt>
+                  <dd className="mt-1">
+                    <input
+                      type="number"
+                      min={0}
+                      step={1}
+                      value={draft.cost || ''}
+                      onChange={(e) =>
+                        setDraft((d) => (d ? { ...d, cost: parseFloat(e.target.value) || 0 } : null))
+                      }
+                      className={cn(
+                        inputClass,
+                        'mt-0 tabular-nums',
+                        editErrors.cost && 'border-red-500 ring-1 ring-red-200 dark:ring-red-900/50'
+                      )}
+                    />
+                    {editErrors.cost && (
+                      <p className="mt-1 text-xs text-red-600 dark:text-red-400">{editErrors.cost}</p>
+                    )}
+                  </dd>
+                </div>
+                <div className="sm:col-span-2">
+                  <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Estado en catálogo</dt>
+                  <dd className="mt-1">
+                    <select
+                      value={draft.status}
+                      onChange={(e) =>
+                        setDraft((d) =>
+                          d ? { ...d, status: e.target.value as Product['status'] } : null
+                        )
+                      }
+                      className={cn(inputClass, 'mt-0')}
+                    >
+                      <option value="active">Activo</option>
+                      <option value="inactive">Inactivo</option>
+                      <option value="discontinued">Descontinuado</option>
+                      <option value="out_of_stock">Sin stock</option>
+                    </select>
+                  </dd>
+                </div>
+                <Field label="Fecha de creación">
+                  <span className="tabular-nums">{formatDate(product.createdAt)}</span>
+                </Field>
+                {product.updatedAt ? (
+                  <Field label="Última actualización">
+                    <span className="tabular-nums">{formatDate(product.updatedAt)}</span>
+                  </Field>
+                ) : null}
+              </dl>
+            ) : (
+              <dl className="grid gap-4 sm:grid-cols-2">
+                <Field label="Descripción">{product.description || 'Sin descripción'}</Field>
+                <Field label="Categoría">{getCategoryName(product.categoryId)}</Field>
+                {product.brand ? <Field label="Marca">{product.brand}</Field> : null}
+                <Field label="Precio de venta">
+                  <span className="font-semibold tabular-nums">{formatCurrency(product.price)}</span>
+                </Field>
+                <Field label="Costo">
+                  <span className="font-semibold tabular-nums">{formatCurrency(product.cost)}</span>
+                </Field>
+                <Field label="Fecha de creación">
+                  <span className="tabular-nums">{formatDate(product.createdAt)}</span>
+                </Field>
+                {product.updatedAt ? (
+                  <Field label="Última actualización">
+                    <span className="tabular-nums">{formatDate(product.updatedAt)}</span>
+                  </Field>
+                ) : null}
+              </dl>
+            )}
+
+            <div className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+              <h3 className="flex items-center gap-2 text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                <ImageIcon className="h-4 w-4 text-zinc-400" strokeWidth={1.5} />
+                Foto del catálogo
+              </h3>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                Imagen para clientes y equipo en Zonat.
+                {editing && draft ? (
+                  <span className="block mt-1 text-amber-700 dark:text-amber-300/90">
+                    Sube o cambia la imagen y pulsa <span className="font-medium">Guardar cambios</span> para
+                    guardarla en el producto.
+                  </span>
+                ) : null}
+              </p>
+              <div className="mt-4">
+                {editing && draft ? (
+                  <>
+                    <input
+                      ref={catalogFileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="sr-only"
+                      disabled={uploadingImage || saving}
+                      onChange={handleCatalogImageFile}
+                    />
+                    {(uploadPreview || draft.imageUrl?.trim()) ? (
+                      <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/50">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={uploadPreview || draft.imageUrl!.trim()}
+                          alt={draft.name || 'Vista previa catálogo'}
+                          className="mx-auto block max-h-[min(50vh,380px)] w-full object-contain"
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex min-h-[160px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50/50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-950/30">
+                        <ImageIcon className="mb-2 h-10 w-10 text-zinc-300 dark:text-zinc-600" strokeWidth={1.25} />
+                        <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin imagen</p>
                       </div>
                     )}
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        disabled={uploadingImage || saving}
+                        onClick={() => catalogFileInputRef.current?.click()}
+                      >
+                        {uploadingImage ? 'Subiendo…' : 'Subir imagen'}
+                      </Button>
+                      {draft.imageUrl?.trim() ? (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          className="text-rose-600 dark:text-rose-400"
+                          disabled={uploadingImage || saving}
+                          onClick={() => setDraft((d) => (d ? { ...d, imageUrl: null } : null))}
+                        >
+                          Quitar imagen
+                        </Button>
+                      ) : null}
+                    </div>
+                  </>
+                ) : product.imageUrl?.trim() ? (
+                  <>
+                    <div className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={product.imageUrl.trim()}
+                        alt={product.name}
+                        className="mx-auto block max-h-[min(50vh,380px)] w-full object-contain"
+                      />
+                    </div>
+                    <a
+                      href={product.imageUrl.trim()}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-100"
+                    >
+                      <ExternalLink className="h-4 w-4 shrink-0" strokeWidth={1.5} />
+                      Abrir imagen en pestaña nueva
+                    </a>
+                  </>
+                ) : (
+                  <div className="flex min-h-[200px] flex-col items-center justify-center rounded-lg border border-dashed border-zinc-300 bg-zinc-50/50 px-4 py-8 text-center dark:border-zinc-700 dark:bg-zinc-950/30">
+                    <ImageIcon className="mb-2 h-10 w-10 text-zinc-300 dark:text-zinc-600" strokeWidth={1.25} />
+                    <p className="text-sm text-zinc-600 dark:text-zinc-400">Sin imagen de catálogo</p>
+                    {canEdit ? (
+                      <p className="mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-500">
+                        Pulsa <span className="font-medium text-zinc-700 dark:text-zinc-300">Editar</span> para subir
+                        una foto.
+                      </p>
+                    ) : null}
                   </div>
-                </div>
+                )}
               </div>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Información Detallada */}
-        <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-          <CardHeader className="p-3 md:p-6 pb-3 md:pb-6">
-            <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white">
-              Información del Producto
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="p-3 md:p-6 pt-0 md:pt-0 space-y-3 md:space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-              <div>
-                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Descripción</div>
-                <div className="text-sm md:text-base text-gray-900 dark:text-white">
-                  {product.description || 'Sin descripción'}
-                </div>
-              </div>
-              {product.brand && (
-                <div>
-                  <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Marca</div>
-                  <div className="text-sm md:text-base text-gray-900 dark:text-white">
-                    {product.brand}
-                  </div>
-                </div>
-              )}
-              <div>
-                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Precio de Venta</div>
-                <div className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">
-                  {formatCurrency(product.price)}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Costo</div>
-                <div className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">
-                  {formatCurrency(product.cost)}
-                </div>
-              </div>
-              <div>
-                <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Fecha de Creación</div>
-                <div className="text-sm md:text-base text-gray-900 dark:text-white">
-                  {formatDate(product.createdAt)}
-                </div>
-              </div>
-              {product.updatedAt && (
-                <div>
-                  <div className="text-xs md:text-sm text-gray-500 dark:text-gray-400 mb-1">Última Actualización</div>
-                  <div className="text-sm md:text-base text-gray-900 dark:text-white">
-                    {formatDate(product.updatedAt)}
-                  </div>
-                </div>
-              )}
-              <div>
-                <div className="text-xs md:text-sm text-gray-400 dark:text-gray-500 mb-1 flex items-center gap-1 flex-wrap">
-                  <span>Última Actualización de Inventario</span>
-                  <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-600 italic">(próximamente)</span>
-                </div>
-                <div className="text-sm md:text-base text-gray-400 dark:text-gray-600 italic">
-                  No disponible
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Análisis de Rotación y Márgenes - Solo para Super Admin */}
-        {isSuperAdmin && (
-          <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-            <CardHeader className="p-3 md:p-6 pb-3 md:pb-6">
-              <CardTitle className="text-base md:text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                <BarChart3 className="h-4 w-4 md:h-5 md:w-5 text-cyan-600" />
-                Análisis de Rotación y Márgenes
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-3 md:p-6 pt-0 md:pt-0 space-y-4 md:space-y-6">
-            {/* Métricas Principales */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-4">
-              <div className="p-2 md:p-4 bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg border border-blue-200 dark:border-blue-800">
-                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
-                  <TrendingUp className="h-3 w-3 md:h-4 md:w-4 text-blue-600 dark:text-blue-400 flex-shrink-0" />
-                  <div className="text-[10px] md:text-xs text-blue-600 dark:text-blue-400 font-medium truncate">Unidades Vendidas</div>
-                </div>
-                <div className="text-lg md:text-2xl font-bold text-blue-900 dark:text-blue-100">
-                  {formatNumber(metrics.totalSold)}
-                </div>
-                <div className="text-[10px] md:text-xs text-blue-700 dark:text-blue-300 mt-0.5 md:mt-1">
-                  Total histórico
-                </div>
-              </div>
-              
-              <div className="p-2 md:p-4 bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 rounded-lg border border-green-200 dark:border-green-800">
-                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
-                  <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-green-600 dark:text-green-400 flex-shrink-0" />
-                  <div className="text-[10px] md:text-xs text-green-600 dark:text-green-400 font-medium truncate">Ingresos Totales</div>
-                </div>
-                <div className="text-base md:text-xl font-bold text-green-900 dark:text-green-100 truncate">
-                  {formatCurrency(metrics.totalRevenue)}
-                </div>
-                <div className="text-[10px] md:text-xs text-green-700 dark:text-green-300 mt-0.5 md:mt-1">
-                  Total histórico
-                </div>
-              </div>
-              
-              <div className="p-2 md:p-4 bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg border border-purple-200 dark:border-purple-800">
-                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
-                  <DollarSign className="h-3 w-3 md:h-4 md:w-4 text-purple-600 dark:text-purple-400 flex-shrink-0" />
-                  <div className="text-[10px] md:text-xs text-purple-600 dark:text-purple-400 font-medium truncate">Ganancia Total</div>
-                </div>
-                <div className="text-base md:text-xl font-bold text-purple-900 dark:text-purple-100 truncate">
-                  {formatCurrency(metrics.totalProfit)}
-                </div>
-                <div className="text-[10px] md:text-xs text-purple-700 dark:text-purple-300 mt-0.5 md:mt-1">
-                  {metrics.profitMargin.toFixed(1)}% margen
-                </div>
-              </div>
-              
-              <div className="p-2 md:p-4 bg-gradient-to-br from-orange-50 to-orange-100 dark:from-orange-900/20 dark:to-orange-800/20 rounded-lg border border-orange-200 dark:border-orange-800">
-                <div className="flex items-center gap-1 md:gap-2 mb-1 md:mb-2">
-                  <Calendar className="h-3 w-3 md:h-4 md:w-4 text-orange-600 dark:text-orange-400 flex-shrink-0" />
-                  <div className="text-[10px] md:text-xs text-orange-600 dark:text-orange-400 font-medium truncate">Promedio Diario</div>
-                </div>
-                <div className="text-lg md:text-2xl font-bold text-orange-900 dark:text-orange-100">
-                  {new Intl.NumberFormat('es-CO', {
-                    minimumFractionDigits: 1,
-                    maximumFractionDigits: 1
-                  }).format(metrics.averageDailySales)}
-                </div>
-                <div className="text-[10px] md:text-xs text-orange-700 dark:text-orange-300 mt-0.5 md:mt-1">
-                  unidades/día
-                </div>
-              </div>
-            </div>
-
-            {/* Gráfica de Rotación por Día */}
-            {metrics.salesByDay.length > 0 && (
-              <div>
-                <div className="text-xs md:text-sm font-medium text-gray-700 dark:text-gray-300 mb-3 md:mb-4">
-                  Rotación Diaria (Últimos {Math.min(30, metrics.salesByDay.length)} días)
-                </div>
-                <div className="h-64 md:h-80 w-full">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={metrics.salesByDay} margin={{ top: 5, right: 10, left: 0, bottom: 50 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
-                      <XAxis 
-                        dataKey="dayLabel" 
-                        stroke="#6b7280"
-                        className="text-xs"
-                        tick={{ fill: '#6b7280', fontSize: 10 }}
-                        angle={-45}
-                        textAnchor="end"
-                        height={70}
-                        interval={0}
-                      />
-                      <YAxis 
-                        stroke="#6b7280"
-                        tick={{ fill: '#6b7280', fontSize: 11 }}
-                      />
-                      <Tooltip 
-                        contentStyle={{
-                          backgroundColor: 'white',
-                          border: '1px solid #e5e7eb',
-                          borderRadius: '8px',
-                          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                        }}
-                        labelStyle={{ color: '#374151', fontWeight: 600 }}
-                        formatter={(value: number) => [`${value} unidades`, 'Ventas']}
-                        labelFormatter={(label) => {
-                          const date = metrics.salesByDay.find(d => d.dayLabel === label)?.date
-                          if (date) {
-                            return new Date(date).toLocaleDateString('es-CO', { 
-                              day: 'numeric', 
-                              month: 'short'
-                            })
-                          }
-                          return label
-                        }}
-                      />
-                      <Line 
-                        type="monotone" 
-                        dataKey="quantity" 
-                        stroke="#06b6d4" 
-                        strokeWidth={2}
-                        dot={{ fill: '#06b6d4', r: 4, strokeWidth: 2, stroke: '#fff' }}
-                        activeDot={{ r: 6, fill: '#0891b2', strokeWidth: 2, stroke: '#fff' }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            )}
-
-            {metrics.salesByDay.length === 0 && (
-              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                <BarChart3 className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                <p>No hay ventas registradas para este producto</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-        )}
-
+          </section>
+        </div>
       </div>
 
       {/* Modales */}
-      <ProductModal
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-        onSave={handleSaveProduct}
-        product={product}
-        categories={categories}
-      />
-
       <StockAdjustmentModal
         isOpen={isAdjustmentModalOpen}
         onClose={() => setIsAdjustmentModalOpen(false)}

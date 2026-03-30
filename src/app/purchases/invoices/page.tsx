@@ -54,8 +54,8 @@ export default function SupplierInvoicesPage() {
 
   return (
     <RoleProtectedRoute module="supplier_invoices" requiredAction="view">
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-orange-50/30 dark:from-neutral-950 dark:via-neutral-900 dark:to-neutral-950 pb-24 xl:pb-8">
-        <div className="max-w-7xl mx-auto px-3 md:px-6 py-4 md:py-8">
+      <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 pb-24 xl:pb-8">
+        <div className="py-4 md:py-8">
           <SupplierInvoiceTable
             invoices={invoices}
             suppliers={supplierOptions}
