@@ -751,9 +751,10 @@ export default function NewSalePage() {
         </header>
 
         <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
+          {/* Una columna solo en móvil; desde tablet (md) mismo layout que desktop con sidebar */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Columna Izquierda - Productos (2/3 del ancho) */}
-            <div className="xl:col-span-2 space-y-6">
+            <div className="md:col-span-2 space-y-6">
               {/* Búsqueda y Selección de Productos */}
               {/** sin overflow-hidden: el listado absoluto del buscador quedaría recortado */}
               <Card className={cardShell}>
@@ -971,7 +972,7 @@ export default function NewSalePage() {
             </div>
 
             {/* Columna Derecha - Cliente, Pago y Resumen (1/3 del ancho, Sticky) */}
-            <div className="space-y-6 xl:col-span-1">
+            <div className="space-y-6 md:col-span-1">
               {/** z-index alto solo con lista abierta: si no, la columna de abajo (pago/resumen) tapa el dropdown */}
               <div
                 className={cn(
@@ -1224,7 +1225,7 @@ export default function NewSalePage() {
                 </CardContent>
               </Card>
 
-              <Card className={cn(cardShell, 'relative z-0 overflow-hidden xl:sticky xl:top-24')}>
+              <Card className={cn(cardShell, 'relative z-0 overflow-hidden md:sticky md:top-24')}>
                 <CardHeader className="space-y-0 border-b border-zinc-200 p-4 dark:border-zinc-800">
                   <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
                     <DollarSign className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-300" strokeWidth={1.5} />

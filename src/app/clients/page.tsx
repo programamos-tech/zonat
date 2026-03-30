@@ -82,7 +82,7 @@ export default function ClientsPage() {
   }
 
   return (
-    <div className="space-y-6 bg-gray-50 py-6 dark:bg-neutral-950 min-h-screen">
+    <div className="space-y-6 bg-gray-50 py-6 dark:bg-neutral-950">
       <ClientTable
         clients={clients}
         onView={(c) => router.push(`/clients/${c.id}`)}
