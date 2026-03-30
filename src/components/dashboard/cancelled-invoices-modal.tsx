@@ -28,7 +28,7 @@ interface CancelledInvoicesModalProps {
   allSales?: Sale[]
 }
 
-export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvoicesModalProps) {
+export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: CancelledInvoicesModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [cancelledInvoices, setCancelledInvoices] = useState<CancelledInvoiceInfo[]>([])
 
@@ -38,12 +38,13 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
       loadCancellationInfo()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, sales])
+  }, [isOpen, sales, allSales])
 
   const loadCancellationInfo = async () => {
     setIsLoading(true)
     try {
-      const cancelledSales = sales.filter(sale => sale.status === 'cancelled')
+      const salesSource = allSales?.length ? allSales : sales
+      const cancelledSales = salesSource.filter(sale => sale.status === 'cancelled')
       
       // Obtener solo los logs de cancelación directamente (más eficiente)
       let cancellationLogs: any[] = []
@@ -204,7 +205,8 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales }: CancelledInvo
     } catch {
       // Error silencioso en producción
       // Si falla, mostrar solo las ventas sin información de cancelación
-      const cancelledSales = sales
+      const salesSource = allSales?.length ? allSales : sales
+      const cancelledSales = salesSource
         .filter(sale => sale.status === 'cancelled')
         .map(sale => ({
           ...sale,

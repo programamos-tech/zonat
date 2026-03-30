@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
 import { Sale } from '@/types'
-import { SalesService } from '@/lib/sales-service'
+import { SalesService, SALES_PAGE_SIZE } from '@/lib/sales-service'
 import { useAuth } from './auth-context'
 import { useProducts } from './products-context'
 
@@ -36,7 +36,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
   const fetchSales = useCallback(async (page: number = 1, append: boolean = false) => {
     try {
       setLoading(true)
-      const result = await SalesService.getAllSales(page, 10)
+      const result = await SalesService.getAllSales(page, SALES_PAGE_SIZE)
       
       if (append) {
         setSales(prev => [...prev, ...result.sales])
@@ -186,7 +186,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
   }
 
   const goToPage = async (page: number) => {
-    if (page >= 1 && page <= Math.ceil(totalSales / 10) && !loading) {
+    if (page >= 1 && page <= Math.ceil(totalSales / SALES_PAGE_SIZE) && !loading) {
       await fetchSales(page, false)
     }
   }

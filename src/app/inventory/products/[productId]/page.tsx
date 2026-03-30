@@ -558,7 +558,7 @@ export default function ProductDetailPage() {
     <RoleProtectedRoute module="products" requiredAction="view">
       <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
         <div className="border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
-          <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:py-5 md:px-6">
+          <div className="flex w-full min-w-0 flex-col gap-4 px-4 py-4 sm:flex-row sm:items-start sm:justify-between sm:py-5 md:px-6">
             <div className="min-w-0 flex-1">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 Ficha del producto
@@ -700,7 +700,7 @@ export default function ProductDetailPage() {
           </div>
         </div>
 
-        <div className="mx-auto max-w-6xl space-y-4 px-4 py-6 md:space-y-5 md:px-6">
+        <div className="w-full min-w-0 space-y-4 px-4 py-6 md:space-y-5 md:px-6">
           <section className={cn('grid gap-3', isMainStore ? 'sm:grid-cols-3' : 'sm:grid-cols-1')}>
             {isMainStore ? (
               <>

@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Edit, Trash2, Users, RefreshCcw, Eye, ChevronDown } from 'lucide-react'
+import { Search, Plus, Edit, Trash2, Users, RefreshCcw, Eye, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react'
 import { Client } from '@/types'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { UserAvatar } from '@/components/ui/user-avatar'
@@ -65,20 +65,43 @@ export function ClientTable({
 }: ClientTableProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [filterType, setFilterType] = useState('all')
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
 
   const types = ['all', 'mayorista', 'minorista', 'consumidor_final'] as const
 
-  const filteredClients = clients.filter((client) => {
-    const matchesSearch =
-      client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.phone.includes(searchTerm) ||
-      client.document.includes(searchTerm) ||
-      client.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      client.state.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesType = filterType === 'all' || client.type === filterType
-    return matchesSearch && matchesType
-  })
+  const filteredClients = useMemo(
+    () =>
+      clients.filter((client) => {
+        const matchesSearch =
+          client.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.phone.includes(searchTerm) ||
+          client.document.includes(searchTerm) ||
+          client.city.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          client.state.toLowerCase().includes(searchTerm.toLowerCase())
+        const matchesType = filterType === 'all' || client.type === filterType
+        return matchesSearch && matchesType
+      }),
+    [clients, searchTerm, filterType]
+  )
+
+  const totalPages = Math.max(1, Math.ceil(filteredClients.length / itemsPerPage))
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const paginatedClients = filteredClients.slice(startIndex, startIndex + itemsPerPage)
+
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterType])
+
+  useEffect(() => {
+    setCurrentPage((p) => Math.min(p, totalPages))
+  }, [totalPages])
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }
 
   return (
     <div className="space-y-4 md:space-y-6">
@@ -165,7 +188,7 @@ export function ClientTable({
           ) : (
             <>
               <div className="space-y-2 p-3 md:hidden">
-                {filteredClients.map((client) => (
+                {paginatedClients.map((client) => (
                   <div
                     key={client.id}
                     role="button"
@@ -261,7 +284,7 @@ export function ClientTable({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                      {filteredClients.map((client) => (
+                      {paginatedClients.map((client) => (
                         <tr
                           key={client.id}
                           className="cursor-pointer transition-colors hover:bg-zinc-50/90 dark:hover:bg-zinc-800/25"
@@ -343,6 +366,43 @@ export function ClientTable({
                   </table>
                 </div>
               </div>
+
+              {filteredClients.length > 0 && (
+                <div className="flex flex-col items-center gap-3 border-t border-zinc-100 px-3 py-4 dark:border-zinc-800 sm:flex-row sm:justify-between sm:gap-4">
+                  <p className="order-2 text-center text-sm tabular-nums text-zinc-500 dark:text-zinc-400 sm:order-1 sm:text-left">
+                    Mostrando{' '}
+                    <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                      {startIndex + 1}–{Math.min(startIndex + itemsPerPage, filteredClients.length)}
+                    </span>{' '}
+                    de <span className="font-medium text-zinc-700 dark:text-zinc-300">{filteredClients.length}</span>
+                  </p>
+                  {totalPages > 1 && (
+                    <div className="order-1 flex flex-wrap items-center justify-center gap-3 sm:order-2">
+                      <button
+                        type="button"
+                        onClick={() => goToPage(currentPage - 1)}
+                        disabled={currentPage === 1}
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                        aria-label="Página anterior"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <span className="min-w-[10rem] text-center text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
+                        Página {currentPage} de {totalPages}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => goToPage(currentPage + 1)}
+                        disabled={currentPage >= totalPages}
+                        className="flex h-8 w-8 items-center justify-center rounded-md text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+                        aria-label="Página siguiente"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
             </>
           )}
         </CardContent>

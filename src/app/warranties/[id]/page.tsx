@@ -55,7 +55,7 @@ export default function WarrantyDetailPage() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
       <div className="border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:py-5 md:px-6">
+        <div className="flex w-full min-w-0 items-center justify-between gap-4 px-4 py-4 sm:py-5 md:px-6">
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <Shield className="h-6 w-6 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
             <div className="min-w-0">
@@ -78,7 +78,7 @@ export default function WarrantyDetailPage() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+      <div className="w-full min-w-0 px-4 py-6 md:px-6">
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-24">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />

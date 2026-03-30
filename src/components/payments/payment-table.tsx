@@ -97,7 +97,7 @@ export function CreditTable({
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const itemsPerPage = 20
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {

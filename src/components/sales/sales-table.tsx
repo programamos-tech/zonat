@@ -11,6 +11,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { cn } from '@/lib/utils'
+import { SALES_PAGE_SIZE } from '@/lib/sales-service'
 
 const cardShell =
   'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
@@ -638,10 +639,10 @@ export function SalesTable({
                     </button>
                     
                   <div className="flex items-center gap-0.5">
-                      {Array.from({ length: Math.ceil(totalSales / 10) }, (_, i) => i + 1)
+                      {Array.from({ length: Math.ceil(totalSales / SALES_PAGE_SIZE) }, (_, i) => i + 1)
                         .filter(page => {
                           return page === 1 || 
-                                 page === Math.ceil(totalSales / 10) || 
+                                 page === Math.ceil(totalSales / SALES_PAGE_SIZE) || 
                                  Math.abs(page - currentPage) <= 2
                         })
                         .map((page, index, array) => {
@@ -670,7 +671,7 @@ export function SalesTable({
                     
                     <button
                       onClick={() => onPageChange(currentPage + 1)}
-                      disabled={currentPage >= Math.ceil(totalSales / 10) || loading}
+                      disabled={currentPage >= Math.ceil(totalSales / SALES_PAGE_SIZE) || loading}
                     className="h-7 w-7 flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700 rounded border border-gray-200 dark:border-neutral-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                     <ChevronRight className="h-3.5 w-3.5" />

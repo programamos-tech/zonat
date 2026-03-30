@@ -4,6 +4,9 @@ import { AuthService } from './auth-service'
 import { ProductsService } from './products-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
+/** Tamaño de página de la lista de ventas (contexto + servicio + tabla). */
+export const SALES_PAGE_SIZE = 20
+
 export class SalesService {
   // Generar el siguiente número de factura
   static async getNextInvoiceNumber(): Promise<string> {
@@ -42,7 +45,7 @@ export class SalesService {
     }
   }
 
-  static async getAllSales(page: number = 1, limit: number = 10): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
+  static async getAllSales(page: number = 1, limit: number = SALES_PAGE_SIZE): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
     try {
       const offset = (page - 1) * limit
       const user = getCurrentUser()

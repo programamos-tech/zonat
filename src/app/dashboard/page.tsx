@@ -889,11 +889,10 @@ export default function DashboardPage() {
       return totalProfit + saleProfit
     }, 0)
 
-    // Facturas anuladas en el período seleccionado
-    const cancelledSales = sales.filter(sale => sale.status === 'cancelled').length
-
-    // Valor perdido por facturas anuladas en el período seleccionado
-    const lostValue = sales
+    // Facturas anuladas: usar allSales (misma ventana que getDashboardSales), no filteredData.sales.
+    // filteredData para "hoy" solo incluye ventas creadas ese día; una factura anulada suele crearse antes.
+    const cancelledSales = allSales.filter(sale => sale.status === 'cancelled').length
+    const lostValue = allSales
       .filter(sale => sale.status === 'cancelled')
       .reduce((sum, sale) => sum + sale.total, 0)
 
@@ -1068,7 +1067,8 @@ export default function DashboardPage() {
       transferRevenue,
       creditRevenue,
       knownPaymentMethodsTotal,
-      totalSales: optimizedMetrics.salesSummary?.salesCount ?? activeSales.length,
+      // Mismo período que totalRevenue (filteredData), no salesSummary: ese contaba la ventana cruda de getDashboardSales (p. ej. 7 días con filtro "Hoy").
+      totalSales: activeSales.length,
       topProducts,
       completedWarranties,
       pendingWarranties,
@@ -1098,7 +1098,7 @@ export default function DashboardPage() {
       paymentMethodData,
       topProductsChart
     }
-  }, [filteredData, allProducts, allClients, allWarranties, allCredits, optimizedMetrics, specificProductsCache])
+  }, [filteredData, allSales, allProducts, allClients, allWarranties, allCredits, optimizedMetrics, specificProductsCache])
 
   // Función helper para formatear moneda con opción de ocultar
   const formatCurrency = (amount: number): string => {
@@ -1535,7 +1535,9 @@ export default function DashboardPage() {
                   <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
                     {metrics.cancelledSales}
                   </p>
-                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">de {metrics.totalSales} ventas</p>
+                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                    {metrics.cancelledSales === 1 ? 'Factura anulada' : 'Facturas anuladas'}
+                  </p>
                 </button>
               ) : (
                 <button
@@ -1660,16 +1662,12 @@ export default function DashboardPage() {
                 <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
                   {metrics.cancelledSales}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">de {metrics.totalSales} ventas totales</p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {metrics.cancelledSales === 1 ? 'Factura anulada' : 'Facturas anuladas'}
+                </p>
                 <div className="mt-3 space-y-1.5 border-t border-zinc-200/90 pt-3 dark:border-zinc-700/90">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-500 dark:text-zinc-400">Tasa</span>
-                    <span className="font-medium tabular-nums text-red-600 dark:text-red-400">
-                      {metrics.totalSales > 0 ? ((metrics.cancelledSales / metrics.totalSales) * 100).toFixed(1) : 0}%
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-zinc-500 dark:text-zinc-400">Valor perdido</span>
+                    <span className="text-zinc-500 dark:text-zinc-400">Valor anulado</span>
                     <span className="font-medium tabular-nums text-red-600/90 dark:text-red-400">
                       {formatCurrency(metrics.lostValue)}
                     </span>
@@ -1677,7 +1675,7 @@ export default function DashboardPage() {
                   <p className="pt-1 text-center text-[10px] font-medium text-zinc-500 dark:text-zinc-400">
                     <span className="inline-flex items-center gap-1">
                       <BarChart3 className="h-3 w-3 shrink-0" aria-hidden />
-                      Clic para análisis detallado
+                      Clic para ver el detalle
                     </span>
                   </p>
                 </div>

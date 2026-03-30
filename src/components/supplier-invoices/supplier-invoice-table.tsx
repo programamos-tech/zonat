@@ -100,7 +100,7 @@ export function SupplierInvoiceTable({
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterSupplierId, setFilterSupplierId] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const itemsPerPage = 20
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-CO', {

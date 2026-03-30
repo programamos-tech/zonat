@@ -52,8 +52,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
               hideMainScrollbar && 'scrollbar-hide'
             )}
           >
-            {/* Mismo ancho máximo que facturador de proveedores (max-w-7xl) en todas las vistas autenticadas */}
-            <div className="mx-auto w-full min-w-0 max-w-7xl px-3 md:px-6">{children}</div>
+            {/* Ancho completo en pantallas grandes; solo márgenes horizontales para no pegar al borde */}
+            <div className="w-full min-w-0 px-3 md:px-6 xl:px-8 2xl:px-10">{children}</div>
           </div>
         </main>
       </div>

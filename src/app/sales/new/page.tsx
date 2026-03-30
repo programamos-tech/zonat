@@ -721,7 +721,7 @@ export default function NewSalePage() {
     <RoleProtectedRoute module="sales" requiredAction="create">
       <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
         <header className="sticky top-0 z-40 border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
-          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-4 md:px-6">
+          <div className="flex w-full min-w-0 flex-wrap items-center gap-3 px-4 py-4 md:px-6">
             <Button
               type="button"
               variant="ghost"
@@ -750,7 +750,7 @@ export default function NewSalePage() {
           </div>
         </header>
 
-        <div className="mx-auto max-w-6xl px-4 py-6 md:px-6">
+        <div className="w-full min-w-0 px-4 py-6 md:px-6">
           {/* Una columna solo en móvil; desde tablet (md) mismo layout que desktop con sidebar */}
           <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
             {/* Columna Izquierda - Productos (2/3 del ancho) */}
