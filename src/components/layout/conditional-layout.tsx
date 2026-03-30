@@ -46,9 +46,9 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           <div
             className={cn(
               'min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain bg-white dark:bg-neutral-950',
-              /* Espacio bajo el contenido para que tablas/listas terminen por encima de la bottom nav (tablet/móvil). */
+              /* Alineado con bottom nav compacta (h-10/11 + safe area). */
               showMobileBottomNavInset &&
-                'pb-[max(7rem,calc(5.75rem+env(safe-area-inset-bottom)))] scroll-pb-[max(7rem,calc(5.75rem+env(safe-area-inset-bottom)))] xl:pb-0 xl:scroll-pb-0',
+                'pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))] scroll-pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))] xl:pb-0 xl:scroll-pb-0',
               hideMainScrollbar && 'scrollbar-hide'
             )}
           >

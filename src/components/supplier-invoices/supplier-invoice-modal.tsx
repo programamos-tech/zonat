@@ -10,8 +10,20 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { X, FileText, Upload, Plus } from 'lucide-react'
 import { Supplier, SupplierInvoice } from '@/types'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
+import { supabase } from '@/lib/supabase'
+import { compressImageForUpload } from '@/lib/compress-image-for-upload'
 import { useAuth } from '@/contexts/auth-context'
 import { toast } from 'sonner'
+
+/** Valor guardado en BD: URL absoluta o ruta `invoices/...` dentro del bucket. */
+function supplierInvoiceStoredToPublicUrl(stored: string): string {
+  const s = stored.trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const path = s.replace(/^\/+/, '').replace(/^supplier-invoices\//, '')
+  if (!path) return ''
+  return supabase.storage.from('supplier-invoices').getPublicUrl(path).data.publicUrl
+}
 
 /** Folio único tipo FV-20260328-A1B2C3D4 (sin depender de la red). */
 function generateSupplierInvoiceFolio(): string {
@@ -29,7 +41,8 @@ function generateSupplierInvoiceFolio(): string {
 interface SupplierInvoiceModalProps {
   isOpen: boolean
   onClose: () => void
-  onSaved: () => void
+  /** Tras guardar: recargar datos en el padre antes de cerrar (evita ver el detalle desactualizado). */
+  onSaved: () => void | Promise<void>
   invoice?: SupplierInvoice | null
 }
 
@@ -130,17 +143,30 @@ export function SupplierInvoiceModal({
     setUploadPreview(blobUrl)
     setUploading(true)
     try {
+      const prepared = await compressImageForUpload(file)
       const fd = new FormData()
-      fd.append('file', file)
+      fd.append('file', prepared)
       const res = await fetch('/api/storage/upload-supplier-invoice', {
         method: 'POST',
         body: fd
       })
-      const json = await res.json()
+      const text = await res.text()
+      let json: { error?: string; url?: string; path?: string } = {}
+      try {
+        json = text ? (JSON.parse(text) as typeof json) : {}
+      } catch {
+        throw new Error(
+          res.status === 413
+            ? 'La imagen supera el máximo de 2 MB. Intenta con otra foto o recorta el comprobante.'
+            : 'No se pudo procesar la respuesta del servidor al subir la imagen.'
+        )
+      }
       if (!res.ok) throw new Error(json.error || 'Error al subir')
+      const path = typeof json.path === 'string' ? json.path.trim() : ''
       const url = typeof json.url === 'string' ? json.url.trim() : ''
-      if (!url) throw new Error('El servidor no devolvió la URL de la imagen')
-      setImageUrl(url)
+      const stored = path || url
+      if (!stored) throw new Error('El servidor no devolvió la ruta ni la URL de la imagen')
+      setImageUrl(stored)
       toast.success('Imagen subida')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
@@ -233,7 +259,7 @@ export function SupplierInvoiceModal({
         })
         toast.success('Factura registrada')
       }
-      onSaved()
+      await Promise.resolve(onSaved())
       onClose()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Error al guardar')
@@ -244,6 +270,7 @@ export function SupplierInvoiceModal({
 
   if (!isOpen) return null
 
+  const receiptPublicUrl = imageUrl ? supplierInvoiceStoredToPublicUrl(imageUrl) : ''
   const isEdit = Boolean(invoice)
   const blocked =
     invoice?.status === 'cancelled' || invoice?.status === 'paid'
@@ -391,15 +418,19 @@ export function SupplierInvoiceModal({
 
               <div className="space-y-2">
                 <Label className="text-zinc-700 dark:text-zinc-300">Comprobante (foto)</Label>
+                <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Máximo 2 MB. Si la foto pesa más, se reduce tamaño y calidad en el navegador para que el
+                  comprobante siga legible.
+                </p>
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50">
                     <Upload className="h-4 w-4 text-zinc-500" />
                     {uploading ? 'Subiendo…' : 'Subir imagen'}
                     <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading || blocked} />
                   </label>
-                  {imageUrl && (
+                  {receiptPublicUrl && (
                     <a
-                      href={imageUrl}
+                      href={receiptPublicUrl}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -408,7 +439,7 @@ export function SupplierInvoiceModal({
                     </a>
                   )}
                 </div>
-                {(imageUrl || uploadPreview) && (
+                {(uploadPreview || receiptPublicUrl) && (
                   <div className="relative mt-2 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/80">
                     {uploading && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-sm font-medium text-white">
@@ -417,7 +448,7 @@ export function SupplierInvoiceModal({
                     )}
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={uploadPreview || imageUrl || ''}
+                      src={uploadPreview || receiptPublicUrl || ''}
                       alt="Vista previa del comprobante"
                       className="w-full max-h-44 sm:max-h-72 object-contain"
                     />

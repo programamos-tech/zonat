@@ -1,10 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { SUPPLIER_INVOICE_MAX_IMAGE_BYTES } from '@/lib/supplier-invoice-image-limits'
 
-const MAX_BYTES = 10 * 1024 * 1024
+const MAX_BYTES = SUPPLIER_INVOICE_MAX_IMAGE_BYTES
 
 export async function POST(request: NextRequest) {
   try {
+    if (process.env.VERCEL === '1' && !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return NextResponse.json(
+        {
+          error:
+            'Falta SUPABASE_SERVICE_ROLE_KEY en el servidor. Configúrala en Vercel (mismo proyecto Supabase que NEXT_PUBLIC_SUPABASE_URL).'
+        },
+        { status: 503 }
+      )
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -24,14 +35,29 @@ export async function POST(request: NextRequest) {
 
     if (file.size > MAX_BYTES) {
       return NextResponse.json(
-        { error: 'La imagen no debe superar los 10MB' },
+        { error: 'La imagen no debe superar los 2 MB.' },
         { status: 400 }
       )
     }
 
     const fileExt = file.name.split('.').pop()?.toLowerCase() || 'png'
     const validExtensions = ['png', 'jpg', 'jpeg', 'gif', 'webp']
-    const finalExt = validExtensions.includes(fileExt) ? fileExt : 'jpg'
+    const typeExt =
+      file.type === 'image/jpeg' || file.type === 'image/jpg'
+        ? 'jpg'
+        : file.type === 'image/png'
+          ? 'png'
+          : file.type === 'image/webp'
+            ? 'webp'
+            : file.type === 'image/gif'
+              ? 'gif'
+              : null
+    const finalExt =
+      typeExt && validExtensions.includes(typeExt)
+        ? typeExt
+        : validExtensions.includes(fileExt)
+          ? fileExt
+          : 'jpg'
     const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${finalExt}`
     const filePath = `invoices/${fileName}`
 

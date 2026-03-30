@@ -104,14 +104,15 @@ export function BottomNav() {
     <nav className="fixed bottom-0 left-0 right-0 z-[45] xl:hidden isolate">
       {/* Barra pegada al borde inferior: padding seguro dentro del contenedor para que el fondo llegue hasta abajo */}
       <div
-        className="relative flex flex-col pt-1.5 md:pt-2 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-gradient-to-b from-transparent via-white/50 dark:via-neutral-950/55 to-white/85 dark:to-neutral-950/90 backdrop-blur-xl shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_30px_-4px_rgba(0,0,0,0.35)]"
+        className="relative flex flex-col pt-0 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-gradient-to-b from-transparent via-white/50 dark:via-neutral-950/55 to-white/85 dark:to-neutral-950/90 backdrop-blur-xl shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_30px_-4px_rgba(0,0,0,0.35)]"
         style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
       >
-        <div className="flex items-stretch h-12 md:h-14 flex-shrink-0">
+        {/* Barra más baja que antes (sin pt extra, h-12 en tablet en vez de h-14); iconos y texto sin cambiar */}
+        <div className="flex h-11 shrink-0 items-stretch md:h-12">
         {/* Contenedor de scroll: siempre empezando por Dashboard a la izquierda */}
         <ul 
           ref={scrollContainerRef}
-          className="flex items-stretch h-full gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0 pl-2 pr-2 md:justify-center"
+          className="flex h-full items-stretch gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0 pl-2 pr-2 md:justify-center"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {visibleItems.map(({ href, label, icon: Icon }) => {
