@@ -381,7 +381,7 @@ export function ProductTable({
               </div>
             ) : (
               <>
-                <div className="space-y-2 p-3 md:hidden">
+                <div className="space-y-2 p-3 lg:hidden">
                   {products.map((product) => {
                     const StatusIcon = getStatusIcon(product.status)
                     return (
@@ -465,7 +465,7 @@ export function ProductTable({
                   })}
                 </div>
 
-                <div className="hidden md:block">
+                <div className="hidden lg:block">
                   <div className="overflow-x-auto">
                     <table className="w-full min-w-[760px] border-collapse text-sm">
                       <thead>

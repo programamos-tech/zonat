@@ -125,7 +125,7 @@ export default function SalesPage() {
 
   if (loading) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-white py-6 dark:bg-neutral-950">
+      <div className="flex min-h-[50dvh] items-center justify-center bg-white py-6 dark:bg-neutral-950">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-500 dark:border-emerald-500 mx-auto mb-4"></div>
           <p className="text-gray-600 dark:text-gray-300">Cargando ventas...</p>
@@ -136,7 +136,7 @@ export default function SalesPage() {
 
   return (
     <RoleProtectedRoute module="sales" requiredAction="view">
-      <div className="min-h-screen space-y-4 bg-white py-4 dark:bg-neutral-950 md:space-y-6 md:py-6">
+      <div className="space-y-4 bg-white py-4 dark:bg-neutral-950 max-xl:pb-1 md:space-y-6 md:py-6">
       <SalesTable
         sales={sales}
         loading={loading}

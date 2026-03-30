@@ -267,7 +267,7 @@ export function CreditTable({
             </div>
           ) : (
             <>
-              <div className="space-y-2 p-3 md:hidden">
+              <div className="space-y-2 p-3 lg:hidden">
                 {paginatedCredits.map((credit, index) => {
                   const globalIndex = startIndex + index
                   return (
@@ -368,7 +368,7 @@ export function CreditTable({
                 })}
               </div>
 
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[880px] border-collapse text-sm">
                     <thead>

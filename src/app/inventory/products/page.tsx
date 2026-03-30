@@ -163,7 +163,7 @@ export default function ProductsPage() {
 
   return (
     <RoleProtectedRoute module="products" requiredAction="view">
-      <div className="space-y-4 bg-gray-50 py-4 pb-20 dark:bg-neutral-950 md:space-y-6 md:py-6 lg:pb-6">
+      <div className="space-y-4 bg-gray-50 py-4 dark:bg-neutral-950 max-xl:pb-1 md:space-y-6 md:py-6">
       <ProductTable
         products={products}
         categories={categories}

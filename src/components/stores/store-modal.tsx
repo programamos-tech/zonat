@@ -172,7 +172,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
 
   const modal = (
     <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-3 backdrop-blur-sm dark:bg-black/60 sm:p-6 sm:py-10 lg:px-12 md:left-56"
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-3 backdrop-blur-sm dark:bg-black/60 sm:p-6 sm:py-10 lg:px-12 xl:left-56"
       style={{
         paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
         paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'

@@ -577,9 +577,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
 
   if (!isOpen) return null
 
-  /* Portal + z-[100]: sobre el main, no detrás del sidebar. md:left-56 = no tapar el sidebar (w-56). */
+  /* Portal + z-[100]: sobre el main; xl:left-56 = no tapar el sidebar fijo (solo ≥ xl, como main xl:ml-56). */
   const modal = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-2 backdrop-blur-sm sm:p-3 md:left-56">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-2 backdrop-blur-sm sm:p-3 xl:left-56">
       <div className="flex h-[min(92dvh,calc(100dvh-0.75rem))] w-full min-w-0 max-w-[min(1600px,calc(100vw-1rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="flex shrink-0 items-center justify-between gap-2 border-b border-zinc-200 bg-zinc-50/90 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-950/80 sm:px-4">
           <div className="flex min-w-0 items-center gap-2">

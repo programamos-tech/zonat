@@ -317,7 +317,7 @@ export default function ClientCreditsPage() {
 
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
-      <div className="min-h-screen space-y-6 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 pb-24 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:py-6 xl:pb-8">
+      <div className="space-y-6 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 max-xl:pb-1 md:py-6">
         <Card className={cardShell}>
           <CardContent className="p-4 md:p-6">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -428,7 +428,7 @@ export default function ClientCreditsPage() {
               <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Créditos del cliente</h2>
             </div>
             <CardContent className="p-0">
-              <div className="space-y-2 p-3 md:hidden">
+              <div className="space-y-2 p-3 lg:hidden">
                 {credits.map(credit => (
                   <button
                     key={credit.id}
@@ -481,7 +481,7 @@ export default function ClientCreditsPage() {
                 ))}
               </div>
 
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[880px] border-collapse text-sm">
                     <thead>

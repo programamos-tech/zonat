@@ -454,8 +454,8 @@ export function SalesTable({
             </div>
           ) : (
             <>
-              {/* Móvil: filas compactas */}
-              <div className="space-y-2 p-3 md:hidden">
+              {/* Móvil y tablet: lista compacta; tabla ancha solo desde lg (evita paginación lejos del bottom nav) */}
+              <div className="space-y-2 p-3 lg:hidden">
                 {filteredSales.map(sale => {
                   const { date, time } = formatDateTime(sale.createdAt)
                   return (
@@ -531,7 +531,7 @@ export function SalesTable({
                 })}
               </div>
 
-              <div className="hidden md:block">
+              <div className="hidden lg:block">
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[880px] border-collapse text-sm">
                     <thead>

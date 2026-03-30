@@ -275,19 +275,19 @@ export function SupplierInvoiceModal({
   const blocked =
     invoice?.status === 'cancelled' || invoice?.status === 'paid'
 
-  /* Portal + z-[100]: el <main> tiene z-10; la bottom nav del body es z-40 y robaba los toques en iPad. */
+  /* Portal + z-[100]: el <main> tiene z-10; la bottom nav del body es z-40 y robaba los toques en iPad.
+     Overlay con overflow-y-auto + min-h-full para poder desplazar modales altos en tablet. */
   const modal = (
-    <div
-      className="fixed inset-0 md:left-56 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-3 sm:p-6 sm:py-10 lg:px-12"
-      style={{
-        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
-      }}
-    >
-      <div className="flex max-h-[min(88dvh,880px)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-h-[min(94vh,880px)] sm:max-w-2xl lg:max-w-3xl">
-        {/* Un solo scroll: título, formulario y acciones van juntos */}
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
+    <div className="fixed inset-0 z-[100] overflow-y-auto overflow-x-hidden bg-white/70 backdrop-blur-sm dark:bg-black/60 xl:left-56">
+      <div
+        className="flex min-h-[100dvh] w-full items-center justify-center p-3 sm:p-6 sm:py-8 lg:px-12"
+        style={{
+          paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
+        }}
+      >
+        <div className="my-auto flex w-full max-h-[min(92dvh,880px)] min-h-0 max-w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-w-2xl lg:max-w-3xl">
+          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
             <div className="flex min-w-0 items-center gap-2.5">
               <FileText className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
               <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
@@ -305,7 +305,8 @@ export function SupplierInvoiceModal({
             </Button>
           </div>
 
-        <form onSubmit={handleSubmit} className="flex flex-col">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
           <Card className="rounded-none border-0 shadow-none">
             <CardHeader className="px-3 pb-2 pt-4 sm:px-6 sm:pt-5">
               <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">
@@ -440,7 +441,7 @@ export function SupplierInvoiceModal({
                   )}
                 </div>
                 {(uploadPreview || receiptPublicUrl) && (
-                  <div className="relative mt-2 overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/80">
+                  <div className="relative mt-2 max-h-[min(36dvh,220px)] overflow-y-auto overflow-x-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/80 sm:max-h-[min(40dvh,280px)]">
                     {uploading && (
                       <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-sm font-medium text-white">
                         Subiendo…
@@ -450,16 +451,17 @@ export function SupplierInvoiceModal({
                     <img
                       src={uploadPreview || receiptPublicUrl || ''}
                       alt="Vista previa del comprobante"
-                      className="w-full max-h-44 sm:max-h-72 object-contain"
+                      className="mx-auto block h-auto w-full max-h-[min(36dvh,220px)] max-w-full object-contain sm:max-h-[min(40dvh,280px)]"
                     />
                   </div>
                 )}
               </div>
             </CardContent>
           </Card>
+          </div>
 
           <div
-            className="flex justify-end gap-2 bg-white px-3 pb-3 pt-4 dark:bg-neutral-950 sm:gap-2.5 sm:px-6 sm:pb-4"
+            className="flex shrink-0 justify-end gap-2 border-t border-zinc-200/90 bg-white px-3 pb-3 pt-4 dark:border-zinc-800 dark:bg-neutral-950 sm:gap-2.5 sm:px-6 sm:pb-4"
             style={{
               paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
             }}

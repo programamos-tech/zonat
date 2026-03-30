@@ -32,6 +32,15 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname !== '/select-store' &&
     !pathname.startsWith('/sales/new')
 
+  /** Listas con paginación (ventas, productos, créditos, actividades): menos padding inferior cerca de la bottom nav (hasta xl). */
+  const compactListBottomPad =
+    pathname === '/sales' ||
+    pathname === '/inventory/products' ||
+    pathname.startsWith('/payments') ||
+    pathname === '/logs'
+      ? 'pb-[max(3.5rem,calc(2.875rem+env(safe-area-inset-bottom)))] scroll-pb-[max(3.5rem,calc(2.875rem+env(safe-area-inset-bottom)))]'
+      : 'pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))] scroll-pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))]'
+
   // Para todas las demás páginas, mostrar el layout completo con sidebar
   return (
     <ProtectedRoute>
@@ -48,7 +57,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
               'min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain bg-white dark:bg-neutral-950',
               /* Alineado con bottom nav compacta (h-10/11 + safe area). */
               showMobileBottomNavInset &&
-                'pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))] scroll-pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))] xl:pb-0 xl:scroll-pb-0',
+                `${compactListBottomPad} xl:pb-0 xl:scroll-pb-0`,
               hideMainScrollbar && 'scrollbar-hide'
             )}
           >
