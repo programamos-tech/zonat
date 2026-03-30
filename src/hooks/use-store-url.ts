@@ -20,7 +20,12 @@ export function useStoreUrl() {
   useEffect(() => {
     const updateUrlWithStore = async () => {
       // No hacer nada en rutas públicas o si ya se está actualizando
-      if (pathname === '/login' || pathname.startsWith('/_next') || isUpdatingRef.current) {
+      if (
+        pathname === '/login' ||
+        pathname.startsWith('/tienda') ||
+        pathname.startsWith('/_next') ||
+        isUpdatingRef.current
+      ) {
         return
       }
 

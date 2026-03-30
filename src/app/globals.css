@@ -25,7 +25,7 @@ html.light body {
   color: #171717 !important;
 }
 
-html.light * {
+html.light body:not(:has(.tienda-storefront)) * {
   background-color: inherit !important;
 }
 
@@ -41,7 +41,13 @@ html.dark body {
   color: #ededed !important;
 }
 
-html.dark * {
+/* Catálogo público (/tienda): sin herencia forzada de fondo — permite tarjetas y UI claras */
+html.dark:has(.tienda-storefront) {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+html.dark body:not(:has(.tienda-storefront)) * {
   background-color: inherit !important;
 }
 

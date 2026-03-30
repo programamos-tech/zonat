@@ -19,7 +19,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   useStoreUrl()
   
   // Si es la página de login o select-store, no mostrar sidebar ni protección
-  if (pathname === '/login' || pathname === '/select-store') {
+  if (pathname === '/login' || pathname === '/select-store' || pathname.startsWith('/tienda')) {
     return <>{children}</>
   }
   
