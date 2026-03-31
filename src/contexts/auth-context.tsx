@@ -1,8 +1,9 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react'
 import { User } from '@/types'
 import { AuthService } from '@/lib/auth-service'
+import { persistZonatUser, clearZonatSessionCookie, setZonatSessionCookie } from '@/lib/auth-session'
 
 interface AuthContextType {
   user: User | null
@@ -18,9 +19,26 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
 
+function parseStoredUser(json: string): User | null {
+  try {
+    const o = JSON.parse(json) as User & { storeId?: string | null }
+    return {
+      ...o,
+      storeId: o.storeId === null || o.storeId === undefined ? undefined : o.storeId
+    }
+  } catch {
+    return null
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+
+  const clearClientSession = useCallback(() => {
+    localStorage.removeItem('zonat_user')
+    clearZonatSessionCookie()
+  }, [])
 
   // Verificar sesión al cargar
   useEffect(() => {
@@ -33,7 +51,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             try {
               userData = JSON.parse(savedUser)
             } catch {
-              localStorage.removeItem('zonat_user')
+              clearClientSession()
               return
             }
             const savedStoreId = userData.storeId
@@ -41,24 +59,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             const currentUser = await AuthService.getCurrentUser()
             if (currentUser) {
               if (savedStoreId !== undefined) {
-                currentUser.storeId = savedStoreId === null ? undefined : savedStoreId
+                currentUser.storeId = savedStoreId === null ? undefined : (savedStoreId as string)
               }
 
               setUser(currentUser)
-              const userToSave = {
-                ...currentUser,
-                storeId: currentUser.storeId === undefined ? null : currentUser.storeId
-              }
-              localStorage.setItem('zonat_user', JSON.stringify(userToSave))
+              persistZonatUser(currentUser)
             } else {
-              localStorage.removeItem('zonat_user')
+              clearClientSession()
             }
           }
         }
       } catch (e) {
         console.error('[AuthProvider] checkAuth:', e)
         try {
-          localStorage.removeItem('zonat_user')
+          clearClientSession()
         } catch {
           /* ignore */
         }
@@ -68,23 +82,58 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     void checkAuth()
+  }, [clearClientSession])
+
+  // Otras pestañas: mismo origen — sincronizar usuario y cookie de middleware
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== 'zonat_user' || e.storageArea !== localStorage) return
+      if (e.newValue === null) {
+        setUser(null)
+        clearZonatSessionCookie()
+        return
+      }
+      const parsed = parseStoredUser(e.newValue)
+      if (parsed) {
+        setUser(parsed)
+        setZonatSessionCookie(e.newValue)
+      }
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [])
 
+  // Renovación deslizante: al volver a la pestaña y cada ~20 min mientras hay sesión
+  useEffect(() => {
+    if (!user || typeof window === 'undefined') return
+
+    const refreshCookieFromStorage = () => {
+      const raw = localStorage.getItem('zonat_user')
+      if (raw) setZonatSessionCookie(raw)
+    }
+
+    refreshCookieFromStorage()
+    const id = window.setInterval(refreshCookieFromStorage, 20 * 60 * 1000)
+    const onVisibility = () => {
+      if (document.visibilityState === 'visible') refreshCookieFromStorage()
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+    return () => {
+      window.clearInterval(id)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
+  }, [user])
+
   const login = async (email: string, password: string): Promise<boolean> => {
-
     setIsLoading(true)
-    
-    try {
 
+    try {
       const userData = await AuthService.login(email, password)
 
       if (userData) {
-
         setUser(userData)
         if (typeof window !== 'undefined') {
-          localStorage.setItem('zonat_user', JSON.stringify(userData))
-          document.cookie = `zonat_user=${JSON.stringify(userData)}; path=/; max-age=86400`
-
+          persistZonatUser(userData)
         }
         setIsLoading(false)
 
@@ -94,7 +143,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false)
       return false
     } catch (error) {
-      // Error silencioso en producción
       setIsLoading(false)
       return false
     }
@@ -105,7 +153,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const newUser = await AuthService.createUser(userData, user?.id)
       return newUser !== null
     } catch (error) {
-      // Error silencioso en producción
       return false
     }
   }
@@ -114,29 +161,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       return await AuthService.getAllUsers()
     } catch (error) {
-      // Error silencioso en producción
       return []
     }
   }
 
   const updateUser = async (id: string, updates: Partial<User>): Promise<boolean> => {
     try {
-
       const success = await AuthService.updateUser(id, updates, user?.id)
 
       if (success && user?.id === id) {
-        // Actualizar usuario actual si es el mismo
         const updatedUser = await AuthService.getUserById(id)
         if (updatedUser) {
           setUser(updatedUser)
           if (typeof window !== 'undefined') {
-            localStorage.setItem('zonat_user', JSON.stringify(updatedUser))
+            persistZonatUser(updatedUser)
           }
         }
       }
       return success
     } catch (error) {
-      // Error silencioso en producción
       return false
     }
   }
@@ -145,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       return await AuthService.deleteUser(id, user?.id)
     } catch (error) {
-      // Error silencioso en producción
       return false
     }
   }
@@ -153,42 +195,38 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = () => {
     setUser(null)
     if (typeof window !== 'undefined') {
-      localStorage.removeItem('zonat_user')
-      document.cookie = 'zonat_user=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+      clearClientSession()
     }
   }
 
   const switchStore = (storeId: string | undefined) => {
     if (!user) return
-    
-    const updatedUser = {
+
+    const updatedUser: User = {
       ...user,
-      storeId: storeId
+      storeId: storeId === undefined ? undefined : storeId
     }
-    
+
     setUser(updatedUser)
     if (typeof window !== 'undefined') {
-      // Guardar con storeId explícito (incluso si es undefined) para que se preserve
-      const userToSave = {
-        ...updatedUser,
-        storeId: storeId === undefined ? null : storeId // Convertir undefined a null para que se guarde en JSON
-      }
-      localStorage.setItem('zonat_user', JSON.stringify(userToSave))
+      persistZonatUser(updatedUser)
     }
   }
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      login, 
-      logout, 
-      isLoading, 
-      createUser, 
-      getAllUsers, 
-      updateUser, 
-      deleteUser,
-      switchStore
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        login,
+        logout,
+        isLoading,
+        createUser,
+        getAllUsers,
+        updateUser,
+        deleteUser,
+        switchStore
+      }}
+    >
       {children}
     </AuthContext.Provider>
   )
