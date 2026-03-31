@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -14,11 +15,14 @@ const panelInner =
 const inputClass =
   'w-full rounded-lg border border-zinc-300 bg-white px-4 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
 
+/** Portal + z por encima del bottom nav (z-45); evita stacking atrapado en main (z-10). */
 const overlayClass =
-  'fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+  'fixed inset-0 z-[100] overflow-hidden overscroll-none bg-black/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+
+const overlayInnerClass = 'flex h-full min-h-0 w-full touch-none items-center justify-center py-4'
 
 const shellClass =
-  'max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-4xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
+  'isolate flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-4xl touch-auto flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
 
 interface StockTransferModalProps {
   isOpen: boolean
@@ -28,6 +32,26 @@ interface StockTransferModalProps {
 }
 
 export function StockTransferModal({ isOpen, onClose, onTransfer, product }: StockTransferModalProps) {
+  const [portalReady, setPortalReady] = useState(false)
+
+  useEffect(() => {
+    setPortalReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
+  }, [isOpen])
+
   const [formData, setFormData] = useState({
     fromLocation: 'warehouse' as 'warehouse' | 'store',
     toLocation: 'store' as 'warehouse' | 'store',
@@ -137,29 +161,41 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
 
   if (!isOpen || !product) return null
 
-  return (
-    <div className={overlayClass}>
-      <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="stock-transfer-title">
-        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <ArrowRightLeft className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
-            <h2 id="stock-transfer-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Transferir stock
-            </h2>
-          </div>
-          <Button
-            type="button"
-            onClick={handleClose}
-            variant="ghost"
-            size="sm"
-            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
-          >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+  if (!portalReady || typeof document === 'undefined') {
+    return null
+  }
 
-        <form onSubmit={(e) => { e.preventDefault(); handleTransfer() }}>
-          <div className="space-y-4 p-4">
+  return createPortal(
+    <div className={overlayClass}>
+      <div className={overlayInnerClass}>
+        <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="stock-transfer-title">
+          <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+            <div className="flex min-w-0 items-center gap-2.5">
+              <ArrowRightLeft className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
+              <h2 id="stock-transfer-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
+                Transferir stock
+              </h2>
+            </div>
+            <Button
+              type="button"
+              onClick={handleClose}
+              variant="ghost"
+              size="sm"
+              className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
+
+          <form
+            className="flex min-h-0 flex-1 flex-col"
+            onSubmit={(e) => {
+              e.preventDefault()
+              handleTransfer()
+            }}
+          >
+            <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain">
+              <div className="space-y-4 p-4">
             <div className="space-y-1">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">
                 {product.name} · {product.reference}
@@ -394,19 +430,22 @@ export function StockTransferModal({ isOpen, onClose, onTransfer, product }: Sto
               </Card>
             </div>
           </div>
-          </div>
+              </div>
+            </div>
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
-            <Button type="button" variant="outline" size="sm" onClick={handleClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" size="sm">
-              <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
-              Transferir stock
-            </Button>
-          </div>
-        </form>
+            <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+              <Button type="button" variant="outline" size="sm" onClick={handleClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" size="sm">
+                <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
+                Transferir stock
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

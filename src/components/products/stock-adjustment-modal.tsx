@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -17,11 +18,17 @@ const panelInner =
 const inputClass =
   'w-full rounded-lg border border-zinc-300 bg-white px-4 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
 
+/** Por encima del bottom nav (z-45) y del sidebar (z-40); portal a body evita quedar atrapado en main (z-10). */
+/** Sin scroll en el overlay: evita que en iPad el gesto arrastre todo el modal. El scroll solo va en el cuerpo del diálogo. */
 const overlayClass =
-  'fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+  'fixed inset-0 z-[100] overflow-hidden overscroll-none bg-black/50 px-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
 
+/** touch-none en el contenedor centrador; touch-auto en la caja del modal para inputs y scroll interno. */
+const overlayInnerClass = 'flex h-full min-h-0 w-full touch-none items-center justify-center py-4'
+
+/** Una sola caja: sin overflow en el borde; solo el cuerpo hace scroll (header + footer fijos al card). */
 const shellClass =
-  'max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-3xl overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
+  'isolate flex max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-3xl touch-auto flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -35,6 +42,25 @@ interface StockAdjustmentModalProps {
 
 export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: StockAdjustmentModalProps) {
   const { user } = useAuth()
+  const [portalReady, setPortalReady] = useState(false)
+
+  useEffect(() => {
+    setPortalReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
+    }
+  }, [isOpen])
   
   // Detectar si es tienda principal o microtienda
   const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
@@ -138,10 +164,15 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
 
   if (!isOpen || !product) return null
 
-  return (
+  if (!portalReady || typeof document === 'undefined') {
+    return null
+  }
+
+  return createPortal(
     <div className={overlayClass}>
-      <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="stock-adjust-title">
-        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+      <div className={overlayInnerClass}>
+        <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="stock-adjust-title">
+          <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
           <div className="flex min-w-0 items-center gap-2.5">
             <Package className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
             <h2 id="stock-adjust-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -157,10 +188,11 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
           >
             <X className="h-5 w-5" />
           </Button>
-        </div>
+          </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 p-4">
+          <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
+            <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-y-contain">
+              <div className="space-y-4 p-4">
             <div className="space-y-1">
               <p className="text-sm text-zinc-600 dark:text-zinc-400">Modificar inventario del producto</p>
             </div>
@@ -376,18 +408,21 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
               </p>
             </div>
           )}
-          </div>
+              </div>
+            </div>
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
-            <Button type="button" variant="outline" size="sm" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button type="submit" size="sm">
-              Ajustar stock
-            </Button>
-          </div>
-        </form>
+            <div className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+              <Button type="button" variant="outline" size="sm" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button type="submit" size="sm">
+                Ajustar stock
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
