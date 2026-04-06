@@ -22,21 +22,15 @@ import { CreditsService } from '@/lib/credits-service'
 import { PaymentModal } from '@/components/credits/payment-modal'
 import { cn } from '@/lib/utils'
 import { UserAvatar } from '@/components/ui/user-avatar'
+import {
+  creditStatusBadgeClass,
+  creditStatusIconClass,
+  creditStatusLabel,
+  isCreditCancelled,
+} from '@/lib/credit-status-ui'
 
 const cardShell =
   'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
-
-/** Badges discretos (sin verde/rojo/ámbar fuerte) */
-function getStatusBadgeClass(_status: string, credit?: Credit) {
-  if (credit && isCreditCancelled(credit)) {
-    return 'border-zinc-200/90 bg-zinc-100/40 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-500'
-  }
-  return 'border-zinc-200/90 bg-zinc-50/90 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300'
-}
-
-function isCreditCancelled(credit: Credit) {
-  return credit.totalAmount === 0 && credit.pendingAmount === 0
-}
 
 export default function ClientCreditsPage() {
   const params = useParams()
@@ -153,7 +147,7 @@ export default function ClientCreditsPage() {
   }
 
   const getStatusIcon = (status: string, credit?: Credit) => {
-    const ic = 'h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400'
+    const ic = creditStatusIconClass(status, credit)
     if (credit && isCreditCancelled(credit)) {
       return <XCircle className={ic} />
     }
@@ -171,27 +165,6 @@ export default function ClientCreditsPage() {
         return <XCircle className={ic} />
       default:
         return <AlertCircle className={ic} />
-    }
-  }
-
-  const getStatusLabel = (status: string, credit?: Credit) => {
-    if (credit && isCreditCancelled(credit)) {
-      return 'Anulado'
-    }
-    
-    switch (status) {
-      case 'pending':
-        return 'Pendiente'
-      case 'partial':
-        return 'Parcial'
-      case 'completed':
-        return 'Completado'
-      case 'overdue':
-        return 'Vencido'
-      case 'cancelled':
-        return 'Anulado'
-      default:
-        return status
     }
   }
 
@@ -447,11 +420,11 @@ export default function ClientCreditsPage() {
                         variant="outline"
                         className={cn(
                           'shrink-0 border px-2 py-0.5 text-[11px] font-normal',
-                          getStatusBadgeClass(credit.status, credit)
+                          creditStatusBadgeClass(credit.status, credit)
                         )}
                       >
                         {getStatusIcon(credit.status, credit)}
-                        {getStatusLabel(credit.status, credit)}
+                        {creditStatusLabel(credit.status, credit)}
                       </Badge>
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-3 text-left dark:border-zinc-800">
@@ -544,12 +517,12 @@ export default function ClientCreditsPage() {
                               variant="outline"
                               className={cn(
                                 'inline-flex border px-2 py-0.5 text-[11px] font-normal',
-                                getStatusBadgeClass(credit.status, credit)
+                                creditStatusBadgeClass(credit.status, credit)
                               )}
                             >
                               <span className="flex items-center justify-center gap-1">
                                 {getStatusIcon(credit.status, credit)}
-                                {getStatusLabel(credit.status, credit)}
+                                {creditStatusLabel(credit.status, credit)}
                               </span>
                             </Badge>
                           </td>

@@ -26,7 +26,7 @@ import {
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
-// ThemeToggle removed
+import { LoginThemeToggle } from '@/components/auth/login-theme-toggle'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
@@ -390,6 +390,10 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               )
             })}
           </nav>
+
+          <div className="flex justify-center px-2 pb-2 pt-1">
+            <LoginThemeToggle />
+          </div>
 
           {/* User info */}
           <div className="border-t border-zinc-200/80 p-2.5 dark:border-zinc-800">

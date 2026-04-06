@@ -20,6 +20,13 @@ import {
 } from 'lucide-react'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
+import { cn } from '@/lib/utils'
+import {
+  creditStatusSolidBadgeClass,
+  creditStatusIconClass,
+  creditStatusLabel,
+  isCreditCancelled,
+} from '@/lib/credit-status-ui'
 
 interface CreditDetailModalProps {
   isOpen: boolean
@@ -87,53 +94,24 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
     }
   }
 
-  // Función para verificar si un crédito está cancelado
-  const isCreditCancelled = (credit: any) => {
-    // Si totalAmount y pendingAmount son 0, el crédito está cancelado
-    return credit?.totalAmount === 0 && credit?.pendingAmount === 0
-  }
-
-  const getStatusColor = (status: string, credit?: any) => {
-    // Si el crédito está cancelado (montos en 0), usar color rojo
-    if (isCreditCancelled(credit)) {
-      return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+  const getStatusIcon = (status: string, credit?: Credit | null) => {
+    const ic = creditStatusIconClass(status, credit ?? undefined, 'md')
+    if (isCreditCancelled(credit ?? undefined)) {
+      return <XCircle className={ic} />
     }
-    
     switch (status) {
       case 'completed':
-        return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 hover:bg-green-100 hover:text-green-800 dark:hover:bg-green-900/20 dark:hover:text-green-400'
+        return <CheckCircle className={ic} />
       case 'partial':
-        return 'bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 hover:bg-orange-100 hover:text-orange-800 dark:hover:bg-orange-900/20 dark:hover:text-orange-400'
+        return <Clock className={ic} />
       case 'pending':
-        return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400 hover:bg-yellow-100 hover:text-yellow-800 dark:hover:bg-yellow-900/20 dark:hover:text-yellow-400'
+        return <AlertCircle className={ic} />
       case 'overdue':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+        return <XCircle className={ic} />
       case 'cancelled':
-        return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100 hover:text-red-800 dark:hover:bg-red-900/20 dark:hover:text-red-400'
+        return <XCircle className={ic} />
       default:
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-800 dark:text-gray-300 hover:bg-gray-100 hover:text-gray-800 dark:hover:bg-gray-700 dark:hover:text-gray-300'
-    }
-  }
-
-  const getStatusIcon = (status: string, credit?: any) => {
-    // Si el crédito está cancelado (montos en 0), usar ícono X
-    if (isCreditCancelled(credit)) {
-      return <XCircle className="h-4 w-4" />
-    }
-    
-    switch (status) {
-      case 'completed':
-        return <CheckCircle className="h-4 w-4" />
-      case 'partial':
-        return <Clock className="h-4 w-4" />
-      case 'pending':
-        return <AlertCircle className="h-4 w-4" />
-      case 'overdue':
-        return <XCircle className="h-4 w-4" />
-      case 'cancelled':
-        return <XCircle className="h-4 w-4" />
-      default:
-        return <AlertCircle className="h-4 w-4" />
+        return <AlertCircle className={ic} />
     }
   }
 
@@ -255,14 +233,14 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                                 
                                 <div>
                                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Estado</div>
-                                  <Badge className={`${getStatusColor(c.status, c)} flex items-center gap-1 w-fit text-sm`}>
+                                  <Badge
+                                    className={cn(
+                                      creditStatusSolidBadgeClass(c.status, c),
+                                      'flex w-fit items-center gap-1 text-sm'
+                                    )}
+                                  >
                                     {getStatusIcon(c.status, c)}
-                                    {isCreditCancelled(c) ? 'Anulado' :
-                                     c.status === 'completed' ? 'Completado' :
-                                     c.status === 'partial' ? 'Parcial' :
-                                     c.status === 'pending' ? 'Pendiente' :
-                                     c.status === 'overdue' ? 'Vencido' :
-                                     c.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
+                                    {creditStatusLabel(c.status, c)}
                                   </Badge>
                                 </div>
                                 
@@ -351,14 +329,20 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                         </div>
                         <div>
                           <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Estado</div>
-                          <Badge className={`${getStatusColor(currentCredit?.status || 'pending', currentCredit)} flex items-center gap-1 w-fit text-sm px-3 py-1`}>
+                          <Badge
+                            className={cn(
+                              creditStatusSolidBadgeClass(
+                                currentCredit?.status || 'pending',
+                                currentCredit
+                              ),
+                              'flex w-fit items-center gap-1 px-3 py-1 text-sm'
+                            )}
+                          >
                             {getStatusIcon(currentCredit?.status || 'pending', currentCredit)}
-                            {isCreditCancelled(currentCredit) ? 'Anulado' :
-                             currentCredit?.status === 'completed' ? 'Completado' :
-                             currentCredit?.status === 'partial' ? 'Parcial' :
-                             currentCredit?.status === 'pending' ? 'Pendiente' :
-                             currentCredit?.status === 'overdue' ? 'Vencido' :
-                             currentCredit?.status === 'cancelled' ? 'Anulado' : 'Desconocido'}
+                            {creditStatusLabel(
+                              currentCredit?.status || 'pending',
+                              currentCredit
+                            )}
                           </Badge>
                         </div>
                       </div>

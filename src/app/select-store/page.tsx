@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Store as StoreIcon, Crown, Loader2 } from 'lucide-react'
 import Image from 'next/image'
 import { toast } from 'sonner'
+import { LoginThemeToggle } from '@/components/auth/login-theme-toggle'
 
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -82,7 +83,11 @@ export default function SelectStorePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black">
+      <div
+        data-auth-page
+        className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black"
+      >
+        <LoginThemeToggle className="absolute right-4 top-4 z-20 md:right-8 md:top-8" />
         <div className="text-center">
           <Loader2 className="h-12 w-12 animate-spin text-emerald-600 mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-300">Cargando tiendas...</p>
@@ -92,7 +97,11 @@ export default function SelectStorePage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-white to-emerald-100 dark:from-black dark:via-neutral-950 dark:to-black flex items-center justify-center p-4">
+    <div
+      data-auth-page
+      className="relative flex min-h-screen items-center justify-center bg-gradient-to-br from-emerald-50 via-white to-emerald-100 p-4 dark:from-black dark:via-neutral-950 dark:to-black"
+    >
+      <LoginThemeToggle className="absolute right-4 top-4 z-20 md:right-8 md:top-8" />
       <div className="w-full max-w-4xl">
         {/* Header */}
         <div className="text-center mb-6 md:mb-8">

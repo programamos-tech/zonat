@@ -27,19 +27,12 @@ import {
   ChevronDown
 } from 'lucide-react'
 import {
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
   LineChart,
-  Line,
-  Area,
-  AreaChart
+  Line
 } from 'recharts'
 import { useSales } from '@/contexts/sales-context'
 import { useProducts } from '@/contexts/products-context'
@@ -1686,20 +1679,20 @@ export default function DashboardPage() {
 
         {/* Gráficos y estadísticas mejoradas */}
         <div className="space-y-4 md:space-y-6 mb-6 md:mb-8">
-          {/* Tendencia de Ingresos + Ingresos por método (super admin, lado a lado en lg) */}
+          {/* Tendencia de Ingresos — ancho completo (super admin) */}
           {isSuperAdmin && (
-            <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-2 lg:items-stretch">
-            <div className={dashCardBase}>
+            <div className="w-full min-w-0">
+            <div className={cn(dashCardBase, 'w-full')}>
               <div className="mb-4 flex min-w-0 items-start gap-2">
                 <TrendingUp className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 md:text-base">Tendencia de Ingresos</h3>
                   <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                    {effectiveDateFilter === 'all' ? 'Por mes' : effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd ? 'Por día (rango)' : 'Últimos 7 días'}
+                    {effectiveDateFilter === 'all' ? 'Por mes' : effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd ? 'Por día (rango)' : 'Últimos 15 días'}
                   </p>
                 </div>
               </div>
-              <div className="h-[250px] md:h-[300px]">
+              <div className="h-[260px] w-full min-w-0 md:h-[320px] lg:h-[360px]">
                 {(() => {
                   // Si es anual, mostrar por mes
                   if (effectiveDateFilter === 'all') {
@@ -1823,7 +1816,7 @@ export default function DashboardPage() {
                     )
                   }
 
-                  // Para fecha específica o hoy: últimos 7 días (incluye el día de referencia)
+                  // Para fecha específica o hoy: últimos 15 días (incluye el día de referencia)
                   const getDateKey = (dateInput: Date | string): string => {
                     const date = new Date(dateInput)
                     const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -1850,7 +1843,7 @@ export default function DashboardPage() {
                       referenceDate = new Date()
                     }
                     referenceDate.setHours(0, 0, 0, 0)
-                    for (let i = 0; i < 7; i++) {
+                    for (let i = 0; i < 15; i++) {
                       const date = new Date(referenceDate)
                       date.setDate(date.getDate() - i)
                       chartDays.push(date)
@@ -1896,7 +1889,7 @@ export default function DashboardPage() {
                       const saleDate = new Date(sale.createdAt)
                       saleDate.setHours(0, 0, 0, 0)
 
-                      // Verificar si la venta está en la ventana del gráfico (7 días)
+                      // Verificar si la venta está en la ventana del gráfico (15 días)
                       if (dayTimestamps.has(saleDate.getTime())) {
                         const dateKey = getDateKey(saleDate)
 
@@ -2020,135 +2013,6 @@ export default function DashboardPage() {
                 })()}
               </div>
             </div>
-
-            <div className={dashCardBase}>
-              <div className="mb-4 flex min-w-0 items-start gap-2">
-                <CreditCard className={dashMetricIconEm} strokeWidth={1.5} aria-hidden />
-                <div className="min-w-0">
-                  <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 md:text-base">Ingresos por Método de Pago</h3>
-                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Efectivo, Transferencia y Mixto</p>
-                </div>
-              </div>
-              <div className="h-[250px] md:h-[300px]">
-                {(() => {
-                    // Calcular ingresos por método de pago
-                    let efectivoTotal = 0
-                    let transferenciaTotal = 0
-                    let mixtoTotal = 0
-
-                    filteredData.sales.forEach((sale: Sale) => {
-                      if (sale.status !== 'cancelled') {
-                        if (sale.paymentMethod === 'cash') {
-                          efectivoTotal += sale.total || 0
-                        } else if (sale.paymentMethod === 'transfer') {
-                          transferenciaTotal += sale.total || 0
-                        } else if (sale.paymentMethod === 'mixed' && sale.payments) {
-                          sale.payments.forEach(payment => {
-                            if (payment.paymentType === 'cash') {
-                              efectivoTotal += payment.amount || 0
-                            } else if (payment.paymentType === 'transfer') {
-                              transferenciaTotal += payment.amount || 0
-                            }
-                          })
-                          mixtoTotal += sale.total || 0
-                        }
-                      }
-                    })
-
-                    // Agregar abonos de créditos
-                    filteredData.paymentRecords.forEach((payment: any) => {
-                      if (payment.status !== 'cancelled') {
-                        if (payment.paymentMethod === 'cash' || payment.paymentMethod === 'efectivo') {
-                          efectivoTotal += payment.amount || 0
-                        } else if (payment.paymentMethod === 'transfer') {
-                          transferenciaTotal += payment.amount || 0
-                        }
-                      }
-                    })
-
-                    const paymentData = [
-                      { name: 'Efectivo', value: efectivoTotal, color: '#3dab1f' },
-                      { name: 'Transferencia', value: transferenciaTotal, color: '#52525b' },
-                      { name: 'Mixto', value: mixtoTotal, color: '#71717a' },
-                    ].filter(item => item.value > 0)
-
-                    return paymentData.length > 0 ? (
-                      <ResponsiveContainer width="100%" height="100%" minHeight={250}>
-                        <BarChart
-                          data={paymentData}
-                          margin={{ top: 10, right: 10, left: 5, bottom: 5 }}
-                        >
-                          <defs>
-                            <linearGradient id="colorEfectivo" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#52c42a" stopOpacity={0.9} />
-                              <stop offset="95%" stopColor="#2e8f1a" stopOpacity={0.75} />
-                            </linearGradient>
-                            <linearGradient id="colorTransferencia" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#71717a" stopOpacity={0.95} />
-                              <stop offset="95%" stopColor="#52525b" stopOpacity={0.85} />
-                            </linearGradient>
-                            <linearGradient id="colorMixto" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="#a1a1aa" stopOpacity={0.95} />
-                              <stop offset="95%" stopColor="#71717a" stopOpacity={0.85} />
-                            </linearGradient>
-                          </defs>
-                          <XAxis
-                            dataKey="name"
-                            stroke="#666"
-                            fontSize={11}
-                            tick={{ fontSize: 11 }}
-                          />
-                          <YAxis
-                            stroke="#666"
-                            fontSize={11}
-                            tick={{ fontSize: 11 }}
-                            tickFormatter={(value) => {
-                              if (value >= 1000000) return `$${(value / 1000000).toFixed(1)}M`
-                              if (value >= 1000) return `$${(value / 1000).toFixed(0)}k`
-                              return `$${value}`
-                            }}
-                          />
-                          <Tooltip
-                            formatter={(value: number) => [
-                              new Intl.NumberFormat('es-CO', {
-                                style: 'currency',
-                                currency: 'COP',
-                                minimumFractionDigits: 0
-                              }).format(value),
-                              'Ingresos'
-                            ]}
-                            contentStyle={{
-                              backgroundColor: 'white',
-                              border: '1px solid #e5e7eb',
-                              borderRadius: '8px',
-                              boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-                            }}
-                          />
-                          <Bar
-                            dataKey="value"
-                            radius={[4, 4, 0, 0]}
-                            strokeWidth={1}
-                          >
-                            {paymentData.map((entry, index) => (
-                              <Cell
-                                key={`cell-${index}`}
-                                fill={entry.name === 'Efectivo' ? 'url(#colorEfectivo)' :
-                                  entry.name === 'Transferencia' ? 'url(#colorTransferencia)' :
-                                    'url(#colorMixto)'}
-                                stroke={entry.color}
-                              />
-                            ))}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
-                    ) : (
-                      <div className="flex items-center justify-center h-full">
-                        <p className="text-sm text-gray-500">No hay datos disponibles</p>
-                      </div>
-                    )
-                  })()}
-                </div>
-              </div>
             </div>
           )}
         </div>

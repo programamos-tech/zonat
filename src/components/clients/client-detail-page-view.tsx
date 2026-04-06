@@ -30,6 +30,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { Client, Credit } from '@/types'
+import { creditStatusBadgeClass, creditStatusLabel } from '@/lib/credit-status-ui'
 
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -99,38 +100,6 @@ function storeSublabel(storeId?: string) {
   return storeId
 }
 
-function creditStatusLabel(status: Credit['status']) {
-  switch (status) {
-    case 'pending':
-      return 'Pendiente'
-    case 'partial':
-      return 'Parcial'
-    case 'completed':
-      return 'Pagado'
-    case 'overdue':
-      return 'Vencido'
-    case 'cancelled':
-      return 'Anulado'
-    default:
-      return status
-  }
-}
-
-function creditStatusClass(status: Credit['status']) {
-  switch (status) {
-    case 'completed':
-      return 'border-emerald-500/25 bg-emerald-500/[0.06] text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300/90'
-    case 'pending':
-    case 'partial':
-      return 'border-amber-500/25 bg-amber-500/[0.06] text-amber-950 dark:border-amber-500/30 dark:bg-amber-950/40 dark:text-amber-300/90'
-    case 'overdue':
-      return 'border-rose-500/25 bg-rose-500/[0.06] text-rose-950 dark:border-rose-500/30 dark:bg-rose-950/40 dark:text-rose-300/90'
-    case 'cancelled':
-      return 'border-zinc-200 bg-zinc-50 text-zinc-600 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-400'
-    default:
-      return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
-  }
-}
 
 export interface ClientDetailPageViewProps {
   client: Client
@@ -624,9 +593,9 @@ export function ClientDetailPageView({
                           <td className="px-3 py-3 text-center">
                             <Badge
                               variant="outline"
-                              className={cn('border px-2 py-0.5 text-[11px] font-normal', creditStatusClass(credit.status))}
+                              className={cn('border px-2 py-0.5 text-[11px] font-normal', creditStatusBadgeClass(credit.status, credit))}
                             >
-                              {creditStatusLabel(credit.status)}
+                              {creditStatusLabel(credit.status, credit, { completedLabel: 'Pagado' })}
                             </Badge>
                           </td>
                           <td className="px-2 py-2">
@@ -658,9 +627,9 @@ export function ClientDetailPageView({
                           </div>
                           <Badge
                             variant="outline"
-                            className={cn('shrink-0 border px-2 py-0.5 text-[11px] font-normal', creditStatusClass(credit.status))}
+                            className={cn('shrink-0 border px-2 py-0.5 text-[11px] font-normal', creditStatusBadgeClass(credit.status, credit))}
                           >
-                            {creditStatusLabel(credit.status)}
+                            {creditStatusLabel(credit.status, credit, { completedLabel: 'Pagado' })}
                           </Badge>
                         </div>
                       </Link>

@@ -23,6 +23,7 @@ import { UserAvatar } from '@/components/ui/user-avatar'
 import { Sale, Credit, StoreStockTransfer } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
+import { creditStatusBadgeClass, creditStatusLabel } from '@/lib/credit-status-ui'
 
 const panel =
   'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
@@ -65,39 +66,6 @@ function saleStatusLabel(status: string) {
       return 'Anulada'
     default:
       return status
-  }
-}
-
-function creditStatusLabel(status: Credit['status']) {
-  switch (status) {
-    case 'completed':
-      return 'Completado'
-    case 'partial':
-      return 'Parcial'
-    case 'pending':
-      return 'Pendiente'
-    case 'overdue':
-      return 'Vencido'
-    case 'cancelled':
-      return 'Anulado'
-    default:
-      return status
-  }
-}
-
-function creditStatusBadgeClass(status: Credit['status']) {
-  switch (status) {
-    case 'completed':
-      return 'border-emerald-500/35 bg-emerald-500/[0.1] text-emerald-900 dark:border-emerald-500/40 dark:bg-emerald-950/45 dark:text-emerald-300'
-    case 'pending':
-    case 'partial':
-      return 'border-amber-400/50 bg-amber-400/[0.12] text-amber-950 dark:border-amber-400/45 dark:bg-amber-950/40 dark:text-amber-200'
-    case 'cancelled':
-      return 'border-rose-500/40 bg-rose-500/[0.1] text-rose-950 dark:border-rose-500/40 dark:bg-rose-950/45 dark:text-rose-200'
-    case 'overdue':
-      return 'border-red-500/40 bg-red-500/[0.1] text-red-950 dark:border-red-500/40 dark:bg-red-950/45 dark:text-red-200'
-    default:
-      return 'border-zinc-200/90 bg-zinc-50 text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-200'
   }
 }
 
@@ -562,9 +530,9 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                     <Field label="Estado">
                       <Badge
                         variant="outline"
-                        className={cn('mt-1 font-medium', creditStatusBadgeClass(credit.status))}
+                        className={cn('mt-1 font-medium', creditStatusBadgeClass(credit.status, credit))}
                       >
-                        {creditStatusLabel(credit.status)}
+                        {creditStatusLabel(credit.status, credit)}
                       </Badge>
                     </Field>
                   </dl>

@@ -22,20 +22,15 @@ import { CreditsService } from '@/lib/credits-service'
 import { PaymentModal } from '@/components/credits/payment-modal'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { cn } from '@/lib/utils'
+import {
+  creditStatusBadgeClass,
+  creditStatusIconClass,
+  creditStatusLabel,
+  isCreditCancelled,
+} from '@/lib/credit-status-ui'
 
 const cardShell =
   'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
-
-function getStatusBadgeClass(_status: string, credit?: Credit) {
-  if (credit && isCreditCancelled(credit)) {
-    return 'border-zinc-200/90 bg-zinc-100/40 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/70 dark:text-zinc-500'
-  }
-  return 'border-zinc-200/90 bg-zinc-50/90 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-300'
-}
-
-function isCreditCancelled(credit: Credit) {
-  return credit.totalAmount === 0 && credit.pendingAmount === 0
-}
 
 function getCreditDescription(credit: Credit): string {
   const clientInitials = credit.clientName
@@ -93,7 +88,7 @@ export default function CreditDetailPage() {
   }
 
   const getStatusIcon = (status: string, c?: Credit) => {
-    const ic = 'h-3.5 w-3.5 shrink-0 text-zinc-500 dark:text-zinc-400'
+    const ic = creditStatusIconClass(status, c)
     if (c && isCreditCancelled(c)) {
       return <XCircle className={ic} />
     }
@@ -110,24 +105,6 @@ export default function CreditDetailPage() {
         return <XCircle className={ic} />
       default:
         return <AlertCircle className={ic} />
-    }
-  }
-
-  const getStatusLabel = (status: string, c?: Credit) => {
-    if (c && isCreditCancelled(c)) return 'Anulado'
-    switch (status) {
-      case 'pending':
-        return 'Pendiente'
-      case 'partial':
-        return 'Parcial'
-      case 'completed':
-        return 'Completado'
-      case 'overdue':
-        return 'Vencido'
-      case 'cancelled':
-        return 'Anulado'
-      default:
-        return status
     }
   }
 
@@ -334,11 +311,11 @@ export default function CreditDetailPage() {
                           variant="outline"
                           className={cn(
                             'flex w-fit items-center gap-1 border px-2 py-0.5 text-[11px] font-normal',
-                            getStatusBadgeClass(credit.status, credit)
+                            creditStatusBadgeClass(credit.status, credit)
                           )}
                         >
                           {getStatusIcon(credit.status, credit)}
-                          {getStatusLabel(credit.status, credit)}
+                          {creditStatusLabel(credit.status, credit)}
                         </Badge>
                       </div>
                     </div>
