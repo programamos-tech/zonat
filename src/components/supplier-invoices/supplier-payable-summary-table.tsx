@@ -60,7 +60,7 @@ function getStatusBadgeClass(status: string) {
     case 'cancelled':
       return 'border-rose-500/30 bg-rose-500/[0.06] text-rose-900 dark:border-zinc-600 dark:bg-rose-950/35 dark:text-rose-200/90'
     default:
-      return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
+      return 'border-zinc-300 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
   }
 }
 
@@ -182,7 +182,7 @@ export function SupplierPayableSummaryTable({
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+      <Card className="border-zinc-300 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
         <CardHeader className="space-y-0 p-4 md:p-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -238,9 +238,9 @@ export function SupplierPayableSummaryTable({
         </CardHeader>
       </Card>
 
-      <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+      <Card className="border-zinc-300 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
         <CardContent className="p-3 md:p-4">
-          <div className="flex flex-col gap-2 md:h-11 md:min-h-[2.75rem] md:flex-row md:gap-0 md:overflow-hidden md:rounded-xl md:border md:border-zinc-200 md:bg-white md:shadow-sm dark:md:border-zinc-700 dark:md:bg-zinc-950">
+          <div className="flex flex-col gap-2 md:h-11 md:min-h-[2.75rem] md:flex-row md:gap-0 md:overflow-hidden md:rounded-xl md:border md:border-zinc-300 md:bg-white md:shadow-sm dark:md:border-zinc-700 dark:md:bg-zinc-950">
             <div className="relative min-w-0 flex-1">
               <Search className="pointer-events-none absolute left-3 top-1/2 z-10 h-4 w-4 -translate-y-1/2 text-zinc-400" />
               <input
@@ -251,7 +251,7 @@ export function SupplierPayableSummaryTable({
                   setSearchTerm(e.target.value)
                   setCurrentPage(1)
                 }}
-                className="h-11 w-full min-w-0 rounded-lg border border-zinc-200 bg-white py-2 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20 md:h-full md:rounded-none md:border-0 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-zinc-400/35 dark:md:bg-transparent dark:md:focus-visible:ring-zinc-500/30"
+                className="h-11 w-full min-w-0 rounded-lg border border-zinc-300 bg-white py-2 pl-10 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20 md:h-full md:rounded-none md:border-0 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-zinc-400/35 dark:md:bg-transparent dark:md:focus-visible:ring-zinc-500/30"
               />
             </div>
             <select
@@ -260,7 +260,7 @@ export function SupplierPayableSummaryTable({
                 setFilterStatus(e.target.value)
                 setCurrentPage(1)
               }}
-              className="h-11 w-full min-w-0 cursor-pointer appearance-none rounded-lg border border-zinc-200 bg-white px-3 py-2 pr-9 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20 md:h-full md:w-44 md:shrink-0 md:rounded-none md:border-0 md:border-l md:border-zinc-200 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-zinc-400/35 dark:md:bg-zinc-950 dark:md:border-zinc-700 dark:md:focus-visible:ring-zinc-500/30"
+              className="h-11 w-full min-w-0 cursor-pointer appearance-none rounded-lg border border-zinc-300 bg-white px-3 py-2 pr-9 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20 md:h-full md:w-44 md:shrink-0 md:rounded-none md:border-0 md:border-l md:border-zinc-300 md:focus-visible:ring-inset md:focus-visible:ring-2 md:focus-visible:ring-zinc-400/35 dark:md:bg-zinc-950 dark:md:border-zinc-700 dark:md:focus-visible:ring-zinc-500/30"
               style={{
                 backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2371717a' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
                 backgroundRepeat: 'no-repeat',
@@ -278,7 +278,7 @@ export function SupplierPayableSummaryTable({
         </CardContent>
       </Card>
 
-      <Card className="overflow-hidden border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+      <Card className="overflow-hidden border-zinc-300 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
         <CardContent className="p-0">
           {isLoading ? (
             <div className="py-16 text-center">
@@ -302,7 +302,7 @@ export function SupplierPayableSummaryTable({
                   <button
                     type="button"
                     key={g.supplierId || '__none__'}
-                    className="w-full rounded-xl border border-zinc-200/90 bg-zinc-50/50 p-4 text-left transition-colors hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-950/30 dark:hover:bg-zinc-800/40"
+                    className="w-full rounded-xl border border-zinc-300 bg-zinc-50/50 p-4 text-left transition-colors hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-950/30 dark:hover:bg-zinc-800/40"
                     onClick={() => openSupplier(g)}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -335,7 +335,7 @@ export function SupplierPayableSummaryTable({
                         </span>
                       </Badge>
                     </div>
-                    <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-zinc-200/80 pt-3 text-left dark:border-zinc-800">
+                    <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-zinc-300 pt-3 text-left dark:border-zinc-800">
                       <div>
                         <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Total</dt>
                         <dd className="mt-0.5 text-sm tabular-nums text-zinc-800 dark:text-zinc-200">
@@ -362,7 +362,7 @@ export function SupplierPayableSummaryTable({
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[720px] border-collapse text-sm">
                     <thead>
-                      <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                      <tr className="border-b border-zinc-300 dark:border-zinc-800">
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Proveedor
                         </th>
@@ -384,7 +384,7 @@ export function SupplierPayableSummaryTable({
                         <th className="w-12 bg-zinc-50/80 px-2 py-3 dark:bg-zinc-900/50" />
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
+                    <tbody className="divide-y divide-zinc-300 dark:divide-zinc-800/80">
                       {paginated.map((g) => (
                         <tr
                           key={g.supplierId || '__none__'}
@@ -455,7 +455,7 @@ export function SupplierPayableSummaryTable({
               </div>
 
               {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-3 border-t border-zinc-200 py-4 dark:border-zinc-800">
+                <div className="flex items-center justify-center gap-3 border-t border-zinc-300 py-4 dark:border-zinc-800">
                   <Button
                     variant="outline"
                     size="sm"

@@ -94,14 +94,14 @@ export default function SupplierPayablesDetailPage() {
   return (
     <RoleProtectedRoute module="supplier_invoices" requiredAction="view">
       <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 pb-24 xl:pb-8">
-        <div className="border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
+        <div className="border-b border-zinc-300 bg-white/90 backdrop-blur-sm dark:border-zinc-800 dark:bg-zinc-950/80">
           <div className="flex w-full min-w-0 flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:py-5 md:px-6">
             <div className="flex min-w-0 flex-1 items-center gap-3">
               <UserAvatar
                 name={supplierName}
                 seed={supplierKey || SIN_PROVEEDOR_SEGMENT}
                 size="lg"
-                className="shrink-0 ring-2 ring-zinc-200/80 dark:ring-zinc-700"
+                className="shrink-0 ring-2 ring-zinc-300 dark:ring-zinc-700"
               />
               <div className="min-w-0">
                 <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">

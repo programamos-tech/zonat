@@ -20,7 +20,7 @@ export function Button({
       className={cn(
         'inline-flex items-center justify-center gap-1.5 font-medium transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/45 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 dark:focus-visible:ring-zinc-500/40 dark:focus-visible:ring-offset-zinc-950',
         variant === 'default' &&
-          'rounded-lg border border-zinc-200/90 bg-zinc-100 text-zinc-900 shadow-none hover:border-zinc-300/80 hover:bg-white dark:border-emerald-600/85 dark:bg-emerald-500 dark:text-white dark:hover:border-emerald-500 dark:hover:bg-emerald-400',
+          'rounded-lg border border-zinc-300 bg-zinc-100 text-zinc-900 shadow-none hover:border-zinc-400 hover:bg-white dark:border-emerald-600/85 dark:bg-emerald-500 dark:text-white dark:hover:border-emerald-500 dark:hover:bg-emerald-400',
         variant === 'destructive' &&
           'rounded-lg border border-red-600/90 bg-red-600 text-white shadow-none hover:bg-red-700 dark:bg-red-600 dark:hover:bg-red-700',
         variant === 'outline' &&

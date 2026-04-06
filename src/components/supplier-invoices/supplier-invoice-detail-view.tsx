@@ -21,8 +21,9 @@ import { cn } from '@/lib/utils'
 import { SupplierInvoice, SupplierPaymentRecord } from '@/types'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
 
+/** Bordes más marcados en modo claro (zinc-200/100 casi no se ven sobre blanco). */
 const panel =
-  'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
+  'overflow-hidden rounded-xl border border-zinc-300 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
 
 function isPdfAttachment(ref: string, publicUrl: string): boolean {
   const path = ref.split('?')[0].toLowerCase()
@@ -154,7 +155,7 @@ export function SupplierInvoiceDetailView({
 
   if (!invoice) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/40">
+      <div className="rounded-xl border border-zinc-300 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/40">
         <p className="text-base font-medium text-zinc-900 dark:text-zinc-100">Factura no encontrada</p>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
           No existe o no tienes acceso desde esta tienda.
@@ -174,9 +175,9 @@ export function SupplierInvoiceDetailView({
 
   return (
     <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:gap-8">
-      <aside className="w-full shrink-0 lg:sticky lg:top-6 lg:w-80">
+      <aside className="w-full shrink-0 lg:sticky lg:top-6 lg:w-80 lg:border-r lg:border-zinc-300 lg:pr-8 dark:lg:border-zinc-700">
         <div className={panel}>
-          <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="border-b border-zinc-300 bg-zinc-50/40 px-4 py-3 dark:border-zinc-800 dark:bg-transparent">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Estado de la factura</p>
             <div className="mt-3">
               <Badge
@@ -187,7 +188,7 @@ export function SupplierInvoiceDetailView({
               </Badge>
             </div>
           </div>
-          <dl className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <dl className="divide-y divide-zinc-200 dark:divide-zinc-800">
             <div className="px-4 py-3">
               <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Total</dt>
               <dd className="mt-1 text-base font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
@@ -261,11 +262,11 @@ export function SupplierInvoiceDetailView({
 
       <div className="min-w-0 flex-1 space-y-6">
         <div className={panel}>
-          <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="border-b border-zinc-300 bg-zinc-50/40 px-4 py-3 dark:border-zinc-800 dark:bg-transparent">
             <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Datos de la factura</h2>
             <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Proveedor y referencias.</p>
           </div>
-          <section className="divide-y divide-zinc-100 dark:divide-zinc-800">
+          <section className="divide-y divide-zinc-200 dark:divide-zinc-800">
             <div className="px-4 py-5 md:px-6">
               <div className="mb-4 flex items-center gap-2">
                 <Building2 className={cn('h-4 w-4', iconMuted)} strokeWidth={1.5} />
@@ -293,7 +294,7 @@ export function SupplierInvoiceDetailView({
 
         {invoice.attachmentUrls && invoice.attachmentUrls.length > 0 ? (
           <div className={panel}>
-            <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+            <div className="border-b border-zinc-300 bg-zinc-50/40 px-4 py-3 dark:border-zinc-800 dark:bg-transparent">
               <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                 <ImageIcon className={cn('h-4 w-4', iconMuted)} strokeWidth={1.5} />
                 Comprobantes
@@ -309,7 +310,7 @@ export function SupplierInvoiceDetailView({
                 return (
                   <div
                     key={`${url}-${i}`}
-                    className="overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/50"
+                    className="overflow-hidden rounded-lg border border-zinc-300 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-950/50"
                   >
                     {pdf ? (
                       <a
@@ -332,7 +333,7 @@ export function SupplierInvoiceDetailView({
                             className="mx-auto block max-h-[min(70vh,640px)] w-full object-contain"
                           />
                         </div>
-                        <div className="border-t border-zinc-200/80 px-4 py-3 dark:border-zinc-800">
+                        <div className="border-t border-zinc-300 px-4 py-3 dark:border-zinc-800">
                           <a
                             href={url}
                             target="_blank"
@@ -360,7 +361,7 @@ export function SupplierInvoiceDetailView({
         )}
 
         <div className={panel}>
-          <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
+          <div className="border-b border-zinc-300 bg-zinc-50/40 px-4 py-3 dark:border-zinc-800 dark:bg-transparent">
             <h2 className="flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
               <DollarSign className={cn('h-4 w-4', iconMuted)} strokeWidth={1.5} />
               Historial de abonos
@@ -379,7 +380,7 @@ export function SupplierInvoiceDetailView({
                 {payments.map((p) => (
                   <div
                     key={p.id}
-                    className="rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/40"
+                    className="rounded-lg border border-zinc-300 bg-zinc-50 p-4 dark:border-zinc-700 dark:bg-zinc-950/40"
                   >
                     <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-3">
                       <div className="flex items-center gap-2">
@@ -404,7 +405,7 @@ export function SupplierInvoiceDetailView({
                             </div>
                           )}
                       </div>
-                      <div className="flex items-start justify-between gap-3 border-t border-zinc-200/80 pt-3 sm:border-t-0 sm:pt-0 dark:border-zinc-800">
+                      <div className="flex items-start justify-between gap-3 border-t border-zinc-300 pt-3 sm:border-t-0 sm:pt-0 dark:border-zinc-800">
                         <div className="min-w-0 flex-1">
                           <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Fecha</div>
                           <div className="font-medium text-zinc-900 dark:text-zinc-100">{formatDate(p.paymentDate)}</div>
