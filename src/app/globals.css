@@ -47,9 +47,11 @@ html.dark:has(.tienda-storefront) {
   background-image: none !important;
 }
 
-html.dark body:not(:has(.tienda-storefront)):not(:has([data-auth-page])) * {
-  background-color: inherit !important;
-}
+/*
+ * No forzar background-color: inherit en * en dark: body es transparente (deja ver el gradiente de html)
+ * y eso hacía que modales en portal (createPortal → body) ignoraran bg-zinc-950 / overlays opacos.
+ * Las superficies usan clases Tailwind explícitas en layout (main, cards, etc.).
+ */
 
 /* Default styles */
 body {

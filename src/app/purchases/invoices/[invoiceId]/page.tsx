@@ -60,9 +60,20 @@ export default function SupplierInvoiceDetailPage() {
               <FileText className="h-6 w-6 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
               <div className="min-w-0">
                 <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
-                  Factura #{shortId}
+                  ID de factura
+                  {shortId ? (
+                    <span className="ml-1.5 font-mono text-base font-normal text-zinc-500 dark:text-zinc-400">
+                      ·{shortId}
+                    </span>
+                  ) : null}
                 </h1>
-                <p className="text-xs text-zinc-500 dark:text-zinc-400">Detalle del registro</p>
+                <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                  {invoice?.invoiceNumber
+                    ? `Folio ${invoice.invoiceNumber}`
+                    : loading
+                      ? 'Cargando…'
+                      : 'Detalle del registro'}
+                </p>
               </div>
             </div>
             <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
@@ -77,7 +88,13 @@ export default function SupplierInvoiceDetailPage() {
                 canCancel={canCancel('supplier_invoices')}
               />
               <Link
-                href="/purchases/invoices"
+                href={
+                  invoice?.supplierId
+                    ? `/purchases/invoices/supplier/${encodeURIComponent(invoice.supplierId)}`
+                    : invoice
+                      ? `/purchases/invoices/supplier/${encodeURIComponent('__sin_proveedor__')}`
+                      : '/purchases/invoices'
+                }
                 className={cn(
                   'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-800 transition-colors',
                   'hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70'

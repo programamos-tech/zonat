@@ -5,7 +5,21 @@ import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X, Plus, Trash2, Package, Store as StoreIcon, Warehouse, ArrowRightLeft, AlertTriangle, Search, CheckCircle, CreditCard } from 'lucide-react'
+import {
+  X,
+  Plus,
+  Trash2,
+  Package,
+  Store as StoreIcon,
+  Warehouse,
+  ArrowRightLeft,
+  AlertTriangle,
+  Search,
+  CheckCircle,
+  CreditCard,
+  ChevronDown,
+  ChevronRight,
+} from 'lucide-react'
 import { Store, Product, TransferItem } from '@/types'
 import { ProductsService } from '@/lib/products-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
@@ -14,23 +28,30 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Label } from '@/components/ui/label'
 
+/** Light: borde claro. Dark: sin caja “doble”, solo salto de tono (menos líneas). */
 const panelInner =
-  'rounded-lg border border-zinc-200 bg-zinc-50/80 dark:border-zinc-700 dark:bg-zinc-950/40'
+  'rounded-xl border border-zinc-200 bg-zinc-50 dark:border-0 dark:bg-zinc-900'
 
 const inputClass =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+  'w-full rounded-lg border border-zinc-300 bg-white px-3 text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-0 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-400 dark:ring-1 dark:ring-inset dark:ring-white/10 dark:focus:ring-2 dark:focus:ring-emerald-500/35 dark:focus:ring-inset'
 
 const selectTriggerClass =
-  'h-10 rounded-lg border-zinc-300 bg-white py-2 pl-3 pr-3 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+  'h-10 rounded-lg border border-zinc-300 bg-white py-2 pl-3 pr-3 text-sm text-zinc-900 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-400/30 dark:border-0 dark:bg-zinc-950 dark:text-zinc-100 dark:ring-1 dark:ring-inset dark:ring-white/10 dark:focus:ring-2 dark:focus:ring-emerald-500/35 dark:focus:ring-inset'
+
+/** Tarjeta por producto: en dark sin marco, bloque ligeramente más claro */
+const itemCardClass =
+  'rounded-xl border border-zinc-200 bg-white p-3 dark:border-0 dark:bg-zinc-800/50'
 
 const overlayClass =
-  'fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+  'fixed inset-0 z-[100] flex items-center justify-center !bg-black/75 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] xl:left-56'
 
 const shellClass =
-  'flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
+  'flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 !bg-white shadow-2xl dark:border dark:border-white/[0.08] dark:!bg-zinc-950 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.85)]'
 
 /** Por encima del overlay del modal (z-[100]); si no, el listado del Select queda invisible detrás. */
 const selectContentModalZ = 'z-[200]'
+
+const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 interface TransferModalProps {
   isOpen: boolean
@@ -41,13 +62,21 @@ interface TransferModalProps {
 }
 
 interface TransferItemForm {
+  rowId: string
   productId: string
   productName: string
   productReference: string
-  fromLocation: 'warehouse' | 'store'
+  fromLocation: 'warehouse' | 'store' | 'both'
   quantity: number
   unitPrice: number // Precio de venta por unidad
   productCost: number // Costo del producto (solo lectura, como referencia)
+}
+
+function newTransferRowId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  return `row-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
 }
 
 export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: TransferModalProps) {
@@ -70,12 +99,23 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   }, [])
   const [paymentError, setPaymentError] = useState<string>('')
   const [showStoreError, setShowStoreError] = useState(false)
+  const [collapsedRowIds, setCollapsedRowIds] = useState<Set<string>>(() => new Set())
+
+  const toggleItemCollapsed = (rowId: string) => {
+    setCollapsedRowIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(rowId)) next.delete(rowId)
+      else next.add(rowId)
+      return next
+    })
+  }
 
   useEffect(() => {
     if (isOpen && fromStoreId) {
       loadAvailableProducts()
       // Resetear formulario al abrir
       setItems([])
+      setCollapsedRowIds(new Set())
       setToStoreId('')
       setDescription('')
       setGlobalProductSearch('')
@@ -130,19 +170,31 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       toast.info('Completa el producto actual antes de agregar otro')
       return
     }
-    setItems([...items, { 
-      productId: '', 
-      productName: '', 
-      productReference: '',
-      fromLocation: 'warehouse',
-      quantity: 0,
-      unitPrice: 0,
-      productCost: 0
-    }])
+    setItems([
+      ...items,
+      {
+        rowId: newTransferRowId(),
+        productId: '',
+        productName: '',
+        productReference: '',
+        fromLocation: 'warehouse',
+        quantity: 0,
+        unitPrice: 0,
+        productCost: 0,
+      },
+    ])
   }
 
   const handleRemoveItem = (index: number) => {
+    const removed = items[index]
     setItems(items.filter((_, i) => i !== index))
+    if (removed?.rowId) {
+      setCollapsedRowIds((prev) => {
+        const next = new Set(prev)
+        next.delete(removed.rowId)
+        return next
+      })
+    }
   }
 
   const handleSelectProductFromSearch = (product: Product) => {
@@ -153,15 +205,19 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
     }
 
     // Agregar el producto a la lista
-    setItems([...items, {
-      productId: product.id,
-      productName: product.name || '',
-      productReference: product.reference || '',
-      fromLocation: 'warehouse',
-      quantity: 0,
-      unitPrice: product.price || 0, // Precio por defecto del producto
-      productCost: product.cost || 0 // Costo como referencia
-    }])
+    setItems([
+      ...items,
+      {
+        rowId: newTransferRowId(),
+        productId: product.id,
+        productName: product.name || '',
+        productReference: product.reference || '',
+        fromLocation: 'warehouse',
+        quantity: 0,
+        unitPrice: product.price || 0,
+        productCost: product.cost || 0,
+      },
+    ])
 
     // Limpiar el buscador global
     setGlobalProductSearch('')
@@ -188,7 +244,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         return newAlerts
       })
     } else if (field === 'fromLocation') {
-      newItems[index] = { ...newItems[index], [field]: value }
+      newItems[index] = { ...newItems[index], fromLocation: value as 'warehouse' | 'store' | 'both' }
       // Limpiar alerta cuando cambia la ubicación
       setStockAlerts(prev => {
         const newAlerts = { ...prev }
@@ -224,12 +280,25 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         return
       }
 
-      const availableStock = item.fromLocation === 'warehouse' 
-        ? (product.stock?.warehouse || 0)
-        : (product.stock?.store || 0)
+      const wh = product.stock?.warehouse || 0
+      const st = product.stock?.store || 0
+      const availableStock =
+        item.fromLocation === 'warehouse'
+          ? wh
+          : item.fromLocation === 'store'
+            ? st
+            : wh + st
 
       if (item.quantity > availableStock) {
-        toast.error(`No hay suficiente stock en ${item.fromLocation === 'warehouse' ? 'Bodega' : 'Local'} para ${item.productName}. Disponible: ${availableStock}`)
+        const where =
+          item.fromLocation === 'warehouse'
+            ? 'Bodega'
+            : item.fromLocation === 'store'
+              ? 'Local'
+              : 'local y bodega combinados'
+        toast.error(
+          `No hay suficiente stock (${where}) para ${item.productName}. Disponible: ${availableStock}`
+        )
         return
       }
 
@@ -323,6 +392,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         })
         toast.success('Transferencia creada exitosamente')
         setItems([])
+        setCollapsedRowIds(new Set())
         setToStoreId('')
         setDescription('')
         setStockAlerts({})
@@ -361,6 +431,20 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       .reduce((sum, item) => sum + item.quantity, 0)
   }
 
+  /** Uso en otras líneas del mismo producto y ubicación (excluye la línea actual). */
+  const getUsedQuantityExcluding = (
+    productId: string,
+    location: 'warehouse' | 'store',
+    excludeIndex: number
+  ): number => {
+    return items
+      .filter(
+        (it, i) =>
+          i !== excludeIndex && it.productId === productId && it.fromLocation === location
+      )
+      .reduce((sum, it) => sum + it.quantity, 0)
+  }
+
   const formatNumber = (value: number): string => {
     return value.toLocaleString('es-CO', {
       minimumFractionDigits: 0,
@@ -388,10 +472,16 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   const destinationStores = stores.filter(s => s.id !== fromStoreId && s.isActive)
 
   const modal = (
-    <div className={overlayClass}>
-      <div className={shellClass} role="dialog" aria-modal="true" aria-labelledby="transfer-modal-title">
+    <div className={overlayClass} data-modal-backdrop>
+      <div
+        className={shellClass}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="transfer-modal-title"
+        data-transfer-modal-shell
+      >
         {/* Header */}
-        <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+        <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 !bg-zinc-50 px-4 py-3 dark:border-white/[0.06] dark:!bg-zinc-950">
           <div className="flex min-w-0 items-center gap-2.5">
             <ArrowRightLeft className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
             <h2 id="transfer-modal-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -410,8 +500,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         </div>
 
         {/* Content */}
-        <div className="min-h-0 flex-1 overflow-y-auto p-4">
-          <div className="space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto !bg-white p-4 dark:!bg-zinc-950">
+          <div className="space-y-4 dark:space-y-6">
             {/* Tienda Destino y Descripción en una fila */}
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
@@ -451,8 +541,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               </div>
             </div>
 
-            {/* Productos */}
-            <div className={cn('p-4', panelInner)}>
+            {/* Productos — en dark sin caja exterior extra (menos “marcos” anidados) */}
+            <div className={cn('p-4', panelInner, 'dark:!bg-transparent dark:p-0')}>
               <div className="mb-4 flex items-center gap-2">
                 <Package className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -466,7 +556,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                     Buscar Producto para Agregar
                   </Label>
                   <div className="relative">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+                    <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-500 dark:text-zinc-400" />
                     <Input
                       type="text"
                       placeholder="Buscar por referencia o nombre..."
@@ -484,7 +574,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                   
                   {/* Resultados de búsqueda */}
                   {globalProductSearch && !loadingProducts && (
-                    <div className="mt-2 max-h-60 overflow-y-auto rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950/40">
+                    <div className="mt-2 max-h-60 overflow-y-auto rounded-xl border border-zinc-200 bg-white dark:border-0 dark:bg-zinc-900">
                           {availableProducts
                             .filter(p => {
                               // Filtrar productos ya seleccionados
@@ -516,7 +606,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                 <div
                                   key={product.id}
                                   className={cn(
-                                    'flex w-full items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 transition-colors last:border-b-0 dark:border-zinc-800',
+                                    'flex w-full items-center justify-between gap-3 border-b border-zinc-100 px-4 py-3 transition-colors last:border-b-0 dark:border-b dark:border-white/[0.05]',
                                     !hasStock && 'opacity-60'
                                   )}
                                 >
@@ -584,24 +674,56 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                       const product = availableProducts.find(p => p.id === item.productId)
                       const warehouseStock = product ? (product.stock?.warehouse || 0) : 0
                       const storeStock = product ? (product.stock?.store || 0) : 0
-                      const usedWarehouse = item.productId ? getUsedQuantity(item.productId, 'warehouse') : 0
-                      const usedStore = item.productId ? getUsedQuantity(item.productId, 'store') : 0
-                      const remainingWarehouse = warehouseStock - (usedWarehouse - (item.fromLocation === 'warehouse' ? item.quantity : 0))
-                      const remainingStore = storeStock - (usedStore - (item.fromLocation === 'store' ? item.quantity : 0))
-                      const availableQty = item.fromLocation === 'warehouse' ? remainingWarehouse : remainingStore
+                      const isFromMainStoreOrigin = fromStoreId === MAIN_STORE_ID
+                      const usedWarehouseExcl = item.productId
+                        ? getUsedQuantityExcluding(item.productId, 'warehouse', index)
+                        : 0
+                      const usedStoreExcl = item.productId
+                        ? getUsedQuantityExcluding(item.productId, 'store', index)
+                        : 0
+                      const remainingWarehouse = warehouseStock - usedWarehouseExcl
+                      const remainingStore = storeStock - usedStoreExcl
+                      const availableQty =
+                        item.fromLocation === 'warehouse'
+                          ? remainingWarehouse
+                          : item.fromLocation === 'store'
+                            ? remainingStore
+                            : remainingWarehouse + remainingStore
                       const isComplete = item.quantity > 0 && item.productId && item.fromLocation
+                      const isCollapsed = collapsedRowIds.has(item.rowId)
+                      const canToggleCollapse = Boolean(item.productId)
 
                       return (
                         <div
-                          key={index}
-                          className={cn('rounded-lg border border-zinc-200 p-3 dark:border-zinc-700', panelInner)}
+                          key={item.rowId}
+                          className={itemCardClass}
                         >
-                          <div className="mb-3 flex items-start justify-between">
-                            <div className="flex flex-1 items-start gap-2">
+                          <div
+                            className={cn(
+                              'flex items-start justify-between gap-2',
+                              item.productId && !isCollapsed && 'mb-3'
+                            )}
+                          >
+                            <div className="flex min-w-0 flex-1 items-start gap-2">
+                              {canToggleCollapse && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleItemCollapsed(item.rowId)}
+                                  className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-zinc-200 bg-white text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-0 dark:bg-zinc-950/80 dark:text-zinc-300 dark:hover:bg-zinc-700/50"
+                                  aria-expanded={!isCollapsed}
+                                  aria-label={isCollapsed ? 'Expandir línea' : 'Colapsar línea'}
+                                >
+                                  {isCollapsed ? (
+                                    <ChevronRight className="h-4 w-4" strokeWidth={2} />
+                                  ) : (
+                                    <ChevronDown className="h-4 w-4" strokeWidth={2} />
+                                  )}
+                                </button>
+                              )}
                               {isComplete && (
                                 <CheckCircle className="mt-0.5 h-4 w-4 flex-shrink-0 text-emerald-600 dark:text-emerald-400" />
                               )}
-                              <div className="flex-1">
+                              <div className="min-w-0 flex-1">
                                 <div className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
                                   {item.productName || 'Seleccionar producto'}
                                 </div>
@@ -617,48 +739,108 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               variant="ghost"
                               size="icon"
                               onClick={() => handleRemoveItem(index)}
-                              className="h-8 w-8 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+                              className="h-8 w-8 shrink-0 text-red-500 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
                           </div>
 
-                          {/* Controles cuando hay producto seleccionado */}
-                          {item.productId && (
+                          {item.productId && isCollapsed && (
+                            <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-200 pt-3 text-sm dark:border-white/[0.06]">
+                              <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:border-0 dark:bg-zinc-950/60 dark:text-zinc-200">
+                                {item.fromLocation === 'warehouse'
+                                  ? 'Bodega'
+                                  : item.fromLocation === 'store'
+                                    ? 'Local'
+                                    : 'Local + bodega'}
+                              </span>
+                              {item.fromLocation === 'both' && (
+                                <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                                  (primero local, luego bodega)
+                                </span>
+                              )}
+                              <span className="text-zinc-600 dark:text-zinc-400">
+                                {formatNumber(item.quantity)} u. × {formatCurrency(item.unitPrice || 0)}
+                              </span>
+                              <span className="font-semibold text-zinc-900 dark:text-zinc-50">
+                                {formatCurrency((item.unitPrice || 0) * item.quantity)}
+                              </span>
+                              <span className="text-xs text-zinc-500 dark:text-zinc-500">
+                                Toca la flecha para editar
+                              </span>
+                            </div>
+                          )}
+
+                          {/* Controles cuando hay producto seleccionado y la fila está expandida */}
+                          {item.productId && !isCollapsed && (
                             <div className="space-y-3">
                               {/* Stock y Selección de Ubicación */}
                               <div>
                                 <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                                   Transferir desde
                                 </Label>
-                                <div className="grid grid-cols-2 gap-2">
-                                  {(['warehouse', 'store'] as const).map((location) => {
+                                <div
+                                  className={cn(
+                                    'grid gap-2',
+                                    isFromMainStoreOrigin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'
+                                  )}
+                                >
+                                  {(isFromMainStoreOrigin
+                                    ? (['store', 'warehouse', 'both'] as const)
+                                    : (['warehouse', 'store'] as const)
+                                  ).map((location) => {
                                     const isSelected = item.fromLocation === location
-                                    const stock = location === 'warehouse' ? warehouseStock : storeStock
-                                    const used = location === 'warehouse' ? usedWarehouse : usedStore
-                                    const remaining = stock - (used - (isSelected ? item.quantity : 0))
+                                    const stock =
+                                      location === 'warehouse'
+                                        ? warehouseStock
+                                        : location === 'store'
+                                          ? storeStock
+                                          : warehouseStock + storeStock
+                                    const remaining =
+                                      location === 'warehouse'
+                                        ? remainingWarehouse
+                                        : location === 'store'
+                                          ? remainingStore
+                                          : remainingWarehouse + remainingStore
                                     const isDisabled = remaining <= 0 && !isSelected
-                                    const Icon = location === 'warehouse' ? Warehouse : StoreIcon
+                                    const Icon =
+                                      location === 'warehouse'
+                                        ? Warehouse
+                                        : location === 'store'
+                                          ? StoreIcon
+                                          : ArrowRightLeft
+                                    const title =
+                                      location === 'warehouse'
+                                        ? 'Bodega'
+                                        : location === 'store'
+                                          ? 'Local'
+                                          : 'Local + bodega'
+                                    const subtitle =
+                                      location === 'both'
+                                        ? `Disponible en total: ${formatNumber(remaining)} (primero local, luego bodega)`
+                                        : `Stock: ${formatNumber(stock)} · Disponible: ${formatNumber(remaining)}`
 
                                     return (
                                       <button
                                         key={location}
                                         type="button"
-                                        onClick={() => !isDisabled && handleItemChange(index, 'fromLocation', location)}
+                                        onClick={() =>
+                                          !isDisabled && handleItemChange(index, 'fromLocation', location)
+                                        }
                                         disabled={isDisabled}
                                         className={cn(
                                           'rounded-lg border p-3 text-left text-sm transition-colors',
                                           isDisabled
-                                            ? 'cursor-not-allowed border-zinc-200 text-zinc-400 opacity-50 dark:border-zinc-800'
+                                            ? 'cursor-not-allowed border-zinc-200 text-zinc-400 opacity-50 dark:border-0 dark:bg-zinc-950/30'
                                             : isSelected
-                                              ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-zinc-400 dark:bg-zinc-800 dark:text-zinc-50'
-                                              : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50'
+                                              ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-0 dark:bg-zinc-700/70 dark:text-zinc-50'
+                                              : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-0 dark:bg-zinc-950/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60'
                                         )}
                                       >
                                         <div className="mb-1 flex items-center gap-2">
                                           <Icon
                                             className={cn(
-                                              'h-4 w-4',
+                                              'h-4 w-4 shrink-0',
                                               isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'
                                             )}
                                             strokeWidth={1.5}
@@ -671,18 +853,18 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                                 : 'text-zinc-700 dark:text-zinc-300'
                                             )}
                                           >
-                                            {location === 'warehouse' ? 'Bodega' : 'Local'}
+                                            {title}
                                           </span>
                                         </div>
                                         <div
                                           className={cn(
-                                            'text-xs',
+                                            'text-xs leading-snug',
                                             isSelected
                                               ? 'text-zinc-600 dark:text-zinc-300'
                                               : 'text-zinc-500 dark:text-zinc-400'
                                           )}
                                         >
-                                          Stock: {formatNumber(stock)} • Disponible: {formatNumber(remaining)}
+                                          {subtitle}
                                         </div>
                                       </button>
                                     )
@@ -761,7 +943,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                   readOnly
                                   className={cn(
                                     inputClass,
-                                    'h-10 cursor-not-allowed bg-zinc-100 py-2 text-sm text-zinc-600 dark:bg-zinc-900/60 dark:text-zinc-400'
+                                    'h-10 cursor-not-allowed bg-zinc-100 py-2 text-sm text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400'
                                   )}
                                 />
                                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -830,7 +1012,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
             {/* Método de Pago */}
             {items.length > 0 && calculateTotal() > 0 && (
-              <div className={cn('p-4', panelInner)}>
+              <div className={cn('p-4', panelInner, 'dark:!bg-transparent dark:p-0')}>
                 <div className="mb-3 flex items-center gap-2">
                   <CreditCard className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
                   <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -863,7 +1045,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
                   {/* Campos para pago mixto */}
                   {paymentMethod === 'mixed' && (
-                    <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-900/40">
+                    <div className="space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-0 dark:bg-zinc-900">
                       <div>
                         <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
                           Efectivo
@@ -898,7 +1080,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                           className={cn(inputClass, 'h-10 py-2 text-sm')}
                         />
                       </div>
-                      <div className="border-t border-zinc-200 pt-2 dark:border-zinc-600">
+                      <div className="border-t border-zinc-200 pt-2 dark:border-white/[0.06]">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-zinc-600 dark:text-zinc-400">Total ingresado:</span>
                           <span className="font-semibold text-zinc-900 dark:text-zinc-50">
@@ -926,7 +1108,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
             {/* Resumen compacto */}
             {items.length > 0 && (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50/90 p-3 dark:border-zinc-700 dark:bg-zinc-950/50">
+              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-0 dark:bg-zinc-900">
                 <div className="grid grid-cols-2 gap-3 text-center md:grid-cols-4">
                   <div>
                     <div className="text-xs text-zinc-600 dark:text-zinc-400">Productos</div>
@@ -957,7 +1139,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         </div>
 
         {/* Footer */}
-        <div className="flex flex-shrink-0 flex-col gap-3 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+        <div className="flex flex-shrink-0 flex-col gap-3 border-t border-zinc-200 !bg-zinc-50 p-4 dark:border-white/[0.06] dark:!bg-zinc-950">
           {/* Alerta si no hay tienda seleccionada (solo mostrar después de intentar guardar) */}
           {showStoreError && !toStoreId && (
             <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
@@ -972,7 +1154,13 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
             <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSaving}>
               Cancelar
             </Button>
-            <Button type="button" size="sm" onClick={handleSave} disabled={isSaving}>
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="dark:border-emerald-600 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-500"
+            >
               {isSaving ? (
                 <span className="flex items-center gap-2">
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-b-zinc-800 dark:border-zinc-600 dark:border-b-zinc-100" />

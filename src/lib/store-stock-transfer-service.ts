@@ -6,12 +6,150 @@ import { ProductsService } from './products-service'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId } from './store-helper'
 
+/** Línea que envía el cliente; `both` solo aplica si el origen es la tienda principal (se expande a store/warehouse). */
+export type CreateTransferLineInput = {
+  productId: string
+  productName: string
+  productReference?: string
+  quantity: number
+  fromLocation: 'warehouse' | 'store' | 'both'
+  unitPrice?: number
+}
+
+/** Filas persistidas en transfer_items / deducción (una ubicación por fila). */
+export type ExpandedTransferLine = {
+  productId: string
+  productName: string
+  productReference?: string
+  quantity: number
+  fromLocation: 'warehouse' | 'store'
+  unitPrice?: number
+}
+
 export class StoreStockTransferService {
+  /**
+   * Expande líneas con fromLocation `both` (primero local, luego bodega) para tienda principal.
+   * Valida stock; devuelve null si falta producto o stock insuficiente.
+   */
+  private static async expandTransferLinesForPersistence(
+    items: CreateTransferLineInput[],
+    isFromMainStore: boolean,
+    fromStoreId: string
+  ): Promise<ExpandedTransferLine[] | null> {
+    const out: ExpandedTransferLine[] = []
+
+    for (const item of items) {
+      if (!isFromMainStore) {
+        if (item.fromLocation === 'both') {
+          console.error('[STORE STOCK TRANSFER] fromLocation "both" solo aplica a la tienda principal')
+          return null
+        }
+        const stock = await this.getStoreStock(fromStoreId, item.productId)
+        if (!stock || stock.quantity < item.quantity) {
+          console.error(`Insufficient stock for product ${item.productName}`)
+          return null
+        }
+        out.push({
+          productId: item.productId,
+          productName: item.productName,
+          productReference: item.productReference,
+          quantity: item.quantity,
+          fromLocation: item.fromLocation,
+          unitPrice: item.unitPrice,
+        })
+        continue
+      }
+
+      const { data: product } = await supabaseAdmin
+        .from('products')
+        .select('stock_warehouse, stock_store')
+        .eq('id', item.productId)
+        .single()
+
+      if (!product) {
+        console.error(`Product not found: ${item.productId}`)
+        return null
+      }
+
+      const wh = product.stock_warehouse || 0
+      const st = product.stock_store || 0
+      const req = item.quantity
+
+      if (item.fromLocation === 'both') {
+        if (st + wh < req) {
+          console.error(
+            `Insufficient combined stock for ${item.productName}. Local+bodega: ${st + wh}, Requested: ${req}`
+          )
+          return null
+        }
+        const qtyStore = Math.min(st, req)
+        const remaining = req - qtyStore
+        const qtyWarehouse = Math.min(wh, remaining)
+        if (qtyStore + qtyWarehouse < req) {
+          console.error(`[STORE STOCK TRANSFER] Split logic failed for ${item.productName}`)
+          return null
+        }
+        if (qtyStore > 0) {
+          out.push({
+            productId: item.productId,
+            productName: item.productName,
+            productReference: item.productReference,
+            quantity: qtyStore,
+            fromLocation: 'store',
+            unitPrice: item.unitPrice,
+          })
+        }
+        if (qtyWarehouse > 0) {
+          out.push({
+            productId: item.productId,
+            productName: item.productName,
+            productReference: item.productReference,
+            quantity: qtyWarehouse,
+            fromLocation: 'warehouse',
+            unitPrice: item.unitPrice,
+          })
+        }
+        continue
+      }
+
+      if (item.fromLocation === 'warehouse') {
+        if (wh < req) {
+          console.error(`Insufficient warehouse stock for ${item.productName}. Available: ${wh}, Requested: ${req}`)
+          return null
+        }
+        out.push({
+          productId: item.productId,
+          productName: item.productName,
+          productReference: item.productReference,
+          quantity: req,
+          fromLocation: 'warehouse',
+          unitPrice: item.unitPrice,
+        })
+        continue
+      }
+
+      if (st < req) {
+        console.error(`Insufficient store stock for ${item.productName}. Available: ${st}, Requested: ${req}`)
+        return null
+      }
+      out.push({
+        productId: item.productId,
+        productName: item.productName,
+        productReference: item.productReference,
+        quantity: req,
+        fromLocation: 'store',
+        unitPrice: item.unitPrice,
+      })
+    }
+
+    return out
+  }
+
   // Crear transferencia con múltiples productos
   static async createTransfer(
     fromStoreId: string,
     toStoreId: string,
-    items: Array<{ productId: string; productName: string; productReference?: string; quantity: number; fromLocation: 'warehouse' | 'store'; unitPrice?: number }>,
+    items: CreateTransferLineInput[],
     description?: string,
     notes?: string,
     createdBy?: string,
@@ -28,37 +166,9 @@ export class StoreStockTransferService {
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const isFromMainStore = fromStoreId === MAIN_STORE_ID || !fromStoreId
 
-      // Verificar stock disponible para todos los productos
-      for (const item of items) {
-        if (isFromMainStore) {
-          // Para la tienda principal, verificar stock en products
-          const { data: product } = await supabaseAdmin
-            .from('products')
-            .select('stock_warehouse, stock_store')
-            .eq('id', item.productId)
-            .single()
-          
-          if (!product) {
-            console.error(`Product not found: ${item.productId}`)
-            return null
-          }
-
-          const availableStock = item.fromLocation === 'warehouse' 
-            ? (product.stock_warehouse || 0)
-            : (product.stock_store || 0)
-
-          if (availableStock < item.quantity) {
-            console.error(`Insufficient stock for product ${item.productName}. Available: ${availableStock}, Requested: ${item.quantity}`)
-            return null
-          }
-        } else {
-          // Para micro tiendas, verificar stock en store_stock
-          const stock = await this.getStoreStock(fromStoreId, item.productId)
-          if (!stock || stock.quantity < item.quantity) {
-            console.error(`Insufficient stock for product ${item.productName}`)
-            return null
-          }
-        }
+      const expandedItems = await this.expandTransferLinesForPersistence(items, isFromMainStore, fromStoreId)
+      if (!expandedItems || expandedItems.length === 0) {
+        return null
       }
 
       // Crear la transferencia principal
@@ -90,8 +200,8 @@ export class StoreStockTransferService {
         return null
       }
 
-      // Crear los items de la transferencia con from_location y unit_price
-      const transferItems = items.map(item => ({
+      // Crear los items de la transferencia (puede haber 2 filas por producto si origen fue local+bodega)
+      const transferItems = expandedItems.map(item => ({
         transfer_id: transfer.id,
         product_id: item.productId,
         product_name: item.productName,
@@ -112,8 +222,8 @@ export class StoreStockTransferService {
         return null
       }
 
-      // Reducir stock de la tienda origen según el tipo de tienda
-      for (const item of items) {
+      // Reducir stock según cada fila expandida (una ubicación por fila)
+      for (const item of expandedItems) {
         if (isFromMainStore) {
           const { data: product } = await supabaseAdmin
             .from('products')
@@ -123,14 +233,14 @@ export class StoreStockTransferService {
 
           if (product) {
             const field = item.fromLocation === 'warehouse' ? 'stock_warehouse' : 'stock_store'
-            const currentStock = item.fromLocation === 'warehouse' 
-              ? (product.stock_warehouse || 0)
-              : (product.stock_store || 0)
+            const currentStock =
+              item.fromLocation === 'warehouse'
+                ? (product.stock_warehouse || 0)
+                : (product.stock_store || 0)
             const newStock = currentStock - item.quantity
 
             if (newStock < 0) {
               console.error(`Insufficient stock for product ${item.productName}`)
-              // Revertir la transferencia
               await supabaseAdmin.from('stock_transfers').delete().eq('id', transfer.id)
               return null
             }

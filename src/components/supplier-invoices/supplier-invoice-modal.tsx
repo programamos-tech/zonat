@@ -7,12 +7,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { DatePicker } from '@/components/ui/date-picker'
-import { X, FileText, Upload, Plus } from 'lucide-react'
+import { X, FileText, Upload, Plus, Trash2 } from 'lucide-react'
 import { Supplier, SupplierInvoice } from '@/types'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
 import { supabase } from '@/lib/supabase'
 import { compressImageForUpload } from '@/lib/compress-image-for-upload'
+import {
+  SUPPLIER_INVOICE_MAX_ATTACHMENTS,
+  SUPPLIER_INVOICE_MAX_PDF_BYTES,
+} from '@/lib/supplier-invoice-image-limits'
 import { useAuth } from '@/contexts/auth-context'
+import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 /** Valor guardado en BD: URL absoluta o ruta `invoices/...` dentro del bucket. */
@@ -23,6 +28,11 @@ function supplierInvoiceStoredToPublicUrl(stored: string): string {
   const path = s.replace(/^\/+/, '').replace(/^supplier-invoices\//, '')
   if (!path) return ''
   return supabase.storage.from('supplier-invoices').getPublicUrl(path).data.publicUrl
+}
+
+function isPdfStorageRef(ref: string): boolean {
+  const path = ref.split('?')[0].toLowerCase()
+  return path.endsWith('.pdf')
 }
 
 /** Folio único tipo FV-20260328-A1B2C3D4 (sin depender de la red). */
@@ -44,13 +54,16 @@ interface SupplierInvoiceModalProps {
   /** Tras guardar: recargar datos en el padre antes de cerrar (evita ver el detalle desactualizado). */
   onSaved: () => void | Promise<void>
   invoice?: SupplierInvoice | null
+  /** Al crear factura nueva, preseleccionar proveedor (p. ej. vista por proveedor). */
+  defaultSupplierId?: string
 }
 
 export function SupplierInvoiceModal({
   isOpen,
   onClose,
   onSaved,
-  invoice
+  invoice,
+  defaultSupplierId = '',
 }: SupplierInvoiceModalProps) {
   const { user } = useAuth()
   const [suppliers, setSuppliers] = useState<Supplier[]>([])
@@ -58,8 +71,8 @@ export function SupplierInvoiceModal({
   const [invoiceNumber, setInvoiceNumber] = useState('')
   const [totalStr, setTotalStr] = useState('')
   const [notes, setNotes] = useState('')
-  const [imageUrl, setImageUrl] = useState<string | null>(null)
-  const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+  /** Rutas `invoices/…` o URLs absolutas devueltas por la API (máx. 5). */
+  const [attachmentRefs, setAttachmentRefs] = useState<string[]>([])
   const [issueDate, setIssueDate] = useState<Date | null>(null)
   const [dueDate, setDueDate] = useState<Date | null>(null)
   const [uploading, setUploading] = useState(false)
@@ -101,7 +114,7 @@ export function SupplierInvoiceModal({
       formHydratedSessionKeyRef.current = null
       return
     }
-    const sessionKey = invoice?.id ?? '__new__'
+    const sessionKey = invoice?.id ?? `__new__:${defaultSupplierId || '_'}`
     if (formHydratedSessionKeyRef.current === sessionKey) {
       return
     }
@@ -116,66 +129,90 @@ export function SupplierInvoiceModal({
           : ''
       )
       setNotes(invoice.notes || '')
-      setImageUrl(invoice.imageUrl || null)
+      setAttachmentRefs(invoice.attachmentRefs?.length ? [...invoice.attachmentRefs] : [])
       setIssueDate(invoice.issueDate ? new Date(invoice.issueDate + 'T12:00:00') : null)
       setDueDate(invoice.dueDate ? new Date(invoice.dueDate + 'T12:00:00') : null)
       setShowNewSupplier(false)
       setNewSupplierName('')
-      setUploadPreview(null)
     } else {
-      setSupplierId('')
+      setSupplierId(defaultSupplierId?.trim() || '')
       setInvoiceNumber(generateSupplierInvoiceFolio())
       setTotalStr('')
       setNotes('')
-      setImageUrl(null)
-      setUploadPreview(null)
+      setAttachmentRefs([])
       setIssueDate(new Date())
       setDueDate(null)
       setShowNewSupplier(false)
       setNewSupplierName('')
     }
-  }, [isOpen, invoice])
+  }, [isOpen, invoice, defaultSupplierId])
 
-  const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
-    const blobUrl = URL.createObjectURL(file)
-    setUploadPreview(blobUrl)
-    setUploading(true)
-    try {
-      const prepared = await compressImageForUpload(file)
-      const fd = new FormData()
-      fd.append('file', prepared)
-      const res = await fetch('/api/storage/upload-supplier-invoice', {
-        method: 'POST',
-        body: fd
-      })
-      const text = await res.text()
-      let json: { error?: string; url?: string; path?: string } = {}
-      try {
-        json = text ? (JSON.parse(text) as typeof json) : {}
-      } catch {
-        throw new Error(
-          res.status === 413
-            ? 'La imagen supera el máximo de 2 MB. Intenta con otra foto o recorta el comprobante.'
-            : 'No se pudo procesar la respuesta del servidor al subir la imagen.'
-        )
-      }
-      if (!res.ok) throw new Error(json.error || 'Error al subir')
-      const path = typeof json.path === 'string' ? json.path.trim() : ''
-      const url = typeof json.url === 'string' ? json.url.trim() : ''
-      const stored = path || url
-      if (!stored) throw new Error('El servidor no devolvió la ruta ni la URL de la imagen')
-      setImageUrl(stored)
-      toast.success('Imagen subida')
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
-    } finally {
-      URL.revokeObjectURL(blobUrl)
-      setUploadPreview(null)
-      setUploading(false)
-      e.target.value = ''
+  const handleFiles = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || [])
+    e.target.value = ''
+    if (files.length === 0) return
+
+    const remaining = SUPPLIER_INVOICE_MAX_ATTACHMENTS - attachmentRefs.length
+    if (remaining <= 0) {
+      toast.error(`Máximo ${SUPPLIER_INVOICE_MAX_ATTACHMENTS} comprobantes por factura`)
+      return
     }
+
+    const batch = files.slice(0, remaining)
+    if (files.length > remaining) {
+      toast.message(`Solo se añaden ${remaining} archivo(s) (máx. ${SUPPLIER_INVOICE_MAX_ATTACHMENTS} en total)`)
+    }
+
+    for (const file of batch) {
+      const isPdf =
+        file.type === 'application/pdf' || /\.pdf$/i.test(file.name.split('\\').pop() || file.name)
+      if (isPdf) {
+        if (file.size > SUPPLIER_INVOICE_MAX_PDF_BYTES) {
+          toast.error(`${file.name}: el PDF supera 5 MB`)
+          continue
+        }
+      } else if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name}: solo imágenes o PDF`)
+        continue
+      }
+
+      setUploading(true)
+      try {
+        const body = isPdf ? file : await compressImageForUpload(file)
+        const fd = new FormData()
+        fd.append('file', body)
+        const res = await fetch('/api/storage/upload-supplier-invoice', {
+          method: 'POST',
+          body: fd,
+        })
+        const text = await res.text()
+        let json: { error?: string; url?: string; path?: string } = {}
+        try {
+          json = text ? (JSON.parse(text) as typeof json) : {}
+        } catch {
+          throw new Error(
+            res.status === 413
+              ? 'El archivo supera el tamaño máximo permitido.'
+              : 'No se pudo procesar la respuesta del servidor al subir el archivo.'
+          )
+        }
+        if (!res.ok) throw new Error(json.error || 'Error al subir')
+        const path = typeof json.path === 'string' ? json.path.trim() : ''
+        const url = typeof json.url === 'string' ? json.url.trim() : ''
+        const stored = path || url
+        if (!stored) throw new Error('El servidor no devolvió la ruta del archivo')
+        setAttachmentRefs((prev) => [...prev, stored])
+        toast.success(isPdf ? 'PDF subido' : 'Imagen subida')
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : 'Error al subir archivo')
+      } finally {
+        setUploading(false)
+      }
+    }
+  }
+
+  const removeAttachment = (index: number) => {
+    setAttachmentRefs((prev) => prev.filter((_, i) => i !== index))
   }
 
   const handleCreateSupplier = async () => {
@@ -233,17 +270,13 @@ export function SupplierInvoiceModal({
     setSaving(true)
     try {
       if (invoice) {
-        const trimmedNew = imageUrl?.trim() || ''
-        const trimmedExisting = invoice.imageUrl?.trim() || ''
-        const nextImageUrl =
-          trimmedNew || trimmedExisting || null
         await SupplierInvoicesService.updateInvoice(invoice.id, {
           invoiceNumber: invoiceNumber.trim(),
           issueDate: issueIso,
           dueDate: dueIso ?? null,
           totalAmount: total,
-          imageUrl: nextImageUrl,
-          notes: notes.trim() || null
+          documentUrls: attachmentRefs.map((s) => s.trim()).filter(Boolean),
+          notes: notes.trim() || null,
         })
         toast.success('Factura actualizada')
       } else {
@@ -253,9 +286,9 @@ export function SupplierInvoiceModal({
           issueDate: issueIso,
           dueDate: dueIso,
           totalAmount: total,
-          imageUrl: imageUrl?.trim() || undefined,
+          documentUrls: attachmentRefs.map((s) => s.trim()).filter(Boolean),
           notes: notes.trim() || undefined,
-          createdBy: user?.id
+          createdBy: user?.id,
         })
         toast.success('Factura registrada')
       }
@@ -270,7 +303,6 @@ export function SupplierInvoiceModal({
 
   if (!isOpen) return null
 
-  const receiptPublicUrl = imageUrl ? supplierInvoiceStoredToPublicUrl(imageUrl) : ''
   const isEdit = Boolean(invoice)
   const blocked =
     invoice?.status === 'cancelled' || invoice?.status === 'paid'
@@ -418,42 +450,91 @@ export function SupplierInvoiceModal({
               </div>
 
               <div className="space-y-2">
-                <Label className="text-zinc-700 dark:text-zinc-300">Comprobante (foto)</Label>
+                <div className="flex flex-wrap items-end justify-between gap-2">
+                  <Label className="text-zinc-700 dark:text-zinc-300">Comprobantes (imagen o PDF)</Label>
+                  <span className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">
+                    {attachmentRefs.length}/{SUPPLIER_INVOICE_MAX_ATTACHMENTS}
+                  </span>
+                </div>
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                  Máximo 2 MB. Si la foto pesa más, se reduce tamaño y calidad en el navegador para que el
-                  comprobante siga legible.
+                  Hasta {SUPPLIER_INVOICE_MAX_ATTACHMENTS} archivos. Imágenes máx. 2 MB (se comprimen en el
+                  navegador). PDF máx. 5 MB.
                 </p>
                 <div className="flex flex-wrap items-center gap-2">
-                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50">
-                    <Upload className="h-4 w-4 text-zinc-500" />
-                    {uploading ? 'Subiendo…' : 'Subir imagen'}
-                    <input type="file" accept="image/*" className="hidden" onChange={handleFile} disabled={uploading || blocked} />
-                  </label>
-                  {receiptPublicUrl && (
-                    <a
-                      href={receiptPublicUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
-                    >
-                      Abrir en pestaña nueva
-                    </a>
-                  )}
-                </div>
-                {(uploadPreview || receiptPublicUrl) && (
-                  <div className="relative mt-2 max-h-[min(36dvh,220px)] overflow-y-auto overflow-x-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/80 sm:max-h-[min(40dvh,280px)]">
-                    {uploading && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-sm font-medium text-white">
-                        Subiendo…
-                      </div>
+                  <label
+                    className={cn(
+                      'inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50',
+                      (blocked || uploading || attachmentRefs.length >= SUPPLIER_INVOICE_MAX_ATTACHMENTS) &&
+                        'pointer-events-none opacity-50'
                     )}
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={uploadPreview || receiptPublicUrl || ''}
-                      alt="Vista previa del comprobante"
-                      className="mx-auto block h-auto w-full max-h-[min(36dvh,220px)] max-w-full object-contain sm:max-h-[min(40dvh,280px)]"
+                  >
+                    <Upload className="h-4 w-4 text-zinc-500" />
+                    {uploading ? 'Subiendo…' : 'Añadir archivos'}
+                    <input
+                      type="file"
+                      accept="image/*,application/pdf"
+                      multiple
+                      className="hidden"
+                      onChange={handleFiles}
+                      disabled={uploading || blocked || attachmentRefs.length >= SUPPLIER_INVOICE_MAX_ATTACHMENTS}
                     />
-                  </div>
+                  </label>
+                </div>
+                {attachmentRefs.length > 0 && (
+                  <ul className="mt-2 space-y-2">
+                    {attachmentRefs.map((ref, index) => {
+                      const publicUrl = supplierInvoiceStoredToPublicUrl(ref)
+                      const pdf = isPdfStorageRef(ref)
+                      const label = ref.split('/').pop() || `Archivo ${index + 1}`
+                      return (
+                        <li
+                          key={`${ref}-${index}`}
+                          className="flex items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-950/50"
+                        >
+                          <div className="min-w-0 flex-1">
+                            {pdf ? (
+                              <a
+                                href={publicUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-2 text-sm font-medium text-zinc-800 hover:underline dark:text-zinc-200"
+                              >
+                                <FileText className="h-8 w-8 shrink-0 text-red-600/90 dark:text-red-400/90" />
+                                <span className="truncate">{label}</span>
+                              </a>
+                            ) : (
+                              <a
+                                href={publicUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block overflow-hidden rounded-md"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={publicUrl}
+                                  alt=""
+                                  className="h-20 w-full max-w-[200px] object-cover object-left"
+                                />
+                              </a>
+                            )}
+                            <p className="mt-1 truncate text-xs text-zinc-500 dark:text-zinc-400">{label}</p>
+                          </div>
+                          {!blocked && (
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 w-8 shrink-0 p-0 text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
+                              onClick={() => removeAttachment(index)}
+                              aria-label="Quitar archivo"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </li>
+                      )
+                    })}
+                  </ul>
                 )}
               </div>
             </CardContent>
@@ -478,7 +559,7 @@ export function SupplierInvoiceModal({
             <Button
               type="submit"
               size="sm"
-              disabled={saving || blocked}
+              disabled={saving || blocked || uploading}
               className="h-9 w-full flex-1 touch-manipulation bg-zinc-900 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white sm:w-auto sm:flex-none"
             >
               {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Registrar'}

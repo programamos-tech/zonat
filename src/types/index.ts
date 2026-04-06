@@ -309,6 +309,11 @@ export interface SupplierInvoice {
   totalAmount: number
   paidAmount: number
   status: SupplierInvoiceStatus
+  /** Rutas guardadas en storage o URLs absolutas (hasta 5). */
+  attachmentRefs?: string[]
+  /** URLs públicas resueltas para mostrar comprobantes. */
+  attachmentUrls?: string[]
+  /** Primer comprobante (compatibilidad con vistas que solo usaban uno). */
   imageUrl?: string
   notes?: string
   /** Motivo de anulación (solo si status === cancelled) */
@@ -329,6 +334,8 @@ export interface SupplierPaymentRecord {
   /** Solo cuando paymentMethod === 'mixed' */
   transferAmount?: number
   notes?: string
+  /** Comprobante del abono (mismo bucket que facturas: ruta `payments/…` o URL). */
+  imageUrl?: string
   userId: string
   userName: string
   storeId?: string

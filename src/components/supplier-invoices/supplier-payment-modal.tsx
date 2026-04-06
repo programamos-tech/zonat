@@ -3,12 +3,24 @@
 import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { X, DollarSign, CreditCard, Banknote, Shuffle } from 'lucide-react'
+import { X, DollarSign, CreditCard, Banknote, Shuffle, Upload } from 'lucide-react'
 import { SupplierInvoice } from '@/types'
 import { useAuth } from '@/contexts/auth-context'
 import { getCurrentUser } from '@/lib/store-helper'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
+import { supabase } from '@/lib/supabase'
+import { compressImageForUpload } from '@/lib/compress-image-for-upload'
 import { cn } from '@/lib/utils'
+import { toast } from 'sonner'
+
+function paymentReceiptStoredToPublicUrl(stored: string): string {
+  const s = stored.trim()
+  if (!s) return ''
+  if (/^https?:\/\//i.test(s)) return s
+  const path = s.replace(/^\/+/, '').replace(/^supplier-invoices\//, '')
+  if (!path) return ''
+  return supabase.storage.from('supplier-invoices').getPublicUrl(path).data.publicUrl
+}
 
 interface SupplierPaymentModalProps {
   isOpen: boolean
@@ -29,6 +41,9 @@ export function SupplierPaymentModal({
   const [cashStr, setCashStr] = useState('')
   const [transferStr, setTransferStr] = useState('')
   const [notes, setNotes] = useState('')
+  const [imageUrl, setImageUrl] = useState<string | null>(null)
+  const [uploadPreview, setUploadPreview] = useState<string | null>(null)
+  const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
 
@@ -47,10 +62,58 @@ export function SupplierPaymentModal({
       setCashStr('')
       setTransferStr('')
       setNotes('')
+      setImageUrl(null)
+      setUploadPreview(null)
+      setUploading(false)
       setError('')
       setSubmitting(false)
     }
   }, [isOpen, invoice?.id])
+
+  const receiptPublicUrl = imageUrl ? paymentReceiptStoredToPublicUrl(imageUrl) : ''
+
+  const handleReceiptFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const blobUrl = URL.createObjectURL(file)
+    setUploadPreview(blobUrl)
+    setUploading(true)
+    try {
+      const prepared = await compressImageForUpload(file)
+      const fd = new FormData()
+      fd.append('file', prepared)
+      const res = await fetch('/api/storage/upload-supplier-payment-receipt', {
+        method: 'POST',
+        body: fd,
+      })
+      const text = await res.text()
+      let json: { error?: string; url?: string; path?: string } = {}
+      try {
+        json = text ? (JSON.parse(text) as typeof json) : {}
+      } catch {
+        throw new Error(
+          res.status === 413
+            ? 'La imagen supera el máximo de 2 MB. Intenta con otra foto.'
+            : 'No se pudo procesar la respuesta del servidor al subir la imagen.'
+        )
+      }
+      if (!res.ok) throw new Error(json.error || 'Error al subir')
+      const path = typeof json.path === 'string' ? json.path.trim() : ''
+      const url = typeof json.url === 'string' ? json.url.trim() : ''
+      const stored = path || url
+      if (!stored) throw new Error('El servidor no devolvió la ruta ni la URL de la imagen')
+      setImageUrl(stored)
+      toast.success('Comprobante del abono subido')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Error al subir imagen')
+      setImageUrl(null)
+    } finally {
+      URL.revokeObjectURL(blobUrl)
+      setUploadPreview(null)
+      setUploading(false)
+      e.target.value = ''
+    }
+  }
 
   if (!isOpen || !invoice) return null
 
@@ -104,6 +167,7 @@ export function SupplierPaymentModal({
         cashAmount,
         transferAmount,
         notes: notes.trim() || undefined,
+        imageUrl: imageUrl?.trim() || undefined,
         userId,
         userName: userName || 'Usuario',
       })
@@ -276,6 +340,63 @@ export function SupplierPaymentModal({
               />
             </div>
 
+            <div className="space-y-2">
+              <Label className="text-zinc-700 dark:text-zinc-300">Comprobante del abono (opcional)</Label>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                Foto del recibo o transferencia. Máx. 2 MB; se comprime en el navegador si hace falta.
+              </p>
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50">
+                  <Upload className="h-4 w-4 text-zinc-500" />
+                  {uploading ? 'Subiendo…' : 'Subir imagen'}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleReceiptFile}
+                    disabled={uploading || submitting}
+                  />
+                </label>
+                {receiptPublicUrl && (
+                  <button
+                    type="button"
+                    className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+                    onClick={() => {
+                      setImageUrl(null)
+                      setUploadPreview(null)
+                    }}
+                  >
+                    Quitar
+                  </button>
+                )}
+                {receiptPublicUrl && (
+                  <a
+                    href={receiptPublicUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+                  >
+                    Abrir en pestaña nueva
+                  </a>
+                )}
+              </div>
+              {(uploadPreview || receiptPublicUrl) && (
+                <div className="relative mt-2 max-h-[min(28dvh,180px)] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800/80">
+                  {uploading && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-black/40 text-sm font-medium text-white">
+                      Subiendo…
+                    </div>
+                  )}
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={uploadPreview || receiptPublicUrl || ''}
+                    alt="Vista previa del comprobante de abono"
+                    className="mx-auto block h-auto w-full max-h-[min(28dvh,180px)] object-contain"
+                  />
+                </div>
+              )}
+            </div>
+
             {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
           </div>
 
@@ -283,7 +404,7 @@ export function SupplierPaymentModal({
             <Button type="button" variant="outline" size="sm" onClick={onClose}>
               Cancelar
             </Button>
-            <Button type="submit" size="sm" disabled={submitting}>
+            <Button type="submit" size="sm" disabled={submitting || uploading}>
               {submitting ? 'Guardando…' : 'Registrar abono'}
             </Button>
           </div>

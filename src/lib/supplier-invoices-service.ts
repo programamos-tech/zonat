@@ -80,6 +80,22 @@ function mapSupplier(row: Record<string, unknown>): Supplier {
   }
 }
 
+function parseInvoiceDocumentRefs(row: Record<string, unknown>): string[] {
+  const raw = row.document_urls
+  if (raw != null && Array.isArray(raw)) {
+    const arr = raw
+      .map((x) => (typeof x === 'string' ? x.trim() : String(x).trim()))
+      .filter(Boolean)
+      .slice(0, 5)
+    if (arr.length > 0) return arr
+  }
+  const legacy = row.image_url
+  if (legacy != null && String(legacy).trim()) {
+    return [String(legacy).trim()]
+  }
+  return []
+}
+
 function mapInvoice(
   row: Record<string, unknown>,
   supplierName?: string
@@ -88,6 +104,10 @@ function mapInvoice(
   const name =
     supplierName ||
     (suppliers && typeof suppliers === 'object' ? suppliers.name : undefined)
+  const attachmentRefs = parseInvoiceDocumentRefs(row)
+  const attachmentUrls = attachmentRefs
+    .map((r) => resolveSupplierInvoiceImageUrl(r) || (/^https?:\/\//i.test(r) ? r : undefined))
+    .filter((u): u is string => Boolean(u))
   return {
     id: row.id as string,
     supplierId: row.supplier_id as string,
@@ -101,7 +121,9 @@ function mapInvoice(
     totalAmount: Number(row.total_amount),
     paidAmount: Number(row.paid_amount ?? 0),
     status: row.status as SupplierInvoiceStatus,
-    imageUrl: resolveSupplierInvoiceImageUrl(row.image_url),
+    attachmentRefs,
+    attachmentUrls,
+    imageUrl: attachmentUrls[0],
     notes: (row.notes as string) || undefined,
     cancellationReason: (row.cancellation_reason as string) || undefined,
     createdBy: (row.created_by as string) || undefined,
@@ -124,6 +146,7 @@ function mapPayment(row: Record<string, unknown>): SupplierPaymentRecord {
     transferAmount:
       transfer != null && transfer !== '' ? Number(transfer) : undefined,
     notes: (row.notes as string) || undefined,
+    imageUrl: resolveSupplierInvoiceImageUrl(row.image_url),
     userId: row.user_id as string,
     userName: (row.user_name as string) || 'Usuario',
     storeId: (row.store_id as string) || undefined,
@@ -227,11 +250,16 @@ export class SupplierInvoicesService {
     issueDate: string
     dueDate?: string
     totalAmount: number
-    imageUrl?: string
+    /** Rutas `invoices/…` o URLs absolutas, máximo 5. */
+    documentUrls?: string[]
     notes?: string
     createdBy?: string
   }): Promise<SupplierInvoice> {
     const storeId = getCurrentUserStoreId() || MAIN_STORE_ID
+    const docs = (input.documentUrls || [])
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .slice(0, 5)
     const { data, error } = await supabase
       .from('supplier_invoices')
       .insert([
@@ -244,7 +272,8 @@ export class SupplierInvoicesService {
           total_amount: input.totalAmount,
           paid_amount: 0,
           status: 'pending',
-          image_url: input.imageUrl || null,
+          image_url: docs[0] ?? null,
+          document_urls: docs.length ? docs : [],
           notes: input.notes || null,
           created_by: input.createdBy || null
         }
@@ -262,7 +291,7 @@ export class SupplierInvoicesService {
       issueDate: string
       dueDate: string | null
       totalAmount: number
-      imageUrl: string | null
+      documentUrls: string[] | null
       notes: string | null
     }>
   ): Promise<SupplierInvoice> {
@@ -280,7 +309,14 @@ export class SupplierInvoicesService {
     if (patch.issueDate != null) row.issue_date = patch.issueDate
     if (patch.dueDate !== undefined) row.due_date = patch.dueDate
     if (patch.totalAmount != null) row.total_amount = patch.totalAmount
-    if (patch.imageUrl !== undefined) row.image_url = patch.imageUrl
+    if (patch.documentUrls !== undefined) {
+      const docs = (patch.documentUrls || [])
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 5)
+      row.document_urls = docs.length ? docs : []
+      row.image_url = docs[0] ?? null
+    }
     if (patch.notes !== undefined) row.notes = patch.notes
     const { data, error } = await supabase
       .from('supplier_invoices')
@@ -334,6 +370,7 @@ export class SupplierInvoicesService {
     transferAmount?: number
     paymentDate?: string
     notes?: string
+    imageUrl?: string | null
     userId: string
     userName: string
   }): Promise<SupplierPaymentRecord> {
@@ -366,6 +403,7 @@ export class SupplierInvoicesService {
       payment_date: input.paymentDate || new Date().toISOString(),
       payment_method: input.paymentMethod,
       notes: input.notes || null,
+      image_url: input.imageUrl?.trim() || null,
       user_id: input.userId,
       user_name: input.userName,
       status: 'active'

@@ -9,7 +9,8 @@
     "build": "next build --turbopack --no-lint",
     "start": "next start",
     "lint": "eslint",
-    "init-db": "node scripts/init-supabase.js"
+    "init-db": "node scripts/init-supabase.js",
+    "seed:clients": "node scripts/seed-fake-clients.mjs"
   },
   "dependencies": {
     "@dicebear/core": "^9.4.2",
@@ -48,6 +49,7 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
+    "@faker-js/faker": "^10.4.0",
     "@tailwindcss/postcss": "^4",
     "@types/jspdf": "^1.3.3",
     "@types/node": "^20",
