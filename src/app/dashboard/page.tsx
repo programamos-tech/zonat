@@ -73,6 +73,10 @@ const dashFilterSelectClass =
 const dashToolbarButtonClass =
   'h-9 min-h-9 border-zinc-300/90 bg-white px-2.5 shadow-sm dark:border-zinc-600 dark:bg-zinc-950/40'
 
+/** Debe coincidir con la ventana del gráfico “Últimos N días” (incluye el día de referencia). */
+const INCOME_TREND_CHART_DAYS = 15
+const INCOME_TREND_FETCH_OFFSET = INCOME_TREND_CHART_DAYS - 1
+
 export default function DashboardPage() {
   const router = useRouter()
   const { sales } = useSales()
@@ -257,14 +261,14 @@ export default function DashboardPage() {
       let chartStartDate = startDate || new Date()
       if (currentFilter === 'specific' && dateToUse) {
         const extendedStart = new Date(dateToUse)
-        extendedStart.setDate(extendedStart.getDate() - 6)
+        extendedStart.setDate(extendedStart.getDate() - INCOME_TREND_FETCH_OFFSET)
         extendedStart.setHours(0, 0, 0, 0)
         chartStartDate = extendedStart
       } else if (currentFilter === 'range' && rangeStart) {
         chartStartDate = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0)
       } else if (currentFilter === 'today' || !startDate) {
         const extendedStart = new Date()
-        extendedStart.setDate(extendedStart.getDate() - 6)
+        extendedStart.setDate(extendedStart.getDate() - INCOME_TREND_FETCH_OFFSET)
         extendedStart.setHours(0, 0, 0, 0)
         chartStartDate = extendedStart
       }
@@ -541,7 +545,7 @@ export default function DashboardPage() {
     }
 
     // Para filtros específicos (today, specific), los datos YA vienen filtrados del backend
-    // PERO cargamos 7 días para la gráfica de tendencia, así que filtramos solo el día seleccionado para las métricas
+    // PERO cargamos INCOME_TREND_CHART_DAYS para la gráfica de tendencia; las métricas usan solo el día seleccionado
     if (effectiveDateFilter === 'specific' && !specificDate) {
       // Si es 'specific' pero no hay fecha seleccionada, devolver vacío
       return {
@@ -552,8 +556,8 @@ export default function DashboardPage() {
       }
     }
 
-    // Para 'today' o 'specific' con fecha, necesitamos filtrar solo el día seleccionado para las métricas
-    // (aunque allSales incluye la ventana de 7 días para la gráfica)
+    // Para 'today' o 'specific' con fecha, filtrar solo el día seleccionado para las métricas
+    // (allSales incluye la ventana de tendencia completa para la gráfica)
     if (effectiveDateFilter === 'today' || (effectiveDateFilter === 'specific' && specificDate)) {
       const targetDate = effectiveDateFilter === 'today' ? new Date() : new Date(specificDate!)
       targetDate.setHours(0, 0, 0, 0)
@@ -1206,13 +1210,17 @@ export default function DashboardPage() {
     }
   }
 
-  // Rango: al elegir "desde" solo guardamos; al elegir "hasta" aplicamos si ambas están definidas
+  // Rango: al cambiar "desde" o "hasta" normalizamos orden y recargamos siempre que existan ambas fechas
   const handleRangeStartSelect = (date: Date | null) => {
     setDateRangeStart(date)
-    if (date && dateRangeEnd && date <= dateRangeEnd) {
+    if (date && dateRangeEnd) {
+      const start = date <= dateRangeEnd ? date : dateRangeEnd
+      const end = date >= dateRangeEnd ? date : dateRangeEnd
+      setDateRangeStart(start)
+      setDateRangeEnd(end)
       setIsFiltering(true)
       setDateFilter('range')
-      loadDashboardData(true, 'range', null, undefined, date, dateRangeEnd).then(() => setIsFiltering(false))
+      loadDashboardData(true, 'range', null, undefined, start, end).then(() => setIsFiltering(false))
     }
   }
   const handleRangeEndSelect = (date: Date | null) => {
@@ -1688,7 +1696,13 @@ export default function DashboardPage() {
                 <div className="min-w-0">
                   <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50 md:text-base">Tendencia de Ingresos</h3>
                   <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                    {effectiveDateFilter === 'all' ? 'Por mes' : effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd ? 'Por día (rango)' : 'Últimos 15 días'}
+                    {effectiveDateFilter === 'all'
+                      ? `Por mes · ${selectedYear}`
+                      : effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd
+                        ? `Por día · ${dateRangeStart.toLocaleDateString('es-CO')} — ${dateRangeEnd.toLocaleDateString('es-CO')}`
+                        : effectiveDateFilter === 'range'
+                          ? 'Elige inicio y fin en el rango'
+                          : 'Últimos 15 días'}
                   </p>
                 </div>
               </div>
@@ -1740,19 +1754,21 @@ export default function DashboardPage() {
                       }
                     })
 
-                    // Convertir a array y ordenar por fecha
-                    const monthlyArray = Object.entries(monthlyData)
-                      .map(([month, amount]) => ({
-                        date: month,
-                        amount,
-                        count: 0,
-                        average: 0
-                      }))
-                      .sort((a, b) => {
-                        const dateA = new Date(a.date)
-                        const dateB = new Date(b.date)
-                        return dateA.getTime() - dateB.getTime()
+                    // Siempre 12 meses del año seleccionado (meses sin ventas = 0), orden cronológico
+                    const monthKeyFor = (y: number, monthIndex: number) =>
+                      new Date(y, monthIndex, 1).toLocaleDateString('es-CO', {
+                        month: 'short',
+                        year: 'numeric',
                       })
+                    const monthlyArray = Array.from({ length: 12 }, (_, m) => {
+                      const key = monthKeyFor(selectedYear, m)
+                      return {
+                        date: key,
+                        amount: monthlyData[key] ?? 0,
+                        count: 0,
+                        average: 0,
+                      }
+                    })
 
                     // Colores adaptativos para modo oscuro
                     const axisColor = isDarkMode ? '#6b7280' : '#666'
@@ -1816,7 +1832,17 @@ export default function DashboardPage() {
                     )
                   }
 
-                  // Para fecha específica o hoy: últimos 15 días (incluye el día de referencia)
+                  if (effectiveDateFilter === 'range' && (!dateRangeStart || !dateRangeEnd)) {
+                    return (
+                      <div className="flex h-full items-center justify-center px-4">
+                        <p className="text-center text-sm text-zinc-500 dark:text-zinc-400">
+                          Selecciona fechas de inicio y fin para ver los ingresos día a día en ese período.
+                        </p>
+                      </div>
+                    )
+                  }
+
+                  // Rango completo, hoy o fecha específica: serie diaria
                   const getDateKey = (dateInput: Date | string): string => {
                     const date = new Date(dateInput)
                     const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
@@ -1830,10 +1856,30 @@ export default function DashboardPage() {
                   // Determinar fechas para el gráfico
                   let chartDays: Date[] = []
                   if (effectiveDateFilter === 'range' && dateRangeStart && dateRangeEnd) {
-                    const start = new Date(dateRangeStart.getFullYear(), dateRangeStart.getMonth(), dateRangeStart.getDate(), 0, 0, 0, 0)
-                    const end = new Date(dateRangeEnd.getFullYear(), dateRangeEnd.getMonth(), dateRangeEnd.getDate(), 0, 0, 0, 0)
-                    for (const d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-                      chartDays.push(new Date(d))
+                    const a = new Date(
+                      dateRangeStart.getFullYear(),
+                      dateRangeStart.getMonth(),
+                      dateRangeStart.getDate(),
+                      0,
+                      0,
+                      0,
+                      0
+                    )
+                    const b = new Date(
+                      dateRangeEnd.getFullYear(),
+                      dateRangeEnd.getMonth(),
+                      dateRangeEnd.getDate(),
+                      0,
+                      0,
+                      0,
+                      0
+                    )
+                    const start = a.getTime() <= b.getTime() ? a : b
+                    const end = a.getTime() <= b.getTime() ? b : a
+                    for (let cursor = new Date(start); cursor.getTime() <= end.getTime(); cursor.setDate(cursor.getDate() + 1)) {
+                      chartDays.push(
+                        new Date(cursor.getFullYear(), cursor.getMonth(), cursor.getDate(), 0, 0, 0, 0)
+                      )
                     }
                   } else {
                     let referenceDate: Date
@@ -1843,7 +1889,7 @@ export default function DashboardPage() {
                       referenceDate = new Date()
                     }
                     referenceDate.setHours(0, 0, 0, 0)
-                    for (let i = 0; i < 15; i++) {
+                    for (let i = 0; i < INCOME_TREND_CHART_DAYS; i++) {
                       const date = new Date(referenceDate)
                       date.setDate(date.getDate() - i)
                       chartDays.push(date)
