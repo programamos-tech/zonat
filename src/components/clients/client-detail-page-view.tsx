@@ -30,7 +30,11 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { Client, Credit } from '@/types'
-import { creditStatusBadgeClass, creditStatusLabel } from '@/lib/credit-status-ui'
+import {
+  creditStatusBadgeClass,
+  creditStatusLabel,
+  getEffectiveCreditStatus,
+} from '@/lib/credit-status-ui'
 
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -581,7 +585,9 @@ export function ClientDetailPageView({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                      {recentCredits.map((credit) => (
+                      {recentCredits.map((credit) => {
+                        const displayStatus = getEffectiveCreditStatus(credit)
+                        return (
                         <tr key={credit.id} className="hover:bg-zinc-50/80 dark:hover:bg-zinc-800/20">
                           <td className="px-3 py-3 font-mono text-xs text-zinc-800 dark:text-zinc-200">{credit.invoiceNumber}</td>
                           <td className="px-3 py-3 text-right tabular-nums text-zinc-700 dark:text-zinc-300">
@@ -593,9 +599,9 @@ export function ClientDetailPageView({
                           <td className="px-3 py-3 text-center">
                             <Badge
                               variant="outline"
-                              className={cn('border px-2 py-0.5 text-[11px] font-normal', creditStatusBadgeClass(credit.status, credit))}
+                              className={cn('border px-2 py-0.5 text-[11px] font-normal', creditStatusBadgeClass(displayStatus, credit))}
                             >
-                              {creditStatusLabel(credit.status, credit, { completedLabel: 'Pagado' })}
+                              {creditStatusLabel(displayStatus, credit, { completedLabel: 'Pagado' })}
                             </Badge>
                           </td>
                           <td className="px-2 py-2">
@@ -607,12 +613,14 @@ export function ClientDetailPageView({
                             </Link>
                           </td>
                         </tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                 </div>
                 <ul className="space-y-2 md:hidden">
-                  {recentCredits.map((credit) => (
+                  {recentCredits.map((credit) => {
+                    const displayStatus = getEffectiveCreditStatus(credit)
+                    return (
                     <li key={credit.id}>
                       <Link
                         href={`/payments/${client.id}/credit/${credit.id}`}
@@ -627,14 +635,14 @@ export function ClientDetailPageView({
                           </div>
                           <Badge
                             variant="outline"
-                            className={cn('shrink-0 border px-2 py-0.5 text-[11px] font-normal', creditStatusBadgeClass(credit.status, credit))}
+                            className={cn('shrink-0 border px-2 py-0.5 text-[11px] font-normal', creditStatusBadgeClass(displayStatus, credit))}
                           >
-                            {creditStatusLabel(credit.status, credit, { completedLabel: 'Pagado' })}
+                            {creditStatusLabel(displayStatus, credit, { completedLabel: 'Pagado' })}
                           </Badge>
                         </div>
                       </Link>
                     </li>
-                  ))}
+                  )})}
                 </ul>
                 {credits.length > recentCredits.length && (
                   <div className="mt-4 text-center">

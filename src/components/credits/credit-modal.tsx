@@ -34,7 +34,8 @@ import { SalesService } from '@/lib/sales-service'
 import { CreditsService } from '@/lib/credits-service'
 import { cn } from '@/lib/utils'
 
-const inputCompact = 'min-h-9 py-1.5'
+/** Altura cómoda en modal (tablet / dedo) — evita campos “apretados” verticalmente */
+const inputComfort = 'min-h-11 px-3 py-2.5 text-sm'
 
 const inputBase =
   'rounded-lg border border-zinc-300 bg-white text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
@@ -48,9 +49,12 @@ const sectionTitleClass =
 
 const iconSection = 'h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-300'
 
-const cardHeaderCompact = 'space-y-0 p-3 pb-2'
+/** Cabecera: padding solo en bloque interno + regleta full-bleed (cierra con el borde del card) */
+const modalSectionHeaderClass = 'flex flex-col space-y-0 p-0'
+const modalSectionHeaderInnerClass = 'space-y-1 px-4 pb-3 pt-4'
+const modalSectionDividerClass = 'h-px w-full shrink-0 bg-zinc-200 dark:bg-zinc-800'
 
-const cardBodyCompact = 'space-y-2 p-3 pt-0'
+const cardBodyCompact = 'space-y-4 p-4'
 
 interface CreditModalProps {
   isOpen: boolean
@@ -604,24 +608,32 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
           </Button>
         </div>
 
-        <div className="scrollbar-hide min-h-0 min-w-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
-          <div className="grid min-w-0 grid-cols-1 gap-2.5 p-2.5 sm:gap-3 sm:p-3 xl:grid-cols-5 xl:items-start">
-            {/* Izquierda: solo líneas de producto (más ancho para ventas grandes) */}
-            <div className="min-w-0 space-y-2.5 xl:col-span-3 xl:flex xl:min-h-0 xl:flex-col xl:h-[min(calc(92dvh-7.5rem),900px)]">
-              <Card className={cn(cardShell, 'flex min-h-0 flex-1 flex-col overflow-hidden')}>
-              <CardHeader className={cardHeaderCompact}>
-                <CardTitle className={sectionTitleClass}>
-                  <Package className={iconSection} strokeWidth={1.5} />
-                  Productos
-                </CardTitle>
+        <div className="scrollbar-hide min-h-0 min-w-0 flex-1 overflow-y-auto overscroll-contain">
+          {/* Sin overflow-x-hidden aquí: recorta el borde derecho de cards/select en la columna lateral. */}
+          {/* Misma rejilla que /sales/new: 1 col en móvil; desde tablet productos 2/3 izq., cliente + crédito + resumen 1/3 der. */}
+          <div className="grid min-w-0 grid-cols-1 gap-4 p-2.5 pr-3 sm:p-3 sm:pr-4 md:grid-cols-3 md:gap-4 md:items-start md:pr-4">
+            {/* Columna izquierda — Productos (2/3) */}
+            <div className="min-w-0 space-y-4 md:col-span-2 md:flex md:min-h-0 md:flex-col md:h-[min(calc(92dvh-7.5rem),900px)]">
+              <Card className={cn(cardShell, 'min-w-0 flex min-h-0 flex-1 flex-col overflow-hidden')}>
+              <CardHeader className={modalSectionHeaderClass}>
+                <div className={modalSectionHeaderInnerClass}>
+                  <CardTitle className={sectionTitleClass}>
+                    <Package className={iconSection} strokeWidth={1.5} />
+                    Productos
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Busca por nombre o referencia (búsqueda amplia desde 2 caracteres).
+                  </p>
+                </div>
+                <div className={modalSectionDividerClass} aria-hidden />
               </CardHeader>
-              <CardContent className={cn(cardBodyCompact, 'flex min-h-0 flex-1 flex-col')}>
-                <div className="shrink-0">
-                  <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Buscar producto
-                  </label>
+              <CardContent className={cn(cardBodyCompact, 'flex min-h-0 flex-1 flex-col md:pt-5')}>
+                <div className="relative z-10 shrink-0">
                   <div className="relative">
-                    <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400" />
+                    <Search
+                      className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+                      aria-hidden
+                    />
                     <input
                       type="text"
                       placeholder="Nombre o referencia…"
@@ -631,11 +643,15 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         setShowProductDropdown(e.target.value.length > 0)
                       }}
                       onKeyDown={handleProductSearchKeyDown}
-                      className={cn('w-full pl-8 pr-3', inputCompact, inputBase, 'text-sm')}
+                      className={cn(
+                        'min-h-11 w-full py-2.5 pl-12 pr-3 text-sm',
+                        inputBase
+                      )}
+                      aria-label="Buscar producto por nombre o referencia"
                     />
                     
                     {showProductDropdown && productSearch && (
-                    <div className="scrollbar-hide absolute left-0 right-0 top-full z-10 mt-1 max-h-[min(16rem,50dvh)] overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900">
+                    <div className="scrollbar-hide absolute left-0 right-0 top-full z-[100] mt-1 max-h-[min(16rem,50dvh)] overflow-y-auto overflow-x-hidden overscroll-contain rounded-lg border border-zinc-200 bg-white shadow-lg dark:border-zinc-700 dark:bg-zinc-900 md:max-h-80">
                       {isSearchingProducts ? (
                         <div className="p-4 text-center">
                           <div className="mx-auto mb-2 h-6 w-6 animate-spin rounded-full border-2 border-zinc-200 border-t-emerald-600 dark:border-zinc-600 dark:border-t-emerald-500" />
@@ -716,7 +732,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                 </div>
                 
                 {selectedProducts.length > 0 && (
-                  <div className="scrollbar-hide mt-2 min-h-0 min-w-0 flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden max-h-[min(12rem,28vh)] sm:max-h-52 xl:mt-3 xl:max-h-none xl:min-h-[12rem]">
+                  <div className="scrollbar-hide mt-2 min-h-0 min-w-0 flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden max-h-[min(12rem,28vh)] sm:max-h-52 md:mt-3 md:max-h-none md:min-h-[12rem]">
                     {selectedProducts.map((item) => {
                       const product = products.find(p => p.id === item.productId)
                       const warehouseStock = product?.stock?.warehouse || 0
@@ -724,7 +740,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                       const reference = item.productReferenceCode || product?.reference || 'N/A'
                       
                       return (
-                      <div key={item.productId} className="min-w-0 space-y-1.5 overflow-hidden rounded-lg border border-zinc-200/90 bg-zinc-50/80 p-2 dark:border-zinc-700 dark:bg-zinc-950/40">
+                      <div key={item.productId} className="min-w-0 space-y-3 overflow-hidden rounded-lg border border-zinc-200/90 bg-zinc-50/80 p-3 dark:border-zinc-700 dark:bg-zinc-950/40">
                         <div className="flex min-w-0 items-center justify-between">
                           <div className="min-w-0 flex-1">
                             <div className="break-words font-medium text-zinc-900 dark:text-zinc-100">
@@ -737,9 +753,9 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                         </div>
                         
                         {/* Controles de precio y cantidad */}
-                        <div className="flex min-w-0 flex-wrap items-center gap-2">
+                        <div className="flex min-w-0 flex-wrap items-end gap-3">
                           <div className="min-w-0 flex-1">
-                            <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                            <label className="mb-2 block text-xs text-zinc-600 dark:text-zinc-400">
                               Precio de venta
                             </label>
                             <input
@@ -751,23 +767,23 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                 updatePrice(item.productId, numericValue)
                               }}
                               onBlur={() => handlePriceBlur(item.productId)}
-                              className={cn('w-full px-2 py-1 text-sm', inputBase)}
+                              className={cn('min-h-10 w-full px-3 py-2 text-sm', inputBase)}
                               placeholder="0"
                             />
                           </div>
                           
                           <div>
-                            <label className="mb-1 block text-xs text-zinc-600 dark:text-zinc-400">
+                            <label className="mb-2 block text-xs text-zinc-600 dark:text-zinc-400">
                               Cantidad
                             </label>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                               <Button
                                 onClick={() => updateQuantity(item.productId, item.quantity - 1, true)}
                                 size="sm"
                                 variant="outline"
-                                className="h-7 w-7 p-0"
+                                className="h-9 w-9 shrink-0 p-0"
                               >
-                                <Minus className="h-3 w-3" />
+                                <Minus className="h-3.5 w-3.5" />
                               </Button>
                               <input
                                 type="number"
@@ -777,28 +793,29 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                                   updateQuantity(item.productId, value, false)
                                 }}
                                 onBlur={() => handleQuantityBlur(item.productId)}
-                                className={cn('h-7 w-12 text-center text-sm', inputBase)}
+                                className={cn('h-9 w-14 text-center text-sm', inputBase)}
                                 min="0"
                               />
                               <Button
                                 onClick={() => updateQuantity(item.productId, item.quantity + 1, true)}
                                 size="sm"
                                 variant="outline"
-                                className="h-7 w-7 p-0"
+                                className="h-9 w-9 shrink-0 p-0"
                               >
-                                <Plus className="h-3 w-3" />
+                                <Plus className="h-3.5 w-3.5" />
                               </Button>
                             </div>
                           </div>
                           
-                          <div className="mt-5 flex shrink-0">
+                          <div className="flex shrink-0">
                             <Button
                               onClick={() => removeProduct(item.productId)}
                               size="sm"
                               variant="outline"
-                              className="h-7 px-2 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20"
+                              className="h-9 min-w-9 px-2 text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-900/20"
+                              title="Quitar línea"
                             >
-                              <X className="h-3 w-3" />
+                              <X className="h-4 w-4" />
                             </Button>
                           </div>
                         </div>
@@ -833,24 +850,30 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
             </Card>
             </div>
 
-            {/* Derecha: cliente + crédito + resumen (último antes de confirmar) */}
-            <div className="min-w-0 space-y-2.5 xl:col-span-2 xl:max-h-[calc(92dvh-7.5rem)] xl:overflow-y-auto xl:overflow-x-hidden xl:scrollbar-hide">
-              <Card className={cardShell}>
-              <CardHeader className={cardHeaderCompact}>
-                <CardTitle className={sectionTitleClass}>
-                  <User className={iconSection} strokeWidth={1.5} />
-                  Cliente
-                </CardTitle>
+            {/* Columna derecha — scroll vertical sin recortar bordes en X */}
+            <div className="min-w-0 space-y-4 md:col-span-1 md:max-h-[min(calc(92dvh-7.5rem),900px)] md:overflow-y-auto md:scrollbar-hide">
+              <Card className={cn(cardShell, 'min-w-0')}>
+              <CardHeader className={modalSectionHeaderClass}>
+                <div className={modalSectionHeaderInnerClass}>
+                  <CardTitle className={sectionTitleClass}>
+                    <User className={iconSection} strokeWidth={1.5} />
+                    Cliente
+                  </CardTitle>
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">Quién recibe la venta a crédito.</p>
+                </div>
+                <div className={modalSectionDividerClass} aria-hidden />
               </CardHeader>
-              <CardContent className={cardBodyCompact}>
-                <div>
-                  <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                    Seleccionar cliente *
-                  </label>
+              <CardContent className={cn(cardBodyCompact, 'min-w-0')}>
+                <div className="min-w-0 w-full">
                   <select
                     value={formData.clientId}
                     onChange={(e) => setFormData(prev => ({ ...prev, clientId: e.target.value }))}
-                    className={cn('w-full px-2.5 py-1.5 text-sm', inputBase)}
+                    className={cn(
+                      inputComfort,
+                      inputBase,
+                      'box-border w-full min-w-0 max-w-full'
+                    )}
+                    aria-label="Cliente obligatorio"
                   >
                     <option value="">Selecciona un cliente...</option>
                     {filteredClients.map((client) => (
@@ -862,7 +885,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
                 </div>
                 
                 {selectedClient && (
-                  <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/90 p-2 text-xs dark:border-zinc-700 dark:bg-zinc-950/40">
+                  <div className="rounded-lg border border-zinc-200/90 bg-zinc-50/90 p-3 text-xs leading-relaxed dark:border-zinc-700 dark:bg-zinc-950/40">
                     <div className="text-zinc-600 dark:text-zinc-400">
                       <div className="font-medium text-zinc-900 dark:text-zinc-100">
                         {selectedClient.name}
@@ -875,56 +898,60 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
               </CardContent>
             </Card>
 
-              <Card className={cardShell}>
-                <CardHeader className={cardHeaderCompact}>
-                  <CardTitle className={sectionTitleClass}>
-                    <Calendar className={iconSection} strokeWidth={1.5} />
-                    Configuración del crédito
-                  </CardTitle>
+              <Card className={cn(cardShell, 'min-w-0')}>
+                <CardHeader className={modalSectionHeaderClass}>
+                  <div className={modalSectionHeaderInnerClass}>
+                    <CardTitle className={sectionTitleClass}>
+                      <Calendar className={iconSection} strokeWidth={1.5} />
+                      Configuración del crédito
+                    </CardTitle>
+                  </div>
+                  <div className={modalSectionDividerClass} aria-hidden />
                 </CardHeader>
-                <CardContent className={cardBodyCompact}>
+                <CardContent className={cn(cardBodyCompact, 'min-w-0')}>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                      Fecha de vencimiento *
-                    </label>
                     <DatePicker
                       selectedDate={selectedDate}
                       onDateSelect={setSelectedDate}
                       placeholder="Seleccionar fecha de vencimiento"
                       className="w-full"
                       minDate={new Date()}
+                      ariaLabel="Fecha de vencimiento del crédito"
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    <label className="mb-2 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
                       Observaciones (opcional)
                     </label>
                     <textarea
                       value={formData.notes}
                       onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
                       placeholder="Notas sobre la venta…"
-                      rows={2}
-                      className={cn('w-full px-2.5 py-1.5 text-sm', inputBase)}
+                      rows={3}
+                      className={cn('min-h-[5.5rem] w-full resize-y px-3 py-2.5 text-sm leading-relaxed', inputBase)}
                     />
                   </div>
                 </CardContent>
               </Card>
 
-              <Card className={cardShell}>
-                <CardHeader className={cardHeaderCompact}>
-                  <CardTitle className={sectionTitleClass}>
-                    <DollarSign className={iconSection} strokeWidth={1.5} />
-                    Resumen de la Venta
-                  </CardTitle>
+              <Card className={cn(cardShell, 'min-w-0')}>
+                <CardHeader className={modalSectionHeaderClass}>
+                  <div className={modalSectionHeaderInnerClass}>
+                    <CardTitle className={sectionTitleClass}>
+                      <DollarSign className={iconSection} strokeWidth={1.5} />
+                      Resumen de la Venta
+                    </CardTitle>
+                  </div>
+                  <div className={modalSectionDividerClass} aria-hidden />
                 </CardHeader>
-                <CardContent className={cardBodyCompact}>
+                <CardContent className={cn(cardBodyCompact, 'min-w-0')}>
                   {selectedProducts.length === 0 ? (
                     <p className="py-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
                       Selecciona productos para ver el resumen
                     </p>
                   ) : (
                     <div className="min-w-0 space-y-2">
-                      <div className="scrollbar-hide max-h-40 space-y-1.5 overflow-y-auto overflow-x-hidden sm:max-h-48 xl:max-h-64">
+                      <div className="scrollbar-hide max-h-40 space-y-1.5 overflow-y-auto overflow-x-hidden sm:max-h-48 md:max-h-64">
                         {selectedProducts.map((item) => (
                           <div key={item.productId} className="flex min-w-0 items-start justify-between gap-2 text-sm">
                             <div className="min-w-0 flex-1">

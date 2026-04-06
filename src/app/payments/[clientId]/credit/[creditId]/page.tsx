@@ -26,6 +26,7 @@ import {
   creditStatusBadgeClass,
   creditStatusIconClass,
   creditStatusLabel,
+  getEffectiveCreditStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
 
@@ -184,6 +185,8 @@ export default function CreditDetailPage() {
     }
   }
 
+  const creditDisplayStatus = credit ? getEffectiveCreditStatus(credit) : 'pending'
+
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
       <div className="min-h-screen space-y-6 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 pb-24 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:py-6 xl:pb-8">
@@ -311,11 +314,11 @@ export default function CreditDetailPage() {
                           variant="outline"
                           className={cn(
                             'flex w-fit items-center gap-1 border px-2 py-0.5 text-[11px] font-normal',
-                            creditStatusBadgeClass(credit.status, credit)
+                            creditStatusBadgeClass(creditDisplayStatus, credit)
                           )}
                         >
-                          {getStatusIcon(credit.status, credit)}
-                          {creditStatusLabel(credit.status, credit)}
+                          {getStatusIcon(creditDisplayStatus, credit)}
+                          {creditStatusLabel(creditDisplayStatus, credit)}
                         </Badge>
                       </div>
                     </div>

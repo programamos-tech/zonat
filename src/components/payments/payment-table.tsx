@@ -27,6 +27,7 @@ import {
   creditStatusBadgeClass,
   creditStatusIconClass,
   creditStatusLabel,
+  getConsolidatedCreditDisplayStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
 
@@ -107,14 +108,15 @@ export function CreditTable({
   }
 
   const totalDebt = credits
-    .filter(credit => credit.status !== 'cancelled')
+    .filter(credit => credit.pendingAmount > 0)
     .reduce((sum, credit) => sum + credit.pendingAmount, 0)
 
   const filteredCredits = credits.filter(credit => {
     const matchesSearch =
       credit.clientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       credit.invoiceNumber.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesStatus = filterStatus === 'all' || credit.status === filterStatus
+    const displayStatus = getConsolidatedCreditDisplayStatus(credit)
+    const matchesStatus = filterStatus === 'all' || displayStatus === filterStatus
     return matchesSearch && matchesStatus
   })
 
@@ -247,6 +249,7 @@ export function CreditTable({
             <>
               <div className="space-y-2 p-3 lg:hidden">
                 {paginatedCredits.map((credit, index) => {
+                  const displayStatus = getConsolidatedCreditDisplayStatus(credit)
                   const globalIndex = startIndex + index
                   return (
                     <div
@@ -286,12 +289,12 @@ export function CreditTable({
                           variant="outline"
                           className={cn(
                             'shrink-0 border px-2 py-0.5 text-[11px] font-normal',
-                            creditStatusBadgeClass(credit.status, credit)
+                            creditStatusBadgeClass(displayStatus, credit)
                           )}
                         >
                           <span className="flex items-center gap-1">
-                            {getStatusIcon(credit.status, credit)}
-                            {creditStatusLabel(credit.status, credit)}
+                            {getStatusIcon(displayStatus, credit)}
+                            {creditStatusLabel(displayStatus, credit)}
                           </span>
                         </Badge>
                       </div>
@@ -318,7 +321,7 @@ export function CreditTable({
                           </dd>
                         </div>
                       </dl>
-                      {credit.dueDate && credit.status !== 'completed' && (
+                      {credit.dueDate && displayStatus !== 'completed' && (
                         <div className="mt-2 flex items-center justify-between border-t border-zinc-200/80 pt-2 text-xs dark:border-zinc-800">
                           <span className="flex items-center gap-1 text-zinc-500">
                             <Calendar className="h-3 w-3 shrink-0" />
@@ -373,7 +376,9 @@ export function CreditTable({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                      {paginatedCredits.map(credit => (
+                      {paginatedCredits.map(credit => {
+                        const displayStatus = getConsolidatedCreditDisplayStatus(credit)
+                        return (
                         <tr
                           key={credit.id}
                           className="cursor-pointer transition-colors hover:bg-zinc-50/90 dark:hover:bg-zinc-800/25"
@@ -411,12 +416,12 @@ export function CreditTable({
                               variant="outline"
                               className={cn(
                                 'inline-flex border px-2 py-0.5 text-[11px] font-normal',
-                                creditStatusBadgeClass(credit.status, credit)
+                                creditStatusBadgeClass(displayStatus, credit)
                               )}
                             >
                               <span className="flex items-center justify-center gap-1">
-                                {getStatusIcon(credit.status, credit)}
-                                {creditStatusLabel(credit.status, credit)}
+                                {getStatusIcon(displayStatus, credit)}
+                                {creditStatusLabel(displayStatus, credit)}
                               </span>
                             </Badge>
                           </td>
@@ -439,7 +444,8 @@ export function CreditTable({
                             </Button>
                           </td>
                         </tr>
-                      ))}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>

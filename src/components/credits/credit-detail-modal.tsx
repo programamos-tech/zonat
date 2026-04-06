@@ -25,6 +25,7 @@ import {
   creditStatusSolidBadgeClass,
   creditStatusIconClass,
   creditStatusLabel,
+  getEffectiveCreditStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
 
@@ -45,6 +46,9 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
 
   // Obtener el crédito actualmente seleccionado
   const currentCredit = clientCredits.find(c => c.id === selectedCreditId) || credit
+  const currentDisplayStatus = currentCredit
+    ? getEffectiveCreditStatus(currentCredit)
+    : 'pending'
 
   useEffect(() => {
     if (isOpen && credit) {
@@ -210,6 +214,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                       <div className="grid grid-cols-1 gap-3">
                         {clientCredits.map((c) => {
                           const isSelected = selectedCreditId === c.id
+                          const displayStatus = getEffectiveCreditStatus(c)
                           const bgColor = isSelected 
                             ? 'bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-400 dark:border-orange-500' 
                             : 'bg-white dark:bg-neutral-900 border border-gray-200 dark:border-neutral-600'
@@ -235,12 +240,12 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                                   <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Estado</div>
                                   <Badge
                                     className={cn(
-                                      creditStatusSolidBadgeClass(c.status, c),
+                                      creditStatusSolidBadgeClass(displayStatus, c),
                                       'flex w-fit items-center gap-1 text-sm'
                                     )}
                                   >
-                                    {getStatusIcon(c.status, c)}
-                                    {creditStatusLabel(c.status, c)}
+                                    {getStatusIcon(displayStatus, c)}
+                                    {creditStatusLabel(displayStatus, c)}
                                   </Badge>
                                 </div>
                                 
@@ -331,18 +336,12 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                           <div className="text-sm text-gray-500 dark:text-gray-400 mb-2">Estado</div>
                           <Badge
                             className={cn(
-                              creditStatusSolidBadgeClass(
-                                currentCredit?.status || 'pending',
-                                currentCredit
-                              ),
+                              creditStatusSolidBadgeClass(currentDisplayStatus, currentCredit),
                               'flex w-fit items-center gap-1 px-3 py-1 text-sm'
                             )}
                           >
-                            {getStatusIcon(currentCredit?.status || 'pending', currentCredit)}
-                            {creditStatusLabel(
-                              currentCredit?.status || 'pending',
-                              currentCredit
-                            )}
+                            {getStatusIcon(currentDisplayStatus, currentCredit)}
+                            {creditStatusLabel(currentDisplayStatus, currentCredit)}
                           </Badge>
                         </div>
                       </div>

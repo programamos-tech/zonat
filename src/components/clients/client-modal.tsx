@@ -23,7 +23,7 @@ interface ClientModalProps {
 }
 
 const inputBase =
-  'w-full rounded-lg border border-zinc-600/80 bg-zinc-800/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 transition-colors focus:border-red-500/60 focus:outline-none focus:ring-2 focus:ring-red-500/25'
+  'w-full rounded-lg border border-zinc-600/80 bg-zinc-800/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 transition-colors focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/20'
 
 function SectionCard({
   icon: Icon,
@@ -37,7 +37,7 @@ function SectionCard({
   return (
     <div className="rounded-xl border border-zinc-700/70 bg-zinc-900/40 p-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/50 md:p-5">
       <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-5 w-5 shrink-0 text-red-500" strokeWidth={1.75} aria-hidden />
+        <Icon className="h-5 w-5 shrink-0 text-zinc-400" strokeWidth={1.75} aria-hidden />
         <h3 className="text-base font-semibold text-zinc-100">{title}</h3>
       </div>
       {children}
@@ -192,8 +192,8 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
       >
         <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-950 px-4 py-4 md:px-6 md:py-5">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10">
-              <UserPen className="h-5 w-5 text-red-500" strokeWidth={1.75} aria-hidden />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-600/90 bg-zinc-800/80">
+              <UserPen className="h-5 w-5 text-zinc-300" strokeWidth={1.75} aria-hidden />
             </div>
             <div className="min-w-0">
               <h2 id="client-modal-title" className="text-lg font-bold tracking-tight text-white md:text-xl">
@@ -220,7 +220,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
               <div className="space-y-4">
                 <div>
                   <label htmlFor="client-name" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                    Nombre del Cliente <span className="text-red-400">*</span>
+                    Nombre del Cliente <span className="text-zinc-500">*</span>
                   </label>
                   <input
                     id="client-name"
@@ -246,11 +246,16 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                           className={cn(
                             'flex min-h-[2.75rem] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-medium transition-all sm:flex-row sm:text-sm',
                             active
-                              ? 'bg-red-600 text-white shadow-md shadow-red-900/30'
+                              ? 'bg-white text-zinc-950 shadow-sm'
                               : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200'
                           )}
                         >
-                          <Icon className={cn('h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4', active ? 'text-white' : 'text-zinc-500')} />
+                          <Icon
+                            className={cn(
+                              'h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4',
+                              active ? 'text-zinc-800' : 'text-zinc-500'
+                            )}
+                          />
                           <span className="leading-tight">{opt.label}</span>
                         </button>
                       )
@@ -264,7 +269,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
               <div className="space-y-4">
                 <div>
                   <label htmlFor="client-document" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                    Cédula/NIT <span className="text-red-400">*</span>
+                    Cédula/NIT <span className="text-zinc-500">*</span>
                   </label>
                   <input
                     id="client-document"
@@ -362,7 +367,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     value="active"
                     checked={formData.status === 'active'}
                     onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="h-4 w-4 border-zinc-500 bg-zinc-800 text-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0 focus:ring-offset-zinc-950"
+                    className="h-4 w-4 border-zinc-500 bg-zinc-800 accent-zinc-300 focus:ring-2 focus:ring-zinc-400/30 focus:ring-offset-0 focus:ring-offset-zinc-950"
                   />
                   <span className="text-sm font-medium text-zinc-200">Activo</span>
                 </label>
@@ -373,7 +378,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     value="inactive"
                     checked={formData.status === 'inactive'}
                     onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="h-4 w-4 border-zinc-500 bg-zinc-800 text-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0 focus:ring-offset-zinc-950"
+                    className="h-4 w-4 border-zinc-500 bg-zinc-800 accent-zinc-300 focus:ring-2 focus:ring-zinc-400/30 focus:ring-offset-0 focus:ring-offset-zinc-950"
                   />
                   <span className="text-sm font-medium text-zinc-200">Inactivo</span>
                 </label>

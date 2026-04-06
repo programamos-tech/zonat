@@ -10,7 +10,7 @@ const POPOVER_H_EST = 360
 
 /** Mismo lenguaje que selects / inputs de la app (zinc, sin gris genérico). */
 const triggerClass =
-  'flex w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-zinc-300/90 bg-white px-3 py-2 text-left text-sm text-zinc-800 shadow-sm transition-colors hover:border-zinc-400/90 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:hover:border-zinc-500'
+  'flex min-h-11 w-full cursor-pointer items-center justify-between gap-2 rounded-lg border border-zinc-300/90 bg-white px-3 py-2.5 text-left text-sm text-zinc-800 shadow-sm transition-colors hover:border-zinc-400/90 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:hover:border-zinc-500'
 
 const triggerFocusClass =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/35 focus-visible:ring-offset-2 dark:focus-visible:ring-zinc-500/30 dark:focus-visible:ring-offset-zinc-950'
@@ -21,6 +21,8 @@ interface DatePickerProps {
   placeholder?: string
   className?: string
   minDate?: Date
+  /** Accesibilidad cuando no hay etiqueta visible junto al control */
+  ariaLabel?: string
 }
 
 export function DatePicker({
@@ -29,6 +31,7 @@ export function DatePicker({
   placeholder = 'Seleccionar fecha',
   className = '',
   minDate,
+  ariaLabel,
 }: DatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [currentMonth, setCurrentMonth] = useState(new Date())
@@ -150,19 +153,20 @@ export function DatePicker({
     })
   }
 
-  const isToday = (date: Date) => {
-    const today = new Date()
-    return date.toDateString() === today.toDateString()
-  }
+  const sameCalendarDay = (a: Date, b: Date) =>
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+
+  const isToday = (date: Date) => sameCalendarDay(date, new Date())
 
   const isDateDisabled = (date: Date) => {
     if (!minDate) return false
     return date < minDate
   }
 
-  const isSelected = (date: Date) => {
-    return selectedDate && date.toDateString() === selectedDate.toDateString()
-  }
+  const isSelected = (date: Date) =>
+    Boolean(selectedDate && sameCalendarDay(date, selectedDate))
 
   const formatSelectedDate = () => {
     if (!selectedDate) return placeholder
@@ -245,17 +249,23 @@ export function DatePicker({
               type="button"
               onClick={() => handleDateClick(date)}
               disabled={isDisabled}
+              aria-selected={isSelectedDay}
               className={cn(
-                'h-8 w-8 touch-manipulation rounded-md text-xs transition-colors',
-                isDisabled
-                  ? 'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-zinc-950 dark:text-zinc-700'
-                  : isCurrentMonth
-                    ? 'text-zinc-900 hover:bg-emerald-100 dark:text-zinc-100 dark:hover:bg-emerald-900/30'
-                    : 'text-zinc-400 dark:text-zinc-600',
-                isCurrentDay && !isDisabled && !isSelectedDay && 'font-semibold text-emerald-700 dark:text-emerald-400',
-                isSelectedDay &&
-                  !isDisabled &&
-                  'bg-emerald-600 font-medium text-white hover:bg-emerald-700 dark:bg-emerald-600 dark:hover:bg-emerald-500'
+                'h-8 w-8 touch-manipulation rounded-md text-xs font-normal transition-colors',
+                isDisabled &&
+                  'cursor-not-allowed bg-zinc-100 text-zinc-300 dark:bg-zinc-950 dark:text-zinc-700',
+                !isDisabled &&
+                  isSelectedDay &&
+                  'z-[1] bg-emerald-600 font-semibold text-white shadow-[0_0_0_1px_rgba(16,185,129,0.45)] hover:bg-emerald-700 focus-visible:bg-emerald-700 dark:bg-emerald-500 dark:text-white dark:shadow-[0_0_0_1px_rgba(52,211,153,0.5)] dark:hover:bg-emerald-400',
+                !isDisabled &&
+                  !isSelectedDay &&
+                  isCurrentMonth &&
+                  'text-zinc-900 hover:bg-emerald-100/80 dark:text-zinc-100 dark:hover:bg-emerald-900/35',
+                !isDisabled && !isSelectedDay && !isCurrentMonth && 'text-zinc-400 dark:text-zinc-600',
+                !isDisabled &&
+                  !isSelectedDay &&
+                  isCurrentDay &&
+                  'font-semibold text-emerald-700 dark:text-emerald-400'
               )}
             >
               {day}
@@ -302,6 +312,9 @@ export function DatePicker({
         type="button"
         onClick={handleOpenCalendar}
         className={cn(triggerClass, triggerFocusClass, isOpen && 'border-zinc-500 ring-2 ring-zinc-400/30 dark:border-zinc-500 dark:ring-zinc-500/25')}
+        aria-label={ariaLabel ?? placeholder}
+        aria-expanded={isOpen}
+        aria-haspopup="dialog"
       >
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <Calendar className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />

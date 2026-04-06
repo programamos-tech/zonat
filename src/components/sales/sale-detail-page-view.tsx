@@ -23,7 +23,11 @@ import { UserAvatar } from '@/components/ui/user-avatar'
 import { Sale, Credit, StoreStockTransfer } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
-import { creditStatusBadgeClass, creditStatusLabel } from '@/lib/credit-status-ui'
+import {
+  creditStatusBadgeClass,
+  creditStatusLabel,
+  getEffectiveCreditStatus,
+} from '@/lib/credit-status-ui'
 
 const panel =
   'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
@@ -530,9 +534,12 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                     <Field label="Estado">
                       <Badge
                         variant="outline"
-                        className={cn('mt-1 font-medium', creditStatusBadgeClass(credit.status, credit))}
+                        className={cn(
+                          'mt-1 font-medium',
+                          creditStatusBadgeClass(getEffectiveCreditStatus(credit), credit)
+                        )}
                       >
-                        {creditStatusLabel(credit.status, credit)}
+                        {creditStatusLabel(getEffectiveCreditStatus(credit), credit)}
                       </Badge>
                     </Field>
                   </dl>

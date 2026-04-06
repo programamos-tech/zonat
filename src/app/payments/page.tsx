@@ -6,6 +6,7 @@ import { CreditTable } from '@/components/payments/payment-table'
 import { CreditModal } from '@/components/credits/credit-modal'
 import { PaymentModal } from '@/components/credits/payment-modal'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
+import { aggregateCreditsDisplayStatus } from '@/lib/credit-status-ui'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
 import { useAuth } from '@/contexts/auth-context'
@@ -74,29 +75,20 @@ export default function CreditsPage() {
             totalAmount: 0,
             paidAmount: 0,
             pendingAmount: 0,
-            status: 'pending' as 'pending' | 'partial' | 'completed'
           }
         }
         acc[key].credits.push(credit)
         acc[key].totalAmount += credit.totalAmount
         acc[key].paidAmount += credit.paidAmount
         acc[key].pendingAmount += credit.pendingAmount
-        
-        // Determinar el estado general del cliente
-        if (acc[key].pendingAmount === 0) {
-          acc[key].status = 'completed'
-        } else if (acc[key].paidAmount > 0) {
-          acc[key].status = 'partial'
-        } else {
-          acc[key].status = 'pending'
-        }
-        
+
         return acc
       }, {} as Record<string, any>)
       
       // Convertir a array
       const consolidated = Object.values(groupedCredits).map(group => ({
         ...group,
+        status: aggregateCreditsDisplayStatus(group.credits),
         // Usar el primer crédito como referencia principal
         id: group.credits[0].id,
         invoiceNumber: `${group.credits.length} factura${group.credits.length > 1 ? 's' : ''}`,

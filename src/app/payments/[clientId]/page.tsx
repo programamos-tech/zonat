@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo, useCallback } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -14,23 +14,42 @@ import {
   XCircle,
   Star,
   ArrowLeft,
-  Eye
+  Eye,
+  Wallet,
+  ListChecks,
 } from 'lucide-react'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { Credit, PaymentRecord } from '@/types'
 import { CreditsService } from '@/lib/credits-service'
 import { PaymentModal } from '@/components/credits/payment-modal'
+import {
+  BulkPaymentModal,
+  type BulkPaymentSubmitPayload,
+} from '@/components/credits/bulk-payment-modal'
+import {
+  allocationsSingleMethod,
+  splitMixedByPending,
+} from '@/lib/credit-bulk-payment'
 import { cn } from '@/lib/utils'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import {
   creditStatusBadgeClass,
   creditStatusIconClass,
   creditStatusLabel,
+  getEffectiveCreditStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
 
 const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+  'overflow-hidden rounded-xl border border-zinc-300/90 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/40'
+
+function isCreditPayable(credit: Credit): boolean {
+  return (
+    credit.pendingAmount > 0 &&
+    !isCreditCancelled(credit) &&
+    credit.status !== 'cancelled'
+  )
+}
 
 export default function ClientCreditsPage() {
   const params = useParams()
@@ -42,6 +61,11 @@ export default function ClientCreditsPage() {
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false)
   const [selectedCredit, setSelectedCredit] = useState<Credit | null>(null)
   const [clientName, setClientName] = useState('')
+  const [selectedCreditIds, setSelectedCreditIds] = useState<Set<string>>(() => new Set())
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [bulkSubmitting, setBulkSubmitting] = useState(false)
+  /** Checkboxes de fila solo visibles tras "Seleccionar créditos" */
+  const [creditSelectionMode, setCreditSelectionMode] = useState(false)
 
   useEffect(() => {
     if (clientId) {
@@ -68,6 +92,77 @@ export default function ClientCreditsPage() {
       setIsLoading(false)
     }
   }
+
+  const payableCredits = useMemo(() => credits.filter(isCreditPayable), [credits])
+
+  const selectedCredits = useMemo(
+    () => credits.filter((c) => selectedCreditIds.has(c.id)),
+    [credits, selectedCreditIds]
+  )
+
+  const totalSelectedPending = useMemo(
+    () => selectedCredits.reduce((s, c) => s + c.pendingAmount, 0),
+    [selectedCredits]
+  )
+
+  useEffect(() => {
+    if (bulkModalOpen && selectedCredits.length === 0) {
+      setBulkModalOpen(false)
+    }
+  }, [bulkModalOpen, selectedCredits.length])
+
+  useEffect(() => {
+    if (payableCredits.length === 0 && creditSelectionMode) {
+      setCreditSelectionMode(false)
+      setSelectedCreditIds(new Set())
+    }
+  }, [payableCredits.length, creditSelectionMode])
+
+  const toggleCreditSelectionMode = useCallback(() => {
+    setCreditSelectionMode((prev) => {
+      if (prev) setSelectedCreditIds(new Set())
+      return !prev
+    })
+  }, [])
+
+  useEffect(() => {
+    setSelectedCreditIds((prev) => {
+      const next = new Set<string>()
+      for (const id of prev) {
+        const c = credits.find((x) => x.id === id)
+        if (c && isCreditPayable(c)) next.add(id)
+      }
+      if (next.size === prev.size) {
+        let same = true
+        for (const id of prev) {
+          if (!next.has(id)) {
+            same = false
+            break
+          }
+        }
+        if (same) return prev
+      }
+      return next
+    })
+  }, [credits])
+
+  const toggleCreditSelected = useCallback((id: string) => {
+    setSelectedCreditIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }, [])
+
+  const toggleSelectAllPayable = useCallback(() => {
+    setSelectedCreditIds((prev) => {
+      const allIds = payableCredits.map((c) => c.id)
+      const allSelected = allIds.length > 0 && allIds.every((id) => prev.has(id))
+      if (allSelected) return new Set()
+      return new Set(allIds)
+    })
+  }, [payableCredits])
 
   const goToCreditDetail = (creditId: string) => {
     router.push(`/payments/${clientId}/credit/${creditId}`)
@@ -114,6 +209,60 @@ export default function ClientCreditsPage() {
     } catch (error) {
       // Error silencioso en producción
       alert('Error al agregar el pago. Por favor intenta de nuevo.')
+    }
+  }
+
+  const handleBulkPaymentSubmit = async (payload: BulkPaymentSubmitPayload) => {
+    if (selectedCredits.length === 0) return
+
+    setBulkSubmitting(true)
+    try {
+      let allocations
+      if (payload.paymentMethod === 'mixed') {
+        allocations = splitMixedByPending(
+          selectedCredits,
+          payload.cashAmount,
+          payload.transferAmount
+        )
+      } else if (payload.paymentMethod === 'cash') {
+        allocations = allocationsSingleMethod(selectedCredits, 'cash')
+      } else {
+        allocations = allocationsSingleMethod(selectedCredits, 'transfer')
+      }
+
+      const desc = payload.description?.trim() || undefined
+
+      for (const alloc of allocations) {
+        const method =
+          alloc.cashAmount > 0 && alloc.transferAmount > 0
+            ? 'mixed'
+            : alloc.cashAmount > 0
+              ? 'cash'
+              : 'transfer'
+
+        await CreditsService.createPaymentRecord({
+          creditId: alloc.creditId,
+          amount: alloc.amount,
+          paymentDate: payload.paymentDate,
+          paymentMethod: method,
+          cashAmount: method === 'mixed' ? alloc.cashAmount : undefined,
+          transferAmount: method === 'mixed' ? alloc.transferAmount : undefined,
+          description: desc,
+          userId: payload.userId ?? '',
+          userName: payload.userName ?? 'Usuario Actual',
+        })
+      }
+
+      setBulkModalOpen(false)
+      setSelectedCreditIds(new Set())
+      setCreditSelectionMode(false)
+      await loadCredits()
+    } catch {
+      alert(
+        'No se pudieron registrar todos los pagos. Revisa el estado de los créditos y vuelve a intentar; algunos abonos podrían haberse aplicado.'
+      )
+    } finally {
+      setBulkSubmitting(false)
     }
   }
 
@@ -288,89 +437,110 @@ export default function ClientCreditsPage() {
 
   const clientScore = calculateClientScore()
 
+  /** Evita abono individual mientras se elige pago masivo (misma pantalla). */
+  const blockIndividualAbono = creditSelectionMode || bulkModalOpen
+
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
       <div className="space-y-6 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 max-xl:pb-1 md:py-6">
         <Card className={cardShell}>
-          <CardContent className="p-4 md:p-6">
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 flex-1">
-                <div className="mb-4 flex items-start gap-3">
-                  <UserAvatar
-                    name={clientName || 'Cliente'}
-                    seed={clientId}
-                    size="sm"
-                    className="shrink-0 md:h-8 md:w-8 md:text-xs"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-center gap-2 md:gap-3">
-                      <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-2xl">
-                        {clientName || 'Cliente'}
-                      </h1>
-                      <div
-                        className="flex items-center gap-1 rounded-lg border border-zinc-200/90 bg-zinc-50/80 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-900/40"
-                        title={clientScore.description}
-                      >
-                        {Array.from({ length: 5 }).map((_, index) => (
-                          <Star
-                            key={index}
-                            className={cn(
-                              'h-3.5 w-3.5 md:h-4 md:w-4',
-                              index < clientScore.stars
-                                ? 'fill-zinc-500 text-zinc-500 dark:fill-zinc-400 dark:text-zinc-400'
-                                : 'fill-zinc-200 text-zinc-200 dark:fill-zinc-800 dark:text-zinc-800'
-                            )}
-                          />
-                        ))}
-                        <span className="ml-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                          {clientScore.label}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-baseline gap-x-6 gap-y-3 border-t border-zinc-200/90 pt-4 dark:border-zinc-800">
-                  <div>
-                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-                      Total créditos
-                    </div>
-                    <div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
-                      {formatCurrency(totalAmount)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-                      Total pagado
-                    </div>
-                    <div className="text-lg font-semibold tabular-nums text-zinc-700 dark:text-zinc-300 md:text-xl">
-                      {formatCurrency(totalPaid)}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-                      Total pendiente
-                    </div>
+          <CardContent className="p-0">
+            <div className="flex flex-col gap-3 px-4 pt-4 pb-2 sm:flex-row sm:items-start sm:justify-between md:px-6 md:pt-5 md:pb-2">
+              <div className="flex min-w-0 flex-1 items-start gap-3">
+                <UserAvatar
+                  name={clientName || 'Cliente'}
+                  seed={clientId}
+                  size="sm"
+                  className="shrink-0 md:h-8 md:w-8 md:text-xs"
+                />
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2 md:gap-3">
+                    <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-2xl">
+                      {clientName || 'Cliente'}
+                    </h1>
                     <div
-                      className={cn(
-                        'text-lg font-semibold tabular-nums md:text-xl text-zinc-900 dark:text-zinc-100',
-                        totalDebt === 0 && 'text-zinc-500 dark:text-zinc-500'
-                      )}
+                      className="flex items-center gap-1 rounded-lg border border-zinc-200/90 bg-zinc-50/80 px-2.5 py-1.5 dark:border-zinc-700 dark:bg-zinc-900/40"
+                      title={clientScore.description}
                     >
-                      {formatCurrency(totalDebt)}
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          className={cn(
+                            'h-3.5 w-3.5 md:h-4 md:w-4',
+                            index < clientScore.stars
+                              ? 'fill-zinc-500 text-zinc-500 dark:fill-zinc-400 dark:text-zinc-400'
+                              : 'fill-zinc-200 text-zinc-200 dark:fill-zinc-800 dark:text-zinc-800'
+                          )}
+                        />
+                      ))}
+                      <span className="ml-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        {clientScore.label}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-              <Button
-                onClick={() => router.push('/payments')}
-                variant="outline"
-                size="sm"
-                className="shrink-0"
-              >
-                <ArrowLeft className="mr-2 h-4 w-4" strokeWidth={1.5} />
-                Créditos
-              </Button>
+              <div className="flex w-full shrink-0 flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap sm:items-center sm:justify-end">
+                {!isLoading && credits.length > 0 && payableCredits.length > 0 && (
+                  <Button
+                    type="button"
+                    variant={creditSelectionMode ? 'secondary' : 'outline'}
+                    size="sm"
+                    className="w-full sm:w-auto"
+                    onClick={toggleCreditSelectionMode}
+                  >
+                    {creditSelectionMode ? (
+                      <>Cancelar selección</>
+                    ) : (
+                      <>
+                        <ListChecks className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                        Seleccionar créditos
+                      </>
+                    )}
+                  </Button>
+                )}
+                <Button
+                  onClick={() => router.push('/payments')}
+                  variant="outline"
+                  size="sm"
+                  className="w-full sm:w-auto"
+                >
+                  <ArrowLeft className="mr-2 h-4 w-4" strokeWidth={1.5} />
+                  Créditos
+                </Button>
+              </div>
+            </div>
+            <div className="h-px w-full shrink-0 bg-zinc-200 dark:bg-zinc-800" aria-hidden />
+            <div className="flex flex-wrap items-baseline gap-x-6 gap-y-2 px-4 pb-4 pt-3 md:px-6 md:pb-5 md:pt-3">
+              <div>
+                <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+                  Total créditos
+                </div>
+                <div className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
+                  {formatCurrency(totalAmount)}
+                </div>
+              </div>
+              <div>
+                <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+                  Total pagado
+                </div>
+                <div className="text-lg font-semibold tabular-nums text-zinc-700 dark:text-zinc-300 md:text-xl">
+                  {formatCurrency(totalPaid)}
+                </div>
+              </div>
+              <div>
+                <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+                  Total pendiente
+                </div>
+                <div
+                  className={cn(
+                    'text-lg font-semibold tabular-nums md:text-xl text-zinc-900 dark:text-zinc-100',
+                    totalDebt === 0 && 'text-zinc-500 dark:text-zinc-500'
+                  )}
+                >
+                  {formatCurrency(totalDebt)}
+                </div>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -397,18 +567,65 @@ export default function ClientCreditsPage() {
           </Card>
         ) : (
           <Card className={cn(cardShell, 'overflow-hidden')}>
-            <div className="border-b border-zinc-200/90 px-4 py-3 dark:border-zinc-800 md:px-6">
-              <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Créditos del cliente</h2>
+            <div className="px-4 pt-4 pb-3 md:px-6 md:pt-5 md:pb-4">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
+                <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Créditos del cliente</h2>
+                {creditSelectionMode && selectedCredits.length > 0 && (
+                  <div className="flex w-full flex-wrap items-center gap-2 rounded-lg border border-emerald-200/80 bg-emerald-50/90 px-3 py-2 dark:border-emerald-800/50 dark:bg-emerald-950/35 sm:w-auto sm:justify-end">
+                    <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                      <span className="font-medium">{selectedCredits.length}</span> seleccionado
+                      {selectedCredits.length !== 1 ? 's' : ''} ·{' '}
+                      <span className="font-semibold tabular-nums text-emerald-800 dark:text-emerald-300">
+                        {formatCurrency(totalSelectedPending)}
+                      </span>
+                    </span>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="shrink-0 !border-emerald-700 !bg-emerald-600 !text-white hover:!bg-emerald-700 dark:!border-emerald-600 dark:!bg-emerald-600 dark:hover:!bg-emerald-500"
+                      onClick={() => setBulkModalOpen(true)}
+                    >
+                      <Wallet className="mr-1.5 h-4 w-4 shrink-0 text-white" strokeWidth={1.5} aria-hidden />
+                      <span className="text-white">Pagar selección</span>
+                    </Button>
+                  </div>
+                )}
+              </div>
             </div>
+            <div className="h-px w-full shrink-0 bg-zinc-200 dark:bg-zinc-800" aria-hidden />
             <CardContent className="p-0">
               <div className="space-y-2 p-3 lg:hidden">
-                {credits.map(credit => (
-                  <button
+                {credits.map((credit) => {
+                  const payable = isCreditPayable(credit)
+                  const displayStatus = getEffectiveCreditStatus(credit)
+                  return (
+                  <div
                     key={credit.id}
-                    type="button"
-                    className="w-full rounded-xl border border-zinc-200/90 bg-zinc-50/50 p-4 text-left transition-colors hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-950/30 dark:hover:bg-zinc-800/40"
-                    onClick={() => goToCreditDetail(credit.id)}
+                    className={cn(
+                      'flex rounded-xl border border-zinc-200/90 bg-zinc-50/50 p-4 dark:border-zinc-800 dark:bg-zinc-950/30',
+                      creditSelectionMode && 'gap-3'
+                    )}
                   >
+                    {creditSelectionMode &&
+                      (payable ? (
+                        <label className="flex shrink-0 cursor-pointer pt-0.5">
+                          <input
+                            type="checkbox"
+                            checked={selectedCreditIds.has(credit.id)}
+                            onChange={() => toggleCreditSelected(credit.id)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500/40"
+                            aria-label={`Seleccionar crédito ${credit.invoiceNumber}`}
+                          />
+                        </label>
+                      ) : (
+                        <span className="w-4 shrink-0" aria-hidden />
+                      ))}
+                    <button
+                      type="button"
+                      className="min-w-0 flex-1 text-left transition-colors hover:opacity-90"
+                      onClick={() => goToCreditDetail(credit.id)}
+                    >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
                         <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-50">
@@ -420,11 +637,11 @@ export default function ClientCreditsPage() {
                         variant="outline"
                         className={cn(
                           'shrink-0 border px-2 py-0.5 text-[11px] font-normal',
-                          creditStatusBadgeClass(credit.status, credit)
+                          creditStatusBadgeClass(displayStatus, credit)
                         )}
                       >
-                        {getStatusIcon(credit.status, credit)}
-                        {creditStatusLabel(credit.status, credit)}
+                        {getStatusIcon(displayStatus, credit)}
+                        {creditStatusLabel(displayStatus, credit)}
                       </Badge>
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-3 text-left dark:border-zinc-800">
@@ -450,15 +667,39 @@ export default function ClientCreditsPage() {
                         </dd>
                       </div>
                     </dl>
-                  </button>
-                ))}
+                    </button>
+                  </div>
+                  )
+                })}
               </div>
 
               <div className="hidden lg:block">
                 <div className="overflow-x-auto">
-                  <table className="w-full min-w-[880px] border-collapse text-sm">
+                  <table
+                    className={cn(
+                      'w-full border-collapse text-sm',
+                      creditSelectionMode ? 'min-w-[920px]' : 'min-w-[840px]'
+                    )}
+                  >
                     <thead>
                       <tr className="border-b border-zinc-200 dark:border-zinc-800">
+                        {creditSelectionMode && (
+                          <th
+                            className="w-10 bg-zinc-50/80 px-2 py-3 text-center dark:bg-zinc-900/50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            {payableCredits.length > 0 ? (
+                              <input
+                                type="checkbox"
+                                checked={payableCredits.every((c) => selectedCreditIds.has(c.id))}
+                                onChange={toggleSelectAllPayable}
+                                className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500/40"
+                                title="Seleccionar todos los créditos con saldo"
+                                aria-label="Seleccionar todos los créditos pagables"
+                              />
+                            ) : null}
+                          </th>
+                        )}
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           ID
                         </th>
@@ -486,12 +727,33 @@ export default function ClientCreditsPage() {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
-                      {credits.map(credit => (
+                      {credits.map((credit) => {
+                        const payable = isCreditPayable(credit)
+                        const displayStatus = getEffectiveCreditStatus(credit)
+                        return (
                         <tr
                           key={credit.id}
                           className="cursor-pointer transition-colors hover:bg-zinc-50/90 dark:hover:bg-zinc-800/25"
                           onClick={() => goToCreditDetail(credit.id)}
                         >
+                          {creditSelectionMode && (
+                            <td
+                              className="px-2 py-3 text-center align-middle"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              {payable ? (
+                                <input
+                                  type="checkbox"
+                                  checked={selectedCreditIds.has(credit.id)}
+                                  onChange={() => toggleCreditSelected(credit.id)}
+                                  className="h-4 w-4 rounded border-zinc-300 text-emerald-600 focus:ring-emerald-500/40"
+                                  aria-label={`Seleccionar crédito ${credit.invoiceNumber}`}
+                                />
+                              ) : (
+                                <span className="inline-block w-4" aria-hidden />
+                              )}
+                            </td>
+                          )}
                           <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
                             #{getCreditDescription(credit)}
                           </td>
@@ -517,12 +779,12 @@ export default function ClientCreditsPage() {
                               variant="outline"
                               className={cn(
                                 'inline-flex border px-2 py-0.5 text-[11px] font-normal',
-                                creditStatusBadgeClass(credit.status, credit)
+                                creditStatusBadgeClass(displayStatus, credit)
                               )}
                             >
                               <span className="flex items-center justify-center gap-1">
-                                {getStatusIcon(credit.status, credit)}
-                                {creditStatusLabel(credit.status, credit)}
+                                {getStatusIcon(displayStatus, credit)}
+                                {creditStatusLabel(displayStatus, credit)}
                               </span>
                             </Badge>
                           </td>
@@ -543,8 +805,17 @@ export default function ClientCreditsPage() {
                                     size="icon"
                                     variant="outline"
                                     className="h-8 w-8"
-                                    title="Abonar"
-                                    aria-label="Abonar"
+                                    disabled={blockIndividualAbono}
+                                    title={
+                                      blockIndividualAbono
+                                        ? 'Cancela la selección de créditos para abonar uno solo'
+                                        : 'Abonar'
+                                    }
+                                    aria-label={
+                                      blockIndividualAbono
+                                        ? 'Abonar no disponible: modo selección o pago múltiple activo'
+                                        : 'Abonar'
+                                    }
                                     onClick={() => handlePayment(credit)}
                                   >
                                     <DollarSign className="h-3.5 w-3.5" strokeWidth={1.5} />
@@ -564,7 +835,8 @@ export default function ClientCreditsPage() {
                             </div>
                           </td>
                         </tr>
-                      ))}
+                        )
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -582,6 +854,16 @@ export default function ClientCreditsPage() {
           }}
           onAddPayment={handleAddPayment}
           credit={selectedCredit}
+        />
+
+        <BulkPaymentModal
+          isOpen={bulkModalOpen}
+          onClose={() => !bulkSubmitting && setBulkModalOpen(false)}
+          onSubmit={handleBulkPaymentSubmit}
+          clientName={clientName || 'Cliente'}
+          creditCount={selectedCredits.length}
+          totalPending={totalSelectedPending}
+          submitting={bulkSubmitting}
         />
       </div>
     </RoleProtectedRoute>
