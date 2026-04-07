@@ -6,6 +6,7 @@ import { ProtectedRoute } from '@/components/auth/protected-route'
 import { useState } from 'react'
 import { useStoreUrl } from '@/hooks/use-store-url'
 import { cn } from '@/lib/utils'
+import { ReleaseNotesModal } from '@/components/ui/release-notes-modal'
 
 interface ConditionalLayoutProps {
   children: React.ReactNode
@@ -66,6 +67,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           </div>
         </main>
       </div>
+      <ReleaseNotesModal />
     </ProtectedRoute>
   )
 }
