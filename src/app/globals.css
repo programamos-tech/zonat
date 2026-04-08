@@ -1,5 +1,12 @@
 @import "tailwindcss";
 
+/*
+ * Tailwind v4 aplica dark: con prefers-color-scheme por defecto.
+ * Nosotros gobiernan el tema con class="light" | "dark" en <html>; sin esto,
+ * con el SO en oscuro los dark: siguen activos aunque elijas modo claro en la app.
+ */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* Verde de marca: tono cálido y coherente (sidebar, botones y acentos mismo family) */
 @theme {
   --color-emerald-50: #f2fce8;
@@ -25,7 +32,13 @@ html.light body {
   color: #171717 !important;
 }
 
-html.light body:not(:has(.tienda-storefront)):not(:has([data-auth-page])) * {
+/*
+ * Heredar fondo en light mode evita “parches” grises; pero no aplicarlo a controles
+ * interactivos: si no, anulan bg-zinc-900 / bg-emerald y el texto claro queda invisible.
+ */
+html.light
+  body:not(:has(.tienda-storefront)):not(:has([data-auth-page]))
+  *:not(button):not(input):not(select):not(textarea):not([role='button']):not(a) {
   background-color: inherit !important;
 }
 

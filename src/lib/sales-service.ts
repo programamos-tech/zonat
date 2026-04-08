@@ -2032,4 +2032,50 @@ export class SalesService {
       return { totalRevenue: 0, cashRevenue: 0, transferRevenue: 0, salesCount: 0 }
     }
   }
+
+  /**
+   * Totales por tienda (solo ventas completadas). Para la tienda principal agrupa store_id NULL y MAIN_STORE_ID.
+   * Pensado para la vista de Micro Tiendas (super admin).
+   */
+  static async getCompletedSalesSummaryByStore(): Promise<
+    Record<string, { count: number; revenue: number }>
+  > {
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const map: Record<string, { count: number; revenue: number }> = {}
+    const pageSize = 1000
+    let from = 0
+
+    try {
+      for (;;) {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('store_id, total')
+          .eq('status', 'completed')
+          .order('created_at', { ascending: true })
+          .range(from, from + pageSize - 1)
+
+        if (error) {
+          console.error('getCompletedSalesSummaryByStore:', error)
+          return map
+        }
+        if (!data?.length) break
+
+        for (const row of data) {
+          const key =
+            !row.store_id || row.store_id === MAIN_STORE_ID
+              ? MAIN_STORE_ID
+              : row.store_id
+          if (!map[key]) map[key] = { count: 0, revenue: 0 }
+          map[key].count += 1
+          map[key].revenue += Number(row.total) || 0
+        }
+
+        if (data.length < pageSize) break
+        from += pageSize
+      }
+    } catch (e) {
+      console.error('getCompletedSalesSummaryByStore:', e)
+    }
+    return map
+  }
 }

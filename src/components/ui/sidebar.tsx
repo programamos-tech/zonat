@@ -32,6 +32,7 @@ import { canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import type { Store } from '@/types/store'
 import { UserAvatar } from '@/components/ui/user-avatar'
+import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: BarChart3, module: 'dashboard' },
@@ -389,6 +390,13 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               )
             })}
           </nav>
+
+          <div className="border-t border-zinc-200/80 px-2.5 py-2 dark:border-zinc-800">
+            <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+              Apariencia
+            </p>
+            <SidebarThemeToggle className="w-full" />
+          </div>
 
           {/* User info */}
           <div className="border-t border-zinc-200/80 p-2.5 dark:border-zinc-800">

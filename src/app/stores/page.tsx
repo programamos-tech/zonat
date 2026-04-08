@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Store } from '@/types'
 import { StoresService } from '@/lib/stores-service'
+import { SalesService } from '@/lib/sales-service'
 import { toast } from 'sonner'
 import { StoreTable } from '@/components/stores/store-table'
 import { StoreModal } from '@/components/stores/store-modal'
@@ -14,6 +15,9 @@ import { canAccessAllStores } from '@/lib/store-helper'
 export default function StoresPage() {
   const { user } = useAuth()
   const [stores, setStores] = useState<Store[]>([])
+  const [salesByStore, setSalesByStore] = useState<
+    Record<string, { count: number; revenue: number }>
+  >({})
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedStore, setSelectedStore] = useState<Store | null>(null)
@@ -32,8 +36,12 @@ export default function StoresPage() {
   const loadStores = async () => {
     try {
       setLoading(true)
-      const data = await StoresService.getAllStores()
+      const [data, stats] = await Promise.all([
+        StoresService.getAllStores(),
+        SalesService.getCompletedSalesSummaryByStore(),
+      ])
       setStores(data)
+      setSalesByStore(stats)
     } catch (error) {
       console.error('Error loading stores:', error)
       toast.error('Error al cargar las tiendas')
@@ -50,23 +58,6 @@ export default function StoresPage() {
   const handleDelete = (store: Store) => {
     setStoreToDelete(store)
     setIsDeleteModalOpen(true)
-  }
-
-  const handleToggleStatus = async (store: Store) => {
-    try {
-      const updated = await StoresService.updateStore(store.id, {
-        isActive: !store.isActive
-      })
-      if (updated) {
-        toast.success(`Tienda ${updated.isActive ? 'activada' : 'desactivada'} exitosamente`)
-        await loadStores()
-      } else {
-        toast.error('Error al actualizar el estado de la tienda')
-      }
-    } catch (error) {
-      console.error('Error toggling store status:', error)
-      toast.error('Error al actualizar el estado de la tienda')
-    }
   }
 
   const confirmDelete = async () => {
@@ -149,9 +140,9 @@ export default function StoresPage() {
       <div className="min-h-screen space-y-4 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 pb-20 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 md:space-y-6 md:py-6 lg:pb-6">
         <StoreTable
           stores={stores}
+          salesByStore={salesByStore}
           onEdit={handleEdit}
           onDelete={handleDelete}
-          onToggleStatus={handleToggleStatus}
           onCreate={handleCreate}
           onRefresh={loadStores}
         />

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
+import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -78,6 +79,16 @@ export default function ProfilePage() {
               Información de tu cuenta y configuración
             </p>
           </div>
+
+          {/* En escritorio el tema está en el sidebar; en móvil/tablet también en la barra inferior */}
+          <Card className="mb-4 border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 xl:hidden">
+            <CardContent className="p-4 md:p-5">
+              <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                Apariencia
+              </p>
+              <SidebarThemeToggle className="w-full max-w-sm" />
+            </CardContent>
+          </Card>
 
           <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
             {/* Tarjeta usuario */}

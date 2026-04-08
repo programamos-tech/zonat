@@ -292,9 +292,9 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   const isEdit = !!product
 
   const modal = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-3 backdrop-blur-md dark:bg-black/75 xl:left-56">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-3 py-5 backdrop-blur-md dark:bg-black/75 sm:py-8 xl:left-56">
       <div
-        className="flex max-h-[min(100dvh,100vh)] w-full max-w-[min(72rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-700/60 bg-zinc-950 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+        className="flex max-h-[calc(100dvh-2.5rem)] w-full max-w-[min(72rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-700/60 bg-zinc-950 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:max-h-[calc(100dvh-4rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="product-modal-title"
