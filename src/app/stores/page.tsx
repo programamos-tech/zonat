@@ -16,7 +16,7 @@ export default function StoresPage() {
   const { user } = useAuth()
   const [stores, setStores] = useState<Store[]>([])
   const [salesByStore, setSalesByStore] = useState<
-    Record<string, { count: number; revenue: number }>
+    Record<string, { count: number; revenueToday: number }>
   >({})
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -36,12 +36,24 @@ export default function StoresPage() {
   const loadStores = async () => {
     try {
       setLoading(true)
-      const [data, stats] = await Promise.all([
+      const [data, stats, todayRev] = await Promise.all([
         StoresService.getAllStores(),
         SalesService.getCompletedSalesSummaryByStore(),
+        SalesService.getTodayCompletedRevenueByStore(),
       ])
       setStores(data)
-      setSalesByStore(stats)
+      const merged: Record<string, { count: number; revenueToday: number }> = {}
+      const ids = new Set([
+        ...Object.keys(stats),
+        ...Object.keys(todayRev),
+      ])
+      for (const id of ids) {
+        merged[id] = {
+          count: stats[id]?.count ?? 0,
+          revenueToday: todayRev[id] ?? 0,
+        }
+      }
+      setSalesByStore(merged)
     } catch (error) {
       console.error('Error loading stores:', error)
       toast.error('Error al cargar las tiendas')

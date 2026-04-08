@@ -1,5 +1,6 @@
 'use client'
 
+import { useMemo } from 'react'
 import { Store } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -20,8 +21,8 @@ const storeMetricLabel =
 
 interface StoreTableProps {
   stores: Store[]
-  /** Ventas completadas e ingresos por store id (tienda principal = MAIN_STORE_ID). */
-  salesByStore: Record<string, { count: number; revenue: number }>
+  /** Ventas completadas (total) e ingresos solo del día por store id (tienda principal = MAIN_STORE_ID). */
+  salesByStore: Record<string, { count: number; revenueToday: number }>
   onEdit: (store: Store) => void
   onDelete: (store: Store) => void
   onCreate: () => void
@@ -30,7 +31,9 @@ interface StoreTableProps {
 
 interface StoreCardProps {
   store: Store
-  salesSummary: { count: number; revenue: number }
+  salesSummary: { count: number; revenueToday: number }
+  /** Fecha legible del “hoy” usada para ingresos (hora local del navegador). */
+  todayLabel: string
   isMainStore: boolean
   isCurrentStore: boolean
   isSuperAdmin: boolean
@@ -50,6 +53,7 @@ function formatCOP(value: number) {
 function StoreCard({ 
   store,
   salesSummary,
+  todayLabel,
   isMainStore, 
   isCurrentStore, 
   isSuperAdmin,
@@ -146,13 +150,16 @@ function StoreCard({
             <div className="flex min-h-0 flex-col justify-center rounded-lg border border-solid border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700/80 dark:bg-zinc-800/35">
               <div className="flex items-center gap-1">
                 <CircleDollarSign className={storeMetricIcon} strokeWidth={1.75} aria-hidden />
-                <span className={storeMetricLabel}>Ingresos</span>
+                <span className={storeMetricLabel}>Hoy</span>
               </div>
               <p
                 className="mt-1 line-clamp-2 text-left text-[11px] font-semibold leading-tight tabular-nums text-zinc-900 dark:text-zinc-100 sm:text-xs"
-                title={formatCOP(salesSummary.revenue)}
+                title={`Ingresos del día: ${formatCOP(salesSummary.revenueToday)}`}
               >
-                {formatCOP(salesSummary.revenue)}
+                {formatCOP(salesSummary.revenueToday)}
+              </p>
+              <p className="mt-1 text-[8px] leading-snug text-zinc-500 dark:text-zinc-500">
+                Ingresos del día ({todayLabel}). Hora local de tu equipo.
               </p>
             </div>
           </div>
@@ -212,6 +219,16 @@ export function StoreTable({
   }
   
   const currentStoreId = getCurrentStoreId()
+
+  const todayLabel = useMemo(
+    () =>
+      new Intl.DateTimeFormat('es-CO', {
+        day: 'numeric',
+        month: 'long',
+        year: 'numeric',
+      }).format(new Date()),
+    []
+  )
 
   const handleStoreClick = (store: Store, e: React.MouseEvent) => {
     // Solo permitir click si es super admin y no se hizo click en los botones de acción
@@ -296,18 +313,19 @@ export function StoreTable({
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 md:gap-6">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 xl:gap-6">
                 {stores.map((store) => {
                   const isMainStore = store.id === MAIN_STORE_ID
                   const isCurrentStore = store.id === currentStoreId
                   const salesSummary =
-                    salesByStore[store.id] ?? { count: 0, revenue: 0 }
+                    salesByStore[store.id] ?? { count: 0, revenueToday: 0 }
                   
                   return (
                     <StoreCard
                       key={store.id}
                       store={store}
                       salesSummary={salesSummary}
+                      todayLabel={todayLabel}
                       isMainStore={isMainStore}
                       isCurrentStore={isCurrentStore}
                       isSuperAdmin={isSuperAdmin || false}

@@ -2078,4 +2078,67 @@ export class SalesService {
     }
     return map
   }
+
+  /**
+   * Ingresos del día (ventas completadas) por tienda, usando inicio/fin del día en hora local del cliente.
+   * Misma convención de tienda principal (null + MAIN_STORE_ID) que getCompletedSalesSummaryByStore.
+   */
+  static async getTodayCompletedRevenueByStore(): Promise<Record<string, number>> {
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const map: Record<string, number> = {}
+    const now = new Date()
+    const startLocal = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      0,
+      0,
+      0,
+      0
+    )
+    const endLocal = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      23,
+      59,
+      59,
+      999
+    )
+    const pageSize = 1000
+    let from = 0
+
+    try {
+      for (;;) {
+        const { data, error } = await supabase
+          .from('sales')
+          .select('store_id, total')
+          .eq('status', 'completed')
+          .gte('created_at', startLocal.toISOString())
+          .lte('created_at', endLocal.toISOString())
+          .order('created_at', { ascending: true })
+          .range(from, from + pageSize - 1)
+
+        if (error) {
+          console.error('getTodayCompletedRevenueByStore:', error)
+          return map
+        }
+        if (!data?.length) break
+
+        for (const row of data) {
+          const key =
+            !row.store_id || row.store_id === MAIN_STORE_ID
+              ? MAIN_STORE_ID
+              : row.store_id
+          map[key] = (map[key] ?? 0) + (Number(row.total) || 0)
+        }
+
+        if (data.length < pageSize) break
+        from += pageSize
+      }
+    } catch (e) {
+      console.error('getTodayCompletedRevenueByStore:', e)
+    }
+    return map
+  }
 }
