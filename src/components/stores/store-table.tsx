@@ -4,7 +4,7 @@ import { useMemo } from 'react'
 import { Store } from '@/types'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Plus, Edit, Store as StoreIcon, Crown, Receipt, CircleDollarSign } from 'lucide-react'
+import { Plus, Edit, Store as StoreIcon, Crown, CircleDollarSign } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
@@ -15,14 +15,14 @@ import { cn } from '@/lib/utils'
 const storeCardShell =
   'rounded-xl border border-solid border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 dark:shadow-none'
 const storeMetricIcon =
-  'h-3.5 w-3.5 shrink-0 text-emerald-600/85 dark:text-emerald-500/80'
+  'h-3 w-3 shrink-0 text-emerald-600/85 dark:text-emerald-500/80'
 const storeMetricLabel =
   'text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400'
 
 interface StoreTableProps {
   stores: Store[]
-  /** Ventas completadas (total) e ingresos solo del día por store id (tienda principal = MAIN_STORE_ID). */
-  salesByStore: Record<string, { count: number; revenueToday: number }>
+  /** Ingresos del día (completadas, efectivo + transferencia) por store id. */
+  salesByStore: Record<string, { revenueToday: number }>
   onEdit: (store: Store) => void
   onDelete: (store: Store) => void
   onCreate: () => void
@@ -31,7 +31,7 @@ interface StoreTableProps {
 
 interface StoreCardProps {
   store: Store
-  salesSummary: { count: number; revenueToday: number }
+  salesSummary: { revenueToday: number }
   /** Fecha legible del “hoy” usada para ingresos (hora local del navegador). */
   todayLabel: string
   isMainStore: boolean
@@ -62,11 +62,11 @@ function StoreCard({
 }: StoreCardProps) {
 
   return (
-    <div className="aspect-square min-w-0 w-full">
+    <div className="min-w-0 w-full">
       <Card
         onClick={onStoreClick}
         className={cn(
-          'group relative flex h-full w-full flex-col overflow-hidden transition-all duration-200',
+          'group relative flex w-full flex-col overflow-hidden transition-all duration-200',
           storeCardShell,
           isCurrentStore &&
             'border-zinc-400/90 shadow-md ring-1 ring-zinc-300/80 dark:border-zinc-500 dark:ring-zinc-600/40',
@@ -75,22 +75,22 @@ function StoreCard({
         )}
         title={isSuperAdmin ? `Haz click para ver el dashboard de ${store.name}` : undefined}
       >
-        <CardContent className="flex min-h-0 flex-1 flex-col gap-2 p-3 sm:p-3.5">
+        <CardContent className="flex flex-col gap-1.5 p-2.5 sm:p-3">
           {isCurrentStore && (
             <span
-              className="absolute right-2 top-2 z-10 rounded-full border border-zinc-200/90 bg-zinc-50 px-1.5 py-0.5 text-[9px] font-medium uppercase tracking-wide text-zinc-600 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+              className="absolute right-1.5 top-1.5 z-10 rounded-full border border-zinc-200/90 bg-zinc-50 px-1 py-0.5 text-[8px] font-medium uppercase tracking-wide text-zinc-600 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
               title="Vista actual"
             >
               Activa
             </span>
           )}
 
-          <div className="flex shrink-0 flex-col items-center gap-1.5 text-center">
+          <div className="flex shrink-0 flex-col items-center gap-1 text-center">
             <div className="relative">
               {store.logo ? (
                 <div
                   className={cn(
-                    'relative h-14 w-14 overflow-hidden rounded-full border border-solid border-zinc-200/90 dark:border-zinc-600',
+                    'relative h-11 w-11 overflow-hidden rounded-full border border-solid border-zinc-200/90 dark:border-zinc-600',
                     isCurrentStore && 'border-zinc-300 dark:border-zinc-500'
                   )}
                 >
@@ -105,15 +105,15 @@ function StoreCard({
               ) : (
                 <div
                   className={cn(
-                    'flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-solid border-zinc-200/90 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800/80',
+                    'flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-solid border-zinc-200/90 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800/80',
                     isCurrentStore && 'border-zinc-300 dark:border-zinc-500'
                   )}
                 >
                   <Image
                     src="/zonat-logo.png"
                     alt="Zona T Logo"
-                    width={40}
-                    height={40}
+                    width={32}
+                    height={32}
                     className="object-contain"
                     unoptimized
                   />
@@ -125,40 +125,28 @@ function StoreCard({
                 </div>
               )}
             </div>
-            <h3 className="line-clamp-2 w-full px-0.5 text-xs font-semibold leading-snug text-zinc-900 dark:text-zinc-50 sm:text-[13px]">
+            <h3 className="line-clamp-2 w-full px-0.5 text-[11px] font-semibold leading-tight text-zinc-900 dark:text-zinc-50 sm:text-xs">
               {store.name}
             </h3>
           </div>
 
           <div
-            className="grid min-h-0 flex-1 grid-cols-2 gap-2"
+            className="shrink-0"
             onClick={e => e.stopPropagation()}
             onMouseDown={e => e.stopPropagation()}
           >
-            <div className="flex min-h-0 flex-col justify-center rounded-lg border border-solid border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700/80 dark:bg-zinc-800/35">
-              <div className="flex items-center gap-1">
-                <Receipt className={storeMetricIcon} strokeWidth={1.75} aria-hidden />
-                <span className={storeMetricLabel}>Ventas</span>
-              </div>
-              <p className="mt-1 truncate text-base font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                {salesSummary.count.toLocaleString('es-CO')}
-              </p>
-              <p className="truncate text-[9px] text-zinc-500 dark:text-zinc-500">
-                Completadas
-              </p>
-            </div>
-            <div className="flex min-h-0 flex-col justify-center rounded-lg border border-solid border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700/80 dark:bg-zinc-800/35">
+            <div className="flex flex-col rounded-lg border border-solid border-zinc-200/80 bg-zinc-50/90 p-1.5 dark:border-zinc-700/80 dark:bg-zinc-800/35">
               <div className="flex items-center gap-1">
                 <CircleDollarSign className={storeMetricIcon} strokeWidth={1.75} aria-hidden />
                 <span className={storeMetricLabel}>Hoy</span>
               </div>
               <p
-                className="mt-1 line-clamp-2 text-left text-[11px] font-semibold leading-tight tabular-nums text-zinc-900 dark:text-zinc-100 sm:text-xs"
+                className="mt-0.5 line-clamp-2 text-left text-sm font-semibold leading-tight tabular-nums text-zinc-900 dark:text-zinc-100"
                 title={`Ingresos del día: ${formatCOP(salesSummary.revenueToday)}`}
               >
                 {formatCOP(salesSummary.revenueToday)}
               </p>
-              <p className="mt-1 text-[8px] leading-snug text-zinc-500 dark:text-zinc-500">
+              <p className="mt-0.5 text-[7px] leading-snug text-zinc-500 dark:text-zinc-500">
                 Ingresos del día ({todayLabel}). Hora local de tu equipo.
               </p>
             </div>
@@ -166,7 +154,7 @@ function StoreCard({
 
           <div
             data-store-card-footer
-            className="mt-auto flex shrink-0 items-center border-t border-solid border-zinc-200/80 pt-2 dark:border-zinc-700/80"
+            className="flex shrink-0 items-center border-t border-solid border-zinc-200/80 pt-1.5 dark:border-zinc-700/80"
             onClick={e => {
               e.stopPropagation()
               e.preventDefault()
@@ -186,10 +174,10 @@ function StoreCard({
               }}
               variant="ghost"
               size="sm"
-              className="h-8 px-2 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
+              className="h-7 px-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
               title="Editar"
             >
-              <Edit className="h-4 w-4" />
+              <Edit className="h-3.5 w-3.5" />
             </Button>
           </div>
         </CardContent>
@@ -313,12 +301,12 @@ export function StoreTable({
             </Button>
           </div>
         ) : (
-          <div className="mx-auto grid max-w-5xl grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3 xl:gap-6">
+          <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 xl:gap-5">
                 {stores.map((store) => {
                   const isMainStore = store.id === MAIN_STORE_ID
                   const isCurrentStore = store.id === currentStoreId
                   const salesSummary =
-                    salesByStore[store.id] ?? { count: 0, revenueToday: 0 }
+                    salesByStore[store.id] ?? { revenueToday: 0 }
                   
                   return (
                     <StoreCard

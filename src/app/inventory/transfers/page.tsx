@@ -31,13 +31,17 @@ export default function TransfersPage() {
   const currentStoreId = getCurrentUserStoreId()
   const canManageAllStores = canAccessAllStores(user)
   const isMainStore = isMainStoreUser(user)
-  const fromStoreIdForTransfer = isMainStore ? MAIN_STORE_ID : (currentStoreId || undefined)
+  /** Listado global de traslados: admin ve todo; tienda principal igual. */
+  const transferListStoreId =
+    canManageAllStores || isMainStore ? MAIN_STORE_ID : currentStoreId || null
+  /** Origen por defecto del modal: principal si aplica; si no, la tienda actual. */
+  const defaultTransferOriginId = isMainStore ? MAIN_STORE_ID : currentStoreId || MAIN_STORE_ID
 
   useEffect(() => {
-    if (user && !isMainStore) {
+    if (user && !isMainStore && !canManageAllStores) {
       window.location.href = '/inventory/receptions'
     }
-  }, [user, isMainStore])
+  }, [user, isMainStore, canManageAllStores])
 
   useEffect(() => {
     loadStores()
@@ -46,7 +50,7 @@ export default function TransfersPage() {
   useEffect(() => {
     loadTransfers()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filter, currentStoreId, isMainStore, currentPage])
+  }, [filter, transferListStoreId, currentPage])
 
   useEffect(() => {
     if (transfers.length === 0) {
@@ -58,9 +62,8 @@ export default function TransfersPage() {
     setLoadingSalesForList(true)
     ;(async () => {
       try {
-        const fromMain = transfers.filter(t => t.fromStoreId === MAIN_STORE_ID)
         const results = await Promise.all(
-          fromMain.map(async t => {
+          transfers.map(async (t) => {
             try {
               const sale = await StoreStockTransferService.getTransferSale(t.id)
               return [t.id, sale] as const
@@ -94,9 +97,7 @@ export default function TransfersPage() {
   }
 
   const loadTransfers = async () => {
-    const storeIdToUse = isMainStore ? MAIN_STORE_ID : (currentStoreId || null)
-
-    if (!storeIdToUse) {
+    if (!transferListStoreId) {
       setLoading(false)
       return
     }
@@ -104,7 +105,7 @@ export default function TransfersPage() {
     setLoading(true)
     try {
       const result = await StoreStockTransferService.getStoreTransfers(
-        storeIdToUse,
+        transferListStoreId,
         'all',
         currentPage,
         PAGE_SIZE
@@ -133,7 +134,7 @@ export default function TransfersPage() {
     }
   }
 
-  if (user && !isMainStore) {
+  if (user && !isMainStore && !canManageAllStores) {
     return (
       <div className="flex h-64 items-center justify-center">
         <p className="text-gray-600 dark:text-gray-400">Redirigiendo a recepciones...</p>
@@ -173,7 +174,7 @@ export default function TransfersPage() {
             await loadTransfers()
           }}
           stores={stores}
-          fromStoreId={fromStoreIdForTransfer}
+          fromStoreId={defaultTransferOriginId}
         />
       </div>
     </RoleProtectedRoute>

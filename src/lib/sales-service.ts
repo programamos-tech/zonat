@@ -1,4 +1,4 @@
-import { supabase } from './supabase'
+import { supabase, supabaseAdmin } from './supabase'
 import { Sale, SaleItem, SalePayment } from '@/types'
 import { AuthService } from './auth-service'
 import { ProductsService } from './products-service'
@@ -8,40 +8,36 @@ import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './sto
 export const SALES_PAGE_SIZE = 20
 
 export class SalesService {
-  // Generar el siguiente número de factura
-  static async getNextInvoiceNumber(): Promise<string> {
+  /**
+   * Siguiente número de factura por tienda.
+   * Sin argumento: usa la tienda del usuario actual (comportamiento previo).
+   * Con `forStoreId`: secuencia para esa tienda (traslados / admin); usa service role para contar bien.
+   */
+  static async getNextInvoiceNumber(forStoreId?: string): Promise<string> {
     try {
-      const user = getCurrentUser()
-      const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const useExplicit = typeof forStoreId === 'string' && forStoreId.length > 0
+      const storeId = useExplicit ? forStoreId : getCurrentUserStoreId()
+      const db = useExplicit ? supabaseAdmin : supabase
 
-      let query = supabase
-        .from('sales')
-        .select('*', { count: 'exact', head: true })
+      let query = db.from('sales').select('*', { count: 'exact', head: true })
 
-      // Filtrar por store_id:
-      // - Si storeId es null o MAIN_STORE_ID, solo contar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
-      // - Si storeId es una microtienda, solo contar ventas de esa microtienda
       if (!storeId || storeId === MAIN_STORE_ID) {
-        // Tienda principal: solo contar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
         query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
       } else {
-        // Microtienda: solo contar ventas de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
       const { count, error } = await query
 
       if (error) {
-        // Error silencioso en producción
-        return '#001' // Fallback
+        return '#001'
       }
 
       const nextNumber = (count || 0) + 1
       return `#${nextNumber.toString().padStart(3, '0')}`
     } catch (error) {
-      // Error silencioso en producción
-      return '#001' // Fallback
+      return '#001'
     }
   }
 

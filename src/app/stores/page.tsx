@@ -16,7 +16,7 @@ export default function StoresPage() {
   const { user } = useAuth()
   const [stores, setStores] = useState<Store[]>([])
   const [salesByStore, setSalesByStore] = useState<
-    Record<string, { count: number; revenueToday: number }>
+    Record<string, { revenueToday: number }>
   >({})
   const [loading, setLoading] = useState(true)
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -36,22 +36,14 @@ export default function StoresPage() {
   const loadStores = async () => {
     try {
       setLoading(true)
-      const [data, stats, todayRev] = await Promise.all([
+      const [data, todayRev] = await Promise.all([
         StoresService.getAllStores(),
-        SalesService.getCompletedSalesSummaryByStore(),
         SalesService.getTodayCompletedRevenueByStore(),
       ])
       setStores(data)
-      const merged: Record<string, { count: number; revenueToday: number }> = {}
-      const ids = new Set([
-        ...Object.keys(stats),
-        ...Object.keys(todayRev),
-      ])
-      for (const id of ids) {
-        merged[id] = {
-          count: stats[id]?.count ?? 0,
-          revenueToday: todayRev[id] ?? 0,
-        }
+      const merged: Record<string, { revenueToday: number }> = {}
+      for (const s of data) {
+        merged[s.id] = { revenueToday: todayRev[s.id] ?? 0 }
       }
       setSalesByStore(merged)
     } catch (error) {

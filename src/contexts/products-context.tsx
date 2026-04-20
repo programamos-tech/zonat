@@ -165,27 +165,23 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     }
   }
 
+  const mergeProductFromServer = async (productId: string) => {
+    const fresh = await ProductsService.getProductById(productId)
+    if (fresh) {
+      setProducts(prev => {
+        if (!prev.some(p => p.id === productId)) return prev
+        return prev.map(p => (p.id === productId ? fresh : p))
+      })
+    } else {
+      await refreshProducts(undefined, { silent: true })
+    }
+    setProductsLastUpdated(Date.now())
+  }
+
   const transferStock = async (productId: string, from: 'warehouse' | 'store', to: 'warehouse' | 'store', quantity: number): Promise<boolean> => {
     const success = await ProductsService.transferStock(productId, from, to, quantity, currentUser?.id)
     if (success) {
-      // Actualizar el estado local
-      setProducts(prev => prev.map(product => {
-        if (product.id === productId) {
-          const newWarehouseStock = from === 'warehouse' ? product.stock.warehouse - quantity : product.stock.warehouse + (to === 'warehouse' ? quantity : 0)
-          const newStoreStock = from === 'store' ? product.stock.store - quantity : product.stock.store + (to === 'store' ? quantity : 0)
-          return {
-            ...product,
-            stock: {
-              warehouse: newWarehouseStock,
-              store: newStoreStock,
-              total: newWarehouseStock + newStoreStock
-            }
-          }
-        }
-        return product
-      }))
-      // Notificar cambio para que el dashboard se actualice
-      setProductsLastUpdated(Date.now())
+      await mergeProductFromServer(productId)
     }
     return success
   }
@@ -193,24 +189,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
   const adjustStock = async (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string): Promise<boolean> => {
     const success = await ProductsService.adjustStock(productId, location, newQuantity, reason, currentUser?.id)
     if (success) {
-      // Actualizar el estado local
-      setProducts(prev => prev.map(product => {
-        if (product.id === productId) {
-          const newWarehouseStock = location === 'warehouse' ? newQuantity : product.stock.warehouse
-          const newStoreStock = location === 'store' ? newQuantity : product.stock.store
-          return {
-            ...product,
-            stock: {
-              warehouse: newWarehouseStock,
-              store: newStoreStock,
-              total: newWarehouseStock + newStoreStock
-            }
-          }
-        }
-        return product
-      }))
-      // Notificar cambio para que el dashboard se actualice
-      setProductsLastUpdated(Date.now())
+      await mergeProductFromServer(productId)
     }
     return success
   }

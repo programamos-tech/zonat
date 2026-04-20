@@ -164,9 +164,10 @@ export class StoreStockTransferService {
       }
 
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      const isFromMainStore = fromStoreId === MAIN_STORE_ID || !fromStoreId
+      const originStoreId = fromStoreId?.trim() ? fromStoreId : MAIN_STORE_ID
+      const isFromMainStore = originStoreId === MAIN_STORE_ID
 
-      const expandedItems = await this.expandTransferLinesForPersistence(items, isFromMainStore, fromStoreId)
+      const expandedItems = await this.expandTransferLinesForPersistence(items, isFromMainStore, originStoreId)
       if (!expandedItems || expandedItems.length === 0) {
         return null
       }
@@ -175,7 +176,7 @@ export class StoreStockTransferService {
       const { data: transfer, error: transferError } = await supabaseAdmin
         .from('stock_transfers')
         .insert({
-          from_store_id: fromStoreId,
+          from_store_id: originStoreId,
           to_store_id: toStoreId,
           status: 'pending',
           description: description || null,
@@ -259,12 +260,12 @@ export class StoreStockTransferService {
             console.error('[STORE STOCK TRANSFER] Product not found when trying to deduct stock:', item.productId)
           }
         } else {
-          await this.updateStoreStock(fromStoreId, item.productId, -item.quantity)
+          await this.updateStoreStock(originStoreId, item.productId, -item.quantity)
         }
       }
 
-      if (isFromMainStore) {
-        try {
+      // Factura en la tienda origen (numeración por tienda), cualquier par origen → destino
+      try {
           const toStore = await StoresService.getStoreById(toStoreId)
           if (!toStore) {
             console.error('[TRANSFER INVOICE] Store not found:', toStoreId)
@@ -363,8 +364,8 @@ export class StoreStockTransferService {
               const currentUser = await AuthService.getCurrentUser()
               const currentUserId = currentUser?.id || createdBy || ''
 
-              // Generar número de factura
-              const invoiceNumber = await SalesService.getNextInvoiceNumber()
+              // Numeración de factura alineada a la tienda origen
+              const invoiceNumber = await SalesService.getNextInvoiceNumber(originStoreId)
 
               // Validar que todos los datos necesarios estén presentes
               if (!toStoreId || !toStore.name || !invoiceNumber) {
@@ -391,7 +392,7 @@ export class StoreStockTransferService {
                 seller_id: currentUserId || createdBy || null,
                   seller_name: currentUser?.name || createdByName || 'Sistema',
                   seller_email: currentUser?.email || '',
-                  store_id: MAIN_STORE_ID // La venta es de la tienda principal
+                  store_id: originStoreId
               }
 
               // Remover campos null o undefined que puedan causar problemas
@@ -498,19 +499,18 @@ export class StoreStockTransferService {
               })
             }
           }
-        } catch (invoiceError) {
+      } catch (invoiceError) {
           // No fallar la transferencia si hay error al crear la factura
           console.error('[TRANSFER INVOICE] Error creating invoice:', invoiceError)
           console.error('[TRANSFER INVOICE] Error stack:', invoiceError instanceof Error ? invoiceError.stack : 'No stack trace')
           console.error('[TRANSFER INVOICE] Error details:', JSON.stringify(invoiceError, null, 2))
-        }
       }
 
       // Registrar log de transferencia generada
       if (createdBy) {
         try {
           // Obtener información de las tiendas
-          const fromStore = await StoresService.getStoreById(fromStoreId)
+          const fromStore = await StoresService.getStoreById(originStoreId)
           const toStore = await StoresService.getStoreById(toStoreId)
           
           // Obtener número de transferencia si existe
@@ -532,7 +532,7 @@ export class StoreStockTransferService {
               description: `Se creó una transferencia de ${totalQuantity} unidades (${items.length} producto${items.length > 1 ? 's' : ''}) desde "${fromStore?.name || 'Tienda origen'}" hacia "${toStore?.name || 'Tienda destino'}"`,
               transferId: transfer.id,
               transferNumber: transferWithNumber?.transferNumber,
-              fromStoreId: fromStoreId,
+              fromStoreId: originStoreId,
               fromStoreName: fromStore?.name,
               toStoreId: toStoreId,
               toStoreName: toStore?.name,
@@ -1775,9 +1775,7 @@ export class StoreStockTransferService {
         return null
       }
 
-      if (sale.store_id !== MAIN_STORE_ID) {
-        return null
-      }
+      const saleOriginStoreId = sale.store_id || MAIN_STORE_ID
       
       // Obtener el cliente para saber su store_id (la tienda destino)
       const { data: client, error: clientError } = await supabaseAdmin
@@ -1801,7 +1799,7 @@ export class StoreStockTransferService {
         .from('stock_transfers')
         .select('*')
         .eq('to_store_id', toStoreId)
-        .eq('from_store_id', MAIN_STORE_ID)
+        .eq('from_store_id', saleOriginStoreId)
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false })
@@ -1831,11 +1829,8 @@ export class StoreStockTransferService {
         return null
       }
 
-      const isFromMainStore = transfer.fromStoreId === MAIN_STORE_ID || !transfer.fromStoreId
-      if (!isFromMainStore) {
-        return null
-      }
-      
+      const originId = transfer.fromStoreId || MAIN_STORE_ID
+
       // Buscar el cliente asociado a la tienda destino
       // El cliente tiene store_id = toStoreId
       const { data: storeClients, error: clientSearchError } = await supabaseAdmin
@@ -1868,7 +1863,7 @@ export class StoreStockTransferService {
             const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
             const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
 
-            const { data: sales, error } = await supabaseAdmin
+            let salesQuery = supabaseAdmin
               .from('sales')
               .select(`
                 *,
@@ -1891,7 +1886,11 @@ export class StoreStockTransferService {
                 )
               `)
               .in('client_id', clientIds)
-              .eq('store_id', MAIN_STORE_ID)
+            salesQuery =
+              originId === MAIN_STORE_ID
+                ? salesQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+                : salesQuery.eq('store_id', originId)
+            const { data: sales, error } = await salesQuery
               .gte('created_at', startDate.toISOString())
               .lte('created_at', endDate.toISOString())
               .order('created_at', { ascending: false })
@@ -1919,20 +1918,6 @@ export class StoreStockTransferService {
               }
               return this.mapSaleToType(sale)
             }
-
-            let sale = sales[0]
-            if (sales.length > 1) {
-              const transferProductIds = new Set(transfer.items?.map(item => item.productId) || [])
-              const matchingSale = sales.find(s => {
-                const saleProductIds = new Set(s.sale_items?.map((item: any) => item.product_id) || [])
-                return transferProductIds.size === saleProductIds.size &&
-                  [...transferProductIds].every(id => saleProductIds.has(id))
-              })
-              if (matchingSale) {
-                sale = matchingSale
-              }
-            }
-            return this.mapSaleToType(sale)
           }
         }
         
@@ -1942,13 +1927,12 @@ export class StoreStockTransferService {
       // Usar los IDs de los clientes encontrados para buscar la venta
       const clientIds = storeClients.map(c => c.id)
       
-      // Buscar la venta asociada: client_id en clientIds, store_id = MAIN_STORE_ID
-      // y fecha de creación cercana (dentro de 2 horas de la transferencia para ser más flexible)
+      // Buscar la venta asociada: client_id en clientIds, store_id = tienda origen del traslado
       const transferDate = new Date(transfer.createdAt)
       const startDate = new Date(transferDate.getTime() - 2 * 60 * 60 * 1000) // 2 horas antes
       const endDate = new Date(transferDate.getTime() + 2 * 60 * 60 * 1000) // 2 horas después
 
-      const { data: sales, error } = await supabaseAdmin
+      let salesQueryMain = supabaseAdmin
         .from('sales')
         .select(`
           *,
@@ -1971,7 +1955,11 @@ export class StoreStockTransferService {
           )
         `)
         .in('client_id', clientIds)
-        .eq('store_id', MAIN_STORE_ID)
+      salesQueryMain =
+        originId === MAIN_STORE_ID
+          ? salesQueryMain.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+          : salesQueryMain.eq('store_id', originId)
+      const { data: sales, error } = await salesQueryMain
         .gte('created_at', startDate.toISOString())
         .lte('created_at', endDate.toISOString())
         .order('created_at', { ascending: false })
@@ -1984,7 +1972,7 @@ export class StoreStockTransferService {
 
       if (!sales || sales.length === 0) {
         // Intentar búsqueda más amplia sin filtro de fecha usando los clientIds
-        const { data: salesWithoutDate, error: error2 } = await supabaseAdmin
+        let salesNoDateQuery = supabaseAdmin
           .from('sales')
           .select(`
             *,
@@ -2007,7 +1995,11 @@ export class StoreStockTransferService {
             )
           `)
           .in('client_id', clientIds)
-          .eq('store_id', MAIN_STORE_ID)
+        salesNoDateQuery =
+          originId === MAIN_STORE_ID
+            ? salesNoDateQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+            : salesNoDateQuery.eq('store_id', originId)
+        const { data: salesWithoutDate, error: error2 } = await salesNoDateQuery
           .order('created_at', { ascending: false })
           .limit(10) // Aumentar el límite para buscar más ventas
         

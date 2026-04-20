@@ -63,7 +63,10 @@ export default function ProductsPage() {
       setIsAdjustmentModalOpen(false)
       setProductToAdjust(null)
     } else {
-      toast.error('Error ajustando stock')
+      toast.error('No se guardaron los cambios', {
+        description:
+          'No pudimos confirmar el ajuste en el servidor. Revisa tu conexión o permisos e inténtalo de nuevo.',
+      })
     }
   }
 

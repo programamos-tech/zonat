@@ -81,6 +81,8 @@ function newTransferRowId(): string {
 
 export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: TransferModalProps) {
   const { user } = useAuth()
+  /** Tienda desde la que sale el stock (admin puede elegir cualquier tienda activa). */
+  const [originStoreId, setOriginStoreId] = useState<string>(fromStoreId || MAIN_STORE_ID)
   const [toStoreId, setToStoreId] = useState<string>('')
   const [description, setDescription] = useState<string>('')
   const [items, setItems] = useState<TransferItemForm[]>([])
@@ -111,36 +113,38 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   }
 
   useEffect(() => {
-    if (isOpen && fromStoreId) {
-      loadAvailableProducts()
-      // Resetear formulario al abrir
-      setItems([])
-      setCollapsedRowIds(new Set())
-      setToStoreId('')
-      setDescription('')
-      setGlobalProductSearch('')
-      setStockAlerts({})
-      setPaymentMethod('transfer')
-      setCashAmount('')
-      setShowStoreError(false)
-      setTransferAmount('')
-      setPaymentError('')
-    }
+    if (!isOpen) return
+    const defaultOrigin = (fromStoreId && fromStoreId.trim()) || MAIN_STORE_ID
+    setOriginStoreId(defaultOrigin)
+    setItems([])
+    setCollapsedRowIds(new Set())
+    setToStoreId('')
+    setDescription('')
+    setGlobalProductSearch('')
+    setStockAlerts({})
+    setPaymentMethod('transfer')
+    setCashAmount('')
+    setShowStoreError(false)
+    setTransferAmount('')
+    setPaymentError('')
   }, [isOpen, fromStoreId])
 
+  useEffect(() => {
+    if (!isOpen || !originStoreId) return
+    void loadAvailableProducts()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, originStoreId])
+
   const loadAvailableProducts = async () => {
-    if (!fromStoreId) {
-      console.error('[TRANSFER MODAL] No fromStoreId provided')
+    if (!originStoreId) {
+      console.error('[TRANSFER MODAL] No originStoreId provided')
       return
     }
 
     setLoadingProducts(true)
     try {
-      console.log('[TRANSFER MODAL] Loading products with fromStoreId:', fromStoreId)
-      // Obtener TODOS los productos de la tienda origen (sin límite)
-      // Usamos getAllProductsLegacy que carga todos los productos en lotes
-      // IMPORTANTE: Pasamos fromStoreId para obtener el stock correcto de la tienda origen
-      const allProducts = await ProductsService.getAllProductsLegacy(fromStoreId)
+      // IMPORTANTE: stock según tienda origen
+      const allProducts = await ProductsService.getAllProductsLegacy(originStoreId)
       
       console.log('[TRANSFER MODAL] Loaded products:', allProducts.length)
       if (allProducts.length > 0) {
@@ -177,7 +181,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         productId: '',
         productName: '',
         productReference: '',
-        fromLocation: 'warehouse',
+        fromLocation: originStoreId === MAIN_STORE_ID ? 'warehouse' : 'store',
         quantity: 0,
         unitPrice: 0,
         productCost: 0,
@@ -212,7 +216,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         productId: product.id,
         productName: product.name || '',
         productReference: product.reference || '',
-        fromLocation: 'warehouse',
+        fromLocation: originStoreId === MAIN_STORE_ID ? 'warehouse' : 'store',
         quantity: 0,
         unitPrice: product.price || 0,
         productCost: product.cost || 0,
@@ -258,8 +262,12 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
   }
 
   const handleSave = async () => {
-    if (!fromStoreId || !toStoreId) {
+    if (!originStoreId || !toStoreId) {
       setShowStoreError(true)
+      return
+    }
+    if (originStoreId === toStoreId) {
+      toast.error('La tienda origen y destino deben ser distintas')
       return
     }
 
@@ -373,7 +381,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       })
 
       const transfer = await StoreStockTransferService.createTransfer(
-        fromStoreId!,
+        originStoreId,
         toStoreId,
         transferItems,
         description || undefined,
@@ -386,8 +394,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
       if (transfer) {
         console.log('[TRANSFER MODAL] Transfer created successfully:', {
           transferId: transfer.id,
-          fromStore: transfer.from_store?.name,
-          toStore: transfer.to_store?.name,
+          fromStore: transfer.fromStoreName,
+          toStore: transfer.toStoreName,
           status: transfer.status
         })
         toast.success('Transferencia creada exitosamente')
@@ -469,7 +477,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
   if (!isOpen) return null
 
-  const destinationStores = stores.filter(s => s.id !== fromStoreId && s.isActive)
+  const originStores = stores.filter(s => s.isActive)
+  const destinationStores = stores.filter(s => s.id !== originStoreId && s.isActive)
 
   const modal = (
     <div className={overlayClass} data-modal-backdrop>
@@ -506,7 +515,34 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div>
                 <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
-                  Tienda Destino <span className="text-red-500">*</span>
+                  Tienda origen (stock que sale) <span className="text-red-500">*</span>
+                </Label>
+                <Select
+                  value={originStoreId}
+                  onValueChange={(value) => {
+                    setOriginStoreId(value)
+                    setToStoreId((prev) => (prev === value ? '' : prev))
+                    setItems([])
+                    setCollapsedRowIds(new Set())
+                    setStockAlerts({})
+                    setShowStoreError(false)
+                  }}
+                >
+                  <SelectTrigger className={cn('w-full border', selectTriggerClass)}>
+                    <SelectValue placeholder="Seleccionar tienda origen" />
+                  </SelectTrigger>
+                  <SelectContent className={selectContentModalZ}>
+                    {originStores.map((store) => (
+                      <SelectItem key={store.id} value={store.id} className="text-sm">
+                        {store.name} {store.city && `- ${store.city}`}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
+                  Tienda destino <span className="text-red-500">*</span>
                 </Label>
                 <Select value={toStoreId} onValueChange={(value) => { setToStoreId(value); setShowStoreError(false); }}>
                   <SelectTrigger className={cn('w-full border', selectTriggerClass)}>
@@ -528,17 +564,17 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                   </p>
                 )}
               </div>
-              <div>
-                <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
-                  Descripción (Opcional)
-                </Label>
-                <Input
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Ej: Envío mensual"
-                  className={cn(inputClass, 'h-10 py-2 text-sm')}
-                />
-              </div>
+            </div>
+            <div>
+              <Label className="mb-2 block text-zinc-700 dark:text-zinc-300">
+                Descripción (Opcional)
+              </Label>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Ej: Envío mensual"
+                className={cn(inputClass, 'h-10 py-2 text-sm')}
+              />
             </div>
 
             {/* Productos — en dark sin caja exterior extra (menos “marcos” anidados) */}
@@ -674,7 +710,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                       const product = availableProducts.find(p => p.id === item.productId)
                       const warehouseStock = product ? (product.stock?.warehouse || 0) : 0
                       const storeStock = product ? (product.stock?.store || 0) : 0
-                      const isFromMainStoreOrigin = fromStoreId === MAIN_STORE_ID
+                      const isFromMainStoreOrigin = originStoreId === MAIN_STORE_ID
                       const usedWarehouseExcl = item.productId
                         ? getUsedQuantityExcluding(item.productId, 'warehouse', index)
                         : 0
@@ -782,12 +818,12 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                 <div
                                   className={cn(
                                     'grid gap-2',
-                                    isFromMainStoreOrigin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-2'
+                                    isFromMainStoreOrigin ? 'grid-cols-1 sm:grid-cols-3' : 'grid-cols-1'
                                   )}
                                 >
                                   {(isFromMainStoreOrigin
                                     ? (['store', 'warehouse', 'both'] as const)
-                                    : (['warehouse', 'store'] as const)
+                                    : (['store'] as const)
                                   ).map((location) => {
                                     const isSelected = item.fromLocation === location
                                     const stock =

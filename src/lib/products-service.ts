@@ -1287,16 +1287,32 @@ export class ProductsService {
         return false
       }
 
-      const { error } = await supabase
+      const expectedWarehouse =
+        product.stock.warehouse +
+        (from === 'warehouse' ? -quantity : 0) +
+        (to === 'warehouse' ? quantity : 0)
+      const expectedStore =
+        product.stock.store +
+        (from === 'store' ? -quantity : 0) +
+        (to === 'store' ? quantity : 0)
+
+      const { data: updatedRows, error } = await supabase
         .from('products')
         .update({
           [fromField]: currentFromStock - quantity,
           [toField]: currentToStock + quantity
         })
         .eq('id', productId)
+        .select('stock_store, stock_warehouse')
 
-      if (error) {
-        // Error silencioso en producción
+      if (error || !updatedRows?.length) {
+        return false
+      }
+
+      const row = updatedRows[0] as { stock_store: number | string; stock_warehouse: number | string }
+      const wh = Number(row.stock_warehouse)
+      const st = Number(row.stock_store)
+      if (wh !== expectedWarehouse || st !== expectedStore) {
         return false
       }
 
@@ -1324,8 +1340,8 @@ export class ProductsService {
               store: product.stock.store
             },
             newStock: {
-              warehouse: from === 'warehouse' ? product.stock.warehouse - quantity : product.stock.warehouse + (to === 'warehouse' ? quantity : 0),
-              store: from === 'store' ? product.stock.store - quantity : product.stock.store + (to === 'store' ? quantity : 0)
+              warehouse: wh,
+              store: st
             }
           }
         )
@@ -1724,15 +1740,24 @@ export class ProductsService {
         currentQuantity = location === 'warehouse' ? product.stock.warehouse : product.stock.store
         difference = newQuantity - currentQuantity
 
-        const { error } = await supabase
+        const { data: updatedRows, error } = await supabase
           .from('products')
           .update({
             [field]: newQuantity
           })
           .eq('id', productId)
+          .select('stock_store, stock_warehouse')
 
-        if (error) {
-          // console.error('[PRODUCTS SERVICE] Error adjusting stock for main store:', error)
+        if (error || !updatedRows?.length) {
+          return false
+        }
+
+        const row = updatedRows[0] as { stock_store: number | string; stock_warehouse: number | string }
+        const written =
+          field === 'stock_warehouse'
+            ? Number(row.stock_warehouse)
+            : Number(row.stock_store)
+        if (written !== newQuantity) {
           return false
         }
       } else {
@@ -1789,12 +1814,14 @@ export class ProductsService {
           })
           .select()
 
-        if (updateError) {
-          // console.error('[PRODUCTS SERVICE] Error adjusting stock for micro store:', updateError)
+        if (updateError || !updatedStock?.length) {
           return false
         }
 
-        // console.log('[PRODUCTS SERVICE] Stock updated successfully for micro store:', updatedStock)
+        const writtenQty = Number((updatedStock[0] as { quantity: number | string }).quantity)
+        if (writtenQty !== newQuantity) {
+          return false
+        }
       }
 
       // Registrar la actividad

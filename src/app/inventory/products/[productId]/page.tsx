@@ -345,22 +345,24 @@ export default function ProductDetailPage() {
       if (success) {
         toast.success('Stock ajustado exitosamente')
         setIsAdjustmentModalOpen(false)
-        // Esperar un momento antes de recargar para asegurar que la actualización se complete
-        setTimeout(async () => {
-          try {
-            await loadProduct()
-          } catch (loadError) {
-            console.error('[PRODUCT DETAIL] Error reloading product after adjustment:', loadError)
-            toast.error('Stock actualizado pero hubo un error al recargar. Por favor, recarga la página.')
-          }
-        }, 500)
+        try {
+          await loadProduct()
+        } catch (loadError) {
+          console.error('[PRODUCT DETAIL] Error reloading product after adjustment:', loadError)
+          toast.error('Stock actualizado pero hubo un error al recargar. Por favor, recarga la página.')
+        }
       } else {
-        toast.error('Error ajustando stock. Por favor, verifica los datos e intenta nuevamente.')
+        toast.error('No se guardaron los cambios', {
+          description:
+            'No pudimos confirmar el ajuste en el servidor. Revisa tu conexión o permisos e inténtalo de nuevo.',
+        })
         // No cerrar el modal si hay error para que el usuario pueda intentar de nuevo
       }
     } catch (error) {
       console.error('[PRODUCT DETAIL] Exception adjusting stock:', error)
-      toast.error('Error ajustando stock. Por favor, intenta nuevamente.')
+      toast.error('No se guardaron los cambios', {
+        description: 'Ocurrió un error inesperado. Inténtalo de nuevo en unos segundos.',
+      })
       // No cerrar el modal si hay error
     }
   }
