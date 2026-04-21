@@ -382,7 +382,11 @@ export function TransferDetailPageView({
                   <Package className={cn('h-4 w-4', iconMuted)} strokeWidth={1.5} />
                   Productos ({transfer.items?.length || 1})
                 </h2>
-                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">Líneas enviadas en esta transferencia.</p>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {isReceived
+                    ? 'Detalle de recepción por producto: esperado, recibido y faltante.'
+                    : 'Líneas enviadas en esta transferencia.'}
+                </p>
               </div>
               <div className="p-4 pt-2 md:px-6 md:pb-5">
                 {transfer.items && transfer.items.length > 0 ? (
@@ -391,16 +395,24 @@ export function TransferDetailPageView({
                       <thead>
                         <tr className="border-b border-zinc-200 text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:border-zinc-800">
                           <th className="pb-2 pr-3">Producto</th>
-                          <th className="pb-2 pr-3 text-center">Cant.</th>
+                          <th className="pb-2 pr-3 text-center">Esperada</th>
                           <th className="pb-2 pr-3 text-center">Origen</th>
-                          {isReceived && <th className="pb-2 pr-3 text-center">Recibida</th>}
+                          {isReceived && (
+                            <>
+                              <th className="pb-2 pr-3 text-center">Recibida</th>
+                              <th className="pb-2 pr-3 text-center">Faltante</th>
+                              <th className="pb-2 pr-3 text-center">Estado</th>
+                            </>
+                          )}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
                         {transfer.items.map(item => {
                           const qtyRec =
                             item.quantityReceived !== undefined ? item.quantityReceived : item.quantity
+                          const missingQty = Math.max(0, item.quantity - qtyRec)
                           const partial = isReceived && qtyRec < item.quantity
+                          const noneReceived = isReceived && qtyRec <= 0
                           return (
                             <tr key={item.id}>
                               <td className="py-3 pr-3 align-top">
@@ -419,20 +431,51 @@ export function TransferDetailPageView({
                                   variant="outline"
                                   className="border-zinc-200/90 bg-zinc-50 text-xs text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-200"
                                 >
-                                  {item.fromLocation === 'warehouse' ? 'Bodega' : 'Local'}
+                                  {item.fromLocation === 'warehouse'
+                                    ? 'Bodega'
+                                    : item.fromLocation === 'both'
+                                      ? 'Local + bodega'
+                                      : 'Local'}
                                 </Badge>
                               </td>
                               {isReceived && (
-                                <td className="py-3 pr-3 text-center align-top">
-                                  <span
-                                    className={cn(
-                                      'font-semibold tabular-nums',
-                                      partial ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-400'
-                                    )}
-                                  >
-                                    {qtyRec}
-                                  </span>
-                                </td>
+                                <>
+                                  <td className="py-3 pr-3 text-center align-top">
+                                    <span
+                                      className={cn(
+                                        'font-semibold tabular-nums',
+                                        partial ? 'text-amber-700 dark:text-amber-300' : 'text-emerald-700 dark:text-emerald-400'
+                                      )}
+                                    >
+                                      {qtyRec}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 pr-3 text-center align-top">
+                                    <span
+                                      className={cn(
+                                        'font-semibold tabular-nums',
+                                        missingQty > 0 ? 'text-rose-700 dark:text-rose-300' : 'text-zinc-500 dark:text-zinc-400'
+                                      )}
+                                    >
+                                      {missingQty}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 pr-3 text-center align-top">
+                                    <Badge
+                                      variant="outline"
+                                      className={cn(
+                                        'text-[11px]',
+                                        noneReceived
+                                          ? 'border-rose-500/30 bg-rose-500/[0.06] text-rose-900 dark:border-rose-500/35 dark:bg-rose-950/35 dark:text-rose-200/90'
+                                          : partial
+                                            ? 'border-orange-500/25 bg-orange-500/[0.08] text-orange-900 dark:border-orange-500/30 dark:bg-orange-950/40 dark:text-orange-200'
+                                            : 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-950/40 dark:text-emerald-300/90'
+                                      )}
+                                    >
+                                      {noneReceived ? 'No recibida' : partial ? 'Parcial' : 'Completa'}
+                                    </Badge>
+                                  </td>
+                                </>
                               )}
                             </tr>
                           )

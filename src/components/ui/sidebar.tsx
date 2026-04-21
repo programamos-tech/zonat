@@ -30,6 +30,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
+import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import type { Store } from '@/types/store'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
@@ -86,6 +87,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
   const { user, logout } = useAuth()
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [currentStore, setCurrentStore] = useState<Store | null>(null)
+  const [pendingReceptionsCount, setPendingReceptionsCount] = useState(0)
   // Inicializar con todos los menús expandidos por defecto
   const [expandedMenus, setExpandedMenus] = useState<Set<string>>(new Set(['Inventario', 'Comercial', 'Administración']))
 
@@ -132,6 +134,44 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
       loadStoreInfo()
     }
   }, [user])
+
+  // Contador de recepciones pendientes para badge en sidebar.
+  useEffect(() => {
+    let cancelled = false
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+    const loadPendingReceptionsCount = async () => {
+      if (!user) {
+        setPendingReceptionsCount(0)
+        return
+      }
+
+      const storeId = isMainStoreUser(user) ? MAIN_STORE_ID : user.storeId
+      if (!storeId) {
+        setPendingReceptionsCount(0)
+        return
+      }
+
+      try {
+        const result = await StoreStockTransferService.getPendingTransfers(storeId, 1, 1)
+        if (!cancelled) {
+          setPendingReceptionsCount(result.total || 0)
+        }
+      } catch (error) {
+        if (!cancelled) setPendingReceptionsCount(0)
+      }
+    }
+
+    void loadPendingReceptionsCount()
+    const interval = setInterval(() => {
+      void loadPendingReceptionsCount()
+    }, 30000)
+
+    return () => {
+      cancelled = true
+      clearInterval(interval)
+    }
+  }, [user?.id, user?.storeId, pathname])
 
   // Cerrar menú cuando se hace click fuera del sidebar
   useEffect(() => {
@@ -298,8 +338,9 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                           {item.submenu.map((subitem) => {
                             if (!canView(subitem.module)) return null
                             
-                            // Ocultar "Transferencias" para usuarios de microtienda
-                            if (subitem.href === '/inventory/transfers' && !isMainStoreUser(user)) return null
+                            // Permitir "Transferencias" en microtiendas a usuarios con acceso global (admin/superadmin).
+                            // Solo usuarios sin acceso global quedan limitados a recepciones.
+                            if (subitem.href === '/inventory/transfers' && !isMainStoreUser(user) && !canAccessAllStores(user)) return null
                             
                             // Verificar si requiere acceso a todas las tiendas (para el subitem de Tiendas)
                             if (subitem.requiresAllStoresAccess && !canAccessAllStores(user)) return null
@@ -346,6 +387,14 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                                   )}
                                 />
                                 <span className="flex-1 truncate">{subitem.name}</span>
+                                {subitem.href === '/inventory/receptions' && pendingReceptionsCount > 0 && (
+                                  <span
+                                    className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"
+                                    title={`${pendingReceptionsCount} pendientes por gestionar`}
+                                  >
+                                    {pendingReceptionsCount > 99 ? '99+' : pendingReceptionsCount}
+                                  </span>
+                                )}
                               </Link>
                             )
                           })}

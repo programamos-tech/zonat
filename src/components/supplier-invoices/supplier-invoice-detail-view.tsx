@@ -12,7 +12,6 @@ import {
   ImageIcon,
   Banknote,
   Shuffle,
-  Hash,
   StickyNote,
   FileText,
 } from 'lucide-react'
@@ -221,15 +220,6 @@ export function SupplierInvoiceDetailView({
                     : (
                         <span className="text-zinc-400 dark:text-zinc-500">Sin notas</span>
                       )}
-                </dd>
-              </div>
-            </div>
-            <div className="flex gap-3 px-4 py-3">
-              <Hash className={cn('mt-0.5 h-4 w-4', iconMuted)} strokeWidth={1.5} />
-              <div className="min-w-0">
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">ID interno</dt>
-                <dd className="mt-1 break-all font-mono text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
-                  {invoice.id}
                 </dd>
               </div>
             </div>

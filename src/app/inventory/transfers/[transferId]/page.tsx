@@ -27,6 +27,8 @@ export default function TransferDetailPage() {
   const [cancelling, setCancelling] = useState(false)
 
   const isMainStore = isMainStoreUser(user)
+  const accessModule = isMainStore ? 'transfers' : 'receptions'
+  const backHref = isMainStore ? '/inventory/transfers' : '/inventory/receptions'
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {
@@ -71,12 +73,6 @@ export default function TransferDetailPage() {
     load()
   }, [load])
 
-  useEffect(() => {
-    if (user && !isMainStore) {
-      window.location.href = '/inventory/receptions'
-    }
-  }, [user, isMainStore])
-
   const handleDownloadPdf = async () => {
     if (!transfer) return
     try {
@@ -119,17 +115,9 @@ export default function TransferDetailPage() {
     (transfer.status === 'pending' || transfer.status === 'in_transit') &&
     isMainStore
 
-  if (user && !isMainStore) {
-    return (
-      <div className="flex h-64 items-center justify-center">
-        <p className="text-zinc-500">Redirigiendo…</p>
-      </div>
-    )
-  }
-
   if (loading) {
     return (
-      <RoleProtectedRoute module="transfers" requiredAction="view">
+      <RoleProtectedRoute module={accessModule} requiredAction="view">
         <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-white py-24 dark:bg-zinc-950">
           <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
           <p className="text-sm text-zinc-500">Cargando transferencia…</p>
@@ -140,16 +128,16 @@ export default function TransferDetailPage() {
 
   if (notFound || !transfer) {
     return (
-      <RoleProtectedRoute module="transfers" requiredAction="view">
+      <RoleProtectedRoute module={accessModule} requiredAction="view">
         <div className="min-h-screen bg-white px-4 py-16 dark:bg-zinc-950">
           <div className="mx-auto max-w-lg rounded-xl border border-zinc-200 bg-white p-8 text-center dark:border-zinc-800 dark:bg-zinc-900/40">
             <p className="text-base font-medium text-zinc-900 dark:text-zinc-100">Transferencia no encontrada</p>
             <button
               type="button"
-              onClick={() => router.push('/inventory/transfers')}
+              onClick={() => router.push(backHref)}
               className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-zinc-900 px-6 text-base font-semibold text-white dark:bg-zinc-100 dark:text-zinc-900"
             >
-              Volver a transferencias
+              Volver
             </button>
           </div>
         </div>
@@ -158,14 +146,14 @@ export default function TransferDetailPage() {
   }
 
   return (
-    <RoleProtectedRoute module="transfers" requiredAction="view">
+    <RoleProtectedRoute module={accessModule} requiredAction="view">
       <div className="min-h-screen bg-white dark:bg-zinc-950">
         <TransferDetailPageView
           transfer={transfer}
           sale={sale}
           loadingSale={loadingSale}
           formatCurrency={formatCurrency}
-          onBack={() => router.push('/inventory/transfers')}
+          onBack={() => router.push(backHref)}
           onDownloadPdf={handleDownloadPdf}
           onRequestCancel={canCancel ? () => setCancelOpen(true) : undefined}
           canCancel={canCancel}
