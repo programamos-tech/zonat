@@ -47,8 +47,8 @@ export function BottomNav() {
       if (item.alwaysVisible && user) {
         return true
       }
-      // Ocultar transferencias si el usuario no es de la tienda principal
-      if (item.requiresMainStore && !isMainStoreUser(user)) {
+      // Transferencias: tienda principal o admin/superadmin con acceso global (misma regla que el sidebar)
+      if (item.requiresMainStore && !isMainStoreUser(user) && !canAccessAllStores(user)) {
         return false
       }
       // Para el módulo de Tiendas, siempre mostrarlo pero solo permitir acceso si es super admin

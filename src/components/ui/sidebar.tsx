@@ -31,6 +31,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { canAccessAllStores, isMainStoreUser } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
+import { APP_VERSION } from '@/config/app-meta'
 import type { Store } from '@/types/store'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
@@ -502,7 +503,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 strokeWidth={2}
                 aria-hidden
               />
-              V2.5
+              {`V${APP_VERSION}`}
             </p>
           </div>
         </div>
