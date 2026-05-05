@@ -16,6 +16,7 @@ import { ConfirmationModal } from '@/components/ui/confirmation-modal'
 import { StoresService } from '@/lib/stores-service'
 import { canAccessAllStores } from '@/lib/store-helper'
 import { UserAvatar } from '@/components/ui/user-avatar'
+import { cardShell } from '@/lib/card-shell'
 
 const roleOptions = [
   { value: 'superadmin', label: 'Super Admin' },
@@ -461,13 +462,10 @@ export function UserManagement() {
     )
   }
 
-  const shellCard =
-    'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
-
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header */}
-      <Card className={shellCard}>
+      <Card className={cardShell}>
         <CardHeader className="p-4 md:p-6">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1">
@@ -763,7 +761,7 @@ export function UserManagement() {
         )}
 
       {/* Search and Filters — input nativo + selects nativos (misma línea base que facturador / logs) */}
-      <Card className={shellCard}>
+      <Card className={cardShell}>
         <CardContent className="p-3 md:p-4">
           <div className="flex flex-col gap-2 md:h-11 md:min-h-[2.75rem] md:flex-row md:gap-0 md:overflow-hidden md:rounded-xl md:border md:border-zinc-200/90 md:bg-white md:shadow-sm dark:md:border-zinc-700 dark:md:bg-zinc-950">
             <div className="group relative min-w-0 flex-1">
@@ -817,7 +815,7 @@ export function UserManagement() {
       </Card>
 
       {/* Users List */}
-      <Card className={shellCard}>
+      <Card className={cardShell}>
         <CardContent className="p-0">
           {filteredUsers.length === 0 ? (
             <div className="px-4 py-14 text-center md:px-6">
@@ -860,7 +858,7 @@ export function UserManagement() {
                   return (
                     <div
                       key={user.id}
-                      className="space-y-3 rounded-xl border border-zinc-200/80 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30"
+                      className="space-y-3 rounded-xl border border-solid border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/30"
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 flex-1 items-center gap-3">
@@ -1079,7 +1077,7 @@ export function UserManagement() {
                 {/* Columna Izquierda - Información del Usuario */}
                 <div className="space-y-4">
                   {/* Información Personal */}
-                  <Card className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                  <Card className={cardShell}>
                     <CardHeader className="space-y-0 pb-2 pt-4 md:pt-5">
                       <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
                         <User className="h-5 w-5 text-zinc-500 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
@@ -1127,7 +1125,7 @@ export function UserManagement() {
                   </Card>
 
                   {/* Rol y Estado */}
-                  <Card className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                  <Card className={cardShell}>
                     <CardHeader className="space-y-0 pb-2 pt-4 md:pt-5">
                       <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
                         <Shield className="h-5 w-5 text-zinc-500 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
@@ -1213,7 +1211,7 @@ export function UserManagement() {
 
                 {/* Columna Derecha - Permisos */}
                 <div className="space-y-4">
-                  <Card className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+                  <Card className={cardShell}>
                     <CardHeader className="space-y-0 pb-2 pt-4 md:pt-5">
                       <CardTitle className="flex items-center gap-2 text-base font-semibold text-zinc-900 dark:text-zinc-50">
                         <Shield className="h-5 w-5 text-zinc-500 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />

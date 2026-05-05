@@ -49,7 +49,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
         <main
           className={cn(
-            'relative z-10 flex min-h-0 min-w-0 flex-1 flex-col bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-56',
+            'relative z-10 flex min-h-0 min-w-0 flex-1 flex-col bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
             isMobileMenuOpen && 'blur-sm'
           )}
         >
@@ -62,8 +62,10 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
               hideMainScrollbar && 'scrollbar-hide'
             )}
           >
-            {/* Ancho completo en pantallas grandes; solo márgenes horizontales para no pegar al borde */}
-            <div className="w-full min-w-0 px-3 md:px-6 xl:px-8 2xl:px-10">{children}</div>
+            {/* +1px horizontal vs px-* evita que overflow-auto recorte el borde de las cards a ancho completo */}
+            <div className="box-border w-full min-w-0 max-w-full px-[13px] md:px-[25px] xl:px-[33px] 2xl:px-[41px]">
+              {children}
+            </div>
           </div>
         </main>
       </div>

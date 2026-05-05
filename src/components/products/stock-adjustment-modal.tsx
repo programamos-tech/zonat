@@ -332,9 +332,10 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                   <Label className="text-zinc-700 dark:text-zinc-300">Nueva cantidad *</Label>
                   <input
                     type="text"
-                    value={formatNumber(formData.newQuantity)}
+                    value={formData.newQuantity === 0 ? '' : formatNumber(formData.newQuantity)}
                     onChange={(e) => {
-                      const numericValue = parseFormattedNumber(e.target.value)
+                      const rawValue = e.target.value.trim()
+                      const numericValue = rawValue === '' ? 0 : parseFormattedNumber(rawValue)
                       handleInputChange('newQuantity', numericValue)
                     }}
                     className={cn(
@@ -342,7 +343,7 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                       'mt-2 h-11 py-2 text-sm',
                       errors.newQuantity && 'border-red-500 focus:border-red-500 focus:ring-red-500/25'
                     )}
-                    placeholder="Ingrese la nueva cantidad"
+                    placeholder="0"
                   />
                   {errors.newQuantity && <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errors.newQuantity}</p>}
                 </div>

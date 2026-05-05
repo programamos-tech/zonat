@@ -23,6 +23,7 @@ import { Credit } from '@/types'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 import {
   creditStatusBadgeClass,
   creditStatusIconClass,
@@ -30,9 +31,6 @@ import {
   getConsolidatedCreditDisplayStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
-
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
 
 const getStatusIcon = (status: string, credit?: Credit) => {
   const cls = creditStatusIconClass(status, credit)

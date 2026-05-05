@@ -29,12 +29,12 @@ function SectionCard({
   description?: string
 }) {
   return (
-    <div className="rounded-xl border border-zinc-700/70 bg-zinc-900/40 p-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/50 md:p-5">
+    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/50 md:p-5">
       <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-5 w-5 shrink-0 text-zinc-400" strokeWidth={1.75} aria-hidden />
-        <h3 className="text-base font-semibold text-zinc-100">{title}</h3>
+        <Icon className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} aria-hidden />
+        <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
       </div>
-      {description ? <p className="mb-4 text-xs leading-relaxed text-zinc-500">{description}</p> : null}
+      {description ? <p className="mb-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{description}</p> : null}
       {children}
     </div>
   )
@@ -130,15 +130,15 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
-        return 'border-zinc-500/45 bg-zinc-700/40 text-zinc-100'
+        return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-zinc-500/45 dark:bg-zinc-700/40 dark:text-zinc-100'
       case 'inactive':
-        return 'border-zinc-600 bg-zinc-800/90 text-zinc-300'
+        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/90 dark:text-zinc-300'
       case 'discontinued':
-        return 'border-zinc-500/50 bg-zinc-800/90 text-zinc-300'
+        return 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-500/50 dark:bg-zinc-800/90 dark:text-zinc-300'
       case 'out_of_stock':
-        return 'border-amber-500/35 bg-amber-500/10 text-amber-200'
+        return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/35 dark:bg-amber-500/10 dark:text-amber-200'
       default:
-        return 'border-zinc-600 bg-zinc-800 text-zinc-300'
+        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
     }
   }
 
@@ -292,23 +292,23 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   const isEdit = !!product
 
   const modal = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 px-3 py-5 backdrop-blur-md dark:bg-black/75 sm:py-8 xl:left-56">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-3 py-5 backdrop-blur-md dark:bg-black/75 sm:py-8 xl:left-56">
       <div
-        className="flex max-h-[calc(100dvh-2.5rem)] w-full max-w-[min(72rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-700/60 bg-zinc-950 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:max-h-[calc(100dvh-4rem)]"
+        className="zonat-preserve-surface flex max-h-[calc(100dvh-2.5rem)] w-full max-w-[min(72rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:max-h-[calc(100dvh-4rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="product-modal-title"
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-800 bg-zinc-950 px-4 py-4 md:px-6 md:py-5">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 bg-white px-4 py-4 md:px-6 md:py-5 dark:border-zinc-800 dark:bg-zinc-950">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-600/90 bg-zinc-800/80">
-              <Package className="h-5 w-5 text-zinc-300" strokeWidth={1.75} aria-hidden />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-600/90 dark:bg-zinc-800/80">
+              <Package className="h-5 w-5 text-zinc-500 dark:text-zinc-300" strokeWidth={1.75} aria-hidden />
             </div>
             <div className="min-w-0">
-              <h2 id="product-modal-title" className="text-lg font-bold tracking-tight text-white md:text-xl">
+              <h2 id="product-modal-title" className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white md:text-xl">
                 {isEdit ? 'Editar producto' : 'Nuevo producto'}
               </h2>
-              <p className="mt-0.5 text-sm text-zinc-400">
+              <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
                 {isEdit ? `Editando ${product.name}` : 'Crea un producto en tu inventario'}
               </p>
             </div>
@@ -316,14 +316,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           <button
             type="button"
             onClick={handleClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-800 hover:text-white"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" strokeWidth={1.75} />
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-950 px-4 py-4 md:px-6 md:py-5">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50 px-4 py-4 md:px-6 md:py-5 dark:bg-zinc-950">
           <form
             id={formId}
             onSubmit={e => {
@@ -337,8 +337,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
-                        <label htmlFor="product-name" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                          Nombre del producto <span className="text-zinc-500">*</span>
+                        <label htmlFor="product-name" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Nombre del producto <span className="text-zinc-400 dark:text-zinc-500">*</span>
                         </label>
                         <input
                           id="product-name"
@@ -351,8 +351,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         {errors.name && <p className="mt-1.5 text-sm text-red-400">{errors.name}</p>}
                       </div>
                       <div>
-                        <label htmlFor="product-ref" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                          Referencia <span className="text-zinc-500">*</span>
+                        <label htmlFor="product-ref" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                          Referencia <span className="text-zinc-400 dark:text-zinc-500">*</span>
                         </label>
                         <input
                           id="product-ref"
@@ -367,7 +367,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                     </div>
 
                     <div>
-                      <label htmlFor="product-desc" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                      <label htmlFor="product-desc" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                         Descripción <span className="font-normal text-zinc-500">(opcional)</span>
                       </label>
                       <textarea
@@ -383,7 +383,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                       <div>
-                        <label htmlFor="product-brand" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                        <label htmlFor="product-brand" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                           Marca <span className="font-normal text-zinc-500">(opcional)</span>
                         </label>
                         <input
@@ -397,7 +397,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         {errors.brand && <p className="mt-1.5 text-sm text-red-400">{errors.brand}</p>}
                       </div>
                       <div>
-                        <label htmlFor="product-cat" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                        <label htmlFor="product-cat" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                           Categoría <span className="font-normal text-zinc-500">(opcional)</span>
                         </label>
                         <select
@@ -424,7 +424,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   title="Imagen del catálogo"
                   description="Foto para ficha y listados (máx. 5MB)."
                 >
-                  <div className="overflow-hidden rounded-lg border border-zinc-700/80 bg-zinc-900/60">
+                  <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900/60">
                     {uploadPreview || catalogImageUrl ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img
@@ -433,7 +433,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                         className="mx-auto block max-h-56 w-full object-contain"
                       />
                     ) : (
-                      <div className="flex min-h-[140px] items-center justify-center px-4 py-8 text-center text-sm text-zinc-500">
+                      <div className="flex min-h-[140px] items-center justify-center px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
                         Sin imagen · sube una foto del producto
                       </div>
                     )}
@@ -453,7 +453,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       size="sm"
                       disabled={uploadingImage}
                       onClick={() => catalogFileInputRef.current?.click()}
-                      className="border-zinc-600 bg-zinc-900/50 text-zinc-200 hover:bg-zinc-800"
+                      className="border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-200 dark:hover:bg-zinc-800"
                     >
                       {uploadingImage ? 'Subiendo…' : 'Subir imagen'}
                     </Button>
@@ -475,11 +475,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                 <SectionCard icon={DollarSign} title="Información financiera">
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
-                      <label htmlFor="product-price" className="mb-1.5 block text-sm font-medium text-zinc-300">
-                        Precio de venta <span className="text-zinc-500">*</span>
+                      <label htmlFor="product-price" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Precio de venta <span className="text-zinc-400 dark:text-zinc-500">*</span>
                       </label>
                       <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-500">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
                           $
                         </span>
                         <input
@@ -494,11 +494,11 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       {errors.price && <p className="mt-1.5 text-sm text-red-400">{errors.price}</p>}
                     </div>
                     <div>
-                      <label htmlFor="product-cost" className="mb-1.5 block text-sm font-medium text-zinc-300">
+                      <label htmlFor="product-cost" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                         Costo de adquisición
                       </label>
                       <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-500">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
                           $
                         </span>
                         <input
@@ -519,9 +519,9 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
               <div className="space-y-4 lg:space-y-5">
                 <SectionCard icon={BarChart3} title="Control de stock">
                   {product && (
-                    <div className="-mt-2 mb-4 flex items-start gap-3 rounded-lg border border-zinc-700/60 bg-zinc-900/50 p-3">
-                      <BarChart3 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" strokeWidth={1.75} />
-                      <p className="text-xs leading-relaxed text-zinc-500">
+                    <div className="-mt-2 mb-4 flex items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700/60 dark:bg-zinc-900/50">
+                      <BarChart3 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} />
+                      <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                         El stock se muestra solo como referencia. Para ajustar o transferir, usa la tabla de productos.
                       </p>
                     </div>
@@ -529,8 +529,8 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                   {!product && isMainStore && (
                     <div className="mb-4">
-                      <span className="mb-2 block text-sm font-medium text-zinc-300">Ubicación inicial</span>
-                      <div className="flex rounded-xl bg-zinc-800/90 p-1 ring-1 ring-zinc-700/80">
+                      <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Ubicación inicial</span>
+                      <div className="flex rounded-xl bg-zinc-100 p-1 ring-1 ring-zinc-200 dark:bg-zinc-800/90 dark:ring-zinc-700/80">
                         <button
                           type="button"
                           onClick={() => handleInputChange('initialLocation', 'store')}
@@ -538,7 +538,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                             'flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                             formData.initialLocation === 'store'
                               ? 'bg-white text-zinc-950 shadow-sm'
-                              : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200'
+                              : 'text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-200'
                           )}
                         >
                           <Store className="h-4 w-4 shrink-0" strokeWidth={1.75} />
@@ -551,7 +551,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                             'flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
                             formData.initialLocation === 'warehouse'
                               ? 'bg-white text-zinc-950 shadow-sm'
-                              : 'text-zinc-400 hover:bg-zinc-700/50 hover:text-zinc-200'
+                              : 'text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-200'
                           )}
                         >
                           <Package className="h-4 w-4 shrink-0" strokeWidth={1.75} />
@@ -563,14 +563,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                   <div className={cn('grid grid-cols-1 gap-6', isMainStore && 'md:grid-cols-2')}>
                     <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-zinc-200">
-                        <Store className="h-4 w-4 text-zinc-500" strokeWidth={1.75} />
+                      <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
+                        <Store className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} />
                         <h4 className="text-sm font-semibold">Local</h4>
                       </div>
                       <div>
-                        <label className="mb-1.5 block text-sm font-medium text-zinc-300">Stock actual</label>
+                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Stock actual</label>
                         {product ? (
-                          <div className="w-full cursor-not-allowed rounded-lg border border-zinc-600/80 bg-zinc-900/60 px-3 py-2.5 text-sm text-zinc-400">
+                            <div className="w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-500 dark:border-zinc-600/80 dark:bg-zinc-900/60 dark:text-zinc-400">
                             {formatNumber(formData.stock.store)} unidades
                           </div>
                         ) : (
@@ -588,14 +588,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
 
                     {isMainStore && (
                       <div className="space-y-3">
-                        <div className="flex items-center gap-2 text-zinc-200">
-                          <Package className="h-4 w-4 text-zinc-500" strokeWidth={1.75} />
+                      <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
+                        <Package className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} />
                           <h4 className="text-sm font-semibold">Bodega</h4>
                         </div>
                         <div>
-                          <label className="mb-1.5 block text-sm font-medium text-zinc-300">Stock actual</label>
+                          <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Stock actual</label>
                           {product ? (
-                            <div className="w-full cursor-not-allowed rounded-lg border border-zinc-600/80 bg-zinc-900/60 px-3 py-2.5 text-sm text-zinc-400">
+                            <div className="w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-500 dark:border-zinc-600/80 dark:bg-zinc-900/60 dark:text-zinc-400">
                               {formatNumber(formData.stock.warehouse)} unidades
                             </div>
                           ) : (
@@ -615,14 +615,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                     )}
                   </div>
 
-                  <div className="mt-4 rounded-xl border border-zinc-700/60 bg-zinc-800/40 px-4 py-3">
+                  <div className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700/60 dark:bg-zinc-800/40">
                     <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-zinc-400">Stock total</span>
-                      <span className="text-lg font-semibold tabular-nums text-white">
+                      <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Stock total</span>
+                      <span className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">
                         {formatNumber(
                           isMainStore ? formData.stock.warehouse + formData.stock.store : formData.stock.store
                         )}{' '}
-                        <span className="text-sm font-normal text-zinc-500">unidades</span>
+                        <span className="text-sm font-normal text-zinc-500 dark:text-zinc-500">unidades</span>
                       </span>
                     </div>
                   </div>
@@ -639,7 +639,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                           'rounded-lg border px-3 py-2 text-sm font-medium transition-all',
                           formData.status === status
                             ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
-                            : 'border-zinc-600/80 bg-zinc-800/50 text-zinc-300 hover:border-zinc-500 hover:bg-zinc-800'
+                            : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-600/80 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800'
                         )}
                       >
                         {getStatusLabel(status)}
@@ -658,20 +658,20 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         </div>
 
         <footer
-          className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-zinc-800 bg-zinc-950 px-4 py-4 md:px-6"
+          className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-zinc-200 bg-white px-4 py-4 md:px-6 dark:border-zinc-800 dark:bg-zinc-950"
           style={{ paddingBottom: `max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))` }}
         >
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-500/80 bg-transparent px-5 text-sm font-medium text-white transition-colors hover:bg-zinc-800/80"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-300 bg-transparent px-5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-500/80 dark:text-white dark:hover:bg-zinc-800/80"
           >
             Cancelar
           </button>
           <button
             type="submit"
             form={formId}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-white px-6 text-sm font-semibold text-zinc-950 shadow-sm transition-colors hover:bg-zinc-100"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
           >
             <Package className="h-4 w-4 shrink-0" strokeWidth={1.75} />
             {isEdit ? 'Guardar cambios' : 'Crear producto'}

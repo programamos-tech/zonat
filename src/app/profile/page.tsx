@@ -16,6 +16,8 @@ import {
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
+import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 
 export default function ProfilePage() {
   const { user, logout } = useAuth()
@@ -81,7 +83,7 @@ export default function ProfilePage() {
           </div>
 
           {/* En escritorio el tema está en el sidebar; en móvil/tablet también en la barra inferior */}
-          <Card className="mb-4 border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 xl:hidden">
+          <Card className={cn(cardShell, 'mb-4 xl:hidden')}>
             <CardContent className="p-4 md:p-5">
               <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                 Apariencia
@@ -92,7 +94,7 @@ export default function ProfilePage() {
 
           <div className="grid grid-cols-1 gap-4 md:gap-6 lg:grid-cols-3">
             {/* Tarjeta usuario */}
-            <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+            <Card className={cardShell}>
               <CardContent className="flex flex-col items-center p-5 text-center md:p-6">
                 <UserAvatar
                   name={user.name}
@@ -120,7 +122,7 @@ export default function ProfilePage() {
             </Card>
 
             {/* Detalle */}
-            <Card className="border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 lg:col-span-2">
+            <Card className={cn(cardShell, 'lg:col-span-2')}>
               <CardHeader className="space-y-0 border-b border-zinc-200/80 px-4 pb-3 pt-4 dark:border-zinc-800 md:px-6 md:pb-4 md:pt-5">
                 <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">
                   Información personal

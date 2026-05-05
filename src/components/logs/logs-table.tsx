@@ -39,6 +39,7 @@ import {
   formatLogDateTime,
   type ActivityLogRecord
 } from '@/components/logs/log-display-helpers'
+import { cardShell } from '@/lib/card-shell'
 
 interface LogsTableProps {
   logs: LogEntry[]
@@ -152,9 +153,6 @@ export function LogsTable({
     }
   }
 
-  const cardClass =
-    'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
-
   const filteredLogs = logs.filter(log => {
     const rec = log as unknown as ActivityLogRecord
     const term = (onSearchChange ? searchTerm : localSearchTerm).toLowerCase()
@@ -197,7 +195,7 @@ export function LogsTable({
 
   return (
     <div className="space-y-4 md:space-y-6">
-      <Card className={cardClass}>
+      <Card className={cardShell}>
         <CardHeader className="space-y-0 p-4 md:p-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="min-w-0 flex-1 space-y-1.5">
@@ -230,9 +228,9 @@ export function LogsTable({
         </CardHeader>
       </Card>
 
-      <Card className={cardClass}>
+      <Card className={cardShell}>
         <CardContent className="p-4 md:p-6">
-          <div className="flex flex-col gap-2 sm:flex-row sm:overflow-hidden sm:rounded-xl sm:border sm:border-zinc-200/80 sm:bg-white sm:dark:border-zinc-800 sm:dark:bg-zinc-950/40">
+          <div className="flex flex-col gap-2 sm:flex-row sm:overflow-hidden sm:rounded-xl sm:border sm:border-solid sm:border-zinc-200 sm:bg-white sm:dark:border-zinc-800 sm:dark:bg-zinc-950/40">
             <label className="group relative flex min-h-10 flex-1 sm:min-h-11">
               <span className="sr-only">Buscar registro</span>
               <Search
@@ -280,7 +278,7 @@ export function LogsTable({
         </CardContent>
       </Card>
 
-      <Card className={cardClass}>
+      <Card className={cardShell}>
         <CardContent className="p-0">
           {filteredLogs.length === 0 ? (
             <div className="px-4 py-14 text-center md:px-6">
@@ -376,7 +374,7 @@ export function LogsTable({
 
       {totalLogs > 20 && (
         <div
-          className={`flex flex-col gap-3 rounded-xl border border-zinc-200/80 bg-white px-4 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between md:px-6`}
+          className={`flex flex-col gap-3 rounded-xl border border-solid border-zinc-200 bg-white px-4 py-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 sm:flex-row sm:items-center sm:justify-between md:px-6`}
         >
           <div className="text-center text-xs text-zinc-500 dark:text-zinc-400 sm:text-left sm:text-sm">
             <span className="hidden sm:inline">Mostrando </span>

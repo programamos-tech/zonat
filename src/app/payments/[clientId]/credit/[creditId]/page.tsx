@@ -22,6 +22,7 @@ import { CreditsService } from '@/lib/credits-service'
 import { PaymentModal } from '@/components/credits/payment-modal'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 import {
   creditStatusBadgeClass,
   creditStatusIconClass,
@@ -29,9 +30,6 @@ import {
   getEffectiveCreditStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
-
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
 
 function getCreditDescription(credit: Credit): string {
   const clientInitials = credit.clientName

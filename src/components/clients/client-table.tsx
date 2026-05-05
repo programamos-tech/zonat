@@ -10,9 +10,7 @@ import { StoreBadge } from '@/components/ui/store-badge'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { isStoreClient } from '@/lib/client-helpers'
 import { cn } from '@/lib/utils'
-
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+import { cardShell } from '@/lib/card-shell'
 
 interface ClientTableProps {
   clients: Client[]

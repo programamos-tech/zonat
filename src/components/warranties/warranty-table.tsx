@@ -18,6 +18,7 @@ import {
 } from 'lucide-react'
 import { Warranty } from '@/types'
 import { StoreBadge } from '@/components/ui/store-badge'
+import { cardShell } from '@/lib/card-shell'
 
 interface WarrantyTableProps {
   warranties: Warranty[]
@@ -107,9 +108,6 @@ export function WarrantyTable({
     setSearchTerm(value)
     onSearch(value)
   }
-
-  const cardShell =
-    'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
 
   return (
     <div className="space-y-4 md:space-y-6">

@@ -28,14 +28,12 @@ import { useProducts } from '@/contexts/products-context'
 import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
 import { StoreBadge } from '@/components/ui/store-badge'
+import { cardShell } from '@/lib/card-shell'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 // Margen mínimo de ganancia para microtiendas (10%)
 const MIN_PROFIT_MARGIN = 0.10
-
-const cardShell =
-  'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
 
 const inputClass =
   'w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20'

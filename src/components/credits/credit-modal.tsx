@@ -33,6 +33,7 @@ import { useAuth } from '@/contexts/auth-context'
 import { SalesService } from '@/lib/sales-service'
 import { CreditsService } from '@/lib/credits-service'
 import { cn } from '@/lib/utils'
+import { cardShell as cardShellBase } from '@/lib/card-shell'
 
 /** Altura cómoda en modal (tablet / dedo) — evita campos “apretados” verticalmente */
 const inputComfort = 'min-h-11 px-3 py-2.5 text-sm'
@@ -40,8 +41,7 @@ const inputComfort = 'min-h-11 px-3 py-2.5 text-sm'
 const inputBase =
   'rounded-lg border border-zinc-300 bg-white text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
 
-const cardShell =
-  'border-zinc-200/90 bg-white shadow-none dark:border-zinc-800 dark:bg-zinc-900/50'
+const cardShell = cn(cardShellBase, 'shadow-none')
 
 /** Títulos de sección — alineados a detalle de factura / marca */
 const sectionTitleClass =

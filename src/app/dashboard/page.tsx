@@ -45,20 +45,18 @@ import { StoreBadge } from '@/components/ui/store-badge'
 import { Sale } from '@/types'
 import { CancelledInvoicesModal } from '@/components/dashboard/cancelled-invoices-modal'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 
 type DateFilter = 'today' | 'specific' | 'all' | 'range'
 
-/** Superficies y métricas alineadas con el resto de la app (zinc + toque esmeralda Zonat) */
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
 const dashCardBase =
-  'rounded-xl border border-zinc-200/80 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 md:p-6'
+  'zonat-card-surface max-w-full min-w-0 rounded-xl border border-solid border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 md:p-6'
 
 /** Celda dentro del panel único de métricas (sin card por KPI) */
 const dashMetricTile =
   'flex w-full min-h-0 flex-col rounded-lg border border-transparent px-3 py-3 text-left transition-colors md:px-3.5 md:py-3.5'
 const dashMetricTileInteractive =
-  'cursor-pointer hover:border-zinc-200/80 hover:bg-zinc-50/90 dark:hover:border-zinc-700/80 dark:hover:bg-zinc-800/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/35 dark:focus-visible:ring-zinc-500/25'
+  'cursor-pointer hover:border-zinc-200 hover:bg-zinc-50/90 dark:hover:border-zinc-700 dark:hover:bg-zinc-800/40 focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/35 dark:focus-visible:ring-zinc-500/25'
 
 const dashMetricIconEm =
   'h-4 w-4 shrink-0 text-emerald-600/85 dark:text-emerald-500/80'
@@ -68,7 +66,7 @@ const dashMetricLabelClass =
 
 /** Toolbar de filtros: mismo criterio que `Button` outline / selects de inventario */
 const dashFilterSelectClass =
-  'w-full appearance-none rounded-lg border border-zinc-300/90 bg-white px-3 py-2 pr-9 text-sm font-medium text-zinc-800 shadow-sm transition-colors hover:border-zinc-400/80 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:hover:border-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25 md:py-2 md:pr-8'
+  'block h-10 w-full appearance-none border-0 bg-transparent px-3 pr-9 text-sm font-medium leading-none text-zinc-800 focus:outline-none focus:ring-0 dark:text-zinc-100 md:pr-8'
 
 const dashToolbarButtonClass =
   'h-9 min-h-9 border-zinc-300/90 bg-white px-2.5 shadow-sm dark:border-zinc-600 dark:bg-zinc-950/40'
@@ -1346,7 +1344,7 @@ export default function DashboardPage() {
                   {isSuperAdmin ? (
                     <>
                       {/* Selector de período simplificado */}
-                      <div className="relative w-full sm:w-auto sm:min-w-[200px]">
+                      <div className="relative w-full overflow-hidden rounded-lg border border-zinc-300/90 bg-white shadow-sm transition-colors hover:border-zinc-400/80 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:hover:border-zinc-500 dark:focus-within:border-zinc-500 dark:focus-within:ring-zinc-500/25 sm:w-auto sm:min-w-[200px]">
                         <select
                           value={dateFilter}
                           onChange={(e) => handleFilterChange(e.target.value as DateFilter)}
@@ -1366,7 +1364,7 @@ export default function DashboardPage() {
 
                       {/* Selector de año cuando "Todo el Tiempo" está seleccionado */}
                       {dateFilter === 'all' && isSuperAdmin && (
-                        <div className="relative w-full sm:w-auto sm:ml-2 sm:min-w-[100px]">
+                        <div className="relative w-full overflow-hidden rounded-lg border border-zinc-300/90 bg-white shadow-sm transition-colors hover:border-zinc-400/80 focus-within:border-zinc-500 focus-within:ring-2 focus-within:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:hover:border-zinc-500 dark:focus-within:border-zinc-500 dark:focus-within:ring-zinc-500/25 sm:ml-2 sm:w-auto sm:min-w-[100px]">
                           <select
                             value={selectedYear}
                             onChange={(e) => handleYearChange(Number(e.target.value))}

@@ -8,9 +8,9 @@ const btn =
   'flex h-9 min-w-0 flex-1 items-center justify-center rounded-md transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/50'
 
 const selected =
-  'bg-white text-zinc-900 shadow-sm dark:bg-zinc-800 dark:text-zinc-50'
+  'bg-zinc-700/80 text-zinc-100 shadow-sm ring-1 ring-zinc-600/90'
 const idle =
-  'text-zinc-500 hover:bg-zinc-100/80 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800/80 dark:hover:text-zinc-200'
+  'text-zinc-400 hover:bg-zinc-800/80 hover:text-zinc-200'
 
 /**
  * Claro / oscuro fijos o según `prefers-color-scheme` (localStorage `light` | `dark` | `system`).
@@ -21,7 +21,7 @@ export function SidebarThemeToggle({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        'flex gap-1 rounded-lg border border-zinc-200/90 bg-zinc-50/90 p-1 dark:border-zinc-700/90 dark:bg-zinc-900/60',
+        'flex gap-1 rounded-lg border border-zinc-700/90 bg-zinc-900/70 p-1',
         className
       )}
       role="group"

@@ -31,6 +31,7 @@ import {
   splitMixedByPending,
 } from '@/lib/credit-bulk-payment'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 import { UserAvatar } from '@/components/ui/user-avatar'
 import {
   creditStatusBadgeClass,
@@ -39,9 +40,6 @@ import {
   getEffectiveCreditStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
-
-const cardShell =
-  'overflow-hidden rounded-xl border border-zinc-300/90 bg-white shadow-sm dark:border-zinc-700 dark:bg-zinc-900/40'
 
 function isCreditPayable(credit: Credit): boolean {
   return (
@@ -443,7 +441,7 @@ export default function ClientCreditsPage() {
   return (
     <RoleProtectedRoute module="payments" requiredAction="view">
       <div className="space-y-6 bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 py-4 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 max-xl:pb-1 md:py-6">
-        <Card className={cardShell}>
+        <Card className={cn(cardShell, 'overflow-hidden')}>
           <CardContent className="p-0">
             <div className="flex flex-col gap-3 px-4 pt-4 pb-2 sm:flex-row sm:items-start sm:justify-between md:px-6 md:pt-5 md:pb-2">
               <div className="flex min-w-0 flex-1 items-start gap-3">
@@ -546,7 +544,7 @@ export default function ClientCreditsPage() {
         </Card>
 
         {isLoading ? (
-          <Card className={cardShell}>
+          <Card className={cn(cardShell, 'overflow-hidden')}>
             <CardContent className="p-12">
               <div className="flex flex-col items-center justify-center gap-3">
                 <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
@@ -555,7 +553,7 @@ export default function ClientCreditsPage() {
             </CardContent>
           </Card>
         ) : credits.length === 0 ? (
-          <Card className={cardShell}>
+          <Card className={cn(cardShell, 'overflow-hidden')}>
             <CardContent className="p-12">
               <div className="text-center">
                 <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-zinc-300 dark:border-zinc-600">

@@ -38,8 +38,23 @@ html.light body {
  */
 html.light
   body:not(:has(.tienda-storefront)):not(:has([data-auth-page]))
-  *:not(button):not(input):not(select):not(textarea):not([role='button']):not(a) {
+  *:not(button):not(input):not(select):not(textarea):not([role='button']):not(a):not(
+    .zonat-card-surface
+  ):not(.zonat-preserve-surface):not(.zonat-preserve-surface *) {
   background-color: inherit !important;
+}
+
+/*
+ * Tarjetas de listas (título + buscador): marco explícito en claro y exclusión de la regla
+ * de herencia evita bordes “cortados” (sobre todo el derecho junto a overflow-auto).
+ */
+html.light .zonat-card-surface {
+  background-color: #ffffff !important;
+  border-width: 1px !important;
+  border-style: solid !important;
+  border-color: rgb(228 228 231) !important;
+  box-sizing: border-box;
+  max-width: 100%;
 }
 
 /* Force dark mode styles - negro mate con difuminado sutil */

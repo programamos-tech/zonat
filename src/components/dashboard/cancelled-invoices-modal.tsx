@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { X, XCircle, DollarSign, User, FileText, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 import { Sale } from '@/types'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -27,9 +28,6 @@ const overlayClass =
 
 const shellClass =
   'flex h-full max-h-[100dvh] w-full flex-col overflow-hidden border-0 border-zinc-200 bg-white shadow-none dark:border-zinc-700 dark:bg-zinc-900 sm:h-auto sm:max-h-[min(90dvh,880px)] sm:max-w-[min(56rem,calc(100vw-2rem))] sm:rounded-2xl sm:border sm:shadow-2xl'
-
-const cardShell =
-  'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
 
 const labelUpper = 'text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400'
 

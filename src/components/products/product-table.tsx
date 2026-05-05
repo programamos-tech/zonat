@@ -32,9 +32,7 @@ import { StoreBadge } from '@/components/ui/store-badge'
 import { getCurrentUserStoreId, isStoreSincelejo } from '@/lib/store-helper'
 import { StoresService } from '@/lib/stores-service'
 import { cn } from '@/lib/utils'
-
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+import { cardShell } from '@/lib/card-shell'
 
 const ITEMS_PER_PAGE = 15
 
@@ -145,14 +143,13 @@ export function ProductTable({
   const getStatusBadgeClass = (status: string) => {
     switch (status) {
       case 'active':
-        /* Tono esmeralda Zonat (misma familia que ZonatBadge), muy contenido */
-        return 'border-emerald-500/25 bg-emerald-500/[0.07] text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/40 dark:text-emerald-300/95'
+        return 'border-emerald-300/80 bg-emerald-100/75 text-emerald-900 dark:border-emerald-500/35 dark:bg-emerald-950/45 dark:text-emerald-300/95'
       case 'inactive':
-        return 'border-zinc-200 bg-zinc-50 text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/50 dark:text-zinc-500'
+        return 'border-zinc-300/90 bg-zinc-100/90 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/55 dark:text-zinc-400'
       case 'discontinued':
-        return 'border-zinc-300 bg-zinc-100 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-400'
+        return 'border-violet-200/90 bg-violet-50/85 text-violet-900 dark:border-violet-900/45 dark:bg-violet-950/35 dark:text-violet-300/90'
       case 'out_of_stock':
-        return 'border-amber-200/80 bg-amber-50 text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-200/90'
+        return 'border-rose-200/90 bg-rose-50/85 text-rose-900 dark:border-rose-900/45 dark:bg-rose-950/35 dark:text-rose-300/90'
       default:
         return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
     }
@@ -207,21 +204,21 @@ export function ProductTable({
   const getStockStatusBadgeClass = (product: Product) => {
     const { warehouse, store, total } = product.stock
     if (total === 0) {
-      return 'border-red-200/80 bg-red-50 text-red-900 dark:border-red-900/45 dark:bg-red-950/40 dark:text-red-200/90'
+      return 'border-rose-200/90 bg-rose-50/85 text-rose-900 dark:border-rose-900/45 dark:bg-rose-950/40 dark:text-rose-300/90'
     }
     if (store > 0) {
       if (store >= 10) {
-        return 'border-emerald-500/20 bg-emerald-500/[0.06] text-emerald-900 dark:border-emerald-500/25 dark:bg-emerald-950/35 dark:text-emerald-400/90'
+        return 'border-emerald-300/80 bg-emerald-100/75 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-300/90'
       }
       if (store >= 5) {
-        return 'border-amber-200/80 bg-amber-50 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-200/90'
+        return 'border-amber-200/90 bg-amber-50/90 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-200/90'
       }
-      return 'border-amber-200/80 bg-amber-50/90 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/40 dark:text-amber-200/90'
+      return 'border-orange-200/90 bg-orange-50/90 text-orange-950 dark:border-orange-900/45 dark:bg-orange-950/35 dark:text-orange-300/90'
     }
     if (warehouse > 0) {
-      return 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/55 dark:text-zinc-400'
+      return 'border-sky-200/90 bg-sky-50/85 text-sky-900 dark:border-sky-900/45 dark:bg-sky-950/35 dark:text-sky-300/90'
     }
-    return 'border-red-200/80 bg-red-50 text-red-900 dark:border-red-900/45 dark:bg-red-950/40 dark:text-red-200/90'
+    return 'border-rose-200/90 bg-rose-50/85 text-rose-900 dark:border-rose-900/45 dark:bg-rose-950/40 dark:text-rose-300/90'
   }
 
   const stockStatusOptions = [

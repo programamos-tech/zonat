@@ -12,9 +12,7 @@ import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { cn } from '@/lib/utils'
 import { SALES_PAGE_SIZE } from '@/lib/sales-service'
-
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
+import { cardShell } from '@/lib/card-shell'
 
 interface SalesTableProps {
   sales: Sale[]

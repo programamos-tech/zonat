@@ -9,7 +9,7 @@ const Card = React.forwardRef<
   <div
     ref={ref}
     className={cn(
-      "rounded-xl border border-zinc-300 dark:border-neutral-700 bg-white dark:bg-neutral-900 text-gray-900 dark:text-white shadow-lg hover:shadow-xl transition-shadow duration-200",
+      "zonat-card-surface max-w-full min-w-0 rounded-xl border border-solid border-zinc-200 bg-white text-gray-900 shadow-sm outline outline-1 -outline-offset-1 outline-zinc-200/80 transition-shadow duration-200 hover:shadow-md dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:outline-neutral-700/80 dark:hover:shadow-lg",
       className
     )}
     {...props}

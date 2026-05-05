@@ -477,7 +477,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
         <div className="max-h-[min(72dvh,560px)] overflow-y-auto overscroll-contain p-4 scrollbar-hide md:p-6">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
             {/* Información General */}
-            <div className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+            <div className="rounded-xl border border-solid border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
               <div className="flex items-center gap-2 border-b border-zinc-200/80 p-3 dark:border-zinc-800 md:gap-3 md:p-4">
                 <FileText
                   className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 md:h-5 md:w-5"
@@ -524,7 +524,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
             {/* Información específica según el tipo de acción */}
             {log.details && (
-              <div className="rounded-xl border border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
+              <div className="rounded-xl border border-solid border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
                 <div className="flex items-center gap-2 border-b border-zinc-200/80 p-3 dark:border-zinc-800 md:gap-3 md:p-4">
                   <TypeIcon
                     className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 md:h-5 md:w-5"

@@ -10,14 +10,13 @@ import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/auth-context'
 import { canAccessAllStores } from '@/lib/store-helper'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 
-/** Misma línea visual que dashboard (zinc + acento esmeralda). */
-const storeCardShell =
-  'rounded-xl border border-solid border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40 dark:shadow-none'
+const storeCardShell = cn(cardShell, 'dark:shadow-none')
 const storeMetricIcon =
-  'h-3 w-3 shrink-0 text-emerald-600/85 dark:text-emerald-500/80'
+  'h-4 w-4 shrink-0 text-emerald-600/90 dark:text-emerald-400/90'
 const storeMetricLabel =
-  'text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400'
+  'text-[11px] font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400'
 
 interface StoreTableProps {
   stores: Store[]
@@ -75,23 +74,23 @@ function StoreCard({
         )}
         title={isSuperAdmin ? `Haz click para ver el dashboard de ${store.name}` : undefined}
       >
-        <CardContent className="flex flex-col gap-1.5 p-2.5 sm:p-3">
+        <CardContent className="flex flex-col gap-3 p-4 sm:p-4.5">
           {isCurrentStore && (
             <span
-              className="absolute right-1.5 top-1.5 z-10 rounded-full border border-zinc-200/90 bg-zinc-50 px-1 py-0.5 text-[8px] font-medium uppercase tracking-wide text-zinc-600 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300"
+              className="absolute right-2 top-2 z-10 rounded-full border border-zinc-200/90 bg-white px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-200"
               title="Vista actual"
             >
               Activa
             </span>
           )}
 
-          <div className="flex shrink-0 flex-col items-center gap-1 text-center">
+          <div className="flex shrink-0 flex-col items-center gap-2 text-center">
             <div className="relative">
               {store.logo ? (
                 <div
                   className={cn(
-                    'relative h-11 w-11 overflow-hidden rounded-full border border-solid border-zinc-200/90 dark:border-zinc-600',
-                    isCurrentStore && 'border-zinc-300 dark:border-zinc-500'
+                    'relative h-16 w-16 overflow-hidden rounded-full border-2 border-zinc-200 bg-white shadow-sm dark:border-zinc-600',
+                    isCurrentStore && 'border-zinc-300 ring-2 ring-zinc-200/80 dark:border-zinc-500 dark:ring-zinc-600/50'
                   )}
                 >
                   <Image
@@ -105,27 +104,27 @@ function StoreCard({
               ) : (
                 <div
                   className={cn(
-                    'flex h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-solid border-zinc-200/90 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-800/80',
-                    isCurrentStore && 'border-zinc-300 dark:border-zinc-500'
+                    'flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 border-zinc-200 bg-white shadow-sm dark:border-zinc-600 dark:bg-zinc-800/80',
+                    isCurrentStore && 'border-zinc-300 ring-2 ring-zinc-200/80 dark:border-zinc-500 dark:ring-zinc-600/50'
                   )}
                 >
                   <Image
                     src="/zonat-logo.png"
                     alt="Zona T Logo"
-                    width={32}
-                    height={32}
+                    width={44}
+                    height={44}
                     className="object-contain"
                     unoptimized
                   />
                 </div>
               )}
               {isMainStore && (
-                <div className="absolute -bottom-0.5 -right-0.5 rounded-full border-2 border-white bg-zinc-900 p-0.5 text-amber-100 shadow-sm dark:border-zinc-900 dark:bg-amber-500/90 dark:text-zinc-950">
-                  <Crown className="h-2 w-2" strokeWidth={2.5} />
+                <div className="absolute -bottom-1 -right-1 rounded-full border-2 border-white bg-zinc-900 p-1 text-amber-100 shadow-sm dark:border-zinc-900 dark:bg-amber-500/90 dark:text-zinc-950">
+                  <Crown className="h-2.5 w-2.5" strokeWidth={2.5} />
                 </div>
               )}
             </div>
-            <h3 className="line-clamp-2 w-full px-0.5 text-[11px] font-semibold leading-tight text-zinc-900 dark:text-zinc-50 sm:text-xs">
+            <h3 className="line-clamp-2 w-full px-1 text-base font-semibold leading-tight text-zinc-900 dark:text-zinc-50">
               {store.name}
             </h3>
           </div>
@@ -135,19 +134,19 @@ function StoreCard({
             onClick={e => e.stopPropagation()}
             onMouseDown={e => e.stopPropagation()}
           >
-            <div className="flex flex-col rounded-lg border border-solid border-zinc-200/80 bg-zinc-50/90 p-1.5 dark:border-zinc-700/80 dark:bg-zinc-800/35">
-              <div className="flex items-center gap-1">
+            <div className="flex flex-col rounded-xl border border-solid border-zinc-200/90 bg-zinc-50/95 p-3 dark:border-zinc-700/80 dark:bg-zinc-800/35">
+              <div className="flex items-center gap-1.5">
                 <CircleDollarSign className={storeMetricIcon} strokeWidth={1.75} aria-hidden />
-                <span className={storeMetricLabel}>Hoy</span>
+                <span className={storeMetricLabel}>Ventas del día</span>
               </div>
               <p
-                className="mt-0.5 line-clamp-2 text-left text-sm font-semibold leading-tight tabular-nums text-zinc-900 dark:text-zinc-100"
+                className="mt-1 line-clamp-2 text-left text-xl font-bold leading-tight tabular-nums text-zinc-900 dark:text-zinc-100"
                 title={`Ingresos del día: ${formatCOP(salesSummary.revenueToday)}`}
               >
                 {formatCOP(salesSummary.revenueToday)}
               </p>
-              <p className="mt-0.5 text-[7px] leading-snug text-zinc-500 dark:text-zinc-500">
-                Ingresos del día ({todayLabel}). Hora local de tu equipo.
+              <p className="mt-1 text-[11px] leading-snug text-zinc-500 dark:text-zinc-500">
+                Hoy · {todayLabel}
               </p>
             </div>
           </div>
@@ -172,12 +171,13 @@ function StoreCard({
               onMouseDown={e => {
                 e.stopPropagation()
               }}
-              variant="ghost"
+              variant="outline"
               size="sm"
-              className="h-7 px-1.5 text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800/60 dark:hover:text-zinc-100"
+              className="h-8 w-full justify-center gap-1.5 border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100 hover:text-zinc-900 dark:border-zinc-700 dark:bg-zinc-900/40 dark:text-zinc-300 dark:hover:bg-zinc-800/70 dark:hover:text-zinc-100"
               title="Editar"
             >
               <Edit className="h-3.5 w-3.5" />
+              Editar
             </Button>
           </div>
         </CardContent>
@@ -301,7 +301,7 @@ export function StoreTable({
             </Button>
           </div>
         ) : (
-          <div className="mx-auto grid max-w-5xl grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3 xl:gap-5">
+          <div className="mx-auto grid max-w-6xl grid-cols-1 items-start gap-4 sm:grid-cols-2 xl:grid-cols-3 xl:gap-5">
                 {stores.map((store) => {
                   const isMainStore = store.id === MAIN_STORE_ID
                   const isCurrentStore = store.id === currentStoreId

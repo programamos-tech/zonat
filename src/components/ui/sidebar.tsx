@@ -202,7 +202,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
       <div 
         ref={sidebarRef}
         className={cn(
-          'fixed inset-y-0 left-0 z-40 w-56 transform overflow-hidden rounded-r-xl border-r border-zinc-200/80 bg-white/95 shadow-sm backdrop-blur-xl transition-all duration-300 ease-in-out dark:border-zinc-800/90 dark:bg-zinc-950/95 dark:shadow-[2px_0_24px_-8px_rgba(0,0,0,0.5)] xl:translate-x-0 xl:rounded-r-2xl',
+          'zonat-preserve-surface fixed inset-y-0 left-0 z-40 w-60 transform overflow-hidden border-r border-zinc-800/90 bg-[#0b0d12]/98 shadow-[2px_0_24px_-8px_rgba(0,0,0,0.55)] backdrop-blur-xl transition-all duration-300 ease-in-out xl:translate-x-0',
           isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full',
           /* Cerrado en móvil/tablet: sin pointer-events para que WebKit no intercepte toques en la barra inferior (z-40 compartida con bottom nav). */
           !isMobileMenuOpen && 'max-xl:pointer-events-none',
@@ -213,7 +213,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           {/* Logo y Tienda */}
           <div
             className={cn(
-              'border-b border-zinc-200/80 px-3 py-3 transition-colors dark:border-zinc-800'
+              'border-b border-zinc-800 px-3 py-3 transition-colors'
             )}
           >
             <Link
@@ -234,7 +234,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 )}
               </div>
               {currentStore && (
-                <p className="max-w-[180px] truncate text-center text-xs font-medium text-zinc-700 dark:text-zinc-200">
+                <p className="max-w-[180px] truncate text-center text-xs font-medium text-zinc-200">
                   {currentStore.name}
                 </p>
               )}
@@ -283,15 +283,14 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 (item.href === '/stores' && pathname?.startsWith('/stores')) ||
                 isSubmenuActive
               
-              const rowActive =
-                'bg-zinc-100/95 text-zinc-900 dark:bg-white/[0.07] dark:text-zinc-50'
+              const rowActive = 'bg-white/[0.08] text-zinc-50'
               const rowInactive =
-                'text-zinc-600 hover:bg-zinc-50/90 dark:text-zinc-400 dark:hover:bg-white/[0.04] dark:hover:text-zinc-200'
+                'text-zinc-400 hover:bg-white/[0.05] hover:text-zinc-200'
 
               const getIconColorForItem = (active: boolean) =>
                 active
-                  ? 'text-zinc-800 dark:text-zinc-100'
-                  : 'text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
+                  ? 'text-zinc-100'
+                  : 'text-zinc-500 group-hover:text-zinc-300'
 
               const toggleSubmenu = (e: React.MouseEvent) => {
                 e.preventDefault()
@@ -329,13 +328,13 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                           <span className="flex-1 truncate text-left">{item.name}</span>
                         </div>
                         {isExpanded ? (
-                          <ChevronDown strokeWidth={1.5} className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
+                          <ChevronDown strokeWidth={1.5} className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
                         ) : (
-                          <ChevronRight strokeWidth={1.5} className="h-3.5 w-3.5 shrink-0 text-zinc-400 dark:text-zinc-500" />
+                          <ChevronRight strokeWidth={1.5} className="h-3.5 w-3.5 shrink-0 text-zinc-500" />
                         )}
                       </button>
                       {isExpanded && item.submenu && (
-                        <div className="ml-2 mt-0.5 space-y-0.5 border-l border-zinc-200/70 pl-2 dark:border-zinc-800">
+                        <div className="ml-2 mt-0.5 space-y-0.5 border-l border-zinc-800 pl-2">
                           {item.submenu.map((subitem) => {
                             if (!canView(subitem.module)) return null
                             
@@ -362,12 +361,12 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                             const getSubitemIconColor = (href: string) => {
                               if (href === '/stores' && isMainStoreUser(user)) {
                                 return isSubActive
-                                  ? 'text-emerald-600 dark:text-emerald-400'
-                                  : 'text-zinc-500 dark:text-zinc-500 group-hover:text-emerald-600/90 dark:group-hover:text-emerald-400/85'
+                                  ? 'text-emerald-400'
+                                  : 'text-zinc-500 group-hover:text-emerald-400/85'
                               }
                               return isSubActive
-                                ? 'text-zinc-800 dark:text-zinc-100'
-                                : 'text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-700 dark:group-hover:text-zinc-300'
+                                ? 'text-zinc-100'
+                                : 'text-zinc-500 group-hover:text-zinc-300'
                             }
                             
                             return (
@@ -408,7 +407,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                         <div
                           className={cn(
                             'group flex cursor-not-allowed items-center rounded-md px-3 py-2 text-sm font-medium opacity-50 transition-colors',
-                            'text-zinc-500 dark:text-zinc-500'
+                            'text-zinc-500'
                           )}
                           title="Solo disponible para Super Administradores"
                         >
@@ -441,30 +440,30 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             })}
           </nav>
 
-          <div className="border-t border-zinc-200/80 px-2.5 py-2 dark:border-zinc-800">
-            <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+          <div className="border-t border-zinc-800 px-2.5 py-2">
+            <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
               Apariencia
             </p>
             <SidebarThemeToggle className="w-full" />
           </div>
 
           {/* User info */}
-          <div className="border-t border-zinc-200/80 p-2.5 dark:border-zinc-800">
-            <div className="flex items-center justify-between rounded-md px-2 py-0.5 transition-colors hover:bg-zinc-50/90 dark:hover:bg-white/[0.04]">
+          <div className="border-t border-zinc-800 p-2.5">
+            <div className="flex items-center justify-between rounded-md px-2 py-0.5 transition-colors hover:bg-white/[0.04]">
               <div className="flex min-w-0 flex-1 items-center">
                 <div className="shrink-0">
                   <UserAvatar
                     name={user?.name || 'Usuario'}
                     seed={user?.id}
                     size="sm"
-                    className="ring-1 ring-zinc-200/80 dark:ring-zinc-700"
+                    className="ring-1 ring-zinc-700"
                   />
                 </div>
                 <div className="ml-2.5 min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                  <p className="truncate text-sm font-medium text-zinc-100">
                     {user?.name || 'Diego Admin'}
                   </p>
-                  <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                  <p className="truncate text-xs text-zinc-400">
                     {user?.role === 'superadmin' ? 'Super Admin' : 
                      user?.role === 'admin' ? 'Admin' :
                      user?.role === 'vendedor' ? 'Vendedor' :
@@ -475,7 +474,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               </div>
               <button
                 onClick={logout}
-                className="ml-1 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-white/10 dark:hover:text-zinc-100"
+                className="ml-1 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-white/10 hover:text-zinc-100"
                 title="Cerrar sesión"
                 type="button"
               >
@@ -485,7 +484,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           </div>
 
           <div className="px-2.5 pb-3 pt-1">
-            <p className="text-center text-[10px] font-medium leading-snug tracking-wide text-zinc-500 dark:text-zinc-400">
+            <p className="text-center text-[10px] font-medium leading-snug tracking-wide text-zinc-400">
               powered by{' '}
               <a
                 href="https://programamos.st"
@@ -499,7 +498,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 ·
               </span>
               <Zap
-                className="mr-0.5 inline-block h-2.5 w-2.5 align-[-0.125em] text-zinc-400 dark:text-zinc-500"
+                className="mr-0.5 inline-block h-2.5 w-2.5 align-[-0.125em] text-zinc-500"
                 strokeWidth={2}
                 aria-hidden
               />

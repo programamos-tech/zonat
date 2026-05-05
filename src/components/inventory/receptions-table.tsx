@@ -16,11 +16,9 @@ import {
 import { StoreBadge } from '@/components/ui/store-badge'
 import { Sale, StoreStockTransfer } from '@/types'
 import { cn } from '@/lib/utils'
+import { cardShell } from '@/lib/card-shell'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-
-const cardShell =
-  'border-zinc-200/80 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40'
 
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
