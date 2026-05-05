@@ -21,8 +21,7 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  FileText,
-  Zap
+  FileText
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -484,25 +483,20 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
           </div>
 
           <div className="px-2.5 pb-3 pt-1">
-            <p className="text-center text-[10px] font-medium leading-snug tracking-wide text-zinc-400">
+            <p className="font-programamos-brand text-center text-[11px] font-medium leading-snug tracking-wide text-zinc-400">
               powered by{' '}
               <a
-                href="https://programamos.st"
+                href="https://programamos-st.vercel.app/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-bold text-[#ff9568] underline-offset-2 hover:underline"
+                className="font-semibold text-zinc-300 underline-offset-2 hover:text-zinc-200 hover:underline"
               >
-                programamos.st
+                programamos
               </a>
-              <span className="mx-1.5" aria-hidden>
+              <span className="mx-1.5 text-zinc-500" aria-hidden>
                 ·
               </span>
-              <Zap
-                className="mr-0.5 inline-block h-2.5 w-2.5 align-[-0.125em] text-zinc-500"
-                strokeWidth={2}
-                aria-hidden
-              />
-              {`V${APP_VERSION}`}
+              <span className="text-zinc-500 tabular-nums">{`V${APP_VERSION}`}</span>
             </p>
           </div>
         </div>

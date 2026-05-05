@@ -7,6 +7,9 @@ import { BarChart3, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, 
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
+import { StoresService } from '@/lib/stores-service'
+import type { Store as StoreType } from '@/types/store'
+import { Logo } from '@/components/ui/logo'
 
 const items = [
   { href: '/dashboard', label: 'Dashboard', icon: BarChart3, module: 'dashboard', alwaysVisible: true },
@@ -29,6 +32,7 @@ export function BottomNav() {
   const [isMounted, setIsMounted] = useState(false)
   const { canView } = usePermissions()
   const { user } = useAuth()
+  const [currentStore, setCurrentStore] = useState<StoreType | null>(null)
   const scrollContainerRef = useRef<HTMLUListElement>(null)
   const [showLeftButton, setShowLeftButton] = useState(false)
   const [showRightButton, setShowRightButton] = useState(false)
@@ -40,6 +44,32 @@ export function BottomNav() {
 
   // Durante el render inicial, usar pathname vacío para evitar mismatch
   const currentPathname = isMounted ? pathname : ''
+
+  // Cargar logo de la tienda para la barra inferior (móvil y tablet)
+  useEffect(() => {
+    let cancelled = false
+
+    const loadStore = async () => {
+      if (!user) {
+        if (!cancelled) setCurrentStore(null)
+        return
+      }
+
+      try {
+        const store = user.storeId
+          ? await StoresService.getStoreById(user.storeId)
+          : await StoresService.getMainStore()
+        if (!cancelled) setCurrentStore(store)
+      } catch {
+        if (!cancelled) setCurrentStore(null)
+      }
+    }
+
+    loadStore()
+    return () => {
+      cancelled = true
+    }
+  }, [user])
 
   // Filtrar items basado en permisos, pero siempre mostrar Dashboard y Perfil si el usuario está autenticado
   const visibleItems = items
@@ -101,18 +131,38 @@ export function BottomNav() {
   }, [visibleItems.length, isMounted])
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-[45] xl:hidden isolate">
+    <nav className="zonat-preserve-surface fixed bottom-0 left-0 right-0 z-[45] isolate xl:hidden">
       {/* Barra pegada al borde inferior: padding seguro dentro del contenedor para que el fondo llegue hasta abajo */}
       <div
-        className="relative flex flex-col pt-0 rounded-t-2xl md:rounded-t-3xl overflow-hidden bg-gradient-to-b from-transparent via-white/50 dark:via-neutral-950/55 to-white/85 dark:to-neutral-950/90 backdrop-blur-xl shadow-[0_-4px_24px_-4px_rgba(0,0,0,0.06)] dark:shadow-[0_-4px_30px_-4px_rgba(0,0,0,0.35)]"
+        className="zonat-preserve-surface relative flex flex-col overflow-hidden border-t border-zinc-800 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-950 pt-0 shadow-none backdrop-blur-xl"
         style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
       >
-        {/* Barra más baja que antes (sin pt extra, h-12 en tablet en vez de h-14); iconos y texto sin cambiar */}
+        {/* Móvil y tablet: barra oscura; en móvil solo iconos (sin texto debajo) */}
         <div className="flex h-11 shrink-0 items-stretch md:h-12">
+        {/* Logo de tienda a la izquierda */}
+        <div className="flex w-12 shrink-0 items-center justify-center pl-2 md:w-14">
+          <Link
+            href="/profile"
+            className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full border border-zinc-700 bg-zinc-900/90 ring-1 ring-zinc-800/60 transition-colors hover:border-zinc-500"
+            title={currentStore?.name ? `Tienda: ${currentStore.name}` : 'Tienda'}
+          >
+            {currentStore?.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={currentStore.logo}
+                alt={currentStore.name || 'Logo de tienda'}
+                className="h-full w-full rounded-full object-cover"
+              />
+            ) : (
+              <Logo size="sm" className="scale-[0.82]" />
+            )}
+          </Link>
+        </div>
+
         {/* Contenedor de scroll: siempre empezando por Dashboard a la izquierda */}
         <ul 
           ref={scrollContainerRef}
-          className="flex h-full items-stretch gap-1 overflow-x-auto scrollbar-hide flex-1 min-w-0 pl-2 pr-2 md:justify-center"
+          className="flex h-full min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto scrollbar-hide px-1 md:justify-center md:gap-1 md:px-1"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {visibleItems.map(({ href, label, icon: Icon }) => {
@@ -129,39 +179,40 @@ export function BottomNav() {
               (href === '/sales' && currentPathname?.startsWith('/sales')) ||
               (href === '/stores' && currentPathname?.startsWith('/stores'))
             
-            // Activo: icono y etiqueta en verde esmeralda (selector único del bottom nav)
+            // Barra oscura: iconos en zinc; activo resaltado sin verde
             const getIconColor = () => {
-              if (!active) return 'text-gray-500 dark:text-gray-400'
-              return 'text-emerald-500 dark:text-emerald-400'
+              if (!active) return 'text-zinc-500'
+              return 'text-zinc-100'
             }
 
-            const activeLabelClass = active
-              ? 'text-emerald-700 dark:text-emerald-300'
-              : 'text-gray-600 dark:text-gray-300'
+            const activeLabelClass = active ? 'text-zinc-100' : 'text-zinc-400'
             
             return (
-              <li key={href} className="flex-shrink-0 flex-1 min-w-[56px] md:min-w-0 md:flex-none md:w-[72px] md:max-w-[76px]">
+              <li key={href} className="flex min-w-[44px] flex-1 flex-shrink-0 md:min-w-0 md:w-[72px] md:max-w-[76px] md:flex-none">
                 {isStoresModule && !canAccessStores ? (
                   <div
-                    className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-2 text-[9px] md:text-[10px] transition-all duration-200 rounded-t-lg cursor-not-allowed opacity-50 ${
-                      active ? activeLabelClass : 'text-gray-400 dark:text-gray-500'
+                    className={`flex h-full cursor-not-allowed flex-col items-center justify-center gap-0 px-1.5 text-[9px] opacity-50 transition-all duration-200 md:gap-1 md:px-2 md:text-[10px] ${
+                      active ? activeLabelClass : 'text-zinc-500'
                     }`}
                     title="Solo disponible para Super Administradores"
+                    aria-label={`${label} — solo super administradores`}
                   >
                     <Icon strokeWidth={1.5} className={`h-5 w-5 shrink-0 transition-colors md:h-5 md:w-5 ${getIconColor()}`} />
-                    <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
+                    <span className="hidden max-w-full truncate whitespace-nowrap px-0.5 text-center leading-tight md:block">{label}</span>
                   </div>
                 ) : (
                 <Link
                   href={href}
-                  className={`flex h-full flex-col items-center justify-center gap-0.5 md:gap-1 px-1.5 md:px-2 text-[9px] md:text-[10px] transition-all duration-200 rounded-t-lg touch-manipulation ${
+                  aria-label={label}
+                  title={label}
+                  className={`flex h-full flex-col items-center justify-center gap-0 px-1.5 text-[9px] transition-all duration-200 touch-manipulation md:gap-1 md:px-2 md:text-[10px] ${
                     active
-                      ? activeLabelClass
-                      : 'text-gray-600 dark:text-gray-300 hover:bg-white/10 dark:hover:bg-white/5 hover:text-gray-900 dark:hover:text-white active:scale-95'
+                      ? `${activeLabelClass} bg-white/10`
+                      : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100 active:scale-95'
                   }`}
                 >
                     <Icon strokeWidth={1.5} className={`h-5 w-5 shrink-0 transition-colors md:h-5 md:w-5 ${getIconColor()}`} />
-                  <span className="leading-tight text-center truncate max-w-full px-0.5 whitespace-nowrap">{label}</span>
+                  <span className="hidden max-w-full truncate whitespace-nowrap px-0.5 text-center leading-tight md:block">{label}</span>
                 </Link>
                 )}
               </li>
@@ -173,14 +224,14 @@ export function BottomNav() {
         {/* Difuminado derecha: indica que hay más opciones sin quitar espacio */}
         {showRightButton && (
           <div
-            className="absolute right-0 top-0 bottom-0 w-8 md:w-10 pointer-events-none z-10 bg-gradient-to-l from-white/90 dark:from-neutral-950/90 to-transparent"
+            className="pointer-events-none absolute bottom-0 right-0 top-0 z-10 w-8 bg-gradient-to-l from-zinc-950 to-transparent md:w-10"
             aria-hidden
           />
         )}
         {/* Difuminado izquierda: cuando hay scroll, indica que hay más a la izquierda */}
         {showLeftButton && (
           <div
-            className="absolute left-0 top-0 bottom-0 w-8 md:w-10 pointer-events-none z-10 bg-gradient-to-r from-white/90 dark:from-neutral-950/90 to-transparent"
+            className="pointer-events-none absolute bottom-0 left-12 top-0 z-10 w-8 bg-gradient-to-r from-zinc-950 to-transparent md:left-14 md:w-10"
             aria-hidden
           />
         )}

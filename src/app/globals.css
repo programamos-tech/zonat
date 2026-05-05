@@ -8,6 +8,12 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* Verde de marca: tono cálido y coherente (sidebar, botones y acentos mismo family) */
+/* Pie “powered by programamos” en sidebar (Google Fonts: Stack Sans Notch) */
+.font-programamos-brand {
+  font-family: "Stack Sans Notch", ui-sans-serif, system-ui, sans-serif;
+  font-optical-sizing: auto;
+}
+
 @theme {
   --color-emerald-50: #f2fce8;
   --color-emerald-100: #e2f9d4;
