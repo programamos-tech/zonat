@@ -1,4 +1,4 @@
-import { Sale } from '@/types'
+import { PaymentRecord, Sale } from '@/types'
 import { StoresService } from '@/lib/stores-service'
 import { getCurrentUserStoreId } from '@/lib/store-helper'
 
@@ -62,6 +62,123 @@ export async function printSaleTicket(sale: Sale): Promise<void> {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(amount)
+  }
+
+  const escHtml = (s: string) =>
+    (s || '')
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+
+  const creditStatusLabel = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'Pendiente'
+      case 'partial':
+        return 'Parcial'
+      case 'completed':
+        return 'Pagado'
+      case 'overdue':
+        return 'Vencido'
+      case 'cancelled':
+        return 'Cancelado'
+      default:
+        return status
+    }
+  }
+
+  const payMethodLabel = (m: string) => {
+    switch (m) {
+      case 'cash':
+        return 'Efectivo'
+      case 'transfer':
+        return 'Transferencia'
+      case 'mixed':
+        return 'Mixto'
+      default:
+        return m
+    }
+  }
+
+  const showCreditOnTicket =
+    sale.paymentMethod === 'credit' ||
+    (sale.paymentMethod === 'mixed' && sale.payments?.some((p) => p.paymentType === 'credit'))
+
+  let creditBlockHtml = ''
+  if (showCreditOnTicket) {
+    try {
+      const { CreditsService } = await import('@/lib/credits-service')
+      let credit = await CreditsService.getCreditBySaleId(sale.id)
+      if (!credit && sale.invoiceNumber) {
+        const inv = sale.invoiceNumber.replace(/^#\s*/, '').trim()
+        credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+        if (!credit && inv !== sale.invoiceNumber) {
+          credit = await CreditsService.getCreditByInvoiceNumber(inv)
+        }
+      }
+      if (credit) {
+        let history: PaymentRecord[] = []
+        try {
+          history = await CreditsService.getPaymentHistory(credit.id)
+        } catch {
+          history = []
+        }
+        const active = history.filter((p) => p.status !== 'cancelled')
+        const sorted = [...active].sort(
+          (a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime()
+        )
+        const dueStr = credit.dueDate
+          ? new Date(credit.dueDate).toLocaleDateString('es-CO', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+            })
+          : '—'
+
+        const abonosHtml =
+          sorted.length > 0
+            ? sorted
+                .map((p, i) => {
+                  const d = new Date(p.paymentDate)
+                  const dateStr = `${d.toLocaleDateString('es-CO')} ${d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`
+                  const desc = p.description ? `<div class="abono-desc">${escHtml(p.description)}</div>` : ''
+                  return `
+                  <div class="abono-item">
+                    <div class="detail-row"><span><strong>#${i + 1}</strong></span><span>${formatCurrency(p.amount)}</span></div>
+                    <div class="detail-row abono-meta"><span>${dateStr}</span><span>${payMethodLabel(p.paymentMethod)}</span></div>
+                    <div class="detail-row abono-meta"><span>Registró: ${escHtml(p.userName || '—')}</span><span></span></div>
+                    ${desc}
+                  </div>`
+                })
+                .join('')
+            : `<div class="credit-empty">Sin abonos registrados aún.</div>`
+
+        creditBlockHtml = `
+            <div class="credit-section">
+              <div class="client-title">CRÉDITO Y ABONOS</div>
+              <div class="detail-row"><span>Total crédito</span><span><strong>${formatCurrency(credit.totalAmount)}</strong></span></div>
+              <div class="detail-row"><span>Total pagado</span><span>${formatCurrency(credit.paidAmount)}</span></div>
+              <div class="detail-row"><span>Saldo pendiente</span><span><strong>${formatCurrency(credit.pendingAmount)}</strong></span></div>
+              <div class="detail-row"><span>Estado</span><span>${creditStatusLabel(credit.status)}</span></div>
+              <div class="detail-row"><span>Vencimiento</span><span>${dueStr}</span></div>
+              <div class="abonos-title">Historial de abonos</div>
+              ${abonosHtml}
+            </div>`
+      } else {
+        creditBlockHtml = `
+            <div class="credit-section">
+              <div class="client-title">CRÉDITO</div>
+              <div class="credit-empty">No se encontró el registro de crédito para esta venta.</div>
+            </div>`
+      }
+    } catch {
+      creditBlockHtml = `
+            <div class="credit-section">
+              <div class="client-title">CRÉDITO</div>
+              <div class="credit-empty">No se pudo cargar el historial del crédito.</div>
+            </div>`
+    }
   }
 
   const invoiceHTML = `
@@ -244,6 +361,53 @@ export async function printSaleTicket(sale: Sale): Promise<void> {
               font-weight: 600;
               color: #000;
             }
+            .credit-section {
+              padding: 8px 5px;
+              border-bottom: 1px dashed #000;
+              font-size: 10px;
+              color: #000;
+            }
+            .credit-section .client-title {
+              margin-bottom: 6px;
+              font-size: 11px;
+            }
+            .credit-section .detail-row {
+              font-size: 10px;
+              font-weight: 600;
+            }
+            .abonos-title {
+              margin-top: 8px;
+              margin-bottom: 4px;
+              font-size: 10px;
+              font-weight: bold;
+              text-transform: uppercase;
+              letter-spacing: 0.02em;
+            }
+            .abono-item {
+              padding: 6px 0;
+              border-top: 1px dotted #999;
+            }
+            .abono-item .detail-row {
+              font-size: 10px;
+              font-weight: 600;
+            }
+            .abono-meta {
+              font-size: 9px !important;
+              font-weight: 600 !important;
+              color: #333 !important;
+            }
+            .abono-desc {
+              margin-top: 3px;
+              font-size: 9px;
+              line-height: 1.25;
+              color: #333;
+            }
+            .credit-empty {
+              margin-top: 4px;
+              font-size: 10px;
+              font-style: italic;
+              color: #333;
+            }
             .footer { 
               text-align: center; 
               padding: 10px 5px; 
@@ -424,6 +588,8 @@ export async function printSaleTicket(sale: Sale): Promise<void> {
                 <span>${sale.status === 'completed' ? 'Completada' : sale.status === 'pending' ? 'Pendiente' : 'Anulada'}</span>
               </div>
             </div>
+
+            ${creditBlockHtml}
 
             <div class="footer">
               <div class="separator">═══════════════════════════════</div>

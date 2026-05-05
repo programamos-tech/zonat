@@ -17,7 +17,7 @@ import {
   Edit,
   Truck
 } from 'lucide-react'
-import { Sale, CompanyConfig, Client, Credit, StoreStockTransfer } from '@/types'
+import { Sale, CompanyConfig, Client, Credit, PaymentRecord, StoreStockTransfer } from '@/types'
 import { CompanyService } from '@/lib/company-service'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
@@ -349,6 +349,137 @@ export default function SaleDetailModal({
     setIsLoadingPrint(true)
     
     try {
+      const escHtml = (s: string) =>
+        (s || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+
+      const creditStatusLabel = (status: string) => {
+        switch (status) {
+          case 'pending':
+            return 'Pendiente'
+          case 'partial':
+            return 'Parcial'
+          case 'completed':
+            return 'Pagado'
+          case 'overdue':
+            return 'Vencido'
+          case 'cancelled':
+            return 'Cancelado'
+          default:
+            return status
+        }
+      }
+
+      const payMethodLabel = (m: string) => {
+        switch (m) {
+          case 'cash':
+            return 'Efectivo'
+          case 'transfer':
+            return 'Transferencia'
+          case 'mixed':
+            return 'Mixto'
+          default:
+            return m
+        }
+      }
+
+      const showCreditOnPrint =
+        sale.paymentMethod === 'credit' ||
+        (sale.paymentMethod === 'mixed' && sale.payments?.some((p) => p.paymentType === 'credit'))
+
+      let creditPrintSection = ''
+      if (showCreditOnPrint) {
+        try {
+          let creditRow = await CreditsService.getCreditBySaleId(sale.id)
+          if (!creditRow && sale.invoiceNumber) {
+            const inv = sale.invoiceNumber.replace(/^#\s*/, '').trim()
+            creditRow = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+            if (!creditRow && inv !== sale.invoiceNumber) {
+              creditRow = await CreditsService.getCreditByInvoiceNumber(inv)
+            }
+          }
+          if (creditRow) {
+            let history: PaymentRecord[] = []
+            try {
+              history = await CreditsService.getPaymentHistory(creditRow.id)
+            } catch {
+              history = []
+            }
+            const active = history.filter((p) => p.status !== 'cancelled')
+            const sorted = [...active].sort(
+              (a, b) => new Date(a.paymentDate).getTime() - new Date(b.paymentDate).getTime()
+            )
+            const dueStr = creditRow.dueDate
+              ? new Date(creditRow.dueDate).toLocaleDateString('es-CO', {
+                  day: 'numeric',
+                  month: 'long',
+                  year: 'numeric',
+                })
+              : '—'
+
+            const abonosRows =
+              sorted.length > 0
+                ? sorted
+                    .map((p, i) => {
+                      const d = new Date(p.paymentDate)
+                      const dateStr = `${d.toLocaleDateString('es-CO')} ${d.toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' })}`
+                      const note = p.description ? `<br/><span style="font-size:10px;color:#555">${escHtml(p.description)}</span>` : ''
+                      return `<tr>
+                        <td>${i + 1}</td>
+                        <td>${dateStr}</td>
+                        <td>${payMethodLabel(p.paymentMethod)}</td>
+                        <td style="text-align:right;font-weight:bold">${formatCurrency(p.amount)}</td>
+                        <td>${escHtml(p.userName || '—')}${note}</td>
+                      </tr>`
+                    })
+                    .join('')
+                : `<tr><td colspan="5" style="font-style:italic;color:#555">Sin abonos registrados aún.</td></tr>`
+
+            creditPrintSection = `
+            <div class="section">
+              <h3>CRÉDITO Y ABONOS</h3>
+              <table>
+                <tbody>
+                  <tr><td><strong>Total crédito</strong></td><td style="text-align:right"><strong>${formatCurrency(creditRow.totalAmount)}</strong></td></tr>
+                  <tr><td>Total pagado</td><td style="text-align:right">${formatCurrency(creditRow.paidAmount)}</td></tr>
+                  <tr><td>Saldo pendiente</td><td style="text-align:right"><strong>${formatCurrency(creditRow.pendingAmount)}</strong></td></tr>
+                  <tr><td>Estado</td><td style="text-align:right">${creditStatusLabel(creditRow.status)}</td></tr>
+                  <tr><td>Vencimiento</td><td style="text-align:right">${dueStr}</td></tr>
+                </tbody>
+              </table>
+              <p style="font-size:12px;font-weight:bold;margin:12px 0 6px 0">Historial de abonos</p>
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>Fecha</th>
+                    <th>Método</th>
+                    <th style="text-align:right">Monto</th>
+                    <th>Registró / nota</th>
+                  </tr>
+                </thead>
+                <tbody>${abonosRows}</tbody>
+              </table>
+            </div>`
+          } else {
+            creditPrintSection = `
+            <div class="section">
+              <h3>CRÉDITO</h3>
+              <p style="font-size:12px;color:#555">No se encontró el registro de crédito para esta venta.</p>
+            </div>`
+          }
+        } catch {
+          creditPrintSection = `
+            <div class="section">
+              <h3>CRÉDITO</h3>
+              <p style="font-size:12px;color:#555">No se pudo cargar el historial del crédito.</p>
+            </div>`
+        }
+      }
+
       // Crear datos del cliente (usar datos de la venta o valores por defecto)
       const client: Client = {
         id: sale.clientId,
@@ -622,6 +753,8 @@ export default function SaleDetailModal({
                 </div>
               </div>
             </div>
+
+            ${creditPrintSection}
 
             <!-- Footer -->
             <div class="footer">

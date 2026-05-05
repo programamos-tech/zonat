@@ -322,6 +322,63 @@ export class CreditsService {
     }
   }
 
+  /** Crédito vinculado a una venta (típicamente uno por venta). */
+  static async getCreditBySaleId(saleId: string): Promise<Credit | null> {
+    if (!saleId) return null
+    const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+    let query = supabase.from('credits').select('*').eq('sale_id', saleId)
+
+    if (!storeId || storeId === MAIN_STORE_ID) {
+      query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+    } else {
+      query = query.eq('store_id', storeId)
+    }
+
+    const { data: rows, error } = await query.order('created_at', { ascending: false }).limit(1)
+
+    if (error) {
+      if (error.code === 'PGRST116') return null
+      throw error
+    }
+    if (!rows?.length) return null
+
+    const data = rows[0]
+
+    let userEmail = data.last_payment_user
+    if (data.last_payment_user) {
+      const { data: userRow } = await supabase
+        .from('users')
+        .select('email')
+        .eq('id', data.last_payment_user)
+        .single()
+
+      if (userRow) {
+        userEmail = userRow.email
+      }
+    }
+
+    return {
+      id: data.id,
+      saleId: data.sale_id,
+      clientId: data.client_id,
+      clientName: data.client_name,
+      invoiceNumber: data.invoice_number,
+      totalAmount: data.total_amount,
+      paidAmount: data.paid_amount,
+      pendingAmount: data.pending_amount,
+      status: data.status,
+      dueDate: data.due_date,
+      lastPaymentAmount: data.last_payment_amount,
+      lastPaymentDate: data.last_payment_date,
+      lastPaymentUser: userEmail,
+      storeId: data.store_id || undefined,
+      createdAt: data.created_at,
+      updatedAt: data.updated_at,
+    }
+  }
+
   // Obtener todos los créditos de un cliente
   static async getCreditsByClientId(clientId: string): Promise<Credit[]> {
     const user = getCurrentUser()
