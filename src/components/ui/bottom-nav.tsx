@@ -138,7 +138,7 @@ export function BottomNav() {
         style={{ paddingBottom: 'max(0px, env(safe-area-inset-bottom))' }}
       >
         {/* Móvil y tablet: barra oscura; en móvil solo iconos (sin texto debajo) */}
-        <div className="flex h-11 shrink-0 items-stretch md:h-12">
+        <div className="flex h-11 shrink-0 items-stretch gap-2 md:h-12 md:gap-2">
         {/* Logo de tienda a la izquierda */}
         <div className="flex w-12 shrink-0 items-center justify-center pl-2 md:w-14">
           <Link
@@ -162,7 +162,7 @@ export function BottomNav() {
         {/* Contenedor de scroll: siempre empezando por Dashboard a la izquierda */}
         <ul 
           ref={scrollContainerRef}
-          className="flex h-full min-w-0 flex-1 items-stretch gap-0.5 overflow-x-auto scrollbar-hide px-1 md:justify-center md:gap-1 md:px-1"
+          className="scrollbar-hide flex h-full min-w-0 flex-1 flex-row items-stretch gap-1 overflow-x-auto pr-2 md:grid md:grid-flow-col md:[grid-auto-columns:minmax(0,1fr)] md:gap-2 md:overflow-x-auto md:pr-3"
           style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
         >
           {visibleItems.map(({ href, label, icon: Icon }) => {
@@ -188,10 +188,13 @@ export function BottomNav() {
             const activeLabelClass = active ? 'text-zinc-100' : 'text-zinc-400'
             
             return (
-              <li key={href} className="flex min-w-[44px] flex-1 flex-shrink-0 md:min-w-0 md:w-[72px] md:max-w-[76px] md:flex-none">
+              <li
+                key={href}
+                className="flex min-w-[44px] shrink-0 md:min-w-0"
+              >
                 {isStoresModule && !canAccessStores ? (
                   <div
-                    className={`flex h-full cursor-not-allowed flex-col items-center justify-center gap-0 px-1.5 text-[9px] opacity-50 transition-all duration-200 md:gap-1 md:px-2 md:text-[10px] ${
+                    className={`flex h-full w-full min-w-0 cursor-not-allowed flex-col items-center justify-center gap-0 px-1.5 text-[9px] opacity-50 transition-all duration-200 md:gap-1 md:px-1 md:text-[10px] ${
                       active ? activeLabelClass : 'text-zinc-500'
                     }`}
                     title="Solo disponible para Super Administradores"
@@ -205,7 +208,7 @@ export function BottomNav() {
                   href={href}
                   aria-label={label}
                   title={label}
-                  className={`flex h-full flex-col items-center justify-center gap-0 px-1.5 text-[9px] transition-all duration-200 touch-manipulation md:gap-1 md:px-2 md:text-[10px] ${
+                  className={`flex h-full w-full min-w-0 flex-col items-center justify-center gap-0 px-1.5 text-[9px] transition-all duration-200 touch-manipulation md:gap-1 md:px-1 md:text-[10px] ${
                     active
                       ? `${activeLabelClass} bg-white/10`
                       : 'text-zinc-400 hover:bg-white/5 hover:text-zinc-100 active:scale-95'
@@ -231,7 +234,7 @@ export function BottomNav() {
         {/* Difuminado izquierda: cuando hay scroll, indica que hay más a la izquierda */}
         {showLeftButton && (
           <div
-            className="pointer-events-none absolute bottom-0 left-12 top-0 z-10 w-8 bg-gradient-to-r from-zinc-950 to-transparent md:left-14 md:w-10"
+            className="pointer-events-none absolute bottom-0 left-14 top-0 z-10 w-8 bg-gradient-to-r from-zinc-950 to-transparent md:left-16 md:w-10"
             aria-hidden
           />
         )}
