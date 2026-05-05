@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils'
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 const inputBase =
-  'w-full rounded-lg border border-zinc-600/80 bg-zinc-800/80 px-3 py-2.5 text-sm text-zinc-100 placeholder:text-zinc-500 transition-colors focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/20'
+  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-600/80 dark:bg-zinc-800/80 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20'
 
 function SectionCard({
   icon: Icon,
