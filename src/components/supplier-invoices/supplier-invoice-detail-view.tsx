@@ -211,19 +211,6 @@ export function SupplierInvoiceDetailView({
               </dd>
             </div>
             <div className="flex gap-3 px-4 py-3">
-              <StickyNote className={cn('mt-0.5 h-4 w-4', iconMuted)} strokeWidth={1.5} />
-              <div className="min-w-0 flex-1">
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Notas</dt>
-                <dd className="mt-1 text-sm leading-relaxed text-zinc-900 whitespace-pre-wrap dark:text-zinc-100">
-                  {invoice.notes?.trim()
-                    ? invoice.notes.trim()
-                    : (
-                        <span className="text-zinc-400 dark:text-zinc-500">Sin notas</span>
-                      )}
-                </dd>
-              </div>
-            </div>
-            <div className="flex gap-3 px-4 py-3">
               <Receipt className={cn('mt-0.5 h-4 w-4', iconMuted)} strokeWidth={1.5} />
               <div className="min-w-0 flex-1">
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Número de factura</dt>
@@ -267,6 +254,24 @@ export function SupplierInvoiceDetailView({
                 <Field label="Número">{invoice.invoiceNumber}</Field>
               </dl>
             </div>
+            {invoice.notes?.trim() ? (
+              <div className="border-t border-zinc-200 px-4 py-4 md:px-6 dark:border-zinc-800">
+                <div className="flex gap-3 rounded-lg border border-amber-200/90 bg-amber-50/90 p-3.5 dark:border-amber-500/25 dark:bg-amber-950/35">
+                  <StickyNote
+                    className="mt-0.5 h-4 w-4 shrink-0 text-amber-700 dark:text-amber-400/90"
+                    strokeWidth={1.5}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-900/90 dark:text-amber-200/90">
+                      Nota
+                    </p>
+                    <p className="mt-1.5 text-sm leading-relaxed whitespace-pre-wrap text-amber-950 dark:text-amber-50/95">
+                      {invoice.notes.trim()}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : null}
             {invoice.status === 'cancelled' && invoice.cancellationReason && (
               <div className="px-4 py-5 md:px-6">
                 <div className="rounded-lg border border-red-200/80 bg-red-50/80 p-3 dark:border-red-900/40 dark:bg-red-950/25">
@@ -430,7 +435,16 @@ export function SupplierInvoiceDetailView({
                         ) : null}
                       </div>
                     </div>
-                    {p.notes && <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{p.notes}</p>}
+                    {p.notes?.trim() ? (
+                      <div className="mt-3 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+                        <div className="text-[11px] font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                          Nota
+                        </div>
+                        <p className="mt-1.5 text-sm leading-relaxed whitespace-pre-wrap text-zinc-800 dark:text-zinc-100">
+                          {p.notes.trim()}
+                        </p>
+                      </div>
+                    ) : null}
                   </div>
                 ))}
               </div>

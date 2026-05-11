@@ -3,12 +3,13 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, FileText } from 'lucide-react'
+import { ArrowLeft, FileText, Pencil } from 'lucide-react'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { SupplierInvoiceDetailView } from '@/components/supplier-invoices/supplier-invoice-detail-view'
 import { SupplierInvoiceHeaderActions } from '@/components/supplier-invoices/supplier-invoice-header-actions'
 import { SupplierInvoiceModal } from '@/components/supplier-invoices/supplier-invoice-modal'
 import { SupplierPaymentModal } from '@/components/supplier-invoices/supplier-payment-modal'
+import { SupplierEditModal } from '@/components/supplier-invoices/supplier-edit-modal'
 import { SupplierInvoice } from '@/types'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -24,6 +25,7 @@ export default function SupplierInvoiceDetailPage() {
   const [loading, setLoading] = useState(true)
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
   const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [supplierEditOpen, setSupplierEditOpen] = useState(false)
 
   const loadInvoice = useCallback(async () => {
     if (!invoiceId) {
@@ -87,6 +89,19 @@ export default function SupplierInvoiceDetailPage() {
                 canEdit={canEdit('supplier_invoices')}
                 canCancel={canCancel('supplier_invoices')}
               />
+              {invoice?.supplierId && canEdit('supplier_invoices') && (
+                <button
+                  type="button"
+                  onClick={() => setSupplierEditOpen(true)}
+                  className={cn(
+                    'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-800 transition-colors',
+                    'hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70'
+                  )}
+                >
+                  <Pencil className="h-4 w-4" strokeWidth={1.5} />
+                  Proveedor
+                </button>
+              )}
               <Link
                 href={
                   invoice?.supplierId
@@ -127,6 +142,13 @@ export default function SupplierInvoiceDetailPage() {
           onClose={() => setPaymentModalOpen(false)}
           invoice={invoice}
           onAddPayment={loadInvoice}
+        />
+
+        <SupplierEditModal
+          isOpen={supplierEditOpen}
+          onClose={() => setSupplierEditOpen(false)}
+          supplierId={invoice?.supplierId ?? null}
+          onSaved={loadInvoice}
         />
       </div>
     </RoleProtectedRoute>

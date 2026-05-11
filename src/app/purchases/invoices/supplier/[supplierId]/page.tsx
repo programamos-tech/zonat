@@ -3,10 +3,11 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, Pencil } from 'lucide-react'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { SupplierInvoiceTable } from '@/components/supplier-invoices/supplier-invoice-table'
 import { SupplierInvoiceModal } from '@/components/supplier-invoices/supplier-invoice-modal'
+import { SupplierEditModal } from '@/components/supplier-invoices/supplier-edit-modal'
 import { groupInvoicesBySupplier } from '@/components/supplier-invoices/supplier-payable-summary-table'
 import { SupplierInvoice } from '@/types'
 import { SupplierInvoicesService } from '@/lib/supplier-invoices-service'
@@ -29,10 +30,11 @@ export default function SupplierPayablesDetailPage() {
   const supplierKey = rawParam ? parseSupplierRouteParam(rawParam) : ''
 
   const { user } = useAuth()
-  const { canCreate } = usePermissions()
+  const { canCreate, canEdit } = usePermissions()
   const [invoices, setInvoices] = useState<SupplierInvoice[]>([])
   const [loading, setLoading] = useState(true)
   const [invoiceModalOpen, setInvoiceModalOpen] = useState(false)
+  const [supplierEditOpen, setSupplierEditOpen] = useState(false)
 
   const loadAll = useCallback(async () => {
     try {
@@ -88,6 +90,7 @@ export default function SupplierPayablesDetailPage() {
   }
 
   const defaultSupplierIdForModal = supplierKey
+  const canEditThisSupplier = Boolean(supplierKey) && canEdit('supplier_invoices')
 
   const notFound = !loading && supplierKey !== '' && supplierInvoices.length === 0 && invoices.length > 0
 
@@ -115,16 +118,31 @@ export default function SupplierPayablesDetailPage() {
                 </p>
               </div>
             </div>
-            <Link
-              href="/purchases/invoices"
-              className={cn(
-                'inline-flex h-9 shrink-0 items-center gap-1.5 self-start rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-800 transition-colors sm:self-auto',
-                'hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70'
+            <div className="flex shrink-0 flex-wrap items-center gap-2 self-start sm:self-auto">
+              {canEditThisSupplier && (
+                <button
+                  type="button"
+                  onClick={() => setSupplierEditOpen(true)}
+                  className={cn(
+                    'inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-800 transition-colors',
+                    'hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70'
+                  )}
+                >
+                  <Pencil className="h-4 w-4" strokeWidth={1.5} />
+                  Editar proveedor
+                </button>
               )}
-            >
-              <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
-              Volver
-            </Link>
+              <Link
+                href="/purchases/invoices"
+                className={cn(
+                  'inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-800 transition-colors',
+                  'hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70'
+                )}
+              >
+                <ArrowLeft className="h-4 w-4" strokeWidth={1.5} />
+                Volver
+              </Link>
+            </div>
           </div>
         </div>
 
@@ -161,6 +179,13 @@ export default function SupplierPayablesDetailPage() {
           onSaved={loadAll}
           invoice={null}
           defaultSupplierId={defaultSupplierIdForModal}
+        />
+
+        <SupplierEditModal
+          isOpen={supplierEditOpen}
+          onClose={() => setSupplierEditOpen(false)}
+          supplierId={supplierKey || null}
+          onSaved={loadAll}
         />
       </div>
     </RoleProtectedRoute>

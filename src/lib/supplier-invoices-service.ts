@@ -218,6 +218,17 @@ export class SupplierInvoicesService {
     return mapSupplier(data as Record<string, unknown>)
   }
 
+  static async getSupplierById(id: string): Promise<Supplier | null> {
+    const trimmed = id.trim()
+    if (!trimmed) return null
+    let query = supabase.from('suppliers').select('*').eq('id', trimmed)
+    query = filterQueryByStoreForId(query)
+    const { data, error } = await query.maybeSingle()
+    if (error) throw error
+    if (!data) return null
+    return mapSupplier(data as Record<string, unknown>)
+  }
+
   static async getInvoices(): Promise<SupplierInvoice[]> {
     let query = supabase
       .from('supplier_invoices')

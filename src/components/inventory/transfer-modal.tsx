@@ -181,7 +181,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         productId: '',
         productName: '',
         productReference: '',
-        fromLocation: originStoreId === MAIN_STORE_ID ? 'warehouse' : 'store',
+        fromLocation: 'store',
         quantity: 0,
         unitPrice: 0,
         productCost: 0,
@@ -216,7 +216,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         productId: product.id,
         productName: product.name || '',
         productReference: product.reference || '',
-        fromLocation: originStoreId === MAIN_STORE_ID ? 'warehouse' : 'store',
+        fromLocation: 'store',
         quantity: 0,
         unitPrice: product.price || 0,
         productCost: product.cost || 0,
@@ -664,7 +664,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                           hasStock ? 'text-zinc-600 dark:text-zinc-300' : 'text-red-500 dark:text-red-400'
                                         )}
                                       >
-                                        Bodega: {formatNumber(warehouseStock)} | Local: {formatNumber(storeStock)}
+                                        Local: {formatNumber(storeStock)} | Bodega: {formatNumber(warehouseStock)}
                                       </span>
                                     </div>
                                   </div>
