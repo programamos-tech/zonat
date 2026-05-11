@@ -16,10 +16,15 @@ import {
   RefreshCcw,
   ChevronLeft,
   ChevronRight,
-  Building2
+  Building2,
+  StickyNote,
 } from 'lucide-react'
 import { SupplierInvoice } from '@/types'
 import { StoreBadge } from '@/components/ui/store-badge'
+import { cn } from '@/lib/utils'
+
+/** Por encima de esta longitud se ofrece expandir/contraer en móvil (vista previa con line-clamp). */
+const NOTE_TOGGLE_MIN_CHARS = 72
 
 function getStatusIcon(status: string) {
   switch (status) {
@@ -106,7 +111,17 @@ export function SupplierInvoiceTable({
   const [filterStatus, setFilterStatus] = useState('all')
   const [filterSupplierId, setFilterSupplierId] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
+  const [expandedNoteIds, setExpandedNoteIds] = useState<Set<string>>(() => new Set())
   const itemsPerPage = 20
+
+  const toggleNoteExpanded = (id: string) => {
+    setExpandedNoteIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-CO', {
@@ -325,70 +340,132 @@ export function SupplierInvoiceTable({
               <div className="space-y-2 p-3 md:hidden">
                 {paginated.map((inv) => {
                   const pending = Math.max(0, inv.totalAmount - inv.paidAmount)
+                  const noteText = inv.notes?.trim() || ''
+                  const noteExpanded = expandedNoteIds.has(inv.id)
+                  const noteNeedsToggle = noteText.length > NOTE_TOGGLE_MIN_CHARS
+
                   return (
-                    <button
-                      type="button"
+                    <div
                       key={inv.id}
-                      className="w-full rounded-xl border border-zinc-300 bg-zinc-50/50 p-4 text-left transition-colors hover:bg-zinc-100/80 dark:border-zinc-800 dark:bg-zinc-950/30 dark:hover:bg-zinc-800/40"
-                      onClick={() => onView(inv)}
+                      className="overflow-hidden rounded-xl border border-zinc-300 bg-zinc-50/50 dark:border-zinc-800 dark:bg-zinc-950/30"
                     >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0 flex-1">
-                          {embedded ? (
-                            <>
-                              <div className="flex items-center gap-2">
-                                <FileText className="h-4 w-4 shrink-0 text-zinc-400" />
-                                <span className="truncate font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                      <button
+                        type="button"
+                        className="w-full p-4 pb-3 text-left transition-colors hover:bg-zinc-100/80 dark:hover:bg-zinc-800/40"
+                        onClick={() => onView(inv)}
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0 flex-1">
+                            {embedded ? (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <FileText className="h-4 w-4 shrink-0 text-zinc-400" />
+                                  <span className="truncate font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                                    {inv.invoiceNumber}
+                                  </span>
+                                </div>
+                                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                                  Emisión {formatIssueDateAndTime(inv)}
+                                </p>
+                              </>
+                            ) : (
+                              <>
+                                <div className="flex items-center gap-2">
+                                  <Building2 className="h-4 w-4 shrink-0 text-zinc-400" />
+                                  <span className="truncate font-medium text-zinc-900 dark:text-zinc-100">
+                                    {inv.supplierName || 'Proveedor'}
+                                  </span>
+                                </div>
+                                <p className="mt-1 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">
                                   {inv.invoiceNumber}
-                                </span>
-                              </div>
-                              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                                Emisión {formatIssueDateAndTime(inv)}
-                              </p>
-                            </>
-                          ) : (
-                            <>
-                              <div className="flex items-center gap-2">
-                                <Building2 className="h-4 w-4 shrink-0 text-zinc-400" />
-                                <span className="truncate font-medium text-zinc-900 dark:text-zinc-100">
-                                  {inv.supplierName || 'Proveedor'}
-                                </span>
-                              </div>
-                              <p className="mt-1 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                                {inv.invoiceNumber}
-                              </p>
-                            </>
-                          )}
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`shrink-0 border px-2 py-0.5 text-[11px] font-normal ${getStatusBadgeClass(inv.status)}`}
-                        >
-                          <span className="flex items-center gap-1">
-                            {getStatusIcon(inv.status)}
-                            {getStatusLabel(inv.status)}
-                          </span>
-                        </Badge>
-                      </div>
-                      <dl className="mt-3 grid grid-cols-2 gap-3 border-t border-zinc-300 pt-3 text-left dark:border-zinc-800">
-                        <div>
-                          <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                            {embedded ? 'Total' : 'Emisión'}
-                          </dt>
-                          <dd className="mt-0.5 text-sm tabular-nums text-zinc-800 dark:text-zinc-200">
-                            {embedded ? formatCurrency(inv.totalAmount) : formatIssueDateAndTime(inv)}
-                          </dd>
-                        </div>
-                        <div className="text-right">
-                          <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Pendiente</dt>
-                          <dd
-                            className={`mt-0.5 text-sm tabular-nums font-medium ${pending > 0 ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-400'}`}
+                                </p>
+                              </>
+                            )}
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={`shrink-0 border px-2 py-0.5 text-[11px] font-normal ${getStatusBadgeClass(inv.status)}`}
                           >
-                            {formatCurrency(pending)}
-                          </dd>
+                            <span className="flex items-center gap-1">
+                              {getStatusIcon(inv.status)}
+                              {getStatusLabel(inv.status)}
+                            </span>
+                          </Badge>
                         </div>
-                      </dl>
-                    </button>
+                      </button>
+
+                      {noteText ? (
+                        <div
+                          role={noteNeedsToggle ? 'button' : undefined}
+                          tabIndex={noteNeedsToggle ? 0 : undefined}
+                          className={cn(
+                            'flex w-full gap-2 border-t border-zinc-300 px-4 py-2.5 text-left dark:border-zinc-800',
+                            noteNeedsToggle &&
+                              'cursor-pointer transition-colors hover:bg-zinc-100/70 active:bg-zinc-100 dark:hover:bg-zinc-800/50'
+                          )}
+                          onClick={noteNeedsToggle ? () => toggleNoteExpanded(inv.id) : undefined}
+                          onKeyDown={
+                            noteNeedsToggle
+                              ? (e) => {
+                                  if (e.key === 'Enter' || e.key === ' ') {
+                                    e.preventDefault()
+                                    toggleNoteExpanded(inv.id)
+                                  }
+                                }
+                              : undefined
+                          }
+                        >
+                          <StickyNote
+                            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600/90 dark:text-amber-400/85"
+                            strokeWidth={1.5}
+                          />
+                          <div className="min-w-0 flex-1">
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
+                              Nota
+                            </p>
+                            <p
+                              className={cn(
+                                'mt-0.5 break-words text-xs leading-relaxed text-zinc-700 dark:text-zinc-300',
+                                noteExpanded && 'whitespace-pre-wrap',
+                                !noteExpanded && noteNeedsToggle && 'line-clamp-3'
+                              )}
+                            >
+                              {noteText}
+                            </p>
+                            {noteNeedsToggle ? (
+                              <span className="mt-1 inline-block text-xs font-medium text-zinc-500 underline decoration-zinc-400/80 underline-offset-2 dark:text-zinc-400">
+                                {noteExpanded ? 'Ver menos' : 'Ver más'}
+                              </span>
+                            ) : null}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      <button
+                        type="button"
+                        className="w-full border-t border-zinc-300 p-4 pt-3 text-left transition-colors hover:bg-zinc-100/80 dark:border-zinc-800 dark:hover:bg-zinc-800/40"
+                        onClick={() => onView(inv)}
+                      >
+                        <dl className="grid grid-cols-2 gap-3 text-left">
+                          <div>
+                            <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
+                              {embedded ? 'Total' : 'Emisión'}
+                            </dt>
+                            <dd className="mt-0.5 text-sm tabular-nums text-zinc-800 dark:text-zinc-200">
+                              {embedded ? formatCurrency(inv.totalAmount) : formatIssueDateAndTime(inv)}
+                            </dd>
+                          </div>
+                          <div className="text-right">
+                            <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Pendiente</dt>
+                            <dd
+                              className={`mt-0.5 text-sm tabular-nums font-medium ${pending > 0 ? 'text-zinc-900 dark:text-zinc-50' : 'text-zinc-500 dark:text-zinc-400'}`}
+                            >
+                              {formatCurrency(pending)}
+                            </dd>
+                          </div>
+                        </dl>
+                      </button>
+                    </div>
                   )
                 })}
               </div>
@@ -396,7 +473,7 @@ export function SupplierInvoiceTable({
               <div className="hidden md:block">
                 <div className="overflow-x-auto">
                   <table
-                    className={`w-full border-collapse text-sm ${embedded ? 'min-w-[640px]' : 'min-w-[720px]'}`}
+                    className={`w-full border-collapse text-sm ${embedded ? 'min-w-[700px]' : 'min-w-[800px]'}`}
                   >
                     <thead>
                       <tr className="border-b border-zinc-300 dark:border-zinc-800">
@@ -410,6 +487,9 @@ export function SupplierInvoiceTable({
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Emisión · hora
+                        </th>
+                        <th className="max-w-[10rem] bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
+                          Nota
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Total
@@ -445,6 +525,18 @@ export function SupplierInvoiceTable({
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-zinc-600 dark:text-zinc-400">
                               <span className="tabular-nums">{formatIssueDateAndTime(inv)}</span>
+                            </td>
+                            <td className="max-w-[10rem] px-4 py-3 align-top">
+                              {inv.notes?.trim() ? (
+                                <span
+                                  className="line-clamp-2 text-xs leading-snug text-zinc-600 dark:text-zinc-400"
+                                  title={inv.notes.trim()}
+                                >
+                                  {inv.notes.trim()}
+                                </span>
+                              ) : (
+                                <span className="text-xs text-zinc-400 dark:text-zinc-500">—</span>
+                              )}
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-zinc-800 dark:text-zinc-200">
                               {formatCurrency(inv.totalAmount)}
