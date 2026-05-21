@@ -27,6 +27,7 @@ import { useProducts } from '@/contexts/products-context'
 import { useAuth } from '@/contexts/auth-context'
 import { ProductsService } from '@/lib/products-service'
 import { ClientModal } from '@/components/clients/client-modal'
+import { isStoreClient } from '@/lib/client-helpers'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -151,15 +152,6 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
     }, 300)
     return () => clearTimeout(timer)
   }, [productSearch])
-
-  // Función helper para identificar si un cliente es una tienda
-  const isStoreClient = (client: Client): boolean => {
-    if (!client || !client.name) return false
-    const nameLower = client.name.toLowerCase()
-    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
-    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
-    return storeKeywords.some(keyword => nameLower.includes(keyword))
-  }
 
   const filteredClients = useMemo(() => {
     // Primero filtrar clientes de tiendas

@@ -29,6 +29,7 @@ import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { cardShell } from '@/lib/card-shell'
+import { isStoreClient } from '@/lib/client-helpers'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -167,16 +168,7 @@ export default function NewSalePage() {
     }
   }, [highlightedProductIndex])
 
-  // Función helper para identificar si un cliente es una tienda
-  const isStoreClient = (client: Client): boolean => {
-    if (!client || !client.name) return false
-    const nameLower = client.name.toLowerCase()
-    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
-    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo', 'store', 'tienda', 'microtienda', 'micro tienda', 'sucursal']
-    return storeKeywords.some(keyword => nameLower.includes(keyword))
-  }
-
-  // Filtrar clientes (excluir clientes de tiendas)
+  // Filtrar clientes (excluir fichas internas de tienda, documento STORE-…)
   const filteredClients = useMemo(() => {
     // Primero filtrar clientes de tiendas
     const nonStoreClients = clients.filter(client => !isStoreClient(client))

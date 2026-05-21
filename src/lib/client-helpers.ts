@@ -1,9 +1,10 @@
 import { Client } from '@/types'
 
-/** Clientes que representan tiendas del sistema (se editan desde Microtiendas). */
+/**
+ * Cliente-ficha creado por el sistema para transferencias / facturación interna entre tiendas.
+ * No confundir con un cliente de negocio que solo comparta nombre con una microtienda.
+ */
 export function isStoreClient(client: Client): boolean {
-  if (!client?.name) return false
-  const nameLower = client.name.toLowerCase()
-  const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
-  return storeKeywords.some((keyword) => nameLower.includes(keyword))
+  const doc = (client.document || '').trim().toUpperCase()
+  return doc.startsWith('STORE-')
 }

@@ -2,6 +2,10 @@ import { supabase } from './supabase'
 import { Client } from '@/types'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
+import { isStoreClient } from './client-helpers'
+
+const STORE_CLIENT_MUTATION_MSG =
+  'Este registro es la ficha interna de una tienda (documento STORE-…). Gestiónalo desde Microtiendas.'
 
 export class ClientsService {
   // Obtener todos los clientes
@@ -200,6 +204,10 @@ export class ClientsService {
         return false
       }
 
+      if (isStoreClient(currentClient)) {
+        return false
+      }
+
       const updateData: any = {}
       
       if (updates.name) updateData.name = updates.name
@@ -285,6 +293,10 @@ export class ClientsService {
       const storeId = getCurrentUserStoreId()
       if (storeId && !canAccessAllStores(user) && clientToDelete.storeId !== storeId) {
         return { success: false, error: 'No tienes permiso para eliminar este cliente' }
+      }
+
+      if (isStoreClient(clientToDelete)) {
+        return { success: false, error: STORE_CLIENT_MUTATION_MSG }
       }
 
       // No permitir eliminar si tiene ventas (facturas) registradas

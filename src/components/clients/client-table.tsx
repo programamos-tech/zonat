@@ -354,7 +354,12 @@ export function ClientTable({
                                 </>
                               )}
                               {isStoreClient(client) && (
-                                <span className="px-2 text-xs text-zinc-400 dark:text-zinc-500">Microtienda</span>
+                                <span
+                                  className="px-2 text-xs text-zinc-500 dark:text-zinc-400"
+                                  title="Ficha interna del sistema para transferencias (documento STORE-…)"
+                                >
+                                  Ficha tienda
+                                </span>
                               )}
                             </div>
                           </td>

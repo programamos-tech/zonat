@@ -26,6 +26,21 @@ import { cn } from '@/lib/utils'
 /** Por encima de esta longitud se ofrece expandir/contraer en móvil (vista previa con line-clamp). */
 const NOTE_TOGGLE_MIN_CHARS = 72
 
+/** Folio corto para listados: deja más sitio a la nota; el folio completo va en `title`. */
+function compactInvoiceNumber(full: string): string {
+  const t = full.trim()
+  if (!t) return ''
+  if (t.length <= 13) return t
+  const parts = t.split('-').filter(Boolean)
+  if (parts.length >= 2) {
+    const start = parts[0]
+    const end = parts[parts.length - 1] || ''
+    const tail = end.length > 8 ? end.slice(-8) : end
+    return `${start}…${tail}`
+  }
+  return `…${t.slice(-10)}`
+}
+
 function getStatusIcon(status: string) {
   switch (status) {
     case 'paid':
@@ -358,10 +373,13 @@ export function SupplierInvoiceTable({
                           <div className="min-w-0 flex-1">
                             {embedded ? (
                               <>
-                                <div className="flex items-center gap-2">
-                                  <FileText className="h-4 w-4 shrink-0 text-zinc-400" />
-                                  <span className="truncate font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                                    {inv.invoiceNumber}
+                                <div className="flex min-w-0 items-center gap-1.5">
+                                  <FileText className="h-3.5 w-3.5 shrink-0 text-zinc-400" strokeWidth={1.5} />
+                                  <span
+                                    className="min-w-0 truncate font-mono text-xs font-medium tabular-nums text-zinc-900 dark:text-zinc-100"
+                                    title={inv.invoiceNumber}
+                                  >
+                                    {compactInvoiceNumber(inv.invoiceNumber)}
                                   </span>
                                 </div>
                                 <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -376,8 +394,11 @@ export function SupplierInvoiceTable({
                                     {inv.supplierName || 'Proveedor'}
                                   </span>
                                 </div>
-                                <p className="mt-1 truncate font-mono text-xs text-zinc-500 dark:text-zinc-400">
-                                  {inv.invoiceNumber}
+                                <p
+                                  className="mt-1 truncate font-mono text-[11px] text-zinc-500 tabular-nums dark:text-zinc-400"
+                                  title={inv.invoiceNumber}
+                                >
+                                  {compactInvoiceNumber(inv.invoiceNumber)}
                                 </p>
                               </>
                             )}
@@ -399,7 +420,7 @@ export function SupplierInvoiceTable({
                           role={noteNeedsToggle ? 'button' : undefined}
                           tabIndex={noteNeedsToggle ? 0 : undefined}
                           className={cn(
-                            'flex w-full gap-2 border-t border-zinc-300 px-4 py-2.5 text-left dark:border-zinc-800',
+                            'flex w-full gap-1.5 border-t border-zinc-300 px-3 py-2.5 text-left dark:border-zinc-800',
                             noteNeedsToggle &&
                               'cursor-pointer transition-colors hover:bg-zinc-100/70 active:bg-zinc-100 dark:hover:bg-zinc-800/50'
                           )}
@@ -416,7 +437,7 @@ export function SupplierInvoiceTable({
                           }
                         >
                           <StickyNote
-                            className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600/90 dark:text-amber-400/85"
+                            className="mt-0.5 h-3 w-3 shrink-0 text-amber-600/90 opacity-80 dark:text-amber-400/85"
                             strokeWidth={1.5}
                           />
                           <div className="min-w-0 flex-1">
@@ -473,7 +494,7 @@ export function SupplierInvoiceTable({
               <div className="hidden md:block">
                 <div className="overflow-x-auto">
                   <table
-                    className={`w-full border-collapse text-sm ${embedded ? 'min-w-[700px]' : 'min-w-[800px]'}`}
+                    className={`w-full border-collapse text-sm ${embedded ? 'min-w-[720px]' : 'min-w-[820px]'}`}
                   >
                     <thead>
                       <tr className="border-b border-zinc-300 dark:border-zinc-800">
@@ -482,13 +503,13 @@ export function SupplierInvoiceTable({
                             Proveedor
                           </th>
                         )}
-                        <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
+                        <th className="w-[6.5rem] max-w-[6.5rem] bg-zinc-50/80 px-3 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Factura
                         </th>
-                        <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
+                        <th className="whitespace-nowrap bg-zinc-50/80 px-3 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Emisión · hora
                         </th>
-                        <th className="max-w-[10rem] bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
+                        <th className="min-w-[12rem] max-w-[min(28rem,40vw)] bg-zinc-50/80 px-3 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Nota
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
@@ -520,16 +541,18 @@ export function SupplierInvoiceTable({
                                 {inv.supplierName || '—'}
                               </td>
                             )}
-                            <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                              {inv.invoiceNumber}
+                            <td className="w-[6.5rem] max-w-[6.5rem] px-3 py-3 align-top font-mono text-[11px] leading-snug text-zinc-600 dark:text-zinc-400">
+                              <span className="line-clamp-2 break-all" title={inv.invoiceNumber}>
+                                {compactInvoiceNumber(inv.invoiceNumber)}
+                              </span>
                             </td>
                             <td className="whitespace-nowrap px-4 py-3 text-zinc-600 dark:text-zinc-400">
                               <span className="tabular-nums">{formatIssueDateAndTime(inv)}</span>
                             </td>
-                            <td className="max-w-[10rem] px-4 py-3 align-top">
+                            <td className="min-w-[12rem] max-w-[min(28rem,40vw)] px-3 py-3 align-top">
                               {inv.notes?.trim() ? (
                                 <span
-                                  className="line-clamp-2 text-xs leading-snug text-zinc-600 dark:text-zinc-400"
+                                  className="line-clamp-3 text-xs leading-snug text-zinc-600 dark:text-zinc-400"
                                   title={inv.notes.trim()}
                                 >
                                   {inv.notes.trim()}

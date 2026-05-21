@@ -18,6 +18,7 @@ import { Warranty, Product, Client } from '@/types'
 import { ProductsService } from '@/lib/products-service'
 import { ClientsService } from '@/lib/clients-service'
 import { useAuth } from '@/contexts/auth-context'
+import { isStoreClient } from '@/lib/client-helpers'
 
 interface WarrantyModalProps {
   isOpen: boolean
@@ -70,17 +71,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     quantityDelivered: 1
   })
 
-  // Función helper para identificar si un cliente es una tienda
-  const isStoreClient = (client: Client): boolean => {
-    if (!client || !client.name) return false
-    const nameLower = client.name.toLowerCase()
-    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
-    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
-    return storeKeywords.some(keyword => nameLower.includes(keyword))
-  }
-
-  // Filtrar clientes para excluir tiendas
-  const filteredClients = clients.filter(client => !isStoreClient(client))
+  const filteredClients = clients.filter((client) => !isStoreClient(client))
 
   const selectedClient = selectedClientId ? clients.find(client => client.id === selectedClientId) || null : null
 

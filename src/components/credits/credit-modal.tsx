@@ -34,6 +34,7 @@ import { SalesService } from '@/lib/sales-service'
 import { CreditsService } from '@/lib/credits-service'
 import { cn } from '@/lib/utils'
 import { cardShell as cardShellBase } from '@/lib/card-shell'
+import { isStoreClient } from '@/lib/client-helpers'
 
 /** Altura cómoda en modal (tablet / dedo) — evita campos “apretados” verticalmente */
 const inputComfort = 'min-h-11 px-3 py-2.5 text-sm'
@@ -67,17 +68,7 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
   const { products, searchProducts } = useProducts()
   const { user } = useAuth()
   
-  // Función helper para identificar si un cliente es una tienda
-  const isStoreClient = (client: Client): boolean => {
-    if (!client || !client.name) return false
-    const nameLower = client.name.toLowerCase()
-    // Filtrar clientes que sean tiendas (ZonaT, Zonat, Corozal, Sahagun, etc.)
-    const storeKeywords = ['zonat', 'zona t', 'corozal', 'sahagun', 'sincelejo']
-    return storeKeywords.some(keyword => nameLower.includes(keyword))
-  }
-
-  // Filtrar clientes para excluir tiendas
-  const filteredClients = clients.filter(client => !isStoreClient(client))
+  const filteredClients = clients.filter((client) => !isStoreClient(client))
   
   const [formData, setFormData] = useState({
     clientId: '',
