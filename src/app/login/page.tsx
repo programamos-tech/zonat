@@ -63,13 +63,13 @@ export default function LoginPage() {
           if (isSuperAdmin) {
             router.push('/select-store')
           } else {
-            router.push('/dashboard')
+            router.push('/reportes')
           }
         } else {
-          router.push('/dashboard')
+          router.push('/reportes')
         }
       } else {
-        router.push('/dashboard')
+        router.push('/reportes')
       }
     } else {
       setError('Credenciales inválidas. Verifica tu email y contraseña.')

@@ -296,7 +296,7 @@ export class AuthService {
         
         // Crear resumen de permisos actuales
         const permissionsSummary = newPermissions.map((p: any) => {
-          const moduleName = p.module === 'dashboard' ? 'Dashboard' :
+          const moduleName = p.module === 'dashboard' ? 'Reportes' :
                             p.module === 'products' ? 'Productos' :
                             p.module === 'clients' ? 'Clientes' :
                             p.module === 'sales' ? 'Ventas' :

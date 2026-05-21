@@ -72,7 +72,7 @@ function StoreCard({
           isSuperAdmin &&
             'cursor-pointer hover:border-zinc-300 hover:shadow-md dark:hover:border-zinc-600'
         )}
-        title={isSuperAdmin ? `Haz click para ver el dashboard de ${store.name}` : undefined}
+        title={isSuperAdmin ? `Haz click para ver los reportes de ${store.name}` : undefined}
       >
         <CardContent className="flex flex-col gap-3 p-4 sm:p-4.5">
           {isCurrentStore && (
@@ -255,7 +255,7 @@ export function StoreTable({
     
     // Usar setTimeout para asegurar que el estado se actualice antes de navegar
     setTimeout(() => {
-      router.push(`/dashboard?store=${storeSlug}`)
+      router.push(`/reportes?store=${storeSlug}`)
     }, 0)
   }
 

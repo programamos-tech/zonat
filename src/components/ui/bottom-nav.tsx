@@ -12,7 +12,7 @@ import type { Store as StoreType } from '@/types/store'
 import { Logo } from '@/components/ui/logo'
 
 const items = [
-  { href: '/dashboard', label: 'Dashboard', icon: BarChart3, module: 'dashboard', alwaysVisible: true },
+  { href: '/reportes', label: 'Reportes', icon: BarChart3, module: 'dashboard', alwaysVisible: true },
   { href: '/inventory/products', label: 'Productos', icon: Package, module: 'products' },
   { href: '/inventory/transfers', label: 'Transferencias', icon: ArrowRightLeft, module: 'transfers', requiresMainStore: true },
   { href: '/inventory/receptions', label: 'Recepciones', icon: CheckCircle, module: 'receptions' },
@@ -71,7 +71,7 @@ export function BottomNav() {
     }
   }, [user])
 
-  // Filtrar items basado en permisos, pero siempre mostrar Dashboard y Perfil si el usuario está autenticado
+  // Filtrar items basado en permisos, pero siempre mostrar Reportes y Perfil si el usuario está autenticado
   const visibleItems = items
     .filter(item => {
       if (item.alwaysVisible && user) {
@@ -88,9 +88,9 @@ export function BottomNav() {
       return canView(item.module)
     })
     .sort((a, b) => {
-      // Dashboard siempre primero
-      if (a.href === '/dashboard') return -1
-      if (b.href === '/dashboard') return 1
+      // Reportes siempre primero
+      if (a.href === '/reportes') return -1
+      if (b.href === '/reportes') return 1
       // Perfil siempre al final
       if (a.href === '/profile') return 1
       if (b.href === '/profile') return -1
@@ -159,7 +159,7 @@ export function BottomNav() {
           </Link>
         </div>
 
-        {/* Contenedor de scroll: siempre empezando por Dashboard a la izquierda */}
+        {/* Contenedor de scroll: siempre empezando por Reportes a la izquierda */}
         <ul 
           ref={scrollContainerRef}
           className="scrollbar-hide flex h-full min-w-0 flex-1 flex-row items-stretch gap-1 overflow-x-auto pr-2 md:grid md:grid-flow-col md:[grid-auto-columns:minmax(0,1fr)] md:gap-2 md:overflow-x-auto md:pr-3"
@@ -170,7 +170,7 @@ export function BottomNav() {
             const canAccessStores = isStoresModule ? canAccessAllStores(user) : true
             
             const active = currentPathname === href || 
-              (href !== '/dashboard' && currentPathname?.startsWith(href)) ||
+              (href !== '/reportes' && currentPathname?.startsWith(href)) ||
               (href === '/payments' && currentPathname?.startsWith('/payments')) ||
               (href === '/purchases/invoices' && currentPathname?.startsWith('/purchases')) ||
               (href === '/inventory/products' && currentPathname?.startsWith('/inventory/products')) ||

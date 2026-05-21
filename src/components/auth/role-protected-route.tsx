@@ -29,13 +29,13 @@ export function RoleProtectedRoute({
         const isInventario = roleNorm === 'inventario'
 
         if (isSuperAdmin) {
-          router.push('/dashboard')
+          router.push('/reportes')
         } else if (isVendedor) {
           router.push('/sales')
         } else if (isInventario) {
           router.push('/inventory/products')
         } else {
-          router.push('/dashboard')
+          router.push('/reportes')
         }
       }
     }

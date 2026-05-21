@@ -13,7 +13,7 @@ export function usePermissions() {
     const roleNorm = (currentUser.role || '').toLowerCase().trim()
     if (roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))) return true
 
-    // El dashboard es accesible para todos los usuarios autenticados
+    // Reportes (módulo dashboard) accesible para todos los usuarios autenticados
     if (module === 'dashboard' && action === 'view') return true
     
     const userRole = currentUser.role?.toLowerCase() || ''

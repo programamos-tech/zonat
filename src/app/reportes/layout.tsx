@@ -1,4 +1,4 @@
-export default function DashboardLayout({
+export default function ReportesLayout({
   children,
 }: {
   children: React.ReactNode

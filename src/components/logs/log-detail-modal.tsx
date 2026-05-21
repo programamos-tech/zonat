@@ -1228,7 +1228,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                         .replace(/sales:/g, 'Ventas:')
                                         .replace(/payments:/g, 'Abonos:')
                                         .replace(/roles:/g, 'Roles:')
-                                        .replace(/dashboard:/g, 'Dashboard:')
+                                        .replace(/dashboard:/g, 'Reportes:')
                                         .replace(/logs:/g, 'Logs:')
                                           .replace(/warranties:/g, 'Garantías:')
                                         .replace(/view/g, 'Ver')
@@ -1264,7 +1264,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                           <span className="text-sm text-gray-600 dark:text-gray-400 block mb-2">Permisos asignados:</span>
                           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 space-y-2">
                             {(log.details as any).newUser.permissions.map((perm: any, idx: number) => {
-                              const moduleLabel = perm.module === 'dashboard' ? 'Dashboard' :
+                              const moduleLabel = perm.module === 'dashboard' ? 'Reportes' :
                                 perm.module === 'products' ? 'Productos' :
                                 perm.module === 'clients' ? 'Clientes' :
                                 perm.module === 'sales' ? 'Ventas' :

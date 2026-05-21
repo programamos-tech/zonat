@@ -26,7 +26,7 @@ export default function SelectStorePage() {
   useEffect(() => {
     // Verificar que el usuario sea super admin
     if (!user || !canAccessAllStores(user)) {
-      router.push('/dashboard')
+      router.push('/reportes')
       return
     }
 
@@ -72,8 +72,8 @@ export default function SelectStorePage() {
         .replace(/^-|-$/g, '')
         .substring(0, 30)
       
-      // Redirigir al dashboard
-      router.push(`/dashboard?store=${storeSlug}`)
+      // Redirigir a reportes
+      router.push(`/reportes?store=${storeSlug}`)
     } catch (error) {
       console.error('Error selecting store:', error)
       toast.error('Error al seleccionar la tienda')

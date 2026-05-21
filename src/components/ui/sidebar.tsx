@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -11,7 +12,6 @@ import {
   CreditCard,
   Shield,
   Activity,
-  LogOut,
   ShieldCheck,
   UserCircle,
   UserCog,
@@ -32,11 +32,9 @@ import { StoresService } from '@/lib/stores-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { APP_VERSION } from '@/config/app-meta'
 import type { Store } from '@/types/store'
-import { UserAvatar } from '@/components/ui/user-avatar'
-import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: BarChart3, module: 'dashboard' },
+  { name: 'Reportes', href: '/reportes', icon: BarChart3, module: 'dashboard' },
   { 
     name: 'Inventario', 
     href: '/inventory/products', 
@@ -84,7 +82,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { canView } = usePermissions()
-  const { user, logout } = useAuth()
+  const { user } = useAuth()
   const sidebarRef = useRef<HTMLDivElement>(null)
   const [currentStore, setCurrentStore] = useState<Store | null>(null)
   const [pendingReceptionsCount, setPendingReceptionsCount] = useState(0)
@@ -216,7 +214,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             )}
           >
             <Link
-              href="/dashboard"
+              href="/reportes"
               className="relative flex flex-col items-center transition-opacity hover:opacity-90"
             >
               <div className="relative">
@@ -439,64 +437,18 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             })}
           </nav>
 
-          <div className="border-t border-zinc-800 px-2.5 py-2">
-            <p className="mb-1.5 px-1 text-[10px] font-medium uppercase tracking-wide text-zinc-500">
-              Apariencia
-            </p>
-            <SidebarThemeToggle className="w-full" />
-          </div>
-
-          {/* User info */}
-          <div className="border-t border-zinc-800 p-2.5">
-            <div className="flex items-center justify-between rounded-md px-2 py-0.5 transition-colors hover:bg-white/[0.04]">
-              <div className="flex min-w-0 flex-1 items-center">
-                <div className="shrink-0">
-                  <UserAvatar
-                    name={user?.name || 'Usuario'}
-                    seed={user?.id}
-                    size="sm"
-                    className="ring-1 ring-zinc-700"
-                  />
-                </div>
-                <div className="ml-2.5 min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-100">
-                    {user?.name || 'Diego Admin'}
-                  </p>
-                  <p className="truncate text-xs text-zinc-400">
-                    {user?.role === 'superadmin' ? 'Super Admin' : 
-                     user?.role === 'admin' ? 'Admin' :
-                     user?.role === 'vendedor' ? 'Vendedor' :
-                     user?.role === 'inventario' ? 'Inventario' :
-                     user?.role === 'contador' ? 'Contador' : 'Usuario'}
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={logout}
-                className="ml-1 rounded-md p-1.5 text-zinc-500 transition-colors hover:bg-white/10 hover:text-zinc-100"
-                title="Cerrar sesión"
-                type="button"
-              >
-                <LogOut strokeWidth={1.5} className="h-4 w-4" />
-              </button>
+          <div className="border-t border-zinc-800 px-2.5 pb-3 pt-3">
+            <div className="mb-2.5 flex justify-center px-1">
+              <Image
+                src="/logo-berea12.png"
+                alt="Hecho por Berea — Software e IA a medida"
+                width={96}
+                height={40}
+                className="h-auto w-[5.5rem] max-w-full object-contain opacity-95"
+              />
             </div>
-          </div>
-
-          <div className="px-2.5 pb-3 pt-1">
-            <p className="font-programamos-brand text-center text-[11px] font-medium leading-snug tracking-wide text-zinc-400">
-              powered by{' '}
-              <a
-                href="https://programamos-st.vercel.app/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="font-semibold text-zinc-300 underline-offset-2 hover:text-zinc-200 hover:underline"
-              >
-                programamos
-              </a>
-              <span className="mx-1.5 text-zinc-500" aria-hidden>
-                ·
-              </span>
-              <span className="text-zinc-500 tabular-nums">{`V${APP_VERSION}`}</span>
+            <p className="text-center text-[11px] font-medium leading-snug tracking-wide text-zinc-400">
+              <span className="font-semibold text-zinc-300 tabular-nums">zonat V.{APP_VERSION}</span>
             </p>
           </div>
         </div>

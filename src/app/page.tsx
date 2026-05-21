@@ -17,8 +17,8 @@ export default function Home() {
       return
     }
 
-    // Siempre enviar a dashboard como página inicial
-    router.push('/dashboard')
+    // Siempre enviar a reportes como página inicial
+    router.push('/reportes')
   }, [router, user, isLoading])
 
   return (

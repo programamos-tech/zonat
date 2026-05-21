@@ -7,6 +7,7 @@ import { useState } from 'react'
 import { useStoreUrl } from '@/hooks/use-store-url'
 import { cn } from '@/lib/utils'
 import { ReleaseNotesModal } from '@/components/ui/release-notes-modal'
+import { AppTopBar } from '@/components/layout/app-top-bar'
 
 interface ConditionalLayoutProps {
   children: React.ReactNode
@@ -26,6 +27,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   
   // Nueva venta y detalle de factura: scroll sin barras (vertical u horizontal)
   const hideMainScrollbar = pathname.startsWith('/sales/')
+
+  const showTopBar = !pathname.startsWith('/sales/new')
 
   // Misma regla que MobileNavWrapper: sin barra inferior → no reservar hueco
   const showMobileBottomNavInset =
@@ -49,10 +52,11 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
         <main
           className={cn(
-            'relative z-10 flex min-h-0 min-w-0 flex-1 flex-col bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
+            'relative z-10 flex min-h-0 min-w-0 w-full flex-1 flex-col bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
             isMobileMenuOpen && 'blur-sm'
           )}
         >
+          {showTopBar && <AppTopBar />}
           <div
             className={cn(
               'min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain bg-white dark:bg-neutral-950',

@@ -57,7 +57,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
   const getModuleLabel = (module: string) => {
     switch (module) {
       case 'dashboard':
-        return 'Dashboard'
+        return 'Reportes'
       case 'products':
         return 'Productos'
       case 'clients':

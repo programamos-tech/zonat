@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -71,10 +71,18 @@ export function CreditTable({
   todayPaymentsTotal
 }: CreditTableProps) {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [searchTerm, setSearchTerm] = useState('')
   const [filterStatus, setFilterStatus] = useState('all')
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
+
+  useEffect(() => {
+    const status = searchParams.get('status')
+    if (status && ['all', 'pending', 'partial', 'completed', 'overdue', 'cancelled'].includes(status)) {
+      setFilterStatus(status)
+    }
+  }, [searchParams])
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('es-CO', {

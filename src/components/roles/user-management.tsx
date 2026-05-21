@@ -26,7 +26,7 @@ const roleOptions = [
 ]
 
 const moduleOptions = [
-  { value: 'dashboard', label: 'Dashboard' },
+  { value: 'dashboard', label: 'Reportes' },
   { value: 'products', label: 'Productos' },
   { value: 'transfers', label: 'Transferencias' },
   { value: 'receptions', label: 'Recepciones' },
@@ -84,8 +84,8 @@ const rolePermissions = {
 // Descripciones de cada rol
 const roleDescriptions = {
   'superadmin': 'Acceso completo a todos los módulos del sistema (Diego)',
-  'admin': 'Acceso al dashboard, ventas y créditos',
-  'vendedor': 'Acceso a dashboard, productos, clientes, ventas y créditos',
+  'admin': 'Acceso a reportes, ventas y créditos',
+  'vendedor': 'Acceso a reportes, productos, clientes, ventas y créditos',
   'inventario': 'Solo productos (permisos según lo que marques abajo)'
 }
 
