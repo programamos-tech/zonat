@@ -2,8 +2,11 @@ import type { AppNotification, AppNotificationKind } from './app-notifications-s
 
 const STORAGE_PREFIX = 'zonat:notifications-seen'
 
+/** Tiempo que un aviso visto sigue listado aunque el conteo no cambie. */
+export const NOTIFICATION_LIST_RETENTION_MS = 24 * 60 * 60 * 1000
+
 export type NotificationSeenEntry = {
-  /** Conteo reconocido; si el pendiente actual es mayor, vuelve a mostrarse. */
+  /** Conteo reconocido al ver el aviso. */
   acknowledgedCount: number
   seenAt: string
 }
@@ -59,21 +62,43 @@ export function markNotificationKindSeen(
   markNotificationsSeen(userId, storeId, [{ kind, count }])
 }
 
-/** Oculta avisos ya vistos con el mismo conteo (o menor). */
-export function filterUnseenNotifications(
+function isWithinRetention(seenAt: string, now = Date.now()): boolean {
+  const t = new Date(seenAt).getTime()
+  if (Number.isNaN(t)) return false
+  return now - t < NOTIFICATION_LIST_RETENTION_MS
+}
+
+/**
+ * Lista avisos activos: siempre los no vistos; los vistos se mantienen 24 h
+ * aunque el conteo no cambie. Después de 24 h solo reaparecen si el conteo subió.
+ */
+export function filterNotificationsForDisplay(
   userId: string,
   storeId: string | null | undefined,
   notifications: AppNotification[]
 ): AppNotification[] {
   const seen = getNotificationSeenState(userId, storeId)
+  const now = Date.now()
+
   return notifications.filter((n) => {
     const entry = seen[n.kind]
     if (!entry) return true
-    return n.count > entry.acknowledgedCount
+    if (n.count > entry.acknowledgedCount) return true
+    return isWithinRetention(entry.seenAt, now)
   })
 }
 
-export function isNotificationUnseen(
+/** @deprecated Usar filterNotificationsForDisplay */
+export function filterUnseenNotifications(
+  userId: string,
+  storeId: string | null | undefined,
+  notifications: AppNotification[]
+): AppNotification[] {
+  return filterNotificationsForDisplay(userId, storeId, notifications)
+}
+
+/** Aviso no visto o con conteo mayor al último reconocido (para resaltar en badge). */
+export function isNotificationUnread(
   userId: string,
   storeId: string | null | undefined,
   notification: Pick<AppNotification, 'kind' | 'count'>
@@ -82,4 +107,25 @@ export function isNotificationUnseen(
   const entry = seen[notification.kind]
   if (!entry) return true
   return notification.count > entry.acknowledgedCount
+}
+
+/** Suma conteos de avisos aún no reconocidos (badge más preciso). */
+export function getUnreadNotificationBadgeCount(
+  userId: string,
+  storeId: string | null | undefined,
+  notifications: AppNotification[]
+): number {
+  return notifications
+    .filter((n) => isNotificationUnread(userId, storeId, n))
+    .reduce((sum, n) => sum + n.count, 0)
+}
+
+export function isNotificationSeenWithinRetention(
+  userId: string,
+  storeId: string | null | undefined,
+  kind: AppNotificationKind
+): boolean {
+  const entry = getNotificationSeenState(userId, storeId)[kind]
+  if (!entry) return false
+  return isWithinRetention(entry.seenAt)
 }

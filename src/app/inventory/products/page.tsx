@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { ProductTable } from '@/components/products/product-table'
 import { ProductModal } from '@/components/products/product-modal'
 import { CategoryModal } from '@/components/categories/category-modal'
@@ -12,8 +13,21 @@ import { useProducts } from '@/contexts/products-context'
 import { useCategories } from '@/contexts/categories-context'
 import { Product, Category, StockTransfer } from '@/types'
 import { toast } from 'sonner'
+import type { StockFilter } from '@/lib/products-service'
+
+const STOCK_FILTERS: StockFilter[] = [
+  'all',
+  'Sin Stock',
+  'Disponible Local',
+  'Stock Local Bajo',
+  'Stock Local Muy Bajo',
+  'Solo Bodega',
+  'Solo Bodega (Bajo)',
+  'Solo Bodega (Muy Bajo)',
+]
 
 export default function ProductsPage() {
+  const searchParams = useSearchParams()
   const { products, loading, currentPage, totalProducts, hasMore, isSearching, stockFilter, setStockFilter, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, refreshProducts, goToPage, searchProducts, productsLastUpdated } = useProducts()
   const { categories, createCategory, toggleCategoryStatus, deleteCategory } = useCategories()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -26,6 +40,13 @@ export default function ProductsPage() {
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null)
+
+  useEffect(() => {
+    const stock = searchParams.get('stock')
+    if (stock && STOCK_FILTERS.includes(stock as StockFilter)) {
+      setStockFilter(stock as StockFilter)
+    }
+  }, [searchParams, setStockFilter])
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product)

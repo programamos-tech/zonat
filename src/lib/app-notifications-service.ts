@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { ProductsService } from './products-service'
 import { StoreStockTransferService } from './store-stock-transfer-service'
 import { getCurrentUserStoreId } from './store-helper'
 
@@ -6,6 +7,7 @@ const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 export type AppNotificationKind =
   | 'receptions_pending'
+  | 'products_out_of_stock'
   | 'credits_overdue'
   | 'supplier_invoices_overdue'
 
@@ -81,6 +83,7 @@ async function countPendingReceptions(storeId: string): Promise<number> {
 
 export type FetchAppNotificationsOptions = {
   canViewReceptions: boolean
+  canViewProducts: boolean
   canViewPayments: boolean
   canViewSupplierInvoices: boolean
   storeId: string | null
@@ -90,7 +93,7 @@ export type FetchAppNotificationsOptions = {
 export async function fetchAppNotifications(
   options: FetchAppNotificationsOptions
 ): Promise<AppNotification[]> {
-  const { canViewReceptions, canViewPayments, canViewSupplierInvoices, storeId, isMainStore } =
+  const { canViewReceptions, canViewProducts, canViewPayments, canViewSupplierInvoices, storeId, isMainStore } =
     options
 
   const effectiveStoreId = isMainStore ? MAIN_STORE_ID : storeId
@@ -112,6 +115,26 @@ export async function fetchAppNotifications(
                 : `${count} transferencias por recibir`,
             count,
             href: '/inventory/receptions',
+          })
+        }
+      })
+    )
+  }
+
+  if (canViewProducts) {
+    tasks.push(
+      ProductsService.countOutOfStockProducts(storeId).then((count) => {
+        if (count > 0) {
+          out.push({
+            id: 'products_out_of_stock',
+            kind: 'products_out_of_stock',
+            title: 'Productos sin stock',
+            description:
+              count === 1
+                ? '1 producto agotado en tu tienda'
+                : `${count} productos agotados en tu tienda`,
+            count,
+            href: '/inventory/products?stock=Sin%20Stock',
           })
         }
       })
@@ -160,6 +183,7 @@ export async function fetchAppNotifications(
 
   const order: AppNotificationKind[] = [
     'receptions_pending',
+    'products_out_of_stock',
     'credits_overdue',
     'supplier_invoices_overdue',
   ]

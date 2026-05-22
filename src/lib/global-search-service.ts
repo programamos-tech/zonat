@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { ClientsService } from './clients-service'
+import { ProductsService } from './products-service'
 import { WarrantyService } from './warranty-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
@@ -52,26 +53,25 @@ function applyStoreFilter<T>(query: T, storeId: string | null): T {
   return q.eq('store_id', storeId)
 }
 
-async function searchProductsLite(term: string): Promise<GlobalSearchHit[]> {
+async function searchProductsLite(
+  term: string,
+  storeId?: string | null
+): Promise<GlobalSearchHit[]> {
   const cleanTerm = sanitizeTerm(term)
   if (!cleanTerm) return []
 
-  const { data, error } = await supabase
-    .from('products')
-    .select('id, name, reference')
-    .or(`reference.ilike.%${cleanTerm}%,name.ilike.%${cleanTerm}%`)
-    .order('created_at', { ascending: false })
-    .limit(LIMIT)
-
-  if (error || !data) return []
-
-  return data.map((p) => ({
-    id: `p-${p.id}`,
-    kind: 'product' as const,
-    label: p.name,
-    sublabel: p.reference ? `Ref. ${p.reference}` : undefined,
-    href: `/inventory/products/${p.id}`,
-  }))
+  try {
+    const rows = await ProductsService.searchProducts(cleanTerm, 'all', storeId)
+    return rows.slice(0, LIMIT).map((p) => ({
+      id: `p-${p.id}`,
+      kind: 'product' as const,
+      label: p.name,
+      sublabel: p.reference ? `Ref. ${p.reference}` : undefined,
+      href: `/inventory/products/${p.id}`,
+    }))
+  } catch {
+    return []
+  }
 }
 
 async function searchSalesLite(term: string): Promise<GlobalSearchHit[]> {
@@ -263,7 +263,7 @@ export async function runGlobalSearch(
   }
 
   if (enabled.has('products')) {
-    tasks.push({ kind: 'product', run: () => searchProductsLite(term) })
+    tasks.push({ kind: 'product', run: () => searchProductsLite(term, storeId) })
   }
 
   if (enabled.has('sales')) {

@@ -9,6 +9,7 @@ import {
   ArrowRightLeft,
   CreditCard,
   FileText,
+  Package,
   Loader2,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
@@ -16,12 +17,13 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { isMainStoreUser } from '@/lib/store-helper'
 import {
   fetchAppNotifications,
-  totalNotificationCount,
   type AppNotification,
   type AppNotificationKind,
 } from '@/lib/app-notifications-service'
 import {
-  filterUnseenNotifications,
+  filterNotificationsForDisplay,
+  getUnreadNotificationBadgeCount,
+  isNotificationUnread,
   markNotificationKindSeen,
   markNotificationsSeen,
 } from '@/lib/app-notifications-seen'
@@ -32,6 +34,7 @@ const KIND_ICON: Record<
   React.ComponentType<{ className?: string; strokeWidth?: number }>
 > = {
   receptions_pending: ArrowRightLeft,
+  products_out_of_stock: Package,
   credits_overdue: CreditCard,
   supplier_invoices_overdue: FileText,
 }
@@ -40,6 +43,10 @@ const KIND_STYLE: Record<AppNotificationKind, { wrap: string; icon: string }> = 
   receptions_pending: {
     wrap: 'bg-cyan-100 dark:bg-cyan-950/70',
     icon: 'text-cyan-700 dark:text-cyan-400',
+  },
+  products_out_of_stock: {
+    wrap: 'bg-emerald-100 dark:bg-emerald-950/70',
+    icon: 'text-emerald-700 dark:text-emerald-400',
   },
   credits_overdue: {
     wrap: 'bg-rose-100 dark:bg-rose-950/70',
@@ -53,6 +60,7 @@ const KIND_STYLE: Record<AppNotificationKind, { wrap: string; icon: string }> = 
 
 const PATH_TO_KIND: { prefix: string; kind: AppNotificationKind }[] = [
   { prefix: '/inventory/receptions', kind: 'receptions_pending' },
+  { prefix: '/inventory/products', kind: 'products_out_of_stock' },
   { prefix: '/payments', kind: 'credits_overdue' },
   { prefix: '/purchases/invoices', kind: 'supplier_invoices_overdue' },
 ]
@@ -83,29 +91,34 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
   const rawNotificationsRef = useRef<AppNotification[]>([])
 
   const canViewReceptions = canView('receptions')
+  const canViewProducts = canView('products')
   const canViewPayments = canView('payments')
   const canViewSupplierInvoices = canView('supplier_invoices')
-  const showBell = canViewReceptions || canViewPayments || canViewSupplierInvoices
+  const showBell =
+    canViewReceptions || canViewProducts || canViewPayments || canViewSupplierInvoices
 
   const userId = user?.id
   const storeId = user?.storeId ?? null
 
-  const applySeenFilter = useCallback(
+  const applyDisplayFilter = useCallback(
     (list: AppNotification[]) => {
       if (!userId) return []
-      return filterUnseenNotifications(userId, storeId, list)
+      return filterNotificationsForDisplay(userId, storeId, list)
     },
     [userId, storeId]
   )
+
+  const refreshDisplayed = useCallback(() => {
+    setNotifications(applyDisplayFilter(rawNotificationsRef.current))
+  }, [applyDisplayFilter])
 
   const acknowledge = useCallback(
     (items: AppNotification[]) => {
       if (!userId || items.length === 0) return
       markNotificationsSeen(userId, storeId, items)
-      setNotifications((prev) => applySeenFilter(prev))
-      rawNotificationsRef.current = applySeenFilter(rawNotificationsRef.current)
+      refreshDisplayed()
     },
-    [userId, storeId, applySeenFilter]
+    [userId, storeId, refreshDisplayed]
   )
 
   const closePanel = useCallback(() => {
@@ -127,6 +140,7 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
     try {
       const list = await fetchAppNotifications({
         canViewReceptions,
+        canViewProducts,
         canViewPayments,
         canViewSupplierInvoices,
         storeId,
@@ -142,7 +156,7 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
         }
       }
 
-      setNotifications(applySeenFilter(list))
+      setNotifications(applyDisplayFilter(list))
     } catch {
       setNotifications([])
       rawNotificationsRef.current = []
@@ -156,9 +170,10 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
     pathname,
     showBell,
     canViewReceptions,
+    canViewProducts,
     canViewPayments,
     canViewSupplierInvoices,
-    applySeenFilter,
+    applyDisplayFilter,
   ])
 
   useEffect(() => {
@@ -186,7 +201,9 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
 
   if (!showBell) return null
 
-  const badgeTotal = totalNotificationCount(notifications)
+  const badgeTotal = userId
+    ? getUnreadNotificationBadgeCount(userId, storeId, notifications)
+    : 0
 
   return (
     <div ref={ref} className="relative shrink-0">
@@ -219,7 +236,7 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
           <div className="border-b border-zinc-100 px-3 py-2.5 dark:border-zinc-800">
             <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Notificaciones</p>
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
-              Pendientes que requieren tu atención
+              Se mantienen listadas 24 h después de revisarlas
             </p>
           </div>
 
@@ -244,12 +261,16 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
               {notifications.map((n) => {
                 const Icon = KIND_ICON[n.kind]
                 const style = KIND_STYLE[n.kind]
+                const isUnread = userId ? isNotificationUnread(userId, storeId, n) : true
                 return (
                   <li key={n.id}>
                     <Link
                       href={n.href}
                       role="menuitem"
-                      className="flex gap-3 px-3 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900"
+                      className={cn(
+                        'flex gap-3 px-3 py-3 transition-colors hover:bg-zinc-50 dark:hover:bg-zinc-900',
+                        !isUnread && 'opacity-80'
+                      )}
                       onClick={() => handleNotificationClick(n)}
                     >
                       <span
@@ -265,7 +286,14 @@ export function AppNotificationsBell({ iconBtnClass }: { iconBtnClass: string })
                           <span className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                             {n.title}
                           </span>
-                          <span className="shrink-0 rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-bold tabular-nums text-rose-800 dark:bg-rose-950/60 dark:text-rose-300">
+                          <span
+                            className={cn(
+                              'shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums',
+                              isUnread
+                                ? 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                : 'bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                            )}
+                          >
                             {n.count}
                           </span>
                         </span>

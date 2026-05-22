@@ -442,6 +442,57 @@ export class ProductsService {
     }
   }
 
+  /** Productos sin stock (local y bodega en 0), según la tienda activa. */
+  static async countOutOfStockProducts(storeId?: string | null): Promise<number> {
+    try {
+      const currentStoreId = storeId !== undefined ? storeId : getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+
+      if (isMainStore) {
+        const { count, error } = await supabase
+          .from('products')
+          .select('id', { count: 'exact', head: true })
+          .eq('stock_warehouse', 0)
+          .eq('stock_store', 0)
+
+        if (error) return 0
+        return count ?? 0
+      }
+
+      let total = 0
+      const PAGE = 300
+      let from = 0
+
+      while (true) {
+        const { data, error } = await supabase
+          .from('products')
+          .select('id')
+          .order('created_at', { ascending: false })
+          .range(from, from + PAGE - 1)
+
+        if (error || !data?.length) break
+
+        const stockMap = await this.getProductsStockForStore(
+          data.map((p: { id: string }) => p.id),
+          currentStoreId
+        )
+
+        for (const row of data) {
+          const s = stockMap.get(row.id) || { warehouse: 0, store: 0, total: 0 }
+          if (s.warehouse === 0 && s.store === 0) total++
+        }
+
+        if (data.length < PAGE) break
+        from += PAGE
+      }
+
+      return total
+    } catch {
+      return 0
+    }
+  }
+
   // Obtener todos los productos (sin paginación - para compatibilidad)
   static async getAllProductsLegacy(storeId: string | null = null): Promise<Product[]> {
     try {

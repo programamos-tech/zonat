@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search,
@@ -25,16 +25,6 @@ import {
   type GlobalSearchModule,
 } from '@/lib/global-search-service'
 import { cn } from '@/lib/utils'
-
-const MODULE_MAP: Record<string, GlobalSearchModule> = {
-  clients: 'clients',
-  products: 'products',
-  sales: 'sales',
-  payments: 'payments',
-  supplier_invoices: 'supplier_invoices',
-  transfers: 'transfers',
-  warranties: 'warranties',
-}
 
 const KIND_ICON: Record<
   GlobalSearchKind,
@@ -142,7 +132,7 @@ const KIND_STYLE: Record<
 export function AppTopBarSearch({ className }: { className?: string }) {
   const router = useRouter()
   const { user } = useAuth()
-  const { getAccessibleModules } = usePermissions()
+  const { canView } = usePermissions()
   const [query, setQuery] = useState('')
   const [sections, setSections] = useState<GlobalSearchSection[]>([])
   const [loading, setLoading] = useState(false)
@@ -154,13 +144,17 @@ export function AppTopBarSearch({ className }: { className?: string }) {
   const q = query.trim()
   const totalHits = sections.reduce((n, s) => n + s.hits.length, 0)
 
-  const enabledModulesKey = useMemo(() => {
-    return getAccessibleModules()
-      .map((m) => MODULE_MAP[m])
-      .filter(Boolean)
-      .sort()
-      .join(',')
-  }, [user?.id, user?.role, user?.permissions])
+  const buildEnabledModules = useCallback((): GlobalSearchModule[] => {
+    const mods: GlobalSearchModule[] = []
+    if (canView('clients')) mods.push('clients')
+    if (canView('products')) mods.push('products')
+    if (canView('sales')) mods.push('sales')
+    if (canView('payments')) mods.push('payments')
+    if (canView('supplier_invoices')) mods.push('supplier_invoices')
+    if (canView('transfers')) mods.push('transfers')
+    if (canView('warranties')) mods.push('warranties')
+    return mods
+  }, [canView])
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -176,9 +170,7 @@ export function AppTopBarSearch({ className }: { className?: string }) {
       return
     }
 
-    const enabledModules = enabledModulesKey
-      ? (enabledModulesKey.split(',') as GlobalSearchModule[])
-      : []
+    const enabledModules = buildEnabledModules()
 
     if (enabledModules.length === 0) {
       setSections([])
@@ -219,7 +211,7 @@ export function AppTopBarSearch({ className }: { className?: string }) {
         debounceRef.current = null
       }
     }
-  }, [q, user?.storeId, enabledModulesKey])
+  }, [q, user?.storeId, user?.id, user?.role, user?.permissions, buildEnabledModules])
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
