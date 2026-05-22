@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Search,
@@ -144,7 +144,10 @@ export function AppTopBarSearch({ className }: { className?: string }) {
   const q = query.trim()
   const totalHits = sections.reduce((n, s) => n + s.hits.length, 0)
 
-  const buildEnabledModules = useCallback((): GlobalSearchModule[] => {
+  // canView cambia de referencia en cada render; serializar permisos evita re-ejecutar el efecto en bucle.
+  const permissionsKey = user?.permissions ? JSON.stringify(user.permissions) : ''
+
+  const enabledModules = useMemo((): GlobalSearchModule[] => {
     const mods: GlobalSearchModule[] = []
     if (canView('clients')) mods.push('clients')
     if (canView('products')) mods.push('products')
@@ -154,7 +157,7 @@ export function AppTopBarSearch({ className }: { className?: string }) {
     if (canView('transfers')) mods.push('transfers')
     if (canView('warranties')) mods.push('warranties')
     return mods
-  }, [canView])
+  }, [user?.id, user?.role, permissionsKey])
 
   useEffect(() => {
     if (debounceRef.current) {
@@ -170,8 +173,6 @@ export function AppTopBarSearch({ className }: { className?: string }) {
       return
     }
 
-    const enabledModules = buildEnabledModules()
-
     if (enabledModules.length === 0) {
       setSections([])
       setLoading(false)
@@ -180,9 +181,9 @@ export function AppTopBarSearch({ className }: { className?: string }) {
     }
 
     setOpen(true)
-    const gen = ++searchGenRef.current
 
     debounceRef.current = setTimeout(() => {
+      const gen = ++searchGenRef.current
       void (async () => {
         setLoading(true)
         try {
@@ -210,8 +211,9 @@ export function AppTopBarSearch({ className }: { className?: string }) {
         clearTimeout(debounceRef.current)
         debounceRef.current = null
       }
+      searchGenRef.current += 1
     }
-  }, [q, user?.storeId, user?.id, user?.role, user?.permissions, buildEnabledModules])
+  }, [q, user?.storeId, enabledModules])
 
   useEffect(() => {
     const onDoc = (e: MouseEvent) => {
