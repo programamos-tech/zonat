@@ -52,14 +52,19 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
         <main
           className={cn(
-            'relative z-10 flex min-h-0 min-w-0 w-full flex-1 flex-col bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
+            'zonat-app-main relative z-10 grid min-h-0 min-w-0 w-full flex-1 overflow-hidden bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
+            showTopBar ? 'grid-rows-[auto_1fr]' : 'grid-rows-[1fr]',
             isMobileMenuOpen && 'blur-sm'
           )}
         >
-          {showTopBar && <AppTopBar />}
+          {showTopBar && (
+            <div className="zonat-topbar-slot min-h-0 min-w-0 shrink-0">
+              <AppTopBar />
+            </div>
+          )}
           <div
             className={cn(
-              'min-h-0 min-w-0 flex-1 overflow-auto overscroll-contain bg-white dark:bg-neutral-950',
+              'zonat-app-scroll min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-neutral-950',
               /* Alineado con bottom nav compacta (h-10/11 + safe area). */
               showMobileBottomNavInset &&
                 `${compactListBottomPad} xl:pb-0 xl:scroll-pb-0`,

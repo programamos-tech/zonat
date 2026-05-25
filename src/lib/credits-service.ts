@@ -3,6 +3,52 @@ import { Credit, PaymentRecord } from '@/types'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 
+type PaymentRecordRow = {
+  id: string
+  payment_id: string
+  amount: number
+  payment_date: string
+  payment_method: string
+  description?: string | null
+  user_id: string
+  user_name: string
+  store_id?: string | null
+  status?: string | null
+  cancelled_at?: string | null
+  cancelled_by?: string | null
+  cancelled_by_name?: string | null
+  cancellation_reason?: string | null
+  created_at: string
+  payments?: { sale_id: string } | { sale_id: string }[] | null
+}
+
+function mapPaymentRecordFromRow(row: PaymentRecordRow, creditId: string | null = null): PaymentRecord {
+  const paymentsRel = row.payments
+  const saleId = Array.isArray(paymentsRel) ? paymentsRel[0]?.sale_id : paymentsRel?.sale_id
+
+  return {
+    id: row.id,
+    paymentId: row.payment_id,
+    saleId: saleId ?? undefined,
+    creditId,
+    amount: row.amount,
+    paymentDate: row.payment_date,
+    paymentMethod: row.payment_method as PaymentRecord['paymentMethod'],
+    description: row.description ?? undefined,
+    userId: row.user_id,
+    userName: row.user_name,
+    storeId: row.store_id || undefined,
+    status: (row.status as PaymentRecord['status']) || 'active',
+    cancelledAt: row.cancelled_at ?? undefined,
+    cancelledBy: row.cancelled_by ?? undefined,
+    cancelledByName: row.cancelled_by_name ?? undefined,
+    cancellationReason: row.cancellation_reason ?? undefined,
+    createdAt: row.created_at,
+  }
+}
+
+const PAYMENT_RECORDS_SELECT = '*, payments(sale_id)'
+
 export class CreditsService {
   // Crear un nuevo crédito (en navegador usa API para evitar fallos por RLS con vendedores)
   static async createCredit(creditData: Omit<Credit, 'id' | 'createdAt' | 'updatedAt'>): Promise<Credit> {
@@ -804,7 +850,7 @@ export class CreditsService {
     // Obtener los registros de pago para estos payments (lógica simple como antes)
     const { data, error } = await supabase
       .from('payment_records')
-      .select('*')
+      .select(PAYMENT_RECORDS_SELECT)
       .in('payment_id', paymentIds)
       .order('payment_date', { ascending: false })
 
@@ -814,24 +860,7 @@ export class CreditsService {
       return []
     }
 
-    return data.map(payment => ({
-      id: payment.id,
-      creditId: creditId,
-      amount: payment.amount,
-      paymentDate: payment.payment_date,
-      paymentMethod: payment.payment_method,
-      cashAmount: undefined,
-      transferAmount: undefined,
-      description: payment.description,
-      userId: payment.user_id,
-      userName: payment.user_name,
-      status: payment.status || 'active',
-      cancelledAt: payment.cancelled_at,
-      cancelledBy: payment.cancelled_by,
-      cancelledByName: payment.cancelled_by_name,
-      cancellationReason: payment.cancellation_reason,
-      createdAt: payment.created_at
-    }))
+    return data.map((payment) => mapPaymentRecordFromRow(payment as PaymentRecordRow, creditId))
   }
 
   // Anular un crédito y todos sus abonos
@@ -993,7 +1022,7 @@ export class CreditsService {
       const storeId = getCurrentUserStoreId()
       let query = supabase
         .from('payment_records')
-        .select('*')
+        .select(PAYMENT_RECORDS_SELECT)
 
       // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
       if (storeId && !canAccessAllStores(user)) {
@@ -1004,25 +1033,7 @@ export class CreditsService {
 
       if (error) throw error
 
-      return data.map(payment => ({
-        id: payment.id,
-        creditId: null, // No hay credit_id directo en payment_records
-        amount: payment.amount,
-        paymentDate: payment.payment_date,
-        paymentMethod: payment.payment_method,
-        cashAmount: undefined, // La tabla no tiene este campo
-        transferAmount: undefined, // La tabla no tiene este campo
-        description: payment.description,
-        userId: payment.user_id,
-        userName: payment.user_name,
-        storeId: payment.store_id || undefined,
-        status: payment.status || 'active', // Incluir status, por defecto 'active'
-        cancelledAt: payment.cancelled_at,
-        cancelledBy: payment.cancelled_by,
-        cancelledByName: payment.cancelled_by_name,
-        cancellationReason: payment.cancellation_reason,
-        createdAt: payment.created_at
-      }))
+      return data.map((payment) => mapPaymentRecordFromRow(payment as PaymentRecordRow, null))
     } catch (error) {
       // Error silencioso en producción
       return []
@@ -1037,7 +1048,7 @@ export class CreditsService {
 
       let query = supabase
         .from('payment_records')
-        .select('*')
+        .select(PAYMENT_RECORDS_SELECT)
         .order('payment_date', { ascending: false })
 
       // Filtrar por store_id:
@@ -1065,24 +1076,7 @@ export class CreditsService {
 
       if (error) throw error
 
-      return data.map(payment => ({
-        id: payment.id,
-        creditId: null,
-        amount: payment.amount,
-        paymentDate: payment.payment_date,
-        paymentMethod: payment.payment_method,
-        cashAmount: undefined,
-        transferAmount: undefined,
-        description: payment.description,
-        userId: payment.user_id,
-        userName: payment.user_name,
-        status: payment.status || 'active',
-        cancelledAt: payment.cancelled_at,
-        cancelledBy: payment.cancelled_by,
-        cancelledByName: payment.cancelled_by_name,
-        cancellationReason: payment.cancellation_reason,
-        createdAt: payment.created_at
-      }))
+      return data.map((payment) => mapPaymentRecordFromRow(payment as PaymentRecordRow, null))
     } catch (error) {
       // Error silencioso en producción
       return []

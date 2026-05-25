@@ -93,6 +93,24 @@ body {
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
+/*
+ * Shell principal: barra superior en fila fija + contenido con scroll debajo (tablet/móvil/desktop).
+ * Evita que sticky/fixed de la top bar tape el titular de Reportes, Productos, etc.
+ */
+.zonat-app-main {
+  min-height: 0;
+}
+
+.zonat-topbar-slot {
+  position: relative;
+  z-index: 30;
+}
+
+.zonat-app-scroll {
+  min-height: 0;
+  -webkit-overflow-scrolling: touch;
+}
+
 /* Ocultar scrollbar pero mantener scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;

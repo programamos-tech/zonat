@@ -346,7 +346,11 @@ export interface SupplierPaymentRecord {
 
 export interface PaymentRecord {
   id: string
-  creditId: string
+  /** UUID del registro en `payments` (enlace a la venta/crédito). */
+  paymentId?: string
+  /** Venta asociada al abono (vía `payments.sale_id`). */
+  saleId?: string
+  creditId: string | null
   amount: number
   paymentDate: string
   paymentMethod: 'cash' | 'transfer' | 'mixed'

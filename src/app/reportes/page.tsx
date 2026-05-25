@@ -75,6 +75,26 @@ const dashToolbarButtonClass =
 const INCOME_TREND_CHART_DAYS = 15
 const INCOME_TREND_FETCH_OFFSET = INCOME_TREND_CHART_DAYS - 1
 
+/** Margen bruto total de una venta (precio con descuento − costo) × cantidad. */
+function computeSaleGrossMargin(
+  sale: Sale,
+  productLookup: (productId: string) => { cost?: number | null } | undefined
+): number {
+  if (!sale.items?.length) return 0
+
+  return sale.items.reduce((itemProfit, item) => {
+    const cost = productLookup(item.productId)?.cost || 0
+    const baseTotal = item.quantity * item.unitPrice
+    const discountAmount =
+      item.discountType === 'percentage'
+        ? (baseTotal * (item.discount || 0)) / 100
+        : item.discount || 0
+    const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
+    const realUnitPrice = item.quantity > 0 ? salePriceAfterDiscount / item.quantity : 0
+    return itemProfit + (realUnitPrice - cost) * item.quantity
+  }, 0)
+}
+
 export default function ReportesPage() {
   const router = useRouter()
   const { sales } = useSales()
@@ -612,14 +632,22 @@ export default function ReportesPage() {
       .filter(sale => sale.status !== 'cancelled' && sale.status !== 'draft')
       .flatMap(sale => sale.items?.map(item => item.productId) || [])
       .filter(Boolean) as string[]
-    
+
+    const abonoSaleIds = new Set(
+      allPaymentRecords.map((p) => p.saleId).filter((id): id is string => Boolean(id))
+    )
+    const abonoProductIds = allSales
+      .filter((sale) => abonoSaleIds.has(sale.id))
+      .flatMap((sale) => sale.items?.map((item) => item.productId) || [])
+      .filter(Boolean) as string[]
+
     // Combinar y cargar productos únicos
-    const allProductIds = Array.from(new Set([...warrantyProductIds, ...saleProductIds]))
+    const allProductIds = Array.from(new Set([...warrantyProductIds, ...saleProductIds, ...abonoProductIds]))
     
     if (allProductIds.length > 0) {
       loadSpecificProducts(allProductIds)
     }
-  }, [allSales, allWarranties, loadSpecificProducts])
+  }, [allSales, allWarranties, allPaymentRecords, loadSpecificProducts])
 
   // Calcular métricas del dashboard
   const metrics = useMemo(() => {
@@ -842,47 +870,40 @@ export default function ReportesPage() {
     // Clientes únicos que han comprado en el período seleccionado - Excluir ventas canceladas
     const uniqueClients = new Set(activeSales.map(sale => sale.clientId)).size
 
-    // Calcular ganancia bruta (ventas - costo de productos vendidos)
-    // Excluir ventas canceladas del cálculo de ganancia bruta
-    // Para ventas a crédito: solo contar la ganancia cuando el crédito esté completado
-    const grossProfit = activeSales.reduce((totalProfit, sale) => {
-      // Si es una venta a crédito, verificar si el crédito está completado
-      if (sale.paymentMethod === 'credit') {
-        // Buscar el crédito asociado a esta venta
-        const associatedCredit = allCredits.find(c => c.saleId === sale.id)
+    const productLookup = (productId: string) =>
+      specificProductsCache.get(productId) || allProducts.find((p) => p.id === productId)
 
-        // Solo contar la ganancia si el crédito está completado
-        // Si no hay crédito asociado o no está completado, no contar la ganancia
-        if (!associatedCredit || associatedCredit.status !== 'completed') {
-          return totalProfit
-        }
-      }
+    const salesById = new Map(allSales.map((sale) => [sale.id, sale]))
+    const creditBySaleId = new Map(
+      allCredits.filter((c) => c.saleId).map((c) => [c.saleId as string, c])
+    )
 
-      if (!sale.items) return totalProfit
-
-      const saleProfit = sale.items.reduce((itemProfit, item) => {
-        // Buscar el producto para obtener su costo (primero en cache, luego en allProducts)
-        const product = specificProductsCache.get(item.productId) || allProducts.find(p => p.id === item.productId)
-        const cost = product?.cost || 0
-
-        // Calcular el precio real de venta después de descuentos
-        const baseTotal = item.quantity * item.unitPrice
-        const discountAmount = item.discountType === 'percentage'
-          ? (baseTotal * (item.discount || 0)) / 100
-          : (item.discount || 0)
-        const salePriceAfterDiscount = Math.max(0, baseTotal - discountAmount)
-
-        // El precio unitario real después de descuentos
-        const realUnitPrice = item.quantity > 0 ? salePriceAfterDiscount / item.quantity : 0
-
-        // Ganancia bruta = (precio de venta real - costo) * cantidad
-        const itemGrossProfit = (realUnitPrice - cost) * item.quantity
-
-        return itemProfit + itemGrossProfit
-      }, 0)
-
-      return totalProfit + saleProfit
+    // Ganancia bruta: ventas al contado / transferencia / mixto (del período filtrado)
+    const grossProfitFromSales = activeSales.reduce((totalProfit, sale) => {
+      if (sale.paymentMethod === 'credit') return totalProfit
+      return totalProfit + computeSaleGrossMargin(sale, productLookup)
     }, 0)
+
+    // Ganancia bruta por abonos de crédito (proporcional al monto abonado en el período)
+    const grossProfitFromCreditPayments = validPaymentRecords.reduce((sum, payment) => {
+      const saleId = payment.saleId
+      if (!saleId) return sum
+
+      const sale = salesById.get(saleId)
+      if (!sale || sale.status === 'cancelled' || sale.status === 'draft') return sum
+
+      const credit = creditBySaleId.get(saleId)
+      if (!credit || credit.status === 'cancelled') return sum
+      if (credit.totalAmount === 0 && credit.pendingAmount === 0) return sum
+
+      const saleMargin = computeSaleGrossMargin(sale, productLookup)
+      const creditBase = credit.totalAmount || sale.total || 0
+      if (creditBase <= 0 || payment.amount <= 0) return sum
+
+      return sum + saleMargin * (payment.amount / creditBase)
+    }, 0)
+
+    const grossProfit = grossProfitFromSales + grossProfitFromCreditPayments
 
     // Facturas anuladas: usar allSales (misma ventana que getDashboardSales), no filteredData.sales.
     // filteredData para "hoy" solo incluye ventas creadas ese día; una factura anulada suele crearse antes.
@@ -1093,7 +1114,17 @@ export default function ReportesPage() {
       paymentMethodData,
       topProductsChart
     }
-  }, [filteredData, allSales, allProducts, allClients, allWarranties, allCredits, optimizedMetrics, specificProductsCache])
+  }, [
+    filteredData,
+    allSales,
+    allProducts,
+    allClients,
+    allWarranties,
+    allCredits,
+    allPaymentRecords,
+    optimizedMetrics,
+    specificProductsCache,
+  ])
 
   // Función helper para formatear moneda con opción de ocultar
   const formatCurrency = (amount: number): string => {
@@ -1238,7 +1269,7 @@ export default function ReportesPage() {
   if (isInitialLoading && allSales.length === 0) {
     return (
       <RoleProtectedRoute module="dashboard" requiredAction="view">
-        <div className="min-h-screen bg-white py-4 dark:bg-neutral-950 md:py-6">
+        <div className="min-h-0 bg-white py-4 dark:bg-neutral-950 md:py-6">
           {/* Header Skeleton */}
           <div className="mb-4 md:mb-8">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
@@ -1294,7 +1325,7 @@ export default function ReportesPage() {
 
   return (
     <RoleProtectedRoute module="dashboard" requiredAction="view">
-      <div className="relative min-h-screen bg-white py-4 dark:bg-neutral-950 md:py-6">
+      <div className="relative min-h-0 bg-white py-4 dark:bg-neutral-950 md:py-6">
         {/* Overlay de carga para actualizaciones */}
         {(isRefreshing || isFiltering) && (
           <div className="absolute inset-0 bg-white/80 dark:bg-neutral-950/80 backdrop-blur-sm z-50 flex items-center justify-center">
