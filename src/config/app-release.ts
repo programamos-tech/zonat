@@ -4,6 +4,9 @@
  */
 export const CURRENT_RELEASE_ID = '2026-05-22-1'
 
+/** Pon en `true` solo cuando quieras mostrar el modal tras un deploy. */
+export const RELEASE_NOTES_MODAL_ENABLED = false
+
 export const releaseNotes = {
   title: 'Novedades',
   intro: 'Versión 2.9. Reportes, barra superior y abonos en ZONA T.',

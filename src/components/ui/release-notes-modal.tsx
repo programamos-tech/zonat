@@ -13,6 +13,7 @@ import {
 import { Button } from '@/components/ui/button'
 import {
   CURRENT_RELEASE_ID,
+  RELEASE_NOTES_MODAL_ENABLED,
   RELEASE_STORAGE_KEY,
   releaseNotes,
 } from '@/config/app-release'
@@ -30,6 +31,7 @@ export function ReleaseNotesModal() {
   }, [])
 
   useEffect(() => {
+    if (!RELEASE_NOTES_MODAL_ENABLED) return
     try {
       const seen = localStorage.getItem(RELEASE_STORAGE_KEY)
       if (seen !== CURRENT_RELEASE_ID) {
@@ -39,6 +41,10 @@ export function ReleaseNotesModal() {
       setOpen(true)
     }
   }, [])
+
+  if (!RELEASE_NOTES_MODAL_ENABLED) {
+    return null
+  }
 
   const handleOpenChange = (next: boolean) => {
     setOpen(next)

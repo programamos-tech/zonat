@@ -36,19 +36,16 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     pathname !== '/select-store' &&
     !pathname.startsWith('/sales/new')
 
-  /** Listas con paginación (ventas, productos, créditos, actividades): menos padding inferior cerca de la bottom nav (hasta xl). */
-  const compactListBottomPad =
-    pathname === '/sales' ||
-    pathname === '/inventory/products' ||
-    pathname.startsWith('/payments') ||
-    pathname === '/logs'
-      ? 'pb-[max(3.5rem,calc(2.875rem+env(safe-area-inset-bottom)))] scroll-pb-[max(3.5rem,calc(2.875rem+env(safe-area-inset-bottom)))]'
-      : 'pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))] scroll-pb-[max(4.75rem,calc(3.75rem+env(safe-area-inset-bottom)))]'
-
   // Para todas las demás páginas, mostrar el layout completo con sidebar
   return (
     <ProtectedRoute>
-      <div className="flex h-screen min-h-0 min-w-0 bg-white dark:bg-neutral-950">
+      <div
+        className={cn(
+          'flex h-dvh min-h-0 min-w-0 bg-white dark:bg-neutral-950',
+          /* Reservar hueco inferior en móvil/tablet para que el scroll no intercepte toques del menú fijo (WebKit/iPad). */
+          showMobileBottomNavInset && 'max-xl:pb-[var(--zonat-bottom-nav-height)]'
+        )}
+      >
         <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
         <main
           className={cn(
@@ -65,9 +62,6 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           <div
             className={cn(
               'zonat-app-scroll min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-neutral-950',
-              /* Alineado con bottom nav compacta (h-10/11 + safe area). */
-              showMobileBottomNavInset &&
-                `${compactListBottomPad} xl:pb-0 xl:scroll-pb-0`,
               hideMainScrollbar && 'scrollbar-hide'
             )}
           >

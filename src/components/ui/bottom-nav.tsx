@@ -131,7 +131,7 @@ export function BottomNav() {
   }, [visibleItems.length, isMounted])
 
   return (
-    <nav className="zonat-preserve-surface fixed bottom-0 left-0 right-0 z-[45] isolate xl:hidden">
+    <nav className="zonat-preserve-surface pointer-events-auto fixed bottom-0 left-0 right-0 z-[90] isolate translate-z-0 transform-gpu touch-manipulation xl:hidden">
       {/* Barra pegada al borde inferior: padding seguro dentro del contenedor para que el fondo llegue hasta abajo */}
       <div
         className="zonat-preserve-surface relative flex flex-col overflow-hidden border-t border-zinc-800 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-950 pt-0 shadow-none backdrop-blur-xl"

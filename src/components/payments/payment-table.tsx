@@ -114,7 +114,12 @@ export function CreditTable({
   }
 
   const totalDebt = credits
-    .filter(credit => credit.pendingAmount > 0)
+    .filter(
+      (credit) =>
+        credit.pendingAmount > 0 &&
+        credit.status !== 'cancelled' &&
+        !isCreditCancelled(credit)
+    )
     .reduce((sum, credit) => sum + credit.pendingAmount, 0)
 
   const filteredCredits = credits.filter(credit => {

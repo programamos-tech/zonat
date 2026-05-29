@@ -59,6 +59,7 @@ export function getConsolidatedCreditDisplayStatus(credit: Credit): Credit['stat
 
 export function isCreditCancelled(credit: Credit | undefined | null): boolean {
   if (!credit) return false
+  if (credit.status === 'cancelled') return true
   return credit.totalAmount === 0 && credit.pendingAmount === 0
 }
 

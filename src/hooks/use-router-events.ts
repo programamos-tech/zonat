@@ -1,51 +1,26 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { usePathname } from 'next/navigation'
 
 export function useRouterEvents() {
   const [isLoading, setIsLoading] = useState(false)
-  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const pathname = usePathname()
+  const isFirstRender = useRef(true)
 
   useEffect(() => {
-    // Detectar recarga de página
-    const handleBeforeUnload = () => {
-      setIsLoading(true)
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
     }
 
-    const handleLoad = () => {
+    setIsLoading(true)
+    const timer = window.setTimeout(() => {
       setIsLoading(false)
-      setIsInitialLoad(false)
-    }
+    }, 600)
 
-    // Detectar navegación
-    const handleStart = () => {
-      setIsLoading(true)
-    }
-
-    // Eventos de recarga
-    window.addEventListener('beforeunload', handleBeforeUnload)
-    window.addEventListener('load', handleLoad)
-
-    // Eventos de navegación
-    window.addEventListener('popstate', handleStart)
-
-    // Detectar cambios de ruta de Next.js
-    if (!isInitialLoad) {
-      setIsLoading(true)
-      const timer = setTimeout(() => {
-        setIsLoading(false)
-      }, 600)
-      return () => clearTimeout(timer)
-    }
-
-    return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
-      window.removeEventListener('load', handleLoad)
-      window.removeEventListener('popstate', handleStart)
-    }
-  }, [pathname, isInitialLoad])
+    return () => window.clearTimeout(timer)
+  }, [pathname])
 
   return isLoading
 }

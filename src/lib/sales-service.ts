@@ -1113,67 +1113,30 @@ export class SalesService {
       }
 
       let totalRefund = 0
-
-      // 🚀 OPTIMIZACIÓN: Obtener crédito una sola vez al inicio si es necesario
       let credit = null
+      let cancellingUserName = 'Usuario'
+
+      try {
+        const user = await AuthService.getCurrentUser()
+        if (user?.name) cancellingUserName = user.name
+      } catch {
+        // nombre por defecto
+      }
+
       if (sale.paymentMethod === 'credit') {
         const { CreditsService } = await import('./credits-service')
-        credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+        credit = await CreditsService.resolveCreditForSale({
+          id: sale.id,
+          invoiceNumber: sale.invoiceNumber,
+        })
 
         if (credit) {
-          // Para ventas a crédito, obtener todos los abonos del crédito que no estén cancelados
-          // Primero buscar el payment relacionado al crédito
-          const { data: paymentData, error: paymentError } = await supabase
-            .from('payments')
-            .select('id')
-            .eq('invoice_number', sale.invoiceNumber)
-            .eq('client_id', sale.clientId)
-            .single()
-
-          if (!paymentError && paymentData) {
-            // Obtener todos los payment_records relacionados a este payment que no estén cancelados
-            const { data: paymentRecords, error: recordsError } = await supabase
-              .from('payment_records')
-              .select('id, amount, status')
-              .eq('payment_id', paymentData.id)
-              .neq('status', 'cancelled')
-
-            if (!recordsError && paymentRecords && paymentRecords.length > 0) {
-              // Calcular el reembolso total
-              totalRefund = paymentRecords.reduce((sum, payment) => sum + (payment.amount || 0), 0)
-
-              // Obtener el nombre del usuario que está cancelando
-              let userName = 'Usuario'
-              try {
-                const { AuthService } = await import('./auth-service')
-                const user = await AuthService.getCurrentUser()
-                if (user?.name) {
-                  userName = user.name
-                }
-              } catch (error) {
-                // Error silencioso - usar nombre por defecto
-              }
-
-              // Cancelar todos los abonos del crédito
-              for (const paymentRecord of paymentRecords) {
-                const { error: cancelError } = await supabase
-                  .from('payment_records')
-                  .update({
-                    status: 'cancelled',
-                    cancelled_at: new Date().toISOString(),
-                    cancelled_by: currentUserId,
-                    cancelled_by_name: userName,
-                    cancellation_reason: `Cancelación de factura: ${sale.invoiceNumber} - ${reason}`
-                  })
-                  .eq('id', paymentRecord.id)
-
-                if (cancelError) {
-                  // Error silencioso en producción
-                  // Continuar con la anulación aunque algunos abonos no se pudieron cancelar
-                }
-              }
-            }
-          }
+          totalRefund = await CreditsService.cancelActivePaymentRecordsForCredit(
+            credit.id,
+            `Cancelación de factura: ${sale.invoiceNumber} - ${reason}`,
+            currentUserId,
+            cancellingUserName
+          )
         }
       } else if (sale.paymentMethod === 'cash' || sale.paymentMethod === 'transfer') {
         // Para ventas en efectivo o transferencia, el reembolso es el total de la venta
@@ -1215,47 +1178,46 @@ export class SalesService {
         // Continuar con la anulación aunque algunos productos no se pudieron devolver
       }
 
-      // Si es una venta a crédito, actualizar el crédito para reflejar la cancelación parcial
-      if (sale.paymentMethod === 'credit' && credit) {
-        // Recalcular el estado del crédito basado en las ventas activas
-        // Esto se moverá después de actualizar la venta
-      }
-
       // Anular la venta
-      const { error } = await supabase
+      const { error: saleCancelError } = await supabase
         .from('sales')
         .update({
           status: 'cancelled',
           cancellation_reason: reason,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id)
 
-      if (error) {
-        // Error silencioso en producción
-        throw error
+      if (saleCancelError) {
+        throw saleCancelError
       }
 
-      // Verificar que la venta se actualizó correctamente
-      const { data: updatedSale, error: verifyError } = await supabase
-        .from('sales')
-        .select('id, status, invoice_number')
-        .eq('id', id)
-        .single()
+      // Si es una venta a crédito, actualizar el crédito tras anular la factura
+      if (sale.paymentMethod === 'credit') {
+        const { CreditsService } = await import('./credits-service')
+        const cancellationReason = `Cancelación de factura: ${sale.invoiceNumber}`
 
-      if (verifyError) {
-        // Error silencioso en producción
-      } else {
+        if (!credit) {
+          credit = await CreditsService.resolveCreditForSale({
+            id: sale.id,
+            invoiceNumber: sale.invoiceNumber,
+          })
+        }
 
-        // 🚀 OPTIMIZACIÓN: Solo actualizar crédito si es necesario (evitar query redundante)
-        if (sale.paymentMethod === 'credit') {
-
-          // Usar el crédito que ya obtuvimos anteriormente en lugar de hacer otra query
-          if (credit) {
-            await this.updateCreditStatusAfterSaleCancellation(credit.id, sale.id, currentUserId)
-          } else {
-
-          }
+        if (credit) {
+          await this.updateCreditStatusAfterSaleCancellation(
+            credit.id,
+            sale.id,
+            currentUserId,
+            cancellingUserName,
+            cancellationReason
+          )
+        } else {
+          await CreditsService.markCreditCancelledForSaleIfExists(sale.id, {
+            reason: `${cancellationReason} - ${reason}`,
+            userId: currentUserId,
+            userName: cancellingUserName,
+          })
         }
       }
 
@@ -1287,122 +1249,90 @@ export class SalesService {
   }
 
   // Actualizar el estado del crédito después de cancelar una venta
-  static async updateCreditStatusAfterSaleCancellation(creditId: string, cancelledSaleId: string, cancellingUserId: string): Promise<void> {
+  static async updateCreditStatusAfterSaleCancellation(
+    creditId: string,
+    cancelledSaleId: string,
+    cancellingUserId: string,
+    cancellingUserName = 'Usuario',
+    cancellationReason?: string
+  ): Promise<void> {
     try {
+      const { CreditsService } = await import('./credits-service')
 
-      // Obtener la venta cancelada para obtener el cliente
       const cancelledSale = await this.getSaleById(cancelledSaleId)
       if (!cancelledSale) {
-        // Error silencioso en producción
         return
       }
 
-      // Obtener todas las ventas con el mismo número de factura (crédito específico)
-      const { data: allSales, error: salesError } = await supabase
+      const reason =
+        cancellationReason ||
+        `Cancelación de factura: ${cancelledSale.invoiceNumber}`
+
+      const { data: allSales, error: salesError } = await supabaseAdmin
         .from('sales')
-        .select('*')
+        .select('id, status, total')
         .eq('invoice_number', cancelledSale.invoiceNumber)
         .order('created_at', { ascending: true })
 
-      if (salesError) {
-        // Error silencioso en producción
+      if (salesError || !allSales?.length) {
+        await CreditsService.markCreditAsCancelled(creditId, {
+          reason,
+          userId: cancellingUserId,
+          userName: cancellingUserName,
+        })
         return
       }
 
-      if (!allSales || allSales.length === 0) {
+      const activeSales = allSales.filter((sale) => sale.status !== 'cancelled')
 
-        return
-      }
-
-      // Calcular totales solo de ventas activas (no canceladas)
-      const activeSales = allSales.filter(sale => sale.status !== 'cancelled')
-      const totalAmount = activeSales.reduce((sum, sale) => sum + sale.total, 0)
-
-      // Si no hay ventas activas, el crédito debe cancelarse completamente
       if (activeSales.length === 0) {
-        // Obtener información del crédito antes de actualizarlo para el log
-        const { data: creditBeforeUpdate, error: creditBeforeError } = await supabase
+        const { data: creditBeforeUpdate } = await supabaseAdmin
           .from('credits')
           .select('*')
           .eq('id', creditId)
-          .single()
+          .maybeSingle()
 
-        // Obtener el nombre del usuario que está cancelando
-        let userName = 'Usuario'
-        try {
-          const { AuthService } = await import('./auth-service')
-          const user = await AuthService.getCurrentUser()
-          if (user?.name) {
-            userName = user.name
-          }
-        } catch (error) {
-          // Error silencioso - usar nombre por defecto
-        }
+        await CreditsService.markCreditAsCancelled(creditId, {
+          reason,
+          userId: cancellingUserId,
+          userName: cancellingUserName,
+        })
 
-        // Actualizar el crédito: poner montos en 0 y cambiar estado a cancelled
-        const { error: updateError } = await supabase
-          .from('credits')
-          .update({
-            total_amount: 0,
-            pending_amount: 0,
-            paid_amount: 0,
-            status: 'cancelled',
-            cancelled_at: new Date().toISOString(),
-            cancelled_by: cancellingUserId,
-            cancelled_by_name: userName,
-            cancellation_reason: `Cancelación de factura: ${cancelledSale.invoiceNumber}`,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', creditId)
-
-        if (updateError) {
-          // Error silencioso en producción
-          throw updateError
-        }
-
-        // Log de cancelación de crédito
         if (creditBeforeUpdate && cancellingUserId) {
           try {
-            const { AuthService } = await import('./auth-service')
-            await AuthService.logActivity(
-              cancellingUserId,
-              'credit_cancelled',
-              'credits',
-              {
-                description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
-                creditId: creditId,
-                invoiceNumber: creditBeforeUpdate.invoice_number,
-                clientName: creditBeforeUpdate.client_name,
-                totalAmount: creditBeforeUpdate.total_amount,
-                paidAmount: creditBeforeUpdate.paid_amount || 0,
-                reason: 'Cancelación de factura asociada',
-                cancelledSaleId: cancelledSaleId
-              }
-            )
-          } catch (logError) {
-            // Error silencioso en producción
+            await AuthService.logActivity(cancellingUserId, 'credit_cancelled', 'credits', {
+              description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
+              creditId,
+              invoiceNumber: creditBeforeUpdate.invoice_number,
+              clientName: creditBeforeUpdate.client_name,
+              totalAmount: creditBeforeUpdate.total_amount,
+              paidAmount: creditBeforeUpdate.paid_amount || 0,
+              reason: 'Cancelación de factura asociada',
+              cancelledSaleId,
+            })
+          } catch {
+            // log opcional
           }
         }
 
         return
       }
 
-      // Obtener el monto pagado actual del crédito
-      const { data: creditData, error: creditError } = await supabase
+      const totalAmount = activeSales.reduce((sum, sale) => sum + (sale.total || 0), 0)
+
+      const { data: creditData, error: creditError } = await supabaseAdmin
         .from('credits')
         .select('paid_amount')
         .eq('id', creditId)
         .single()
 
       if (creditError) {
-        // Error silencioso en producción
         return
       }
 
       const paidAmount = creditData.paid_amount || 0
-      const pendingAmount = totalAmount - paidAmount
+      const pendingAmount = Math.max(0, totalAmount - paidAmount)
 
-      // Determinar el nuevo estado del crédito
       let newStatus = 'pending'
       if (pendingAmount <= 0) {
         newStatus = 'completed'
@@ -1410,60 +1340,20 @@ export class SalesService {
         newStatus = 'partial'
       }
 
-      // Obtener información del crédito antes de actualizarlo para el log
-      const { data: creditBeforeUpdate, error: creditBeforeError } = await supabase
-        .from('credits')
-        .select('*')
-        .eq('id', creditId)
-        .single()
-
-      // Actualizar el crédito
-      const { error: updateError } = await supabase
+      const { error: updateError } = await supabaseAdmin
         .from('credits')
         .update({
           total_amount: totalAmount,
           pending_amount: pendingAmount,
           status: newStatus,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', creditId)
 
       if (updateError) {
-        // Error silencioso en producción
         throw updateError
       }
-
-      // Si no hay ventas activas, el crédito fue cancelado completamente
-      if (activeSales.length === 0 && creditBeforeUpdate) {
-        // Obtener historial de pagos para calcular el total a devolver
-        const { CreditsService } = await import('./credits-service')
-        const paymentHistory = await CreditsService.getPaymentHistory(creditId)
-        const totalRefund = paymentHistory.reduce((sum, payment) => sum + payment.amount, 0)
-
-        // Log de cancelación de crédito
-        if (cancellingUserId) {
-          const { AuthService } = await import('./auth-service')
-          await AuthService.logActivity(
-            cancellingUserId,
-            'credit_cancelled',
-            'credits',
-            {
-              description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
-              creditId: creditId,
-              invoiceNumber: creditBeforeUpdate.invoice_number,
-              clientName: creditBeforeUpdate.client_name,
-              totalAmount: creditBeforeUpdate.total_amount,
-              paidAmount: creditBeforeUpdate.paid_amount || 0,
-              totalRefund: totalRefund,
-              reason: 'Cancelación de factura asociada',
-              cancelledSaleId: cancelledSaleId
-            }
-          )
-        }
-      }
-
     } catch (error) {
-      // Error silencioso en producción
       throw error
     }
   }

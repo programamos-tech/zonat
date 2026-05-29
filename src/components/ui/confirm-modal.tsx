@@ -1,5 +1,7 @@
 'use client'
 
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
 import { AlertTriangle, Info, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
@@ -16,7 +18,7 @@ interface ConfirmModalProps {
 }
 
 const overlayClass =
-  'fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
+  'fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56'
 
 const shellClass =
   'w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900'
@@ -31,7 +33,13 @@ export function ConfirmModal({
   cancelText = 'Cancelar',
   type = 'danger',
 }: ConfirmModalProps) {
-  if (!isOpen) return null
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!isOpen || !mounted) return null
 
   const Icon = type === 'info' ? Info : AlertTriangle
   const iconClass =
@@ -41,7 +49,7 @@ export function ConfirmModal({
         ? 'text-amber-600 dark:text-amber-400'
         : 'text-zinc-500 dark:text-zinc-400'
 
-  return (
+  const modal = (
     <div className={overlayClass} role="presentation">
       <div
         className={shellClass}
@@ -91,4 +99,6 @@ export function ConfirmModal({
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }
