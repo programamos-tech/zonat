@@ -927,6 +927,82 @@ export class ProductsService {
     return results
   }
 
+  /** Productos completos por IDs, en el orden de `ids` (para rejilla POS / más vendidos). */
+  static async getFullProductsByIds(ids: string[]): Promise<Product[]> {
+    if (ids.length === 0) return []
+
+    const orderedIds = ids.filter((id, index) => ids.indexOf(id) === index)
+    const currentStoreId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+
+    const { data, error } = await supabaseAdmin
+      .from('products')
+      .select('*')
+      .in('id', orderedIds)
+
+    if (error || !data?.length) return []
+
+    const stockMap = await this.getProductsStockForStore(
+      data.map((row: { id: string }) => row.id),
+      currentStoreId
+    )
+
+    let costPriceMap = new Map<string, { cost: number | null; price: number | null }>()
+    if (!isMainStore && currentStoreId) {
+      const { data: storeStockData } = await supabaseAdmin
+        .from('store_stock')
+        .select('product_id, cost, price')
+        .eq('store_id', currentStoreId)
+        .in('product_id', data.map((row: { id: string }) => row.id))
+
+      if (storeStockData) {
+        storeStockData.forEach((item: { product_id: string; cost: number | null; price: number | null }) => {
+          costPriceMap.set(item.product_id, { cost: item.cost, price: item.price })
+        })
+      }
+    }
+
+    const byId = new Map<string, Product>()
+    for (const row of data) {
+      const stock = stockMap.get(row.id) || { warehouse: 0, store: 0, total: 0 }
+      let productCost = row.cost ?? 0
+      let productPrice = row.price ?? 0
+
+      if (!isMainStore && currentStoreId) {
+        const storeStockCostPrice = costPriceMap.get(row.id)
+        if (storeStockCostPrice) {
+          productCost =
+            storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0
+              ? storeStockCostPrice.cost
+              : row.price ?? 0
+          productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
+        } else {
+          productCost = row.price ?? 0
+          productPrice = 0
+        }
+      }
+
+      byId.set(row.id, {
+        id: row.id,
+        name: row.name,
+        description: row.description,
+        categoryId: row.category_id,
+        brand: row.brand,
+        reference: row.reference,
+        price: productPrice,
+        cost: productCost,
+        stock,
+        status: row.status,
+        imageUrl: row.image_url || undefined,
+        createdAt: row.created_at,
+        updatedAt: row.updated_at,
+      })
+    }
+
+    return orderedIds.map((id) => byId.get(id)).filter((p): p is Product => Boolean(p))
+  }
+
   // Crear nuevo producto
   static async createProduct(productData: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>, currentUserId?: string): Promise<Product | null> {
     try {

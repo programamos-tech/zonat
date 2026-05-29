@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/ui/sidebar'
 import { ProtectedRoute } from '@/components/auth/protected-route'
 import { useState } from 'react'
 import { useStoreUrl } from '@/hooks/use-store-url'
+import { useSalesPosPreference } from '@/hooks/use-sales-pos-preference'
 import { cn } from '@/lib/utils'
 import { ReleaseNotesModal } from '@/components/ui/release-notes-modal'
 import { AppTopBar } from '@/components/layout/app-top-bar'
@@ -16,6 +17,7 @@ interface ConditionalLayoutProps {
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const { posMode, ready: posPrefReady } = useSalesPosPreference()
   
   // Actualizar URL con el identificador de la tienda
   useStoreUrl()
@@ -25,10 +27,13 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
     return <>{children}</>
   }
   
+  const isPosSalePage = pathname.startsWith('/sales/new') && posPrefReady && posMode
+
   // Nueva venta y detalle de factura: scroll sin barras (vertical u horizontal)
   const hideMainScrollbar = pathname.startsWith('/sales/')
 
-  const showTopBar = !pathname.startsWith('/sales/new')
+  // Modo POS en facturación: mantener barra superior global (búsqueda, notificaciones, usuario)
+  const showTopBar = !pathname.startsWith('/sales/new') || isPosSalePage
 
   // Misma regla que MobileNavWrapper: sin barra inferior → no reservar hueco
   const showMobileBottomNavInset =
@@ -46,12 +51,13 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           showMobileBottomNavInset && 'max-xl:pb-[var(--zonat-bottom-nav-height)]'
         )}
       >
-        <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
+        {!isPosSalePage && <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />}
         <main
           className={cn(
-            'zonat-app-main relative z-10 grid min-h-0 min-w-0 w-full flex-1 overflow-hidden bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
+            'zonat-app-main relative z-10 grid min-h-0 min-w-0 w-full flex-1 overflow-hidden bg-white transition-all duration-300 dark:bg-neutral-950',
+            !isPosSalePage && 'xl:ml-60',
             showTopBar ? 'grid-rows-[auto_1fr]' : 'grid-rows-[1fr]',
-            isMobileMenuOpen && 'blur-sm'
+            isMobileMenuOpen && !isPosSalePage && 'blur-sm'
           )}
         >
           {showTopBar && (
@@ -61,14 +67,21 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           )}
           <div
             className={cn(
-              'zonat-app-scroll min-h-0 min-w-0 overflow-y-auto overflow-x-hidden overscroll-contain bg-white dark:bg-neutral-950',
+              'zonat-app-scroll min-h-0 min-w-0 overscroll-contain bg-white dark:bg-neutral-950',
+              isPosSalePage
+                ? 'overflow-hidden'
+                : 'overflow-y-auto overflow-x-hidden',
               hideMainScrollbar && 'scrollbar-hide'
             )}
           >
-            {/* +1px horizontal vs px-* evita que overflow-auto recorte el borde de las cards a ancho completo */}
-            <div className="box-border w-full min-w-0 max-w-full px-[13px] md:px-[25px] xl:px-[33px] 2xl:px-[41px]">
-              {children}
-            </div>
+            {isPosSalePage ? (
+              children
+            ) : (
+              /* +1px horizontal vs px-* evita que overflow-auto recorte el borde de las cards a ancho completo */
+              <div className="box-border w-full min-w-0 max-w-full px-[13px] md:px-[25px] xl:px-[33px] 2xl:px-[41px]">
+                {children}
+              </div>
+            )}
           </div>
         </main>
       </div>

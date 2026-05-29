@@ -16,6 +16,7 @@ import {
 import { UserAvatar } from '@/components/ui/user-avatar'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { SidebarThemeToggle } from '@/components/ui/sidebar-theme-toggle'
+import { SalesPosModeToggle } from '@/components/sales/sales-pos-mode-toggle'
 import { cn } from '@/lib/utils'
 import { cardShell } from '@/lib/card-shell'
 
@@ -89,6 +90,15 @@ export default function ProfilePage() {
                 Apariencia
               </p>
               <SidebarThemeToggle className="w-full max-w-sm" />
+            </CardContent>
+          </Card>
+
+          <Card className={cn(cardShell, 'mb-4')}>
+            <CardContent className="p-4 md:p-5">
+              <p className="mb-3 text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                Facturación
+              </p>
+              <SalesPosModeToggle className="border-0 bg-transparent p-0 dark:bg-transparent" />
             </CardContent>
           </Card>
 

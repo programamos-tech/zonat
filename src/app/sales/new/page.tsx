@@ -18,7 +18,8 @@ import {
   AlertTriangle,
   CheckCircle,
   ArrowLeft,
-  ShoppingCart
+  ShoppingCart,
+  LayoutGrid
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
@@ -30,6 +31,9 @@ import { useAuth } from '@/contexts/auth-context'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { cardShell } from '@/lib/card-shell'
 import { isStoreClient } from '@/lib/client-helpers'
+import { useSalesPosPreference } from '@/hooks/use-sales-pos-preference'
+import { useTopSoldProducts } from '@/hooks/use-top-sold-products'
+import { PosSaleView } from '@/components/sales/pos-sale-view'
 
 // Constante para identificar la tienda principal
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
@@ -45,6 +49,8 @@ export default function NewSalePage() {
   const { products, refreshProducts, searchProducts } = useProducts()
   const { createSale } = useSales()
   const { user } = useAuth()
+  const { posMode, setPosMode, ready: posPrefReady } = useSalesPosPreference()
+  const { products: topSoldProducts, loading: topSoldLoading } = useTopSoldProducts(posPrefReady && posMode)
   
   // Detectar si es tienda principal o microtienda
   const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
@@ -57,7 +63,6 @@ export default function NewSalePage() {
   const [debouncedProductSearch, setDebouncedProductSearch] = useState('')
   const [showClientDropdown, setShowClientDropdown] = useState(false)
   const [showProductDropdown, setShowProductDropdown] = useState(false)
-  const [includeTax, setIncludeTax] = useState(false)
   const [invoiceNumber, setInvoiceNumber] = useState<string>('Pendiente')
   const [stockAlert, setStockAlert] = useState<{show: boolean, message: string, productId?: string}>({show: false, message: ''})
   const [highlightedProductIndex, setHighlightedProductIndex] = useState<number>(-1)
@@ -257,6 +262,29 @@ export default function NewSalePage() {
   }, [products, debouncedProductSearch, searchedProducts, isSearchingProducts])
 
   const visibleProducts = useMemo(() => filteredProducts.slice(0, 15), [filteredProducts])
+
+  const posBestsellerProducts = useMemo(() => {
+    const ranked = [...topSoldProducts]
+
+    if (ranked.length < 16) {
+      const seen = new Set(ranked.map((p) => p.id))
+      for (const p of products) {
+        if (seen.has(p.id) || p.status !== 'active') continue
+        if ((p.stock.store || 0) + (p.stock.warehouse || 0) <= 0) continue
+        ranked.push(p)
+        if (ranked.length >= 48) break
+      }
+    }
+
+    return ranked
+  }, [topSoldProducts, products])
+
+  const posGridProducts = useMemo(() => {
+    if (productSearch.trim().length > 0) {
+      return filteredProducts
+    }
+    return posBestsellerProducts
+  }, [productSearch, filteredProducts, posBestsellerProducts])
 
   // Limpiar referencias cuando cambian los productos visibles
   useEffect(() => {
@@ -514,13 +542,7 @@ export default function NewSalePage() {
     return calculated
   }, [validProductsForTotal])
 
-  const tax = useMemo(() => {
-    return includeTax ? subtotal * 0.19 : 0
-  }, [subtotal, includeTax])
-
-  const total = useMemo(() => {
-    return subtotal + tax
-  }, [subtotal, tax])
+  const total = subtotal
 
   const getTotalMixedPayments = () => {
     return mixedPayments.reduce((sum, payment) => sum + (payment.amount || 0), 0)
@@ -663,7 +685,7 @@ export default function NewSalePage() {
       clientName: selectedClient.name,
       total: total,
       subtotal: subtotal,
-      tax: tax,
+      tax: 0,
       discount: 0,
       discountType: 'amount',
       status: 'completed',
@@ -707,6 +729,67 @@ export default function NewSalePage() {
     </div>
   ) : null
 
+  const canSaveSale =
+    !isCreating &&
+    !!selectedClient &&
+    selectedProducts.length > 0 &&
+    validProducts.length > 0 &&
+    !!paymentMethod &&
+    !validProducts.some((item) => !item.unitPrice || item.unitPrice <= 0)
+
+  if (posPrefReady && posMode) {
+    return (
+      <RoleProtectedRoute module="sales" requiredAction="create">
+        <PosSaleView
+          onBack={() => router.push('/sales')}
+          onSwitchToClassic={() => setPosMode(false)}
+          invoiceNumber={invoiceNumber}
+          orderedSelectedProducts={orderedSelectedProducts}
+          orderedValidProducts={orderedValidProducts}
+          selectedClient={selectedClient}
+          clientSearch={clientSearch}
+          setClientSearch={setClientSearch}
+          showClientDropdown={showClientDropdown}
+          setShowClientDropdown={setShowClientDropdown}
+          filteredClients={filteredClients}
+          setSelectedClient={setSelectedClient}
+          handleRemoveClient={handleRemoveClient}
+          getClientTypeColor={getClientTypeColor}
+          productSearch={productSearch}
+          setProductSearch={setProductSearch}
+          isSearchingProducts={isSearchingProducts}
+          gridProducts={posGridProducts}
+          loadingBestsellers={topSoldLoading}
+          onAddProduct={handleAddProduct}
+          onRemoveProduct={handleRemoveProduct}
+          onUpdateQuantity={handleUpdateQuantity}
+          onUpdatePrice={handleUpdatePrice}
+          onPriceBlur={handlePriceBlur}
+          formatInputNumber={formatNumber}
+          parseInputNumber={parseNumber}
+          findProductById={findProductById}
+          paymentMethod={paymentMethod}
+          setPaymentMethod={setPaymentMethod}
+          showMixedPayments={showMixedPayments}
+          mixedPayments={mixedPayments}
+          updateMixedPayment={updateMixedPayment}
+          paymentError={paymentError}
+          getPaymentTypeLabel={getPaymentTypeLabel}
+          getTotalMixedPayments={getTotalMixedPayments}
+          receivedAmount={receivedAmount}
+          setReceivedAmount={setReceivedAmount}
+          total={total}
+          formatCurrency={formatCurrency}
+          handleSave={handleSave}
+          isCreating={isCreating}
+          canSave={canSaveSale}
+          saleBlockingAlert={saleBlockingAlert}
+          validProducts={validProducts}
+        />
+      </RoleProtectedRoute>
+    )
+  }
+
   return (
     <RoleProtectedRoute module="sales" requiredAction="create">
       <div className="min-h-screen bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
@@ -737,6 +820,16 @@ export default function NewSalePage() {
                 <p className="mt-1 font-mono text-xs text-zinc-500 dark:text-zinc-400">{invoiceNumber}</p>
               )}
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setPosMode(true)}
+              className="shrink-0 touch-manipulation"
+            >
+              <LayoutGrid className="mr-1.5 h-4 w-4" strokeWidth={1.5} />
+              Modo POS
+            </Button>
           </div>
         </header>
 
@@ -1277,32 +1370,8 @@ export default function NewSalePage() {
                         })}
                       </div>
 
-                      <div className="space-y-2 border-t border-zinc-200 pt-3 dark:border-zinc-800">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-zinc-500 dark:text-zinc-400">Subtotal</span>
-                          <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                            {formatCurrency(subtotal)}
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-zinc-500 dark:text-zinc-400">IVA (19%)</span>
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              checked={includeTax}
-                              onChange={(e) => setIncludeTax(e.target.checked)}
-                              className="h-3.5 w-3.5 rounded border-zinc-300 text-zinc-900 focus:ring-zinc-400 dark:border-zinc-600"
-                            />
-                            <span className="text-xs text-zinc-500">Incluir</span>
-                          </div>
-                        </div>
-                        {includeTax && (
-                          <div className="flex justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                            <span>IVA calculado</span>
-                            <span className="tabular-nums">{formatCurrency(tax)}</span>
-                          </div>
-                        )}
-                        <div className="flex justify-between border-t border-zinc-200 pt-2 text-base font-bold dark:border-zinc-800">
+                      <div className="border-t border-zinc-200 pt-3 dark:border-zinc-800">
+                        <div className="flex justify-between text-base font-bold">
                           <span className="text-zinc-900 dark:text-zinc-50">Total</span>
                           <span className="tabular-nums text-emerald-700 dark:text-emerald-400">{formatCurrency(total)}</span>
                         </div>

@@ -2027,4 +2027,50 @@ export class SalesService {
     }
     return map
   }
+
+  /** Productos más vendidos (últimos N días) para rejilla POS. */
+  static async getTopSoldProductIds(
+    options: { limit?: number; lookbackDays?: number; maxSales?: number } = {}
+  ): Promise<Array<{ productId: string; quantitySold: number }>> {
+    const { limit = 48, lookbackDays = 90, maxSales = 2000 } = options
+    const storeId = getCurrentUserStoreId()
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const since = new Date()
+    since.setDate(since.getDate() - lookbackDays)
+
+    try {
+      let query = supabase
+        .from('sales')
+        .select('sale_items(product_id, quantity)')
+        .neq('status', 'cancelled')
+        .gte('created_at', since.toISOString())
+        .order('created_at', { ascending: false })
+        .limit(maxSales)
+
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query
+      if (error || !data?.length) return []
+
+      const counts = new Map<string, number>()
+      for (const sale of data) {
+        for (const item of sale.sale_items || []) {
+          const productId = item?.product_id as string | undefined
+          if (!productId) continue
+          counts.set(productId, (counts.get(productId) || 0) + (Number(item.quantity) || 0))
+        }
+      }
+
+      return [...counts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, limit)
+        .map(([productId, quantitySold]) => ({ productId, quantitySold }))
+    } catch {
+      return []
+    }
+  }
 }
