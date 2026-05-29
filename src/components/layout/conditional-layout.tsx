@@ -51,13 +51,12 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
           showMobileBottomNavInset && 'max-xl:pb-[var(--zonat-bottom-nav-height)]'
         )}
       >
-        {!isPosSalePage && <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />}
+        <Sidebar onMobileMenuToggle={setIsMobileMenuOpen} />
         <main
           className={cn(
-            'zonat-app-main relative z-10 grid min-h-0 min-w-0 w-full flex-1 overflow-hidden bg-white transition-all duration-300 dark:bg-neutral-950',
-            !isPosSalePage && 'xl:ml-60',
+            'zonat-app-main relative z-10 grid min-h-0 min-w-0 w-full flex-1 overflow-hidden bg-white transition-all duration-300 dark:bg-neutral-950 xl:ml-60',
             showTopBar ? 'grid-rows-[auto_1fr]' : 'grid-rows-[1fr]',
-            isMobileMenuOpen && !isPosSalePage && 'blur-sm'
+            isMobileMenuOpen && 'blur-sm'
           )}
         >
           {showTopBar && (
