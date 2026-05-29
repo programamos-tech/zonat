@@ -17,6 +17,8 @@
 :root {
   /* Altura de la bottom nav (h-11 + safe area); tablet usa h-12 vía media query. */
   --zonat-bottom-nav-height: calc(2.75rem + env(safe-area-inset-bottom, 0px));
+  /* AppTopBar (min-h 3.25rem + borde); modales en portal no deben taparla. */
+  --zonat-topbar-height: 3.25rem;
 }
 
 @media (min-width: 768px) {

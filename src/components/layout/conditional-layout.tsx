@@ -32,8 +32,8 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   // Nueva venta y detalle de factura: scroll sin barras (vertical u horizontal)
   const hideMainScrollbar = pathname.startsWith('/sales/')
 
-  // Modo POS en facturación: mantener barra superior global (búsqueda, notificaciones, usuario)
-  const showTopBar = !pathname.startsWith('/sales/new') || isPosSalePage
+  // Barra superior global en todas las pantallas del panel (incl. nueva factura clásica y POS)
+  const showTopBar = true
 
   // Misma regla que MobileNavWrapper: sin barra inferior → no reservar hueco
   const showMobileBottomNavInset =
