@@ -6,7 +6,6 @@ import { Heart, Package } from 'lucide-react'
 import type { PublicCatalogProduct } from '@/lib/public-catalog'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
 import { useTiendaFavorites } from '@/contexts/tienda-favorites-context'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 function formatCOP(n: number) {
@@ -81,12 +80,14 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
         </Link>
         <p className="mt-2 text-base font-bold tabular-nums text-zinc-900">{formatCOP(product.price)}</p>
 
-        <Button
+        <button
           type="button"
-          size="sm"
           disabled={out}
-          variant="outline"
-          className="mt-3 h-9 w-full rounded-full border-zinc-300 text-xs font-semibold hover:border-emerald-500 hover:bg-emerald-50 hover:text-emerald-900 disabled:opacity-40"
+          className={cn(
+            'mt-3 inline-flex h-9 w-full items-center justify-center rounded-full border border-zinc-300 bg-white text-xs font-semibold text-zinc-800 transition-colors',
+            'hover:border-zinc-900 hover:bg-zinc-900 hover:text-white',
+            'disabled:cursor-not-allowed disabled:opacity-40'
+          )}
           onClick={() => {
             if (out) return
             addLine({
@@ -100,7 +101,7 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
           }}
         >
           Agregar al carrito
-        </Button>
+        </button>
       </div>
     </article>
   )
