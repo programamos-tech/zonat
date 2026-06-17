@@ -21,18 +21,18 @@ export function CatalogStorefront({
 
   const filtered = useMemo(() => {
     const t = q.trim().toLowerCase()
-    if (!t) return products
-    return products.filter(
-      (p) =>
-        p.name.toLowerCase().includes(t) ||
-        p.reference.toLowerCase().includes(t) ||
-        p.brand.toLowerCase().includes(t) ||
-        (p.categoryName?.toLowerCase().includes(t) ?? false) ||
-        p.description.toLowerCase().includes(t)
-    )
+    const list = t
+      ? products.filter(
+          (p) =>
+            p.name.toLowerCase().includes(t) ||
+            p.reference.toLowerCase().includes(t) ||
+            p.brand.toLowerCase().includes(t) ||
+            (p.categoryName?.toLowerCase().includes(t) ?? false) ||
+            p.description.toLowerCase().includes(t)
+        )
+      : products
+    return list
   }, [products, q])
-
-  const inStockCount = filtered.filter((p) => p.inStock).length
 
   return (
     <div className="flex min-h-dvh flex-col bg-white">
@@ -76,13 +76,8 @@ export function CatalogStorefront({
                 <p>
                   <span className="font-semibold text-zinc-800">{filtered.length}</span>
                   {filtered.length === 1 ? ' producto' : ' productos'}
-                  {q.trim() ? ' encontrados' : ' en catálogo'}
+                  {q.trim() ? ' encontrados' : ' disponibles'}
                 </p>
-                {inStockCount > 0 && (
-                  <p>
-                    <span className="font-semibold text-emerald-700">{inStockCount}</span> con stock
-                  </p>
-                )}
               </div>
 
               <div className="grid grid-cols-2 gap-x-4 gap-y-8 sm:grid-cols-3 lg:grid-cols-4 xl:gap-x-6">

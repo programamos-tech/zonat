@@ -183,6 +183,7 @@ async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCa
       .from('store_stock')
       .select(`quantity, price, product_id, products!inner(${productSelect})`)
       .eq('store_id', storeId)
+      .gt('quantity', 0)
       .order('quantity', { ascending: false })
       .range(offset, offset + STOCK_PAGE - 1)
 
@@ -213,6 +214,7 @@ async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCa
       const status = String(product.status ?? 'active')
       if (status !== 'active' && status !== 'out_of_stock') return null
       const quantity = Math.max(0, Math.floor(Number(stockRow.quantity ?? 0)))
+      if (quantity < 1) return null
       const salePrice = resolveSalePrice(
         Number(stockRow.price ?? 0),
         Number(product.price ?? 0)
@@ -221,17 +223,14 @@ async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCa
     })
     .filter((p): p is PublicCatalogProduct => Boolean(p))
 
-  products.sort((a, b) => {
-    if (a.inStock !== b.inStock) return a.inStock ? -1 : 1
-    return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
-  })
+  products.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
 
   return products
 }
 
 /**
  * Catálogo público focalizado en la microtienda configurada (telefonía por defecto).
- * Lista productos asignados en store_stock, con stock y precio de esa sucursal.
+ * Solo productos con stock > 0 en esa sucursal.
  */
 export async function getPublicCatalogProducts(): Promise<PublicCatalogProduct[]> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -285,6 +284,9 @@ export async function getPublicProductDetailById(id: string): Promise<PublicProd
   }
 
   const quantity = Math.max(0, Math.floor(Number((stockRow as StoreStockRow).quantity ?? 0)))
+  if (quantity < 1) {
+    return null
+  }
   const salePrice = resolveSalePrice(
     Number((stockRow as StoreStockRow).price ?? 0),
     Number(product.price ?? 0)
