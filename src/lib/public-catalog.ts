@@ -1,7 +1,11 @@
+import { getPublicCatalogStoreId } from '@/config/public-catalog'
 import { supabaseAdmin } from '@/lib/supabase'
 
-/** Tienda principal del sistema (catálogo / bodega). */
+/** Tienda principal del sistema (catálogo legacy / bodega). */
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+const STOCK_PAGE = 1000
+const MAX_CATALOG_ROWS = 2500
 
 /**
  * Solo URLs absolutas del Storage del proyecto (o rutas relativas resueltas contra Supabase).
@@ -62,6 +66,14 @@ export type PublicStoreAvailability = {
   isMain: boolean
 }
 
+export type PublicCatalogStoreInfo = {
+  id: string
+  name: string
+  city: string | null
+  address: string | null
+  phone: string | null
+}
+
 export type PublicProductDetail = PublicCatalogProduct & {
   stockWarehouse: number
   stockStoreFloor: number
@@ -69,61 +81,169 @@ export type PublicProductDetail = PublicCatalogProduct & {
   mainStoreCity: string | null
   /** Microtiendas con stock > 0 (la principal va en stockWarehouse / stockStoreFloor). */
   microStores: PublicStoreAvailability[]
-  /** Suma bodega + mostrador principal + microtiendas. */
+  /** Suma bodega + mostrador principal + microtiendas (o stock de la microtienda en catálogo focalizado). */
   totalUnits: number
+  /** Catálogo de una sola microtienda (p. ej. telefonía). */
+  singleStoreCatalog?: boolean
 }
 
-const MAX_ROWS = 800
+type ProductRow = {
+  id: string
+  name?: string | null
+  reference?: string | null
+  description?: string | null
+  price?: number | null
+  brand?: string | null
+  image_url?: string | null
+  status?: string | null
+  category_id?: string | null
+}
+
+type StoreStockRow = {
+  quantity?: number | null
+  price?: number | null
+  product_id?: string | null
+  products?: ProductRow | ProductRow[] | null
+}
+
+function resolveProductJoin(row: StoreStockRow): ProductRow | null {
+  const p = row.products
+  if (!p) return null
+  return Array.isArray(p) ? p[0] ?? null : p
+}
+
+function resolveSalePrice(storePrice: number, productPrice: number): number {
+  if (storePrice > 0) return storePrice
+  if (productPrice > 0) return productPrice
+  return 0
+}
+
+async function loadCategoryMap(catIds: string[]): Promise<Map<string, string>> {
+  if (catIds.length === 0) return new Map()
+  const { data: cats } = await supabaseAdmin.from('categories').select('id, name').in('id', catIds)
+  if (!cats) return new Map()
+  return new Map(cats.map((c: { id: string; name: string }) => [c.id, c.name]))
+}
+
+function mapProductToCatalog(
+  row: ProductRow,
+  quantity: number,
+  salePrice: number,
+  catMap: Map<string, string>
+): PublicCatalogProduct {
+  const status = String(row.status ?? 'active')
+  const cid = row.category_id
+  return {
+    id: String(row.id),
+    name: String(row.name ?? ''),
+    reference: String(row.reference ?? ''),
+    description: String(row.description ?? ''),
+    price: salePrice,
+    brand: String(row.brand ?? ''),
+    imageUrl: normalizePublicProductImageUrl(row.image_url ? String(row.image_url) : null),
+    categoryName: cid ? catMap.get(cid)?.trim() || null : null,
+    inStock: quantity > 0 && status !== 'out_of_stock',
+    status
+  }
+}
+
+export async function getPublicCatalogStoreInfo(
+  storeId = getPublicCatalogStoreId()
+): Promise<PublicCatalogStoreInfo | null> {
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY || !storeId) return null
+
+  const { data, error } = await supabaseAdmin
+    .from('stores')
+    .select('id, name, city, address, phone')
+    .eq('id', storeId)
+    .eq('is_active', true)
+    .is('deleted_at', null)
+    .maybeSingle()
+
+  if (error || !data) return null
+
+  return {
+    id: String(data.id),
+    name: String(data.name ?? 'ZONA T').trim() || 'ZONA T',
+    city: data.city != null ? String(data.city).trim() || null : null,
+    address: data.address != null ? String(data.address).trim() || null : null,
+    phone: data.phone != null ? String(data.phone).trim() || null : null
+  }
+}
+
+async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCatalogProduct[]> {
+  const productSelect =
+    'id, name, reference, description, price, brand, image_url, status, category_id'
+
+  const rows: StoreStockRow[] = []
+  let offset = 0
+
+  while (rows.length < MAX_CATALOG_ROWS) {
+    const { data, error } = await supabaseAdmin
+      .from('store_stock')
+      .select(`quantity, price, product_id, products!inner(${productSelect})`)
+      .eq('store_id', storeId)
+      .order('quantity', { ascending: false })
+      .range(offset, offset + STOCK_PAGE - 1)
+
+    if (error) {
+      console.error('[getPublicCatalogProducts] store_stock:', error.message)
+      break
+    }
+    if (!data?.length) break
+
+    rows.push(...(data as StoreStockRow[]))
+    if (data.length < STOCK_PAGE) break
+    offset += STOCK_PAGE
+  }
+
+  const catIds = [
+    ...new Set(
+      rows
+        .map((r) => resolveProductJoin(r)?.category_id)
+        .filter((id): id is string => Boolean(id))
+    )
+  ]
+  const catMap = await loadCategoryMap(catIds)
+
+  const products = rows
+    .map((stockRow) => {
+      const product = resolveProductJoin(stockRow)
+      if (!product?.id) return null
+      const status = String(product.status ?? 'active')
+      if (status !== 'active' && status !== 'out_of_stock') return null
+      const quantity = Math.max(0, Math.floor(Number(stockRow.quantity ?? 0)))
+      const salePrice = resolveSalePrice(
+        Number(stockRow.price ?? 0),
+        Number(product.price ?? 0)
+      )
+      return mapProductToCatalog(product, quantity, salePrice, catMap)
+    })
+    .filter((p): p is PublicCatalogProduct => Boolean(p))
+
+  products.sort((a, b) => {
+    if (a.inStock !== b.inStock) return a.inStock ? -1 : 1
+    return a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+  })
+
+  return products
+}
 
 /**
- * Catálogo público: solo columnas seguras (sin costo ni datos internos).
- * Tienda principal: stock bodega + local.
+ * Catálogo público focalizado en la microtienda configurada (telefonía por defecto).
+ * Lista productos asignados en store_stock, con stock y precio de esa sucursal.
  */
 export async function getPublicCatalogProducts(): Promise<PublicCatalogProduct[]> {
   if (!process.env.SUPABASE_SERVICE_ROLE_KEY) {
     return []
   }
 
-  const { data, error } = await supabaseAdmin
-    .from('products')
-    .select(
-      'id, name, reference, description, price, brand, image_url, stock_warehouse, stock_store, status, category_id'
-    )
-    .in('status', ['active', 'out_of_stock'])
-    .order('name', { ascending: true })
-    .limit(MAX_ROWS)
-
-  if (error || !data?.length) {
+  const storeId = getPublicCatalogStoreId()
+  if (!storeId) {
     return []
   }
 
-  const catIds = [...new Set(data.map((p: { category_id?: string | null }) => p.category_id).filter(Boolean))] as string[]
-  let catMap = new Map<string, string>()
-  if (catIds.length > 0) {
-    const { data: cats } = await supabaseAdmin.from('categories').select('id, name').in('id', catIds)
-    if (cats) {
-      catMap = new Map(cats.map((c: { id: string; name: string }) => [c.id, c.name]))
-    }
-  }
-
-  return data.map((row: Record<string, unknown>) => {
-    const wh = Number(row.stock_warehouse ?? 0)
-    const st = Number(row.stock_store ?? 0)
-    const total = wh + st
-    const cid = row.category_id as string | null | undefined
-    return {
-      id: String(row.id),
-      name: String(row.name ?? ''),
-      reference: String(row.reference ?? ''),
-      description: String(row.description ?? ''),
-      price: Number(row.price ?? 0),
-      brand: String(row.brand ?? ''),
-      imageUrl: normalizePublicProductImageUrl(row.image_url ? String(row.image_url) : null),
-      categoryName: cid ? catMap.get(cid)?.trim() || null : null,
-      inStock: total > 0,
-      status: String(row.status ?? 'active')
-    }
-  })
+  return fetchMicroStoreCatalogProducts(storeId)
 }
 
 export async function getPublicProductDetailById(id: string): Promise<PublicProductDetail | null> {
@@ -132,138 +252,70 @@ export async function getPublicProductDetailById(id: string): Promise<PublicProd
   }
 
   const pid = id.trim()
+  const storeId = getPublicCatalogStoreId()
 
-  const { data: row, error } = await supabaseAdmin
-    .from('products')
-    .select(
-      'id, name, reference, description, price, brand, image_url, stock_warehouse, stock_store, status, category_id'
-    )
-    .eq('id', pid)
-    .in('status', ['active', 'out_of_stock'])
-    .maybeSingle()
-
-  if (error || !row) {
+  if (!storeId) {
     return null
   }
 
-  const r = row as Record<string, unknown>
-  const cid = r.category_id as string | null | undefined
-  let categoryName: string | null = null
-  if (cid) {
-    const { data: cat } = await supabaseAdmin.from('categories').select('name').eq('id', cid).maybeSingle()
-    categoryName = (cat as { name?: string } | null)?.name?.trim() || null
+  const storeInfo = await getPublicCatalogStoreInfo(storeId)
+  if (!storeInfo) {
+    return null
   }
 
-  const wh = Math.max(0, Number(r.stock_warehouse ?? 0))
-  const st = Math.max(0, Number(r.stock_store ?? 0))
-  const status = String(r.status ?? 'active')
-
-  const { data: mainStoreRow } = await supabaseAdmin
-    .from('stores')
-    .select('name, city')
-    .eq('id', MAIN_STORE_ID)
+  const { data: stockRow, error: stockErr } = await supabaseAdmin
+    .from('store_stock')
+    .select(
+      'quantity, price, products!inner(id, name, reference, description, price, brand, image_url, status, category_id)'
+    )
+    .eq('store_id', storeId)
+    .eq('product_id', pid)
     .maybeSingle()
 
-  const mainStoreName = String((mainStoreRow as { name?: string } | null)?.name ?? 'ZONA T').trim() || 'ZONA T'
-  const mainStoreCity =
-    (mainStoreRow as { city?: string | null } | null)?.city != null
-      ? String((mainStoreRow as { city: string }).city).trim() || null
-      : null
-
-  const microStores: PublicStoreAvailability[] = []
-  try {
-    const { data: stockRows, error: stockErr } = await supabaseAdmin
-      .from('store_stock')
-      .select('quantity, store_id')
-      .eq('product_id', pid)
-      .gt('quantity', 0)
-
-    if (stockErr) {
-      console.error('[getPublicProductDetailById] store_stock:', stockErr.message)
-    } else {
-      const rows = (stockRows ?? []) as { quantity?: number; store_id?: string }[]
-      const storeIds = [
-        ...new Set(
-          rows
-            .map((r) => String(r.store_id ?? ''))
-            .filter((id) => id && id !== MAIN_STORE_ID)
-        )
-      ]
-
-      const storeMap = new Map<
-        string,
-        { name: string; city: string | null; is_active: boolean; deleted_at: string | null }
-      >()
-
-      if (storeIds.length > 0) {
-        const { data: storesData, error: storesErr } = await supabaseAdmin
-          .from('stores')
-          .select('id, name, city, is_active, deleted_at')
-          .in('id', storeIds)
-
-        if (storesErr) {
-          console.error('[getPublicProductDetailById] stores:', storesErr.message)
-        } else {
-          for (const row of storesData ?? []) {
-            const rec = row as {
-              id: string
-              name?: string
-              city?: string | null
-              is_active?: boolean
-              deleted_at?: string | null
-            }
-            storeMap.set(String(rec.id), {
-              name: String(rec.name ?? 'Tienda').trim() || 'Tienda',
-              city: rec.city != null ? String(rec.city).trim() || null : null,
-              is_active: Boolean(rec.is_active),
-              deleted_at: rec.deleted_at != null ? String(rec.deleted_at) : null
-            })
-          }
-        }
-      }
-
-      for (const sr of rows) {
-        const sid = String(sr.store_id ?? '')
-        if (!sid || sid === MAIN_STORE_ID) continue
-        const q = Math.max(0, Math.floor(Number(sr.quantity ?? 0)))
-        if (q < 1) continue
-        const stInfo = storeMap.get(sid)
-        if (!stInfo?.is_active || stInfo.deleted_at) continue
-        microStores.push({
-          storeId: sid,
-          name: stInfo.name,
-          city: stInfo.city,
-          quantity: q,
-          isMain: false
-        })
-      }
-    }
-  } catch (e) {
-    console.error('[getPublicProductDetailById] micro stock exception:', e)
+  if (stockErr || !stockRow) {
+    return null
   }
 
-  microStores.sort((a, b) => b.quantity - a.quantity || a.name.localeCompare(b.name, 'es'))
+  const product = resolveProductJoin(stockRow as StoreStockRow)
+  if (!product) return null
 
-  const microTotal = microStores.reduce((s, m) => s + m.quantity, 0)
-  const totalUnits = wh + st + microTotal
-  const inStock = status !== 'out_of_stock' && totalUnits > 0
+  const status = String(product.status ?? 'active')
+  if (status !== 'active' && status !== 'out_of_stock') {
+    return null
+  }
+
+  const quantity = Math.max(0, Math.floor(Number((stockRow as StoreStockRow).quantity ?? 0)))
+  const salePrice = resolveSalePrice(
+    Number((stockRow as StoreStockRow).price ?? 0),
+    Number(product.price ?? 0)
+  )
+
+  const cid = product.category_id
+  let categoryName: string | null = null
+  if (cid) {
+    const catMap = await loadCategoryMap([cid])
+    categoryName = catMap.get(cid)?.trim() || null
+  }
+
+  const inStock = quantity > 0 && status !== 'out_of_stock'
 
   return {
-    id: String(r.id),
-    name: String(r.name ?? ''),
-    reference: String(r.reference ?? ''),
-    description: String(r.description ?? ''),
-    price: Number(r.price ?? 0),
-    brand: String(r.brand ?? ''),
-    imageUrl: normalizePublicProductImageUrl(r.image_url ? String(r.image_url) : null),
+    id: String(product.id),
+    name: String(product.name ?? ''),
+    reference: String(product.reference ?? ''),
+    description: String(product.description ?? ''),
+    price: salePrice,
+    brand: String(product.brand ?? ''),
+    imageUrl: normalizePublicProductImageUrl(product.image_url ? String(product.image_url) : null),
     categoryName,
     inStock,
     status,
-    stockWarehouse: wh,
-    stockStoreFloor: st,
-    mainStoreName,
-    mainStoreCity,
-    microStores,
-    totalUnits
+    stockWarehouse: 0,
+    stockStoreFloor: quantity,
+    mainStoreName: storeInfo.name,
+    mainStoreCity: storeInfo.city,
+    microStores: [],
+    totalUnits: quantity,
+    singleStoreCatalog: true
   }
 }

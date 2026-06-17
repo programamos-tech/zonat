@@ -10,13 +10,13 @@ const siteUrl = (() => {
 })()
 
 export const metadata: Metadata = {
-  title: 'Catálogo de productos | ZONA T',
+  title: 'Telefonía | ZONA T Sincelejo',
   description:
-    'Explora el catálogo público de productos Zonat. ZONA T — calidad y servicio.',
+    'Catálogo de celulares y accesorios en TELEFONÍA ZONA T, Sincelejo. Consulta disponibilidad y precios referenciales.',
   metadataBase: siteUrl,
   openGraph: {
-    title: 'Catálogo ZONA T',
-    description: 'Productos Zonat en un solo lugar.',
+    title: 'Telefonía ZONA T',
+    description: 'Celulares, tablets y accesorios en Sincelejo.',
     locale: 'es_CO',
     type: 'website',
     siteName: 'ZONA T'

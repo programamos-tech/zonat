@@ -1,0 +1,63 @@
+'use client'
+
+import { TIENDA_ANNOUNCEMENT_ITEMS } from '@/config/tienda-storefront'
+
+function AnnouncementItem({ text }: { text: string }) {
+  const parts = text.split(' · ')
+  const main = parts[0] ?? text
+  const accent = parts[1]
+
+  return (
+    <span className="flex shrink-0 items-center gap-3 sm:gap-4">
+      <span className="whitespace-nowrap text-[11px] font-medium tracking-wide text-zinc-300 sm:text-xs">
+        {main}
+        {accent && (
+          <>
+            <span className="mx-2 text-zinc-600" aria-hidden>
+              ·
+            </span>
+            <span className="font-semibold text-emerald-400/95">{accent}</span>
+          </>
+        )}
+      </span>
+      <span
+        className="h-1 w-1 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-amber-300/80"
+        aria-hidden
+      />
+    </span>
+  )
+}
+
+export function TiendaAnnouncementBar() {
+  const items = [...TIENDA_ANNOUNCEMENT_ITEMS, ...TIENDA_ANNOUNCEMENT_ITEMS]
+
+  return (
+    <div
+      className="relative z-40 overflow-hidden border-b border-white/[0.06] bg-zinc-950"
+      role="region"
+      aria-label="Anuncios de la tienda"
+    >
+      <div
+        className="pointer-events-none absolute inset-0 opacity-60"
+        aria-hidden
+        style={{
+          background:
+            'radial-gradient(ellipse 80% 120% at 50% -20%, rgba(16,185,129,0.12), transparent 55%)'
+        }}
+      />
+
+      <div className="tienda-marquee-fade relative flex overflow-hidden py-2.5 sm:py-3">
+        <div className="tienda-marquee-track flex w-max items-center gap-8 sm:gap-12">
+          {items.map((text, i) => (
+            <AnnouncementItem key={`${text}-${i}`} text={text} />
+          ))}
+        </div>
+      </div>
+
+      <div
+        className="h-px w-full bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent"
+        aria-hidden
+      />
+    </div>
+  )
+}

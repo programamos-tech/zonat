@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import {
   ChevronLeft,
+  Heart,
   MapPin,
   MessageCircle,
   Minus,
@@ -15,11 +16,11 @@ import {
   Store,
   Warehouse
 } from 'lucide-react'
-import type { PublicProductDetail } from '@/lib/public-catalog'
+import type { PublicProductDetail, PublicCatalogStoreInfo } from '@/lib/public-catalog'
 import { getMockProductSocial } from '@/lib/tienda-product-mocks'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
-import { TiendaHeader } from '@/components/tienda/tienda-header'
-import { TiendaFooter } from '@/components/tienda/tienda-footer'
+import { useTiendaFavorites } from '@/contexts/tienda-favorites-context'
+import { TiendaPageShell } from '@/components/tienda/tienda-page-shell'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -59,8 +60,15 @@ function RatingStars({ rating, className }: { rating: number; className?: string
   )
 }
 
-export function ProductDetailClient({ product }: { product: PublicProductDetail }) {
+export function ProductDetailClient({
+  product,
+  store
+}: {
+  product: PublicProductDetail
+  store?: PublicCatalogStoreInfo | null
+}) {
   const { addLine } = useTiendaCart()
+  const { isFavorite, toggleFavorite } = useTiendaFavorites()
   const [qty, setQty] = useState(1)
   const out = product.status === 'out_of_stock' || !product.inStock
   const hasImg = Boolean(product.imageUrl)
@@ -68,12 +76,14 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
   const social = useMemo(() => getMockProductSocial(product.id), [product.id])
 
   const mainHasUnits = product.stockWarehouse + product.stockStoreFloor > 0
-  const locationCount = (mainHasUnits ? 1 : 0) + product.microStores.length
+  const locationCount = product.singleStoreCatalog
+    ? mainHasUnits
+      ? 1
+      : 0
+    : (mainHasUnits ? 1 : 0) + product.microStores.length
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
-      <TiendaHeader />
-
+    <TiendaPageShell store={store}>
       <main className="w-full flex-1 px-4 py-6 sm:px-6 sm:py-10 lg:px-8 xl:px-10 2xl:px-14">
         <nav className="mb-6 flex flex-wrap items-center gap-2 text-sm text-zinc-500">
           <Link href="/tienda" className="hover:text-emerald-700">
@@ -130,7 +140,25 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
               <p className="text-xs font-bold uppercase tracking-wider text-emerald-600">{product.categoryName}</p>
             )}
             <h1 className="mt-2 text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">{product.name}</h1>
-            {product.brand?.trim() && <p className="mt-2 text-base text-zinc-500">{product.brand}</p>}
+            <div className="mt-3 flex items-center gap-2">
+              {product.brand?.trim() && <p className="text-base text-zinc-500">{product.brand}</p>}
+              <button
+                type="button"
+                onClick={() => toggleFavorite(product.id)}
+                className={cn(
+                  'ml-auto flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 transition-colors sm:ml-0',
+                  isFavorite(product.id)
+                    ? 'border-rose-200 bg-rose-50 text-rose-500'
+                    : 'text-zinc-500 hover:border-rose-200 hover:text-rose-500'
+                )}
+                aria-label={isFavorite(product.id) ? 'Quitar de favoritos' : 'Agregar a favoritos'}
+              >
+                <Heart
+                  className={cn('h-5 w-5', isFavorite(product.id) && 'fill-current')}
+                  strokeWidth={1.75}
+                />
+              </button>
+            </div>
             <p className="mt-3 font-mono text-sm text-zinc-400">Referencia · {product.reference}</p>
 
             <div className="mt-6 flex flex-col gap-3 rounded-2xl border border-zinc-100 bg-zinc-50/80 p-4 sm:flex-row sm:items-center sm:justify-between">
@@ -155,8 +183,9 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
 
             {!out && (
               <p className="mt-3 text-sm text-zinc-600">
-                <span className="font-semibold text-zinc-800">{formatUnits(product.totalUnits)}</span> unidades
-                disponibles en inventario consolidado (referencial).
+                <span className="font-semibold text-zinc-800">{formatUnits(product.totalUnits)}</span>{' '}
+                {product.totalUnits === 1 ? 'unidad disponible' : 'unidades disponibles'}
+                {product.singleStoreCatalog ? ' en esta tienda' : ' en inventario consolidado (referencial)'}.
               </p>
             )}
 
@@ -224,10 +253,12 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
             <CardHeader className="border-b border-zinc-100 pb-4">
               <CardTitle className="flex items-center gap-2 text-lg text-zinc-900 dark:text-zinc-900">
                 <Warehouse className="h-5 w-5 text-emerald-600" strokeWidth={1.5} />
-                Disponibilidad por tienda
+                {product.singleStoreCatalog ? 'Disponibilidad en tienda' : 'Disponibilidad por tienda'}
               </CardTitle>
               <p className="text-sm font-normal text-zinc-500 dark:text-zinc-500">
-                Stock referencial en tiempo casi real. La reserva definitiva se confirma en punto de venta.
+                {product.singleStoreCatalog
+                  ? 'Stock referencial en esta sucursal. La reserva se confirma en punto de venta.'
+                  : 'Stock referencial en tiempo casi real. La reserva definitiva se confirma en punto de venta.'}
               </p>
             </CardHeader>
             <CardContent className="pt-6">
@@ -247,7 +278,9 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
                           <Store className="mt-0.5 h-4 w-4 shrink-0 text-emerald-600" strokeWidth={1.5} />
                           <div>
                             <p className="font-semibold text-zinc-900">{product.mainStoreName}</p>
-                            <p className="text-xs text-zinc-500">Sede principal</p>
+                            <p className="text-xs text-zinc-500">
+                              {product.singleStoreCatalog ? 'Punto de venta' : 'Sede principal'}
+                            </p>
                             {product.mainStoreCity && (
                               <p className="mt-1 flex items-center gap-1 text-xs text-zinc-400">
                                 <MapPin className="h-3 w-3" aria-hidden />
@@ -258,20 +291,33 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
                         </div>
                       </td>
                       <td className="hidden px-4 py-4 text-zinc-600 sm:table-cell">
-                        <p>Bodega · {formatUnits(product.stockWarehouse)}</p>
-                        <p className="mt-1">Mostrador · {formatUnits(product.stockStoreFloor)}</p>
+                        {product.singleStoreCatalog ? (
+                          <p>Stock en mostrador</p>
+                        ) : (
+                          <>
+                            <p>Bodega · {formatUnits(product.stockWarehouse)}</p>
+                            <p className="mt-1">Mostrador · {formatUnits(product.stockStoreFloor)}</p>
+                          </>
+                        )}
                       </td>
                       <td className="px-4 py-4 text-right">
                         <span className="font-mono text-base font-bold tabular-nums text-zinc-900">
-                          {formatUnits(product.stockWarehouse + product.stockStoreFloor)}
+                          {formatUnits(
+                            product.singleStoreCatalog
+                              ? product.stockStoreFloor
+                              : product.stockWarehouse + product.stockStoreFloor
+                          )}
                         </span>
-                        <p className="mt-1 text-xs text-zinc-400 sm:hidden">
-                          Bod. {formatUnits(product.stockWarehouse)} · Mostr.{' '}
-                          {formatUnits(product.stockStoreFloor)}
-                        </p>
+                        {!product.singleStoreCatalog && (
+                          <p className="mt-1 text-xs text-zinc-400 sm:hidden">
+                            Bod. {formatUnits(product.stockWarehouse)} · Mostr.{' '}
+                            {formatUnits(product.stockStoreFloor)}
+                          </p>
+                        )}
                       </td>
                     </tr>
-                    {product.microStores.map((m) => (
+                    {!product.singleStoreCatalog &&
+                      product.microStores.map((m) => (
                       <tr key={m.storeId} className="bg-white">
                         <td className="px-4 py-4">
                           <div className="flex items-start gap-2">
@@ -294,7 +340,7 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
                           </span>
                         </td>
                       </tr>
-                    ))}
+                      ))}
                   </tbody>
                 </table>
               </div>
@@ -370,8 +416,6 @@ export function ProductDetailClient({ product }: { product: PublicProductDetail 
           </Card>
         </div>
       </main>
-
-      <TiendaFooter />
-    </div>
+    </TiendaPageShell>
   )
 }

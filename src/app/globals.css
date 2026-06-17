@@ -124,6 +124,57 @@ body {
   -webkit-overflow-scrolling: touch;
 }
 
+/* Marquee banner — tienda pública */
+@keyframes tienda-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.tienda-marquee-track {
+  animation: tienda-marquee 48s linear infinite;
+}
+
+.tienda-marquee-fade {
+  mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent,
+    black 8%,
+    black 92%,
+    transparent
+  );
+}
+
+.tienda-marquee-fade:hover .tienda-marquee-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tienda-marquee-track {
+    animation: none;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100% !important;
+    gap: 0.75rem 1.25rem;
+    padding-inline: 1rem;
+  }
+
+  .tienda-marquee-fade {
+    mask-image: none;
+    -webkit-mask-image: none;
+  }
+}
+
 /* Ocultar scrollbar pero mantener scroll */
 .scrollbar-hide {
   -ms-overflow-style: none;

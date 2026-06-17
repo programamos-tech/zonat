@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { getPublicProductDetailById } from '@/lib/public-catalog'
+import { getPublicProductDetailById, getPublicCatalogStoreInfo } from '@/lib/public-catalog'
 import { ProductDetailClient } from '@/components/tienda/product-detail-client'
 
 export const dynamic = 'force-dynamic'
@@ -22,9 +22,12 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function TiendaProductPage({ params }: Props) {
   const { productId } = await params
-  const product = await getPublicProductDetailById(productId)
+  const [product, store] = await Promise.all([
+    getPublicProductDetailById(productId),
+    getPublicCatalogStoreInfo()
+  ])
   if (!product) {
     notFound()
   }
-  return <ProductDetailClient product={product} />
+  return <ProductDetailClient product={product} store={store} />
 }

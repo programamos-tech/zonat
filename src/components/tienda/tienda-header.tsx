@@ -2,99 +2,59 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { Search, ShoppingBag } from 'lucide-react'
+import { Heart, Search, ShoppingBag, User } from 'lucide-react'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
+import { useTiendaFavorites } from '@/contexts/tienda-favorites-context'
 import { cn } from '@/lib/utils'
 
 type TiendaHeaderProps = {
   showSearch?: boolean
   searchValue?: string
   onSearchChange?: (value: string) => void
+  storeName?: string | null
 }
 
-export function TiendaHeader({ showSearch, searchValue = '', onSearchChange }: TiendaHeaderProps) {
+const iconBtn =
+  'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-100 hover:text-zinc-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/30 sm:h-10 sm:w-10'
+
+export function TiendaHeader({
+  showSearch,
+  searchValue = '',
+  onSearchChange,
+  storeName
+}: TiendaHeaderProps) {
   const { itemCount, openDrawer } = useTiendaCart()
+  const { count: favCount } = useTiendaFavorites()
 
   return (
-    <header className="sticky top-0 z-30 border-b border-zinc-200 bg-white shadow-sm">
-      <div className="flex w-full flex-col gap-3 px-4 py-4 sm:gap-4 sm:px-6 lg:px-8 xl:px-10 2xl:px-14">
-        <div className="flex items-center gap-3">
-          <Link href="/tienda" className="flex min-w-0 flex-1 items-center gap-3 sm:flex-none">
-            <Image
-              src="/zonat-logo.png"
-              alt="ZONA T"
-              width={44}
-              height={44}
-              className="h-11 w-11 shrink-0 object-contain"
-              priority
-              unoptimized
-            />
-            <div className="min-w-0">
-              <p className="truncate text-base font-bold tracking-tight text-zinc-900 sm:text-lg">ZONA T</p>
-              <p className="text-xs text-zinc-500">Tienda en línea</p>
-            </div>
-          </Link>
-
-          {showSearch && (
-            <div className="relative hidden min-w-0 flex-1 md:block">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
-                strokeWidth={1.5}
-                aria-hidden
-              />
-              <input
-                type="search"
-                value={searchValue}
-                onChange={(e) => onSearchChange?.(e.target.value)}
-                placeholder="Buscar productos, referencia, marca…"
-                className="h-11 w-full rounded-full border border-zinc-200 bg-zinc-50 pl-10 pr-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
-                aria-label="Buscar en catálogo"
-              />
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={openDrawer}
-            aria-label={itemCount > 0 ? `Carrito, ${itemCount} artículos` : 'Abrir carrito'}
-            className={cn(
-              'relative flex h-11 shrink-0 items-center gap-2.5 rounded-full border-2 border-emerald-600 bg-white pl-1.5 pr-4',
-              'shadow-sm shadow-emerald-900/[0.06]',
-              'transition-all duration-200',
-              'hover:border-emerald-700 hover:bg-gradient-to-r hover:from-emerald-50/90 hover:to-yellow-50/70 hover:shadow-md hover:shadow-emerald-600/10',
-              'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2'
-            )}
-          >
-            <span
-              className={cn(
-                'flex h-9 w-9 shrink-0 items-center justify-center rounded-full',
-                'bg-gradient-to-br from-yellow-300 via-yellow-300 to-yellow-400',
-                'text-emerald-900 shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]',
-                'ring-1 ring-yellow-500/35'
-              )}
-              aria-hidden
-            >
-              <ShoppingBag className="h-[18px] w-[18px]" strokeWidth={2.25} />
-            </span>
-            <span className="hidden text-sm font-semibold tracking-tight text-emerald-900 sm:inline">Carrito</span>
-            {itemCount > 0 && (
-              <span
-                className={cn(
-                  'absolute -right-0.5 -top-0.5 flex h-[22px] min-w-[22px] items-center justify-center rounded-full',
-                  'bg-emerald-600 px-1 text-[11px] font-bold tabular-nums text-white',
-                  'ring-[3px] ring-yellow-200 shadow-sm'
-                )}
-              >
-                {itemCount > 99 ? '99+' : itemCount}
-              </span>
-            )}
-          </button>
-        </div>
+    <header className="sticky top-0 z-30 border-b border-zinc-200/90 bg-white/95 backdrop-blur-md">
+      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-6 sm:py-3 lg:gap-6 lg:px-8">
+        <Link
+          href="/tienda"
+          className="flex shrink-0 items-center gap-2.5 sm:gap-3"
+          aria-label="ZONA T inicio"
+        >
+          <Image
+            src="/zonat-logo.png"
+            alt=""
+            width={48}
+            height={48}
+            className="h-9 w-9 object-contain sm:h-11 sm:w-11"
+            priority
+            unoptimized
+          />
+          <div className="hidden min-w-0 sm:block">
+            <p className="text-lg font-bold leading-none tracking-tight text-zinc-900">ZONA T</p>
+            <p className="mt-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-600">
+              {storeName?.trim() || 'Telefonía'}
+            </p>
+          </div>
+        </Link>
 
         {showSearch && onSearchChange && (
-          <div className="relative md:hidden">
+          <div className="relative min-w-0 flex-1">
             <Search
-              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400"
+              className="pointer-events-none absolute left-3 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-zinc-400 sm:left-4 sm:h-4 sm:w-4"
               strokeWidth={1.5}
               aria-hidden
             />
@@ -102,12 +62,41 @@ export function TiendaHeader({ showSearch, searchValue = '', onSearchChange }: T
               type="search"
               value={searchValue}
               onChange={(e) => onSearchChange(e.target.value)}
-              placeholder="Buscar productos…"
-              className="h-11 w-full rounded-xl border border-zinc-200 bg-zinc-50 pl-10 pr-4 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/20"
+              placeholder="Buscar…"
+              className="h-9 w-full min-w-0 rounded-full border border-zinc-200 bg-zinc-50/90 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-emerald-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-emerald-500/15 sm:h-10 sm:pl-11 lg:h-11 lg:placeholder:text-zinc-400"
               aria-label="Buscar en catálogo"
             />
           </div>
         )}
+
+        <div className="flex shrink-0 items-center gap-0 sm:gap-0.5">
+          <Link href="/login" className={iconBtn} aria-label="Mi cuenta">
+            <User className="h-[18px] w-[18px] sm:h-5 sm:w-5" strokeWidth={1.75} />
+          </Link>
+
+          <Link href="/tienda/favoritos" className={iconBtn} aria-label="Favoritos">
+            <Heart className="h-[18px] w-[18px] sm:h-5 sm:w-5" strokeWidth={1.75} />
+            {favCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-rose-500 px-0.5 text-[9px] font-bold text-white sm:h-4 sm:min-w-4 sm:text-[10px]">
+                {favCount > 9 ? '9+' : favCount}
+              </span>
+            )}
+          </Link>
+
+          <button
+            type="button"
+            onClick={openDrawer}
+            className={iconBtn}
+            aria-label={itemCount > 0 ? `Carrito, ${itemCount} artículos` : 'Abrir carrito'}
+          >
+            <ShoppingBag className="h-[18px] w-[18px] sm:h-5 sm:w-5" strokeWidth={1.75} />
+            {itemCount > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-emerald-600 px-0.5 text-[9px] font-bold text-white sm:h-4 sm:min-w-4 sm:text-[10px]">
+                {itemCount > 9 ? '9+' : itemCount}
+              </span>
+            )}
+          </button>
+        </div>
       </div>
     </header>
   )
