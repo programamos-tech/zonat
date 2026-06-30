@@ -243,6 +243,14 @@ export interface Sale {
   sellerName?: string
   sellerEmail?: string
   storeId?: string // ID de la tienda donde se realizó la venta
+  orderSource?: 'pos' | 'web'
+  customerPhone?: string | null
+  customerEmail?: string | null
+  customerAddress?: string | null
+  customerNotes?: string | null
+  paymentProofUrl?: string | null
+  paymentProofDeadline?: string | null
+  paymentProofUploadedAt?: string | null
   createdAt: string
   items: SaleItem[]
   creditStatus?: 'pending' | 'partial' | 'completed' | 'overdue' | 'cancelled' // Estado del crédito asociado (solo para ventas a crédito)

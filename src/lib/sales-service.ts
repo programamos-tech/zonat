@@ -7,6 +7,21 @@ import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './sto
 /** Tamaño de página de la lista de ventas (contexto + servicio + tabla). */
 export const SALES_PAGE_SIZE = 20
 
+function mapWebOrderFields(row: Record<string, unknown>) {
+  return {
+    orderSource: row.order_source === 'web' ? ('web' as const) : ('pos' as const),
+    customerPhone: row.customer_phone != null ? String(row.customer_phone) : null,
+    customerEmail: row.customer_email != null ? String(row.customer_email) : null,
+    customerAddress: row.customer_address != null ? String(row.customer_address) : null,
+    customerNotes: row.customer_notes != null ? String(row.customer_notes) : null,
+    paymentProofUrl: row.payment_proof_url != null ? String(row.payment_proof_url) : null,
+    paymentProofDeadline:
+      row.payment_proof_deadline != null ? String(row.payment_proof_deadline) : null,
+    paymentProofUploadedAt:
+      row.payment_proof_uploaded_at != null ? String(row.payment_proof_uploaded_at) : null
+  }
+}
+
 export class SalesService {
   /**
    * Siguiente número de factura por tienda.
@@ -219,7 +234,8 @@ export class SalesService {
           createdAt: sale.created_at,
           items: itemsWithReferences,
           creditStatus: creditStatus,
-          cancellationReason: sale.cancellation_reason || undefined
+          cancellationReason: sale.cancellation_reason || undefined,
+          ...mapWebOrderFields(sale as Record<string, unknown>)
         }
       })
 
@@ -581,7 +597,8 @@ export class SalesService {
         sellerEmail: data.seller_email,
         storeId: data.store_id || undefined,
         createdAt: data.created_at,
-        items: itemsWithReferences
+        items: itemsWithReferences,
+        ...mapWebOrderFields(data as Record<string, unknown>)
       }
 
       return result

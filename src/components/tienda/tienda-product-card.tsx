@@ -1,9 +1,9 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
 import { Heart, Package } from 'lucide-react'
 import type { PublicCatalogProduct } from '@/lib/public-catalog'
+import { TiendaProductImage } from '@/components/tienda/tienda-product-image'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
 import { useTiendaFavorites } from '@/contexts/tienda-favorites-context'
 import { cn } from '@/lib/utils'
@@ -31,10 +31,9 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
         className="tienda-card-premium relative block aspect-[4/5] overflow-hidden rounded-2xl bg-[#111111]"
       >
         {hasImg ? (
-          <Image
+          <TiendaProductImage
             src={product.imageUrl!}
             alt={product.name}
-            fill
             className="object-contain p-4 transition-transform duration-500 group-hover:scale-[1.03]"
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />

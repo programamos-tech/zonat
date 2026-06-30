@@ -22,7 +22,8 @@ import {
   ChevronDown,
   ChevronRight,
   FileText,
-  Globe
+  Globe,
+  ExternalLink
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -237,6 +238,15 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                   {currentStore.name}
                 </p>
               )}
+            </Link>
+            <Link
+              href="/tienda"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-2 text-[11px] font-semibold text-emerald-400 transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/15 hover:text-emerald-300"
+            >
+              <ExternalLink className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
+              Ver tienda web
             </Link>
           </div>
 

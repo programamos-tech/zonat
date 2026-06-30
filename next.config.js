@@ -32,6 +32,12 @@ function supabaseStorageImagePatterns() {
     port: '54321',
     pathname: '/storage/v1/object/public/**',
   })
+  // Cualquier proyecto Supabase (producción / preview)
+  patterns.push({
+    protocol: 'https',
+    hostname: '**.supabase.co',
+    pathname: '/storage/v1/object/public/**',
+  })
   return patterns
 }
 

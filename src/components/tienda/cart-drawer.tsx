@@ -1,7 +1,7 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
+import { TiendaProductImage } from '@/components/tienda/tienda-product-image'
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
 import { cn } from '@/lib/utils'
@@ -85,10 +85,9 @@ export function CartDrawer() {
                 >
                   <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#111111]">
                     {line.imageUrl ? (
-                      <Image
+                      <TiendaProductImage
                         src={line.imageUrl}
                         alt={line.name}
-                        fill
                         className="object-contain p-1"
                         sizes="80px"
                       />
@@ -154,6 +153,13 @@ export function CartDrawer() {
               El pago y la entrega se coordinan en tienda o con tu asesor ZONA T.
             </p>
             <div className="mt-4 flex flex-col gap-2">
+              <Link
+                href="/tienda/checkout"
+                onClick={closeDrawer}
+                className="tienda-btn-gold inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold"
+              >
+                Comprar
+              </Link>
               <button
                 type="button"
                 className="tienda-btn-outline-gold h-11 w-full rounded-full text-sm font-semibold"
@@ -167,7 +173,7 @@ export function CartDrawer() {
               <Link
                 href="/tienda"
                 onClick={closeDrawer}
-                className="tienda-btn-gold inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold"
+                className="inline-flex h-10 w-full items-center justify-center text-sm font-medium text-[#9a968f] hover:text-[#eceae6]"
               >
                 Seguir comprando
               </Link>

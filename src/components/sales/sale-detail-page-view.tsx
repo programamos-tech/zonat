@@ -84,6 +84,8 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
   const [showCancelForm, setShowCancelForm] = useState(false)
   const [cancelReason, setCancelReason] = useState('')
   const [isCancelling, setIsCancelling] = useState(false)
+  const [isConfirmingWeb, setIsConfirmingWeb] = useState(false)
+  const [webConfirmMessage, setWebConfirmMessage] = useState<string | null>(null)
   const [cancelSuccessMessage, setCancelSuccessMessage] = useState<string | null>(null)
   const cancelFormRef = useRef<HTMLDivElement>(null)
   const [credit, setCredit] = useState<Credit | null>(null)
@@ -314,13 +316,21 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
             <div className={panel}>
               <div className="border-b border-zinc-200 px-4 py-3 dark:border-zinc-800">
                 <p className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Estado de la venta</p>
-                <div className="mt-3">
+                <div className="mt-3 flex flex-wrap gap-2">
                   <Badge
                     variant="outline"
                     className={`inline-flex border px-2.5 py-1 text-sm font-medium ${saleStatusBadgeClass(sale.status)}`}
                   >
                     {saleStatusLabel(sale.status)}
                   </Badge>
+                  {sale.orderSource === 'web' && (
+                    <Badge
+                      variant="outline"
+                      className="border-sky-500/25 bg-sky-500/[0.06] text-sky-900 dark:border-sky-500/30 dark:bg-sky-950/40 dark:text-sky-300"
+                    >
+                      Pedido web
+                    </Badge>
+                  )}
                 </div>
               </div>
               <dl className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -491,6 +501,65 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+                {sale.orderSource === 'web' && (
+                  <div className="px-4 py-5 md:px-6">
+                    <h4 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+                      Pedido tienda virtual
+                    </h4>
+                    <dl className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                      {sale.customerPhone && <Field label="Teléfono">{sale.customerPhone}</Field>}
+                      {sale.customerEmail && <Field label="Correo">{sale.customerEmail}</Field>}
+                      {sale.customerAddress && <Field label="Entrega">{sale.customerAddress}</Field>}
+                      {sale.customerNotes && <Field label="Notas">{sale.customerNotes}</Field>}
+                    </dl>
+                    {sale.paymentProofUrl && (
+                      <div className="mt-4">
+                        <p className="mb-2 text-xs font-medium text-zinc-500">Comprobante de transferencia</p>
+                        <a
+                          href={sale.paymentProofUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                          Ver comprobante
+                        </a>
+                      </div>
+                    )}
+                    {webConfirmMessage && (
+                      <p className="mt-4 text-sm text-emerald-700 dark:text-emerald-400">{webConfirmMessage}</p>
+                    )}
+                    {sale.status === 'pending' && (
+                      <Button
+                        type="button"
+                        className="mt-4"
+                        disabled={isConfirmingWeb || !sale.paymentProofUrl}
+                        onClick={async () => {
+                          setIsConfirmingWeb(true)
+                          setWebConfirmMessage(null)
+                          try {
+                            const res = await fetch(`/api/tienda/orders/${sale.id}/confirm`, {
+                              method: 'POST'
+                            })
+                            const data = await res.json()
+                            if (!res.ok) {
+                              throw new Error(data.error || 'No se pudo confirmar')
+                            }
+                            setWebConfirmMessage('Pedido confirmado. Stock descontado y venta completada.')
+                            window.location.reload()
+                          } catch (err: unknown) {
+                            setWebConfirmMessage(
+                              err instanceof Error ? err.message : 'Error al confirmar pedido'
+                            )
+                          } finally {
+                            setIsConfirmingWeb(false)
+                          }
+                        }}
+                      >
+                        {isConfirmingWeb ? 'Confirmando…' : 'Confirmar pedido web'}
+                      </Button>
+                    )}
                   </div>
                 )}
                 {sale.status === 'cancelled' && sale.cancellationReason && (

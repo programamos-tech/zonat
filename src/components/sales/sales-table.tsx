@@ -503,6 +503,11 @@ export function SalesTable({
                             <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} shrink-0`}>
                               {getPaymentMethodLabel(sale.paymentMethod)}
                             </Badge>
+                            {sale.orderSource === 'web' && (
+                              <Badge className="shrink-0 border-sky-500/25 bg-sky-500/10 text-sky-800 dark:text-sky-300">
+                                Web
+                              </Badge>
+                            )}
                             <Badge className={`${getEffectiveStatusColor(sale)} shrink-0`}>
                               {getEffectiveStatusLabel(sale)}
                             </Badge>

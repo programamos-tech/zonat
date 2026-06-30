@@ -1614,7 +1614,8 @@ export class ProductsService {
    */
   static async deductStockForSaleBatch(
     items: Array<{ productId: string; quantity: number; productName: string; productReferenceCode?: string; unitPrice: number; totalPrice: number }>,
-    currentUserId?: string
+    currentUserId?: string,
+    storeIdOverride?: string | null
   ): Promise<{
     success: boolean
     itemsWithStockInfo?: Array<{ productName: string; productReference?: string; quantity: number; unitPrice: number; totalPrice: number; stockInfo: { storeDeduction: number; warehouseDeduction: number; previousStoreStock: number; previousWarehouseStock: number; newStoreStock: number; newWarehouseStock: number } }>
@@ -1625,7 +1626,8 @@ export class ProductsService {
     }
     try {
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      const storeId = getCurrentUserStoreId()
+      const storeId =
+        storeIdOverride !== undefined ? storeIdOverride : getCurrentUserStoreId()
       const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
       // Agregar cantidades por producto (mismo producto puede estar en varias líneas)

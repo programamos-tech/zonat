@@ -1,13 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import Image from 'next/image'
 import Link from 'next/link'
 import { ChevronLeft, Heart, MapPin, Minus, Package, Plus, ShoppingBag } from 'lucide-react'
 import type { PublicProductDetail, PublicCatalogStoreInfo } from '@/lib/public-catalog'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
 import { useTiendaFavorites } from '@/contexts/tienda-favorites-context'
 import { TiendaPageShell } from '@/components/tienda/tienda-page-shell'
+import { TiendaProductImage } from '@/components/tienda/tienda-product-image'
 import { cn } from '@/lib/utils'
 
 function formatCOP(n: number) {
@@ -54,10 +54,9 @@ export function ProductDetailClient({
         <div className="grid gap-6 lg:grid-cols-2 lg:gap-12 lg:gap-x-14">
           <div className="tienda-card-premium relative aspect-[4/5] w-full overflow-hidden rounded-2xl lg:aspect-square lg:max-h-[min(520px,70vh)]">
             {hasImg ? (
-              <Image
+              <TiendaProductImage
                 src={product.imageUrl!}
                 alt={product.name}
-                fill
                 className="object-contain p-6 sm:p-10"
                 sizes="(max-width: 1024px) 100vw, 50vw"
                 priority

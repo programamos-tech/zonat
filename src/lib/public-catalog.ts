@@ -8,40 +8,39 @@ const STOCK_PAGE = 1000
 const MAX_CATALOG_ROWS = 2500
 
 /**
- * Solo URLs absolutas del Storage del proyecto (o rutas relativas resueltas contra Supabase).
- * Evita que `next/image` rompa el render con hosts fuera de `remotePatterns`.
+ * Extrae la ruta public/storage de una URL de Supabase Storage.
+ * Ej: product-images/catalog/foo.jpg
+ */
+function extractSupabasePublicObjectPath(urlOrPath: string): string | null {
+  const trimmed = urlOrPath.trim()
+  const publicMatch = trimmed.match(/\/storage\/v1\/object\/public\/(.+)$/i)
+  if (publicMatch?.[1]) {
+    return publicMatch[1].replace(/\?.*$/, '')
+  }
+  if (!trimmed.startsWith('http') && !trimmed.startsWith('/storage/')) {
+    return trimmed.replace(/^\//, '')
+  }
+  return null
+}
+
+/**
+ * Normaliza la URL de imagen del catálogo público al proyecto Supabase actual.
+ * Reescribe URLs de localhost u otro host si la ruta en Storage es válida.
  */
 export function normalizePublicProductImageUrl(raw: string | null | undefined): string | null {
   if (!raw?.trim()) return null
-  let s = raw.trim()
-  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  try {
-    if (s.startsWith('/') && baseUrl) {
-      s = new URL(s, baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`).href
-    }
-    const u = new URL(s)
-    const pathOk =
-      u.pathname.includes('/storage/v1/object/public/') ||
-      u.pathname.includes('/storage/v1/object/sign/')
-    if (!pathOk) return null
-    if (baseUrl) {
-      try {
-        const bu = new URL(baseUrl)
-        if (u.hostname === bu.hostname && u.protocol === bu.protocol) return s
-      } catch {
-        /* ignore */
-      }
-    }
-    if (
-      (u.hostname === '127.0.0.1' || u.hostname === 'localhost') &&
-      u.port === '54321'
-    ) {
-      return s
-    }
-    return null
-  } catch {
+
+  const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, '')
+  if (!baseUrl) return null
+
+  const objectPath = extractSupabasePublicObjectPath(raw.trim())
+  if (!objectPath) return null
+
+  if (!objectPath.startsWith('product-images/')) {
     return null
   }
+
+  return `${baseUrl}/storage/v1/object/public/${objectPath}`
 }
 
 export type PublicCatalogProduct = {
