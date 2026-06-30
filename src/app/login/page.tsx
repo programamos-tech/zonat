@@ -60,8 +60,12 @@ export default function LoginPage() {
             userData.role === 'Super Admin' ||
             userData.role === 'Super Administrador'
 
+          const isGestorVirtual = userData.role?.toLowerCase() === 'gestor_tienda_virtual'
+
           if (isSuperAdmin) {
             router.push('/select-store')
+          } else if (isGestorVirtual) {
+            router.push('/inventory/virtual-store')
           } else {
             router.push('/reportes')
           }

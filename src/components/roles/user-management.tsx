@@ -22,12 +22,14 @@ const roleOptions = [
   { value: 'superadmin', label: 'Super Admin' },
   { value: 'admin', label: 'Administrador' },
   { value: 'vendedor', label: 'Vendedor' },
-  { value: 'inventario', label: 'Inventario' }
+  { value: 'inventario', label: 'Inventario' },
+  { value: 'gestor_tienda_virtual', label: 'Gestor tienda virtual' },
 ]
 
 const moduleOptions = [
   { value: 'dashboard', label: 'Reportes' },
   { value: 'products', label: 'Productos' },
+  { value: 'virtual_store', label: 'Tienda virtual' },
   { value: 'transfers', label: 'Transferencias' },
   { value: 'receptions', label: 'Recepciones' },
   { value: 'clients', label: 'Clientes' },
@@ -54,6 +56,7 @@ const rolePermissions = {
   'superadmin': [
     { module: 'dashboard', actions: allActions },
     { module: 'products', actions: allActions },
+    { module: 'virtual_store', actions: allActions },
     { module: 'clients', actions: allActions },
     { module: 'sales', actions: allActions },
     { module: 'payments', actions: allActions },
@@ -78,7 +81,10 @@ const rolePermissions = {
   'inventario': [
     { module: 'products', actions: allActions },
     { module: 'supplier_invoices', actions: allActions }
-  ]
+  ],
+  'gestor_tienda_virtual': [
+    { module: 'virtual_store', actions: ['view', 'edit'] },
+  ],
 }
 
 // Descripciones de cada rol
@@ -86,7 +92,8 @@ const roleDescriptions = {
   'superadmin': 'Acceso completo a todos los módulos del sistema (Diego)',
   'admin': 'Acceso a reportes, ventas y créditos',
   'vendedor': 'Acceso a reportes, productos, clientes, ventas y créditos',
-  'inventario': 'Solo productos (permisos según lo que marques abajo)'
+  'inventario': 'Solo productos (permisos según lo que marques abajo)',
+  'gestor_tienda_virtual': 'Gestiona imágenes y precios del catálogo público /tienda',
 }
 
 /** Mismo patrón que facturador / búsqueda unificada (select nativo + chevron) */

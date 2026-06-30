@@ -16,6 +16,62 @@ export type StockFilter =
   | 'Solo Bodega (Bajo)'
   | 'Solo Bodega (Muy Bajo)'
 
+type StoreStockPricing = {
+  cost: number | null
+  price: number | null
+  onlinePrice: number | null
+}
+
+function toStoreStockPricing(item: {
+  cost: number | null
+  price: number | null
+  online_price?: number | null
+}): StoreStockPricing {
+  return {
+    cost: item.cost,
+    price: item.price,
+    onlinePrice: item.online_price ?? null,
+  }
+}
+
+function resolveProductFinancials(
+  product: {
+    cost?: number | null
+    price?: number | null
+    online_price?: number | null
+  },
+  isMainStore: boolean,
+  storeStock?: StoreStockPricing | null
+): { cost: number; price: number; onlinePrice: number } {
+  const baseCost = Number(product.cost ?? 0)
+  const basePrice = Number(product.price ?? 0)
+  const baseOnlinePrice = Number(product.online_price ?? 0)
+
+  if (isMainStore) {
+    return { cost: baseCost, price: basePrice, onlinePrice: baseOnlinePrice }
+  }
+
+  if (storeStock) {
+    return {
+      cost:
+        storeStock.cost !== null && storeStock.cost !== 0
+          ? Number(storeStock.cost)
+          : basePrice,
+      price: storeStock.price !== null ? Number(storeStock.price) : 0,
+      onlinePrice:
+        storeStock.onlinePrice !== null && storeStock.onlinePrice !== 0
+          ? Number(storeStock.onlinePrice)
+          : baseOnlinePrice,
+    }
+  }
+
+  return {
+    cost: basePrice,
+    price: 0,
+    onlinePrice: baseOnlinePrice,
+  }
+}
+
 export class ProductsService {
   // Helper para aplicar filtro de stock a productos ya mapeados (funciona para tienda principal y microtiendas)
   private static applyStockFilterToProducts(products: Product[], stockFilter?: StockFilter): Product[] {
@@ -343,51 +399,30 @@ export class ProductsService {
       const productIds = data.map((p: any) => p.id)
       const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
 
-      // Para microtiendas, obtener cost/price de store_stock
-      let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
+      // Para microtiendas, obtener cost/price/online_price de store_stock
+      let costPriceMap = new Map<string, StoreStockPricing>()
 
       if (!isMainStore && currentStoreId) {
         const { data: storeStockData } = await supabaseAdmin
           .from('store_stock')
-          .select('product_id, cost, price')
+          .select('product_id, cost, price, online_price')
           .eq('store_id', currentStoreId)
           .in('product_id', productIds)
 
         if (storeStockData) {
           storeStockData.forEach((item: any) => {
-            costPriceMap.set(item.product_id, {
-              cost: item.cost,
-              price: item.price
-            })
+            costPriceMap.set(item.product_id, toStoreStockPricing(item))
           })
         }
       }
 
       const mappedProducts = data.map((product: any) => {
         const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
-
-        // Para microtiendas, usar cost/price de store_stock si existe
-        // Si el costo en store_stock es 0 o null, usar el costo original del producto como respaldo
-        // (esto cubre transferencias anteriores a la implementación de costos por tienda)
-        let productCost = product.cost
-        let productPrice = product.price
-
-        if (!isMainStore) {
-          const storeStockCostPrice = costPriceMap.get(product.id)
-
-          if (storeStockCostPrice) {
-            // Si hay registro en store_stock con cost/price, usar esos valores
-            // Si cost es null o 0, usar el price de Sincelejo como cost por defecto
-            productCost = (storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0)
-              ? storeStockCostPrice.cost
-              : product.price // Precio de venta de Sincelejo como cost por defecto
-            productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
-          } else {
-            // Sin registro: usar price de Sincelejo como cost por defecto
-            productCost = product.price
-            productPrice = 0
-          }
-        }
+        const financials = resolveProductFinancials(
+          product,
+          isMainStore,
+          !isMainStore ? costPriceMap.get(product.id) : null
+        )
 
         return {
           id: product.id,
@@ -396,8 +431,9 @@ export class ProductsService {
           categoryId: product.category_id,
           brand: product.brand,
           reference: product.reference,
-          price: productPrice,
-          cost: productCost,
+          price: financials.price,
+          onlinePrice: financials.onlinePrice,
+          cost: financials.cost,
           stock: stock,
           status: product.status,
           imageUrl: product.image_url || undefined,
@@ -531,10 +567,10 @@ export class ProductsService {
         const productIds = data.map((p: any) => p.id)
         const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
 
-        // Para microtiendas, obtener cost/price de store_stock
+        // Para microtiendas, obtener cost/price/online_price de store_stock
         // Solo filtrar por store_id para evitar URLs muy largas con muchos product_ids
         // IMPORTANTE: Usar limit alto para traer todos los registros (Supabase tiene límite de 1000 por defecto)
-        let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
+        let costPriceMap = new Map<string, StoreStockPricing>()
         if (!isMainStore && currentStoreId) {
           // Obtener todos los registros en lotes para evitar el límite de 1000
           let allStoreStockData: any[] = []
@@ -548,7 +584,7 @@ export class ProductsService {
 
             const { data: storeStockData, error: storeStockError } = await supabaseAdmin
               .from('store_stock')
-              .select('product_id, cost, price')
+              .select('product_id, cost, price, online_price')
               .eq('store_id', currentStoreId)
               .range(from, to)
 
@@ -571,10 +607,7 @@ export class ProductsService {
           */
 
           allStoreStockData.forEach((item: any) => {
-            costPriceMap.set(item.product_id, {
-              cost: item.cost,
-              price: item.price
-            })
+            costPriceMap.set(item.product_id, toStoreStockPricing(item))
           })
         }
 
@@ -595,27 +628,11 @@ export class ProductsService {
           // Si no está en el stockMap, usar valores por defecto
           const stockFromMap = stockMap.get(product.id)
           const stock = stockFromMap || { warehouse: 0, store: 0, total: 0 }
-
-          // Para microtiendas, usar cost/price de store_stock si existe
-          // Si el costo en store_stock es 0 o null, usar el costo original del producto como respaldo
-          // (esto cubre transferencias anteriores a la implementación de costos por tienda)
-          let productCost = product.cost
-          let productPrice = product.price
-
-          if (!isMainStore) {
-            const storeStockCostPrice = costPriceMap.get(product.id)
-
-            if (storeStockCostPrice) {
-              // Si hay registro en store_stock con cost/price, usar esos valores
-              // Si son null, usar 0 (no se ha configurado el precio aún)
-              productCost = storeStockCostPrice.cost !== null ? storeStockCostPrice.cost : 0
-              productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
-            } else {
-              // Sin registro de cost/price: usar 0 (transferencias antiguas o no configurado)
-              productCost = 0
-              productPrice = 0
-            }
-          }
+          const financials = resolveProductFinancials(
+            product,
+            isMainStore,
+            !isMainStore ? costPriceMap.get(product.id) : null
+          )
 
           // Log para depuración
           if (productIds.indexOf(product.id) < 3) {
@@ -628,8 +645,8 @@ export class ProductsService {
               originalCost: product.cost,
               originalPrice: product.price,
               storeStockCostPrice: storeStockCostPriceDebug,
-              finalCost: productCost,
-              finalPrice: productPrice,
+              finalCost: financials.cost,
+              finalPrice: financials.price,
               hasStoreStockEntry: !!storeStockCostPriceDebug,
               costPriceMapSize: costPriceMap.size,
               finalStock: stock
@@ -644,8 +661,9 @@ export class ProductsService {
             categoryId: product.category_id,
             brand: product.brand,
             reference: product.reference,
-            price: productPrice,
-            cost: productCost,
+            price: financials.price,
+            onlinePrice: financials.onlinePrice,
+            cost: financials.cost,
             stock: stock,
             status: product.status,
             imageUrl: product.image_url || undefined,
@@ -802,33 +820,21 @@ export class ProductsService {
       const stock = await this.getProductStockForStore(id, currentStoreId)
       // console.log('[PRODUCTS SERVICE] Stock retrieved:', stock)
 
-      // Para microtiendas, obtener cost y price de store_stock
-      let productCost = data.cost
-      let productPrice = data.price
-
+      let storeStockPricing: StoreStockPricing | null = null
       if (!isMainStore && currentStoreId) {
         const { data: storeStock } = await supabaseAdmin
           .from('store_stock')
-          .select('cost, price')
+          .select('cost, price, online_price')
           .eq('store_id', currentStoreId)
           .eq('product_id', id)
-          .single()
+          .maybeSingle()
 
         if (storeStock) {
-          // Si existe store_stock con cost/price, usarlos
-          // Si cost es null o 0, usar el price de Sincelejo como cost por defecto
-          productCost = (storeStock.cost !== null && storeStock.cost !== 0)
-            ? storeStock.cost
-            : data.price // Precio de venta de Sincelejo como cost por defecto
-          productPrice = storeStock.price !== null ? storeStock.price : 0
-          // console.log('[PRODUCTS SERVICE] Using store_stock cost/price:', { cost: productCost, price: productPrice })
-        } else {
-          // Sin registro: usar price de Sincelejo como cost por defecto
-          productCost = data.price
-          productPrice = 0
-          // console.log('[PRODUCTS SERVICE] No store_stock entry, using price from Sincelejo as cost:', productCost)
+          storeStockPricing = toStoreStockPricing(storeStock)
         }
       }
+
+      const financials = resolveProductFinancials(data, isMainStore, storeStockPricing)
 
       const product = {
         id: data.id,
@@ -837,8 +843,9 @@ export class ProductsService {
         categoryId: data.category_id,
         brand: data.brand,
         reference: data.reference,
-        price: productPrice,
-        cost: productCost,
+        price: financials.price,
+        onlinePrice: financials.onlinePrice,
+        cost: financials.cost,
         stock: stock,
         status: data.status,
         imageUrl: data.image_url || undefined,
@@ -891,7 +898,7 @@ export class ProductsService {
       const productIds = rawResults.map(p => p.id)
       const { data: storeStockData } = await supabaseAdmin
         .from('store_stock')
-        .select('product_id, cost, price')
+        .select('product_id, cost, price, online_price')
         .eq('store_id', currentStoreId)
         .in('product_id', productIds)
       if (storeStockData) {
@@ -948,17 +955,17 @@ export class ProductsService {
       currentStoreId
     )
 
-    let costPriceMap = new Map<string, { cost: number | null; price: number | null }>()
+    let costPriceMap = new Map<string, StoreStockPricing>()
     if (!isMainStore && currentStoreId) {
       const { data: storeStockData } = await supabaseAdmin
         .from('store_stock')
-        .select('product_id, cost, price')
+        .select('product_id, cost, price, online_price')
         .eq('store_id', currentStoreId)
         .in('product_id', data.map((row: { id: string }) => row.id))
 
       if (storeStockData) {
-        storeStockData.forEach((item: { product_id: string; cost: number | null; price: number | null }) => {
-          costPriceMap.set(item.product_id, { cost: item.cost, price: item.price })
+        storeStockData.forEach((item: { product_id: string; cost: number | null; price: number | null; online_price?: number | null }) => {
+          costPriceMap.set(item.product_id, toStoreStockPricing(item))
         })
       }
     }
@@ -966,22 +973,11 @@ export class ProductsService {
     const byId = new Map<string, Product>()
     for (const row of data) {
       const stock = stockMap.get(row.id) || { warehouse: 0, store: 0, total: 0 }
-      let productCost = row.cost ?? 0
-      let productPrice = row.price ?? 0
-
-      if (!isMainStore && currentStoreId) {
-        const storeStockCostPrice = costPriceMap.get(row.id)
-        if (storeStockCostPrice) {
-          productCost =
-            storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0
-              ? storeStockCostPrice.cost
-              : row.price ?? 0
-          productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
-        } else {
-          productCost = row.price ?? 0
-          productPrice = 0
-        }
-      }
+      const financials = resolveProductFinancials(
+        row,
+        isMainStore,
+        !isMainStore ? costPriceMap.get(row.id) : null
+      )
 
       byId.set(row.id, {
         id: row.id,
@@ -990,8 +986,9 @@ export class ProductsService {
         categoryId: row.category_id,
         brand: row.brand,
         reference: row.reference,
-        price: productPrice,
-        cost: productCost,
+        price: financials.price,
+        onlinePrice: financials.onlinePrice,
+        cost: financials.cost,
         stock,
         status: row.status,
         imageUrl: row.image_url || undefined,
@@ -1014,6 +1011,7 @@ export class ProductsService {
         brand: productData.brand || null, // Convertir string vacío a null
         reference: productData.reference,
         price: productData.price,
+        online_price: productData.onlinePrice ?? 0,
         cost: productData.cost,
         stock_warehouse: productData.stock.warehouse,
         stock_store: productData.stock.store,
@@ -1083,6 +1081,7 @@ export class ProductsService {
         brand: data.brand,
         reference: data.reference,
         price: data.price,
+        onlinePrice: data.online_price ?? 0,
         cost: data.cost,
         stock: {
           warehouse: data.stock_warehouse || 0,
@@ -1097,6 +1096,71 @@ export class ProductsService {
     } catch (error) {
       // Error silencioso en producción
       return null
+    }
+  }
+
+  /** Solo imagen de catálogo y precio tienda virtual (gestor /tienda). */
+  static async updateVirtualStoreListing(
+    productId: string,
+    updates: { onlinePrice?: number; imageUrl?: string | null },
+    options?: { storeId?: string | null; currentUserId?: string }
+  ): Promise<boolean> {
+    try {
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const currentStoreId = options?.storeId ?? getCurrentUserStoreId()
+      const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+
+      if (updates.onlinePrice !== undefined && updates.onlinePrice < 0) {
+        return false
+      }
+
+      const productUpdate: Record<string, unknown> = {}
+      if ('imageUrl' in updates) {
+        productUpdate.image_url = updates.imageUrl?.trim() ? updates.imageUrl.trim() : null
+      }
+      if (isMainStore && updates.onlinePrice !== undefined) {
+        productUpdate.online_price = updates.onlinePrice
+      }
+
+      if (Object.keys(productUpdate).length > 0) {
+        const { error } = await supabaseAdmin
+          .from('products')
+          .update(productUpdate)
+          .eq('id', productId)
+
+        if (error) return false
+      }
+
+      if (!isMainStore && currentStoreId && updates.onlinePrice !== undefined) {
+        const { error: storeStockError } = await supabaseAdmin
+          .from('store_stock')
+          .upsert(
+            {
+              store_id: currentStoreId,
+              product_id: productId,
+              online_price: updates.onlinePrice,
+            },
+            { onConflict: 'store_id,product_id' }
+          )
+
+        if (storeStockError) return false
+      }
+
+      if (options?.currentUserId) {
+        const currentProduct = await this.getProductById(productId)
+        await AuthService.logActivity(options.currentUserId, 'product_update', 'virtual_store', {
+          description: `Actualizó catálogo web del producto "${currentProduct?.name || productId}"`,
+          productId,
+          productName: currentProduct?.name,
+          productReference: currentProduct?.reference,
+          changes: Object.keys(updates),
+          updatedFields: updates,
+        })
+      }
+
+      return true
+    } catch {
+      return false
     }
   }
 
@@ -1124,17 +1188,19 @@ export class ProductsService {
       if (isMainStore) {
         // Tienda principal: actualizar en products
         if (updates.price !== undefined) updateData.price = updates.price
+        if (updates.onlinePrice !== undefined) updateData.online_price = updates.onlinePrice
         if (updates.cost !== undefined) updateData.cost = updates.cost
         if (updates.stock) {
           updateData.stock_warehouse = updates.stock.warehouse
           updateData.stock_store = updates.stock.store
         }
       } else {
-        // Microtienda: actualizar cost/price en store_stock, stock también en store_stock
-        if (updates.price !== undefined || updates.cost !== undefined || updates.stock) {
+        // Microtienda: actualizar cost/price/online_price en store_stock, stock también en store_stock
+        if (updates.price !== undefined || updates.onlinePrice !== undefined || updates.cost !== undefined || updates.stock) {
           const storeStockUpdate: any = {}
 
           if (updates.price !== undefined) storeStockUpdate.price = updates.price
+          if (updates.onlinePrice !== undefined) storeStockUpdate.online_price = updates.onlinePrice
           if (updates.cost !== undefined) storeStockUpdate.cost = updates.cost
 
           // Para stock en microtiendas, actualizar quantity en store_stock
@@ -1295,7 +1361,7 @@ export class ProductsService {
       // Búsqueda simplificada sin timeout - buscar en referencia y nombre
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, description, category_id, brand, reference, price, cost, stock_warehouse, stock_store, status, image_url, created_at, updated_at')
+        .select('id, name, description, category_id, brand, reference, price, online_price, cost, stock_warehouse, stock_store, status, image_url, created_at, updated_at')
         .or(`reference.ilike.%${cleanQuery}%,name.ilike.%${cleanQuery}%`)
         .order('created_at', { ascending: false })
         .limit(100)
@@ -1315,49 +1381,30 @@ export class ProductsService {
       const productIds = data.map((p: any) => p.id)
       const stockMap = await this.getProductsStockForStore(productIds, currentStoreId)
 
-      // Para microtiendas, obtener cost/price de store_stock
-      let costPriceMap = new Map<string, { cost: number | null, price: number | null }>()
+      // Para microtiendas, obtener cost/price/online_price de store_stock
+      let costPriceMap = new Map<string, StoreStockPricing>()
 
       if (!isMainStore && currentStoreId) {
         const { data: storeStockData } = await supabaseAdmin
           .from('store_stock')
-          .select('product_id, cost, price')
+          .select('product_id, cost, price, online_price')
           .eq('store_id', currentStoreId)
           .in('product_id', productIds)
 
         if (storeStockData) {
           storeStockData.forEach((item: any) => {
-            costPriceMap.set(item.product_id, {
-              cost: item.cost,
-              price: item.price
-            })
+            costPriceMap.set(item.product_id, toStoreStockPricing(item))
           })
         }
       }
 
       const mappedProducts = data.map((product: any) => {
         const stock = stockMap.get(product.id) || { warehouse: 0, store: 0, total: 0 }
-
-        // Para microtiendas, usar cost/price de store_stock si existe
-        let productCost = product.cost
-        let productPrice = product.price
-
-        if (!isMainStore) {
-          const storeStockCostPrice = costPriceMap.get(product.id)
-
-          if (storeStockCostPrice) {
-            // Si hay registro en store_stock con cost/price, usar esos valores
-            // Si cost es null o 0, usar el price de Sincelejo como cost por defecto
-            productCost = (storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0)
-              ? storeStockCostPrice.cost
-              : product.price // Precio de venta de Sincelejo como cost por defecto
-            productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
-          } else {
-            // Sin registro: usar price de Sincelejo como cost por defecto
-            productCost = product.price
-            productPrice = 0
-          }
-        }
+        const financials = resolveProductFinancials(
+          product,
+          isMainStore,
+          !isMainStore ? costPriceMap.get(product.id) : null
+        )
 
         return {
           id: product.id,
@@ -1366,8 +1413,9 @@ export class ProductsService {
           categoryId: product.category_id,
           brand: product.brand,
           reference: product.reference,
-          price: productPrice,
-          cost: productCost,
+          price: financials.price,
+          onlinePrice: financials.onlinePrice,
+          cost: financials.cost,
           stock: stock,
           status: product.status,
           imageUrl: product.image_url || undefined,

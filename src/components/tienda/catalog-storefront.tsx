@@ -9,6 +9,7 @@ import { TiendaHero } from '@/components/tienda/tienda-hero'
 import { TiendaTrustBadges } from '@/components/tienda/tienda-trust-badges'
 import { TiendaProductCard } from '@/components/tienda/tienda-product-card'
 import { TiendaFooter } from '@/components/tienda/tienda-footer'
+import { cn } from '@/lib/utils'
 
 export function CatalogStorefront({
   products,
@@ -35,7 +36,7 @@ export function CatalogStorefront({
   }, [products, q])
 
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
+    <div className="flex min-h-dvh flex-col">
       <TiendaAnnouncementBar />
       <TiendaHeader
         showSearch
@@ -50,31 +51,31 @@ export function CatalogStorefront({
       <main id="catalogo" className="w-full flex-1 scroll-mt-24">
         <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 sm:py-14 lg:px-8">
           <div className="mb-8 text-center sm:mb-12">
-            <p className="text-[10px] font-bold uppercase tracking-[0.25em] text-emerald-600">
-              Catálogo telefonía
+            <p className="text-[10px] font-bold uppercase tracking-[0.32em] text-[#6b6560]">
+              Listado
             </p>
-            <h2 className="mt-2 text-2xl font-bold tracking-tight text-zinc-900 sm:text-3xl lg:text-4xl">
-              Celulares y accesorios
+            <h2 className="tienda-display mt-2 text-3xl font-semibold tracking-wide text-[#eceae6] sm:text-4xl lg:text-5xl">
+              Catálogo
             </h2>
-            <p className="mx-auto mt-3 max-w-xl text-sm text-zinc-500">
+            <p className="mx-auto mt-3 max-w-xl text-sm text-[#9a968f]">
               {store?.name ?? 'Telefonía ZONA T'}
-              {store?.city ? ` · ${store.city}` : ''}. Consulta disponibilidad y precios referenciales.
+              {store?.city ? ` · ${store.city}` : ''}. Precios y disponibilidad referenciales.
             </p>
           </div>
 
           {products.length === 0 ? (
-            <div className="rounded-3xl border border-dashed border-zinc-200 bg-zinc-50/60 px-6 py-20 text-center">
-              <Package className="mx-auto h-14 w-14 text-zinc-300" strokeWidth={1} />
-              <p className="mt-4 text-sm font-medium text-zinc-700">Catálogo no disponible por ahora</p>
-              <p className="mt-1 text-xs text-zinc-500">
+            <div className={cn('tienda-card-premium rounded-3xl px-6 py-20 text-center')}>
+              <Package className="mx-auto h-14 w-14 text-white/15" strokeWidth={1} />
+              <p className="mt-4 text-sm font-medium text-[#d4d0c8]">Catálogo no disponible por ahora</p>
+              <p className="mt-1 text-xs text-[#6b6560]">
                 Visítanos en {store?.address ?? 'nuestra tienda'} o vuelve más tarde.
               </p>
             </div>
           ) : (
             <>
-              <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm text-zinc-500">
+              <div className="mb-6 flex flex-wrap items-center justify-between gap-2 text-sm text-[#6b6560]">
                 <p>
-                  <span className="font-semibold text-zinc-800">{filtered.length}</span>
+                  <span className="font-semibold text-[#d4d0c8]">{filtered.length}</span>
                   {filtered.length === 1 ? ' producto' : ' productos'}
                   {q.trim() ? ' encontrados' : ' disponibles'}
                 </p>
@@ -87,7 +88,7 @@ export function CatalogStorefront({
               </div>
 
               {filtered.length === 0 && q.trim() && (
-                <p className="mt-16 text-center text-sm text-zinc-500">
+                <p className="mt-16 text-center text-sm text-[#6b6560]">
                   No hay resultados para «{q.trim()}».
                 </p>
               )}

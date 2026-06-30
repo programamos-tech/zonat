@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BarChart3, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, UserCog, UserCircle, ArrowRightLeft, CheckCircle, Store, FileText } from 'lucide-react'
+import { BarChart3, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, UserCog, UserCircle, ArrowRightLeft, CheckCircle, Store, FileText, Globe } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
@@ -14,6 +14,7 @@ import { Logo } from '@/components/ui/logo'
 const items = [
   { href: '/reportes', label: 'Reportes', icon: BarChart3, module: 'dashboard', alwaysVisible: true },
   { href: '/inventory/products', label: 'Productos', icon: Package, module: 'products' },
+  { href: '/inventory/virtual-store', label: 'Tienda virtual', icon: Globe, module: 'virtual_store' },
   { href: '/inventory/transfers', label: 'Transferencias', icon: ArrowRightLeft, module: 'transfers', requiresMainStore: true },
   { href: '/inventory/receptions', label: 'Recepciones', icon: CheckCircle, module: 'receptions' },
   { href: '/clients', label: 'Clientes', icon: Users, module: 'clients' },
@@ -174,6 +175,7 @@ export function BottomNav() {
               (href === '/payments' && currentPathname?.startsWith('/payments')) ||
               (href === '/purchases/invoices' && currentPathname?.startsWith('/purchases')) ||
               (href === '/inventory/products' && currentPathname?.startsWith('/inventory/products')) ||
+              (href === '/inventory/virtual-store' && currentPathname?.startsWith('/inventory/virtual-store')) ||
               (href === '/inventory/transfers' && currentPathname?.startsWith('/inventory/transfers')) ||
               (href === '/inventory/receptions' && currentPathname?.startsWith('/inventory/receptions')) ||
               (href === '/sales' && currentPathname?.startsWith('/sales')) ||

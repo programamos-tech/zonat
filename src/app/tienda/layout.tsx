@@ -1,5 +1,8 @@
 import type { Metadata } from 'next'
 import { TiendaProviders } from '@/components/tienda/tienda-providers'
+import { tiendaDisplay, tiendaSans } from '@/app/tienda/tienda-fonts'
+import { getPublicCatalogStoreInfo } from '@/lib/public-catalog'
+import { cn } from '@/lib/utils'
 
 const siteUrl = (() => {
   try {
@@ -23,13 +26,19 @@ export const metadata: Metadata = {
   }
 }
 
-export default function TiendaLayout({ children }: { children: React.ReactNode }) {
+export default async function TiendaLayout({ children }: { children: React.ReactNode }) {
+  const store = await getPublicCatalogStoreInfo()
+
   return (
     <div
-      className="tienda-storefront min-h-dvh bg-white text-zinc-900 [color-scheme:light]"
-      data-theme="light"
+      className={cn(
+        'tienda-storefront min-h-dvh text-[#f5f0e6] [color-scheme:dark]',
+        tiendaDisplay.variable,
+        tiendaSans.variable
+      )}
+      data-theme="dark"
     >
-      <TiendaProviders>{children}</TiendaProviders>
+      <TiendaProviders store={store}>{children}</TiendaProviders>
     </div>
   )
 }

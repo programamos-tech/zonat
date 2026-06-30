@@ -4,7 +4,6 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { X, Minus, Plus, ShoppingBag, Trash2 } from 'lucide-react'
 import { useTiendaCart } from '@/contexts/tienda-cart-context'
-import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 
 function formatCOP(n: number) {
@@ -33,49 +32,58 @@ export function CartDrawer() {
     <>
       <button
         type="button"
-        className="fixed inset-0 z-[80] bg-zinc-900/40 backdrop-blur-[2px] transition-opacity"
+        className="fixed inset-0 z-[80] bg-black/70 backdrop-blur-sm transition-opacity"
         aria-label="Cerrar carrito"
         onClick={closeDrawer}
       />
       <aside
         className={cn(
-          'fixed inset-y-0 right-0 z-[90] flex w-full max-w-md flex-col border-l border-zinc-200 bg-white shadow-2xl',
+          'fixed inset-y-0 right-0 z-[90] flex w-full max-w-md flex-col border-l border-white/10 bg-[#0d0d0d] shadow-2xl',
           'animate-in slide-in-from-right duration-200'
         )}
         role="dialog"
         aria-modal="true"
         aria-labelledby="tienda-cart-title"
       >
-        <div className="flex items-center justify-between border-b border-zinc-100 px-5 py-4">
+        <div className="flex items-center justify-between px-5 py-4">
           <div className="flex items-center gap-2">
-            <ShoppingBag className="h-5 w-5 text-emerald-600" strokeWidth={1.5} />
-            <h2 id="tienda-cart-title" className="text-lg font-semibold text-zinc-900">
+            <ShoppingBag className="h-5 w-5 text-[#9a968f]" strokeWidth={1.5} />
+            <h2 id="tienda-cart-title" className="text-lg font-semibold text-[#f5f0e6]">
               Tu carrito
             </h2>
           </div>
-          <Button type="button" variant="ghost" size="icon" className="h-9 w-9 shrink-0" onClick={closeDrawer}>
-            <X className="h-5 w-5 text-zinc-500" />
-          </Button>
+          <button
+            type="button"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#9a968f] hover:bg-white/[0.06] hover:text-[#eceae6]"
+            onClick={closeDrawer}
+            aria-label="Cerrar"
+          >
+            <X className="h-5 w-5" />
+          </button>
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4">
           {lines.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <ShoppingBag className="h-14 w-14 text-zinc-200" strokeWidth={1} />
-              <p className="mt-4 text-sm font-medium text-zinc-600">Aún no agregas productos</p>
-              <p className="mt-1 text-xs text-zinc-400">Explora el catálogo y pulsa Agregar</p>
-              <Button className="mt-6" variant="outline" onClick={closeDrawer} asChild>
-                <Link href="/tienda">Ver productos</Link>
-              </Button>
+              <ShoppingBag className="h-14 w-14 text-white/15" strokeWidth={1} />
+              <p className="mt-4 text-sm font-medium text-[#eceae6]">Aún no agregas productos</p>
+              <p className="mt-1 text-xs text-[#9a968f]">Explora el catálogo y pulsa Agregar</p>
+              <Link
+                href="/tienda"
+                onClick={closeDrawer}
+                className="tienda-btn-outline-gold mt-6 inline-flex h-10 items-center rounded-full px-6 text-sm font-semibold"
+              >
+                Ver productos
+              </Link>
             </div>
           ) : (
             <ul className="space-y-4">
               {lines.map((line) => (
                 <li
                   key={line.lineId}
-                  className="flex gap-3 rounded-xl border border-zinc-100 bg-zinc-50/50 p-3"
+                  className="tienda-card-premium flex gap-3 rounded-xl p-3"
                 >
-                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-white">
+                  <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-[#111111]">
                     {line.imageUrl ? (
                       <Image
                         src={line.imageUrl}
@@ -85,33 +93,33 @@ export function CartDrawer() {
                         sizes="80px"
                       />
                     ) : (
-                      <div className="flex h-full items-center justify-center text-zinc-300">
+                      <div className="flex h-full items-center justify-center text-white/15">
                         <ShoppingBag className="h-8 w-8" strokeWidth={1} />
                       </div>
                     )}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="line-clamp-2 text-sm font-medium text-zinc-900">{line.name}</p>
-                    <p className="mt-0.5 font-mono text-[11px] text-zinc-400">{line.reference}</p>
-                    <p className="mt-1 text-sm font-semibold tabular-nums text-zinc-900">
+                    <p className="line-clamp-2 text-sm font-medium text-[#f5f0e6]">{line.name}</p>
+                    <p className="mt-0.5 font-mono text-[11px] text-[#a8a095]">{line.reference}</p>
+                    <p className="tienda-display mt-1 text-base font-semibold tabular-nums text-[#b8973f]">
                       {formatCOP(line.price)}
                     </p>
                     <div className="mt-2 flex items-center gap-2">
-                      <div className="inline-flex items-center rounded-lg border border-zinc-200 bg-white">
+                      <div className="inline-flex items-center rounded-lg border border-white/10 bg-[#141414]">
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center text-zinc-600 hover:bg-zinc-50"
+                          className="flex h-8 w-8 items-center justify-center text-[#9a968f] hover:text-[#eceae6]"
                           onClick={() => setQty(line.lineId, line.quantity - 1)}
                           aria-label="Menos"
                         >
                           <Minus className="h-3.5 w-3.5" />
                         </button>
-                        <span className="min-w-[2rem] text-center text-sm font-medium tabular-nums">
+                        <span className="min-w-[2rem] text-center text-sm font-medium tabular-nums text-[#f5f0e6]">
                           {line.quantity}
                         </span>
                         <button
                           type="button"
-                          className="flex h-8 w-8 items-center justify-center text-zinc-600 hover:bg-zinc-50"
+                          className="flex h-8 w-8 items-center justify-center text-[#9a968f] hover:text-[#eceae6]"
                           onClick={() => setQty(line.lineId, line.quantity + 1)}
                           aria-label="Más"
                         >
@@ -120,7 +128,7 @@ export function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 hover:bg-red-50 hover:text-red-600"
+                        className="ml-auto flex h-8 w-8 items-center justify-center rounded-lg text-[#a8a095] hover:bg-rose-500/10 hover:text-rose-400"
                         onClick={() => removeLine(line.lineId)}
                         aria-label="Quitar"
                       >
@@ -135,27 +143,34 @@ export function CartDrawer() {
         </div>
 
         {lines.length > 0 && (
-          <div className="border-t border-zinc-100 bg-white px-5 py-4">
+          <div className="bg-[#0a0a0a] px-5 py-4">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-zinc-500">Subtotal referencial</span>
-              <span className="text-lg font-bold tabular-nums text-zinc-900">{formatCOP(subtotal)}</span>
+              <span className="text-[#9a968f]">Subtotal referencial</span>
+              <span className="tienda-display text-xl font-semibold tabular-nums text-[#b8973f]">
+                {formatCOP(subtotal)}
+              </span>
             </div>
-            <p className="mt-2 text-xs leading-relaxed text-zinc-500">
+            <p className="mt-2 text-xs leading-relaxed text-[#6b6560]">
               El pago y la entrega se coordinan en tienda o con tu asesor ZONA T.
             </p>
             <div className="mt-4 flex flex-col gap-2">
-              <Button
-                className="h-11 w-full bg-emerald-600 text-white hover:bg-emerald-700"
+              <button
+                type="button"
+                className="tienda-btn-outline-gold h-11 w-full rounded-full text-sm font-semibold"
                 onClick={() => {
                   clearCart()
                   closeDrawer()
                 }}
               >
                 Vaciar carrito
-              </Button>
-              <Button variant="outline" className="h-11 w-full" onClick={closeDrawer} asChild>
-                <Link href="/tienda">Seguir comprando</Link>
-              </Button>
+              </button>
+              <Link
+                href="/tienda"
+                onClick={closeDrawer}
+                className="tienda-btn-gold inline-flex h-11 w-full items-center justify-center rounded-full text-sm font-semibold"
+              >
+                Seguir comprando
+              </Link>
             </div>
           </div>
         )}

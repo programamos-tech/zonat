@@ -60,6 +60,8 @@ export function LoginForm() {
 
           if (isSuperAdmin) {
             router.push('/select-store')
+          } else if (roleNorm === 'gestor_tienda_virtual') {
+            router.push('/inventory/virtual-store')
           } else {
             router.push('/reportes')
           }

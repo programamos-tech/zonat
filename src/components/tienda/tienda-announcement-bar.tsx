@@ -9,19 +9,19 @@ function AnnouncementItem({ text }: { text: string }) {
 
   return (
     <span className="flex shrink-0 items-center gap-3 sm:gap-4">
-      <span className="whitespace-nowrap text-[11px] font-medium tracking-wide text-zinc-300 sm:text-xs">
+      <span className="whitespace-nowrap text-[11px] font-medium tracking-[0.12em] text-[#9a968f] sm:text-xs">
         {main}
         {accent && (
           <>
-            <span className="mx-2 text-zinc-600" aria-hidden>
+            <span className="mx-2 text-white/20" aria-hidden>
               ·
             </span>
-            <span className="font-semibold text-emerald-400/95">{accent}</span>
+            <span className="font-medium text-[#d4d0c8]">{accent}</span>
           </>
         )}
       </span>
       <span
-        className="h-1 w-1 shrink-0 rounded-full bg-gradient-to-br from-emerald-400 to-amber-300/80"
+        className="h-1 w-1 shrink-0 rounded-full bg-white/20"
         aria-hidden
       />
     </span>
@@ -33,16 +33,16 @@ export function TiendaAnnouncementBar() {
 
   return (
     <div
-      className="relative z-40 overflow-hidden border-b border-white/[0.06] bg-zinc-950"
+      className="relative z-40 overflow-hidden bg-[#080808]"
       role="region"
       aria-label="Anuncios de la tienda"
     >
       <div
-        className="pointer-events-none absolute inset-0 opacity-60"
+        className="pointer-events-none absolute inset-0 opacity-70"
         aria-hidden
         style={{
           background:
-            'radial-gradient(ellipse 80% 120% at 50% -20%, rgba(16,185,129,0.12), transparent 55%)'
+            'radial-gradient(ellipse 80% 120% at 50% -20%, rgba(255,255,255,0.04), transparent 55%)'
         }}
       />
 
@@ -53,11 +53,6 @@ export function TiendaAnnouncementBar() {
           ))}
         </div>
       </div>
-
-      <div
-        className="h-px w-full bg-gradient-to-r from-transparent via-emerald-500/25 to-transparent"
-        aria-hidden
-      />
     </div>
   )
 }

@@ -21,7 +21,8 @@ import {
   CheckCircle,
   ChevronDown,
   ChevronRight,
-  FileText
+  FileText,
+  Globe
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -42,6 +43,7 @@ const navigation = [
     module: 'products',
     submenu: [
       { name: 'Productos', href: '/inventory/products', icon: Package, module: 'products' },
+      { name: 'Tienda virtual', href: '/inventory/virtual-store', icon: Globe, module: 'virtual_store' },
       { name: 'Transferencias', href: '/inventory/transfers', icon: ArrowRightLeft, module: 'transfers' },
       { name: 'Recepciones', href: '/inventory/receptions', icon: CheckCircle, module: 'receptions' },
     ]

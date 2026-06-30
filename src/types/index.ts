@@ -3,7 +3,7 @@ export interface User {
   name: string
   email: string
   password: string
-  role: 'superadmin' | 'admin' | 'vendedor' | 'inventario' | 'contador' | 'supervisor_tienda'
+  role: 'superadmin' | 'admin' | 'vendedor' | 'inventario' | 'contador' | 'supervisor_tienda' | 'gestor_tienda_virtual'
   permissions: Permission[]
   isActive: boolean
   storeId?: string // ID de la tienda a la que pertenece el usuario
@@ -33,6 +33,8 @@ export interface Product {
   reference: string
   description: string
   price: number
+  /** Precio de venta en tienda virtual (/tienda). */
+  onlinePrice?: number
   cost: number
   stock: {
     warehouse: number

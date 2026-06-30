@@ -63,6 +63,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     reference: product?.reference || '',
     description: product?.description || '',
     price: product?.price || 0,
+    onlinePrice: product?.onlinePrice || 0,
     cost: product?.cost || 0,
     stock: {
       warehouse: product?.stock?.warehouse || 0,
@@ -88,6 +89,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         reference: product.reference || '',
         description: product.description || '',
         price: product.price || 0,
+        onlinePrice: product.onlinePrice || 0,
         cost: product.cost || 0,
         stock: {
           warehouse: product.stock?.warehouse || 0,
@@ -176,7 +178,10 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
       }
     }
     if (formData.price <= 0) {
-      newErrors.price = 'El precio debe ser mayor a 0'
+      newErrors.price = 'El precio por mayor debe ser mayor a 0'
+    }
+    if (formData.onlinePrice < 0) {
+      newErrors.onlinePrice = 'El precio tienda virtual no puede ser negativo'
     }
     if (formData.cost < 0) {
       newErrors.cost = 'El costo no puede ser negativo'
@@ -244,6 +249,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         reference: formData.reference.trim(),
         description: formData.description.trim(),
         price: formData.price,
+        onlinePrice: formData.onlinePrice,
         cost: formData.cost,
         stock: {
           warehouse: formData.stock.warehouse,
@@ -269,6 +275,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
       reference: '',
       description: '',
       price: 0,
+      onlinePrice: 0,
       cost: 0,
       stock: {
         warehouse: 0,
@@ -476,7 +483,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                   <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div>
                       <label htmlFor="product-price" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Precio de venta <span className="text-zinc-400 dark:text-zinc-500">*</span>
+                        Precio por mayor <span className="text-zinc-400 dark:text-zinc-500">*</span>
                       </label>
                       <div className="relative">
                         <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
@@ -494,6 +501,28 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                       {errors.price && <p className="mt-1.5 text-sm text-red-400">{errors.price}</p>}
                     </div>
                     <div>
+                      <label htmlFor="product-online-price" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        Precio tienda virtual
+                      </label>
+                      <div className="relative">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
+                          $
+                        </span>
+                        <input
+                          id="product-online-price"
+                          type="text"
+                          value={formatNumber(formData.onlinePrice)}
+                          onChange={e => handleInputChange('onlinePrice', parseFormattedNumber(e.target.value))}
+                          className={cn(inputBase, 'pl-8', errors.onlinePrice && 'border-red-500/70')}
+                          placeholder="0"
+                        />
+                      </div>
+                      <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+                        Precio público en /tienda. Si queda en 0, el producto no aparece en el catálogo web.
+                      </p>
+                      {errors.onlinePrice && <p className="mt-1.5 text-sm text-red-400">{errors.onlinePrice}</p>}
+                    </div>
+                    <div className="md:col-span-2 md:max-w-[calc(50%-0.5rem)]">
                       <label htmlFor="product-cost" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                         Costo de adquisición
                       </label>

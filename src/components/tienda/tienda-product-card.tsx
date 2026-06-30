@@ -28,7 +28,7 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
     <article className="group relative flex flex-col">
       <Link
         href={`/tienda/p/${product.id}`}
-        className="relative block aspect-[4/5] overflow-hidden rounded-2xl bg-zinc-100"
+        className="tienda-card-premium relative block aspect-[4/5] overflow-hidden rounded-2xl bg-[#111111]"
       >
         {hasImg ? (
           <Image
@@ -39,7 +39,7 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-zinc-300">
+          <div className="flex h-full items-center justify-center text-white/15">
             <Package className="h-14 w-14" strokeWidth={1} aria-hidden />
           </div>
         )}
@@ -52,8 +52,8 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
             toggleFavorite(product.id)
           }}
           className={cn(
-            'absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 shadow-sm backdrop-blur-sm transition-colors',
-            fav ? 'text-rose-500' : 'text-zinc-500 hover:text-rose-500'
+            'absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-[#0a0a0a]/80 backdrop-blur-sm transition-colors',
+            fav ? 'text-rose-400' : 'text-[#6b6560] hover:text-[#d4d0c8]'
           )}
           aria-label={fav ? 'Quitar de favoritos' : 'Agregar a favoritos'}
         >
@@ -61,7 +61,7 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
         </button>
 
         {out && (
-          <span className="absolute bottom-3 left-3 rounded-full bg-zinc-900/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white">
+          <span className="absolute bottom-3 left-3 rounded-full border border-white/10 bg-[#0a0a0a]/90 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-[#9a968f]">
             Agotado
           </span>
         )}
@@ -69,23 +69,25 @@ export function TiendaProductCard({ product }: { product: PublicCatalogProduct }
 
       <div className="flex flex-1 flex-col pt-3">
         {product.brand?.trim() && (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-zinc-400">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#6b6560]">
             {product.brand}
           </p>
         )}
         <Link href={`/tienda/p/${product.id}`}>
-          <h2 className="mt-0.5 line-clamp-2 text-sm font-semibold leading-snug text-zinc-900 group-hover:text-emerald-800">
+          <h2 className="mt-0.5 line-clamp-2 text-sm font-medium leading-snug text-[#eceae6] transition-colors group-hover:text-white">
             {product.name}
           </h2>
         </Link>
-        <p className="mt-2 text-base font-bold tabular-nums text-zinc-900">{formatCOP(product.price)}</p>
+        <p className="tienda-display mt-2 text-lg font-semibold tabular-nums text-[#b8973f] sm:text-xl">
+          {formatCOP(product.price)}
+        </p>
 
         <button
           type="button"
           disabled={out}
           className={cn(
-            'mt-3 inline-flex h-9 w-full items-center justify-center rounded-full border border-zinc-300 bg-white text-xs font-semibold text-zinc-800 transition-colors',
-            'hover:border-zinc-900 hover:bg-zinc-900 hover:text-white',
+            'mt-3 inline-flex h-9 w-full items-center justify-center rounded-full text-xs font-semibold',
+            'tienda-btn-outline-gold',
             'disabled:cursor-not-allowed disabled:opacity-40'
           )}
           onClick={() => {

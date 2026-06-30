@@ -516,7 +516,8 @@ export class AuthService {
         'vendedor': 'Vendedor',
         'vendedora': 'Vendedor',
         'inventario': 'Inventario',
-        'contador': 'Contador'
+        'contador': 'Contador',
+        'gestor_tienda_virtual': 'Gestor Tienda Virtual',
       }
       
       const normalizedRoleName = roleName.toLowerCase().trim()
@@ -559,6 +560,9 @@ export class AuthService {
             { module: 'payments', actions: ['view', 'create', 'edit'] }
           ]
         }
+        if (normalizedRoleName === 'gestor_tienda_virtual') {
+          return [{ module: 'virtual_store', actions: ['view', 'edit'] }]
+        }
         return []
       }
 
@@ -574,6 +578,9 @@ export class AuthService {
           { module: 'sales', actions: ['view', 'create', 'edit'] },
           { module: 'payments', actions: ['view', 'create', 'edit'] }
         ]
+      }
+      if (normalizedRoleName === 'gestor_tienda_virtual') {
+        return [{ module: 'virtual_store', actions: ['view', 'edit'] }]
       }
       return []
     }

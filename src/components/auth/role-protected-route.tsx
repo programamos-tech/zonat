@@ -27,9 +27,12 @@ export function RoleProtectedRoute({
         const isSuperAdmin = roleNorm === 'superadmin' || (roleNorm.includes('super') && (roleNorm.includes('admin') || roleNorm.includes('administrador')))
         const isVendedor = roleNorm === 'vendedor' || roleNorm === 'vendedora'
         const isInventario = roleNorm === 'inventario'
+        const isGestorVirtual = roleNorm === 'gestor_tienda_virtual'
 
         if (isSuperAdmin) {
           router.push('/reportes')
+        } else if (isGestorVirtual) {
+          router.push('/inventory/virtual-store')
         } else if (isVendedor) {
           router.push('/sales')
         } else if (isInventario) {

@@ -14,7 +14,7 @@ export function TiendaPageShell({
   children: ReactNode
 }) {
   return (
-    <div className="flex min-h-dvh flex-col bg-white">
+    <div className="flex min-h-dvh flex-col">
       <TiendaAnnouncementBar />
       <TiendaHeader storeName={store?.name} />
       {children}

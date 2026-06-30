@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { getRequestUser } from '@/lib/api-auth'
+import { canManageVirtualStoreCatalog } from '@/lib/permissions'
 
 const MAX_BYTES = 5 * 1024 * 1024
 
 export async function POST(request: NextRequest) {
   try {
+    const user = await getRequestUser()
+    if (!user || !canManageVirtualStoreCatalog(user)) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 403 })
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File
 

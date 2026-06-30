@@ -93,6 +93,7 @@ type ProductRow = {
   reference?: string | null
   description?: string | null
   price?: number | null
+  online_price?: number | null
   brand?: string | null
   image_url?: string | null
   status?: string | null
@@ -102,6 +103,7 @@ type ProductRow = {
 type StoreStockRow = {
   quantity?: number | null
   price?: number | null
+  online_price?: number | null
   product_id?: string | null
   products?: ProductRow | ProductRow[] | null
 }
@@ -112,9 +114,10 @@ function resolveProductJoin(row: StoreStockRow): ProductRow | null {
   return Array.isArray(p) ? p[0] ?? null : p
 }
 
-function resolveSalePrice(storePrice: number, productPrice: number): number {
-  if (storePrice > 0) return storePrice
-  if (productPrice > 0) return productPrice
+/** Precio público de la tienda virtual (no usa precio por mayor). */
+function resolveOnlineSalePrice(storeOnlinePrice: number, productOnlinePrice: number): number {
+  if (storeOnlinePrice > 0) return storeOnlinePrice
+  if (productOnlinePrice > 0) return productOnlinePrice
   return 0
 }
 
@@ -173,7 +176,7 @@ export async function getPublicCatalogStoreInfo(
 
 async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCatalogProduct[]> {
   const productSelect =
-    'id, name, reference, description, price, brand, image_url, status, category_id'
+    'id, name, reference, description, price, online_price, brand, image_url, status, category_id'
 
   const rows: StoreStockRow[] = []
   let offset = 0
@@ -181,7 +184,7 @@ async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCa
   while (rows.length < MAX_CATALOG_ROWS) {
     const { data, error } = await supabaseAdmin
       .from('store_stock')
-      .select(`quantity, price, product_id, products!inner(${productSelect})`)
+      .select(`quantity, price, online_price, product_id, products!inner(${productSelect})`)
       .eq('store_id', storeId)
       .gt('quantity', 0)
       .order('quantity', { ascending: false })
@@ -215,10 +218,11 @@ async function fetchMicroStoreCatalogProducts(storeId: string): Promise<PublicCa
       if (status !== 'active' && status !== 'out_of_stock') return null
       const quantity = Math.max(0, Math.floor(Number(stockRow.quantity ?? 0)))
       if (quantity < 1) return null
-      const salePrice = resolveSalePrice(
-        Number(stockRow.price ?? 0),
-        Number(product.price ?? 0)
+      const salePrice = resolveOnlineSalePrice(
+        Number(stockRow.online_price ?? 0),
+        Number(product.online_price ?? 0)
       )
+      if (salePrice <= 0) return null
       return mapProductToCatalog(product, quantity, salePrice, catMap)
     })
     .filter((p): p is PublicCatalogProduct => Boolean(p))
@@ -265,7 +269,7 @@ export async function getPublicProductDetailById(id: string): Promise<PublicProd
   const { data: stockRow, error: stockErr } = await supabaseAdmin
     .from('store_stock')
     .select(
-      'quantity, price, products!inner(id, name, reference, description, price, brand, image_url, status, category_id)'
+      'quantity, price, online_price, products!inner(id, name, reference, description, price, online_price, brand, image_url, status, category_id)'
     )
     .eq('store_id', storeId)
     .eq('product_id', pid)
@@ -287,10 +291,13 @@ export async function getPublicProductDetailById(id: string): Promise<PublicProd
   if (quantity < 1) {
     return null
   }
-  const salePrice = resolveSalePrice(
-    Number((stockRow as StoreStockRow).price ?? 0),
-    Number(product.price ?? 0)
+  const salePrice = resolveOnlineSalePrice(
+    Number((stockRow as StoreStockRow).online_price ?? 0),
+    Number(product.online_price ?? 0)
   )
+  if (salePrice <= 0) {
+    return null
+  }
 
   const cid = product.category_id
   let categoryName: string | null = null
