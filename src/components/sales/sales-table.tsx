@@ -11,7 +11,7 @@ import { usePermissions } from '@/hooks/usePermissions'
 import { CreditsService } from '@/lib/credits-service'
 import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { cn } from '@/lib/utils'
-import { SALES_PAGE_SIZE, type SalesStatusFilter } from '@/lib/sales-service'
+import { SALES_PAGE_SIZE } from '@/lib/sales-service'
 import { cardShell } from '@/lib/card-shell'
 
 interface SalesTableProps {
@@ -20,7 +20,6 @@ interface SalesTableProps {
   currentPage: number
   totalSales: number
   hasMore: boolean
-  statusFilter?: SalesStatusFilter
   onEdit: (sale: Sale) => void
   onDelete: (sale: Sale) => void
   onView: (sale: Sale) => void
@@ -29,7 +28,6 @@ interface SalesTableProps {
   onPageChange: (page: number) => void
   onSearch: (searchTerm: string) => Promise<Sale[]>
   onRefresh?: () => void
-  onStatusFilterChange?: (filter: SalesStatusFilter) => void | Promise<void>
 }
 
 export function SalesTable({ 
@@ -38,7 +36,6 @@ export function SalesTable({
   currentPage,
   totalSales,
   hasMore,
-  statusFilter = 'all',
   onEdit, 
   onDelete, 
   onView, 
@@ -46,8 +43,7 @@ export function SalesTable({
   onPrint,
   onPageChange,
   onSearch,
-  onRefresh,
-  onStatusFilterChange
+  onRefresh
 }: SalesTableProps) {
   const { canCreate, currentUser } = usePermissions()
   const canCreateSales = canCreate('sales')
@@ -55,8 +51,8 @@ export function SalesTable({
   const isVendedorRole = roleNorm === 'vendedor' || roleNorm === 'vendedora'
   
   const [searchTerm, setSearchTerm] = useState('')
+  const [filterStatus, setFilterStatus] = useState('all')
   const [searchResults, setSearchResults] = useState<Sale[]>([])
-  const filterStatus = statusFilter
   const [isSearching, setIsSearching] = useState(false)
   const [credits, setCredits] = useState<Record<string, Credit>>({})
   const [transfers, setTransfers] = useState<Record<string, StoreStockTransfer>>({})
@@ -355,7 +351,7 @@ export function SalesTable({
     }
   }
 
-  const statuses: SalesStatusFilter[] = ['all', 'completed', 'pending', 'cancelled']
+  const statuses = ['all', 'completed', 'pending', 'cancelled']
 
   // Usar resultados de búsqueda si hay un término de búsqueda, sino usar todas las ventas
   // Pero si está buscando, no mostrar nada hasta que termine la búsqueda
@@ -366,13 +362,17 @@ export function SalesTable({
     index === self.findIndex((s) => s.id === sale.id)
   )
   
-  // Con búsqueda: filtrar en cliente por estado efectivo.
-  // Sin búsqueda: el servidor ya filtró según statusFilter.
   const filteredSales = uniqueSales.filter(sale => {
-    if (!searchTerm.trim() || filterStatus === 'all') return true
+    if (filterStatus === 'all') return true
     const effective = getEffectiveStatus(sale)
     if (filterStatus === 'pending') {
-      return effective === 'pending' || effective === 'partial' || effective === 'overdue' || sale.status === 'draft'
+      return (
+        effective === 'pending' ||
+        effective === 'partial' ||
+        effective === 'overdue' ||
+        sale.status === 'draft' ||
+        sale.status === 'pending'
+      )
     }
     if (filterStatus === 'cancelled') {
       return sale.status === 'cancelled' || effective === 'cancelled'
@@ -380,20 +380,20 @@ export function SalesTable({
     if (filterStatus === 'completed') {
       return effective === 'completed' && sale.status !== 'cancelled'
     }
-    return true
+    return sale.status === filterStatus
   })
 
   const emptyTitle = (() => {
     if (searchTerm.trim()) return 'No se encontraron ventas'
-    if (filterStatus === 'pending') return 'No hay ventas pendientes'
-    if (filterStatus === 'completed') return 'No hay ventas completadas'
-    if (filterStatus === 'cancelled') return 'No hay ventas anuladas'
+    if (filterStatus === 'pending') return 'No hay ventas pendientes en esta página'
+    if (filterStatus === 'completed') return 'No hay ventas completadas en esta página'
+    if (filterStatus === 'cancelled') return 'No hay ventas anuladas en esta página'
     return 'No hay ventas registradas'
   })()
 
   const emptySubtitle = (() => {
     if (searchTerm.trim()) return 'Intenta con otros criterios de búsqueda'
-    if (filterStatus !== 'all') return 'Prueba con otro estado o limpia el filtro'
+    if (filterStatus !== 'all') return 'Cambia de página o vuelve a “Todos los estados”'
     return 'Comienza creando una nueva venta'
   })()
 
@@ -467,10 +467,7 @@ export function SalesTable({
             </div>
             <select
               value={filterStatus}
-              onChange={(e) => {
-                const next = e.target.value as SalesStatusFilter
-                void onStatusFilterChange?.(next)
-              }}
+              onChange={(e) => setFilterStatus(e.target.value)}
               className="w-full sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 dark:border-neutral-600 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800"
             >
               {statuses.map(status => (

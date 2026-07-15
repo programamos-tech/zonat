@@ -16,16 +16,14 @@ export default function SalesPage() {
     loading, 
     currentPage, 
     totalSales, 
-    hasMore,
-    statusFilter,
+    hasMore, 
     createSale, 
     updateSale,
     deleteSale, 
     finalizeDraftSale,
     goToPage,
     searchSales,
-    refreshSales,
-    setStatusFilter
+    refreshSales
   } = useSales()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [saleToEdit, setSaleToEdit] = useState<Sale | null>(null)
@@ -125,7 +123,7 @@ export default function SalesPage() {
     }
   }
 
-  if (loading && sales.length === 0) {
+  if (loading) {
     return (
       <div className="flex min-h-[50dvh] items-center justify-center bg-white py-6 dark:bg-neutral-950">
         <div className="text-center">
@@ -145,7 +143,6 @@ export default function SalesPage() {
         currentPage={currentPage}
         totalSales={totalSales}
         hasMore={hasMore}
-        statusFilter={statusFilter}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onView={handleView}
@@ -154,7 +151,6 @@ export default function SalesPage() {
         onPageChange={goToPage}
         onSearch={searchSales}
         onRefresh={handleRefresh}
-        onStatusFilterChange={setStatusFilter}
       />
 
       <SaleModal

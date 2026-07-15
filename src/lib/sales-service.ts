@@ -7,11 +7,6 @@ import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './sto
 /** Tamaño de página de la lista de ventas (contexto + servicio + tabla). */
 export const SALES_PAGE_SIZE = 20
 
-/** Filtro del listado (coincide con el badge de estado mostrado). */
-export type SalesStatusFilter = 'all' | 'completed' | 'pending' | 'cancelled'
-
-const MAIN_STORE_ID_CONST = '00000000-0000-0000-0000-000000000001'
-
 function mapWebOrderFields(row: Record<string, unknown>) {
   return {
     orderSource: row.order_source === 'web' ? ('web' as const) : ('pos' as const),
@@ -28,84 +23,6 @@ function mapWebOrderFields(row: Record<string, unknown>) {
 }
 
 export class SalesService {
-  /** Créditos abiertos de la tienda (pendiente / parcial / vencido). */
-  private static async getOpenCreditLookup(storeId: string | null): Promise<{
-    saleIds: string[]
-    invoices: string[]
-  }> {
-    let creditQuery = supabase
-      .from('credits')
-      .select('sale_id, invoice_number, status')
-      .in('status', ['pending', 'partial', 'overdue'])
-
-    if (!storeId || storeId === MAIN_STORE_ID_CONST) {
-      creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST}`)
-    } else {
-      creditQuery = creditQuery.eq('store_id', storeId)
-    }
-
-    const { data } = await creditQuery.limit(8000)
-    const saleIds = [
-      ...new Set(
-        (data || [])
-          .map((c: { sale_id?: string | null }) => c.sale_id)
-          .filter((id): id is string => Boolean(id))
-      ),
-    ]
-    const invoices = [
-      ...new Set(
-        (data || [])
-          .map((c: { invoice_number?: string | null }) => c.invoice_number)
-          .filter((inv): inv is string => Boolean(inv))
-      ),
-    ]
-    return { saleIds, invoices }
-  }
-
-  /** Alcance de tienda + filtro de estado (como se ve en la tabla). */
-  private static async applySalesListFilters(
-    query: any,
-    storeId: string | null,
-    statusFilter: SalesStatusFilter
-  ): Promise<any> {
-    const isMain = !storeId || storeId === MAIN_STORE_ID_CONST
-
-    // Tienda primero (nunca anidar dos `.or()` — PostgREST solo respeta uno)
-    if (isMain) {
-      query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST}`)
-    } else {
-      query = query.eq('store_id', storeId)
-    }
-
-    if (statusFilter === 'all') {
-      return query
-    }
-
-    if (statusFilter === 'cancelled') {
-      return query.eq('status', 'cancelled')
-    }
-
-    if (statusFilter === 'completed') {
-      // Completadas por status de venta (sin anular)
-      return query.eq('status', 'completed')
-    }
-
-    if (statusFilter === 'pending') {
-      // Pendientes = ventas ligadas a créditos abiertos (por sale_id).
-      // Importante: no encadenar otro `.or()` tras el de tienda (PostgREST pisa el anterior).
-      const { saleIds } = await this.getOpenCreditLookup(storeId)
-      if (saleIds.length > 0) {
-        return query.in('id', saleIds.slice(0, 800))
-      }
-      return query.in('status', ['pending', 'draft'])
-    }
-
-    return query
-  }
-
-
-
-
   /**
    * Serial por tienda: PREFIX-##### (ej. ZT-00001).
    * Sin argumento usa la tienda del usuario; con `forStoreId` la tienda indicada (traslados/admin).
@@ -164,25 +81,28 @@ export class SalesService {
     }
   }
 
-  static async getAllSales(
-    page: number = 1,
-    limit: number = SALES_PAGE_SIZE,
-    statusFilter: SalesStatusFilter = 'all'
-  ): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
+  static async getAllSales(page: number = 1, limit: number = SALES_PAGE_SIZE): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
     try {
       const offset = (page - 1) * limit
       const storeId = getCurrentUserStoreId()
-      const MAIN_STORE_ID = MAIN_STORE_ID_CONST
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
-      // Obtener el total de ventas (misma tienda + filtro de estado)
-      let countQuery = supabase.from('sales').select('*', { count: 'exact', head: true })
-      countQuery = await this.applySalesListFilters(countQuery, storeId, statusFilter)
+      // Obtener el total de ventas
+      let countQuery = supabase
+        .from('sales')
+        .select('*', { count: 'exact', head: true })
+
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        countQuery = countQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        countQuery = countQuery.eq('store_id', storeId)
+      }
 
       const { count, error: countError } = await countQuery
 
+      // Si el count exacto falla (timeout en tablas grandes), seguimos con el listado
       if (countError) {
-        console.error('[Sales] Error contando ventas:', countError)
-        throw countError
+        console.warn('[Sales] Count falló, listando igual:', countError)
       }
 
       // Obtener las ventas paginadas con los códigos de referencia y pagos mixtos
@@ -209,7 +129,11 @@ export class SalesService {
           )
         `)
 
-      dataQuery = await this.applySalesListFilters(dataQuery, storeId, statusFilter)
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        dataQuery = dataQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        dataQuery = dataQuery.eq('store_id', storeId)
+      }
 
       const { data, error } = await dataQuery
         .order('created_at', { ascending: false })
@@ -219,6 +143,8 @@ export class SalesService {
         console.error('[Sales] Error listando ventas:', error)
         throw error
       }
+
+      const totalCount = countError ? (offset + (data?.length || 0) + (data && data.length === limit ? 1 : 0)) : (count || 0)
 
       // OPTIMIZADO: Batch queries en lugar de N+1
       // 1. Recolectar product_ids que necesitan referencia
@@ -245,7 +171,7 @@ export class SalesService {
         }
       }
 
-      // 3. Una sola query de créditos (sin doble `.or` ni `#` en URLs)
+      // 3. Recolectar invoice_numbers de ventas a crédito
       const creditInvoiceNumbers: string[] = []
       for (const sale of data || []) {
         if (sale.payment_method === 'credit' && sale.invoice_number) {
@@ -253,25 +179,22 @@ export class SalesService {
         }
       }
 
-      const creditStatusBySaleId = new Map<string, string>()
-      const creditStatusByInvoice = new Map<string, string>()
+      // 4. Una sola query para obtener todos los créditos
+      const creditStatusMap = new Map<string, string>()
       if (creditInvoiceNumbers.length > 0) {
         let creditQuery = supabase
           .from('credits')
-          .select('sale_id, invoice_number, status')
+          .select('invoice_number, status')
           .in('invoice_number', creditInvoiceNumbers)
-
         if (!storeId || storeId === MAIN_STORE_ID) {
           creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
         } else {
           creditQuery = creditQuery.eq('store_id', storeId)
         }
-
         const { data: creditsData } = await creditQuery
         if (creditsData) {
           for (const c of creditsData) {
-            if (c.sale_id) creditStatusBySaleId.set(c.sale_id, c.status)
-            if (c.invoice_number) creditStatusByInvoice.set(c.invoice_number, c.status)
+            creditStatusMap.set(c.invoice_number, c.status)
           }
         }
       }
@@ -297,12 +220,9 @@ export class SalesService {
           }
         })
 
-        const creditStatus =
-          sale.payment_method === 'credit'
-            ? creditStatusBySaleId.get(sale.id) ||
-              (sale.invoice_number ? creditStatusByInvoice.get(sale.invoice_number) : null) ||
-              null
-            : null
+        const creditStatus = sale.payment_method === 'credit' && sale.invoice_number
+          ? creditStatusMap.get(sale.invoice_number) || null
+          : null
 
         return {
           id: sale.id,
@@ -338,8 +258,8 @@ export class SalesService {
 
       return {
         sales,
-        total: count || 0,
-        hasMore: (offset + limit) < (count || 0)
+        total: totalCount,
+        hasMore: (offset + limit) < totalCount
       }
     } catch (error) {
       // Error silencioso en producción
