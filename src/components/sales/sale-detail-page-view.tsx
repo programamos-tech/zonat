@@ -190,7 +190,7 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
       case 'credit':
         return 'Crédito'
       case 'transfer':
-        return 'Transferencia'
+        return transfer ? 'Traslado' : 'Transferencia'
       case 'warranty':
         return 'Garantía'
       case 'mixed':
@@ -422,8 +422,8 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                   <div className="flex gap-3 px-4 py-3">
                     <Truck className={cn('mt-0.5 h-4 w-4', iconMuted)} strokeWidth={1.5} />
                     <div className="min-w-0 flex-1">
-                      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Transferencia</dt>
-                      <dd className="mt-1 font-mono text-sm text-cyan-700 dark:text-cyan-400">
+                      <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Traslado</dt>
+                      <dd className="mt-1 font-mono text-sm text-orange-700 dark:text-orange-400">
                         {transfer.transferNumber || `#${getTransferId(transfer)}`}
                       </dd>
                     </div>
@@ -465,7 +465,12 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                     <Field label="Tipo de pago">
                       <Badge
                         variant="outline"
-                        className="mt-1 border-zinc-200/90 bg-zinc-50 text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-200"
+                        className={cn(
+                          'mt-1 border px-2.5 py-1',
+                          transfer
+                            ? 'border-orange-500/30 bg-orange-500/10 text-orange-800 dark:border-orange-500/40 dark:bg-orange-950/40 dark:text-orange-300'
+                            : 'border-zinc-200/90 bg-zinc-50 text-zinc-800 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-200'
+                        )}
                       >
                         {getPaymentMethodLabel(sale.paymentMethod)}
                       </Badge>

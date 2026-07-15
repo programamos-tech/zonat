@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Receipt, Printer, RefreshCcw, ChevronLeft, ChevronRight, Banknote, CreditCard, ArrowLeftRight, ShieldCheck, Layers } from 'lucide-react'
+import { Search, Plus, Receipt, Printer, RefreshCcw, ChevronLeft, ChevronRight, Banknote, CreditCard, ArrowLeftRight, ShieldCheck, Layers, Truck } from 'lucide-react'
 import { Sale, Credit, StoreStockTransfer } from '@/types'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -144,10 +144,16 @@ export function SalesTable({
     return transfer.id.substring(transfer.id.length - 8).toUpperCase()
   }
 
-  // Verificar si una venta es de transferencia entre tiendas
+  // Verificar si una venta es de traslado de stock entre tiendas
   // Solo es true si hay una transferencia de stock asociada cargada
-  const isTransferSale = (sale: Sale): boolean => {
+  const isStoreTransferSale = (sale: Sale): boolean => {
     return !!transfers[sale.id]
+  }
+
+  /** Tipo visual: traslado entre tiendas vs método de pago. */
+  const getSaleDisplayMethod = (sale: Sale): string => {
+    if (isStoreTransferSale(sale)) return 'store_transfer'
+    return sale.paymentMethod
   }
 
   // Efecto para manejar la búsqueda
@@ -296,6 +302,8 @@ export function SalesTable({
         return 'bg-amber-100 text-amber-800 hover:bg-amber-200 hover:text-amber-900 dark:bg-amber-900/25 dark:text-amber-300 dark:hover:bg-amber-900/40'
       case 'transfer':
         return 'bg-sky-100 text-sky-800 hover:bg-sky-200 hover:text-sky-900 dark:bg-sky-900/25 dark:text-sky-300 dark:hover:bg-sky-900/40'
+      case 'store_transfer':
+        return 'bg-orange-100 text-orange-800 hover:bg-orange-200 hover:text-orange-900 dark:bg-orange-900/25 dark:text-orange-300 dark:hover:bg-orange-900/40'
       case 'warranty':
         return 'bg-violet-100 text-violet-800 hover:bg-violet-200 hover:text-violet-900 dark:bg-violet-900/25 dark:text-violet-300 dark:hover:bg-violet-900/40'
       case 'mixed':
@@ -313,6 +321,8 @@ export function SalesTable({
         return 'Crédito'
       case 'transfer':
         return 'Transferencia'
+      case 'store_transfer':
+        return 'Traslado'
       case 'warranty':
         return 'Garantía'
       case 'mixed':
@@ -330,6 +340,8 @@ export function SalesTable({
         return <CreditCard className={className} strokeWidth={1.75} aria-hidden />
       case 'transfer':
         return <ArrowLeftRight className={className} strokeWidth={1.75} aria-hidden />
+      case 'store_transfer':
+        return <Truck className={className} strokeWidth={1.75} aria-hidden />
       case 'warranty':
         return <ShieldCheck className={className} strokeWidth={1.75} aria-hidden />
       case 'mixed':
@@ -497,11 +509,11 @@ export function SalesTable({
                             <span
                               className={cn(
                                 'inline-flex h-6 w-6 items-center justify-center rounded-md',
-                                getPaymentMethodColor(sale.paymentMethod)
+                                getPaymentMethodColor(getSaleDisplayMethod(sale))
                               )}
-                              title={getPaymentMethodLabel(sale.paymentMethod)}
+                              title={getPaymentMethodLabel(getSaleDisplayMethod(sale))}
                             >
-                              {getPaymentMethodIcon(sale.paymentMethod, 'h-3.5 w-3.5')}
+                              {getPaymentMethodIcon(getSaleDisplayMethod(sale), 'h-3.5 w-3.5')}
                             </span>
                             <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">
                               {generateInvoiceNumber(sale)}
@@ -530,9 +542,9 @@ export function SalesTable({
                             </div>
                           </dl>
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                            <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} inline-flex shrink-0 items-center gap-1`}>
-                              {getPaymentMethodIcon(sale.paymentMethod)}
-                              {getPaymentMethodLabel(sale.paymentMethod)}
+                            <Badge className={`${getPaymentMethodColor(getSaleDisplayMethod(sale))} inline-flex shrink-0 items-center gap-1`}>
+                              {getPaymentMethodIcon(getSaleDisplayMethod(sale))}
+                              {getPaymentMethodLabel(getSaleDisplayMethod(sale))}
                             </Badge>
                             {sale.orderSource === 'web' && (
                               <Badge className="shrink-0 border-sky-500/25 bg-sky-500/10 text-sky-800 dark:text-sky-300">
@@ -605,11 +617,11 @@ export function SalesTable({
                                 <span
                                   className={cn(
                                     'mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
-                                    getPaymentMethodColor(sale.paymentMethod)
+                                    getPaymentMethodColor(getSaleDisplayMethod(sale))
                                   )}
-                                  title={getPaymentMethodLabel(sale.paymentMethod)}
+                                  title={getPaymentMethodLabel(getSaleDisplayMethod(sale))}
                                 >
-                                  {getPaymentMethodIcon(sale.paymentMethod, 'h-3.5 w-3.5')}
+                                  {getPaymentMethodIcon(getSaleDisplayMethod(sale), 'h-3.5 w-3.5')}
                                 </span>
                                 <div className="flex min-w-0 flex-col gap-0.5">
                                   <span>{generateInvoiceNumber(sale)}</span>
@@ -618,7 +630,7 @@ export function SalesTable({
                                       Crédito #{getCreditId(credits[sale.id])}
                                     </span>
                                   )}
-                                  {isTransferSale(sale) && transfers[sale.id] && (
+                                  {isStoreTransferSale(sale) && transfers[sale.id] && (
                                     <span className="text-[11px] font-normal text-zinc-500">
                                       TRF {transfers[sale.id].transferNumber || `#${getTransferId(transfers[sale.id])}`}
                                     </span>
@@ -636,10 +648,10 @@ export function SalesTable({
                             </td>
                             <td className="px-4 py-3 text-center">
                               <Badge
-                                className={`${getPaymentMethodColor(sale.paymentMethod)} inline-flex w-fit max-w-full items-center justify-center gap-1 text-[11px] whitespace-normal`}
+                                className={`${getPaymentMethodColor(getSaleDisplayMethod(sale))} inline-flex w-fit max-w-full items-center justify-center gap-1 text-[11px] whitespace-normal`}
                               >
-                                {getPaymentMethodIcon(sale.paymentMethod)}
-                                {getPaymentMethodLabel(sale.paymentMethod)}
+                                {getPaymentMethodIcon(getSaleDisplayMethod(sale))}
+                                {getPaymentMethodLabel(getSaleDisplayMethod(sale))}
                               </Badge>
                             </td>
                             <td className="px-4 py-3 text-center">
