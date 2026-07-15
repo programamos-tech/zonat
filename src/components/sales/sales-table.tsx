@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Search, Plus, Receipt, Printer, RefreshCcw, ChevronLeft, ChevronRight } from 'lucide-react'
+import { Search, Plus, Receipt, Printer, RefreshCcw, ChevronLeft, ChevronRight, Banknote, CreditCard, ArrowLeftRight, ShieldCheck, Layers } from 'lucide-react'
 import { Sale, Credit, StoreStockTransfer } from '@/types'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -322,6 +322,24 @@ export function SalesTable({
     }
   }
 
+  const getPaymentMethodIcon = (method: string) => {
+    const iconClass = 'h-3.5 w-3.5 shrink-0'
+    switch (method) {
+      case 'cash':
+        return <Banknote className={iconClass} strokeWidth={1.75} aria-hidden />
+      case 'credit':
+        return <CreditCard className={iconClass} strokeWidth={1.75} aria-hidden />
+      case 'transfer':
+        return <ArrowLeftRight className={iconClass} strokeWidth={1.75} aria-hidden />
+      case 'warranty':
+        return <ShieldCheck className={iconClass} strokeWidth={1.75} aria-hidden />
+      case 'mixed':
+        return <Layers className={iconClass} strokeWidth={1.75} aria-hidden />
+      default:
+        return <Receipt className={iconClass} strokeWidth={1.75} aria-hidden />
+    }
+  }
+
   const statuses = ['all', 'completed', 'pending', 'cancelled']
 
   // Usar resultados de búsqueda si hay un término de búsqueda, sino usar todas las ventas
@@ -377,14 +395,18 @@ export function SalesTable({
                   onClick={onRefresh}
                   variant="outline"
                   size="sm"
-                  className="flex-1 sm:flex-none"
+                  className="flex-1 border-emerald-600/30 bg-emerald-50 text-emerald-800 hover:border-emerald-600/45 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 sm:flex-none"
                 >
                   <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden md:inline">Actualizar</span>
                 </Button>
               )}
               {(canCreateSales || isVendedorRole) && (
-                <Button onClick={onCreate} size="sm" className="flex-1 sm:flex-none">
+                <Button
+                  onClick={onCreate}
+                  size="sm"
+                  className="flex-1 border-emerald-600 bg-emerald-600 text-white hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:text-white dark:hover:border-emerald-400 dark:hover:bg-emerald-400 sm:flex-none"
+                >
                   <Plus className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden sm:inline">Nueva Venta</span>
                   <span className="sm:hidden">Nueva</span>
@@ -500,7 +522,8 @@ export function SalesTable({
                             </div>
                           </dl>
                           <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                            <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} shrink-0`}>
+                            <Badge className={`${getPaymentMethodColor(sale.paymentMethod)} inline-flex shrink-0 items-center gap-1`}>
+                              {getPaymentMethodIcon(sale.paymentMethod)}
                               {getPaymentMethodLabel(sale.paymentMethod)}
                             </Badge>
                             {sale.orderSource === 'web' && (
@@ -594,8 +617,9 @@ export function SalesTable({
                             </td>
                             <td className="px-4 py-3 text-center">
                               <Badge
-                                className={`${getPaymentMethodColor(sale.paymentMethod)} inline-flex w-fit max-w-full items-center justify-center text-[11px] whitespace-normal`}
+                                className={`${getPaymentMethodColor(sale.paymentMethod)} inline-flex w-fit max-w-full items-center justify-center gap-1 text-[11px] whitespace-normal`}
                               >
+                                {getPaymentMethodIcon(sale.paymentMethod)}
                                 {getPaymentMethodLabel(sale.paymentMethod)}
                               </Badge>
                             </td>

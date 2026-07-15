@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -268,9 +269,19 @@ export default function CreditDetailPage() {
                         <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
                           Factura
                         </div>
-                        <p className="font-mono text-sm font-medium text-zinc-600 dark:text-zinc-400 sm:text-base">
-                          {credit.invoiceNumber}
-                        </p>
+                        {credit.saleId ? (
+                          <Link
+                            href={`/sales/${credit.saleId}`}
+                            className="inline-flex items-center gap-1 font-mono text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 sm:text-base"
+                            title="Ver detalle de la factura"
+                          >
+                            {credit.invoiceNumber}
+                          </Link>
+                        ) : (
+                          <p className="font-mono text-sm font-medium text-zinc-600 dark:text-zinc-400 sm:text-base">
+                            {credit.invoiceNumber}
+                          </p>
+                        )}
                       </div>
                     </div>
 

@@ -1535,8 +1535,9 @@ export class SalesService {
       const numericValue = cleanTerm.replace('#', '')
       const isNumber = !isNaN(Number(numericValue)) && numericValue.length > 0
 
-      const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
       let query = supabase
         .from('sales')
@@ -1554,18 +1555,34 @@ export class SalesService {
           )
         `)
 
-      // Filtrar por store_id si el usuario no puede acceder a todas las tiendas
-      if (storeId && !canAccessAllStores(user)) {
-        query = query.eq('store_id', storeId)
-      }
-
-      // Buscar en ambos campos: número de factura Y nombre del cliente
-      if (isNumber) {
-        // Si es un número, buscar por número de factura Y nombre del cliente
-        query = query.or(`invoice_number.eq.#${numericValue.padStart(3, '0')},invoice_number.ilike.%${numericValue}%,client_name.ilike.%${cleanTerm}%`)
+      // Misma regla que el listado: siempre acotar a la tienda activa
+      // (aunque sea admin), sin mezclar facturas de otras microtiendas.
+      if (isMainStore) {
+        const storeScope = `or(store_id.is.null,store_id.eq.${MAIN_STORE_ID})`
+        if (isNumber) {
+          const invoiceExact = `#${numericValue.padStart(3, '0')}`
+          query = query.or(
+            [
+              `and(${storeScope},invoice_number.eq.${invoiceExact})`,
+              `and(${storeScope},invoice_number.ilike.%${numericValue}%)`,
+              `and(${storeScope},client_name.ilike.%${cleanTerm}%)`
+            ].join(',')
+          )
+        } else {
+          query = query
+            .or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+            .ilike('client_name', `%${cleanTerm}%`)
+        }
       } else {
-        // Si no es un número, buscar solo por nombre del cliente
-        query = query.ilike('client_name', `%${cleanTerm}%`)
+        query = query.eq('store_id', storeId)
+        if (isNumber) {
+          const invoiceExact = `#${numericValue.padStart(3, '0')}`
+          query = query.or(
+            `invoice_number.eq.${invoiceExact},invoice_number.ilike.%${numericValue}%,client_name.ilike.%${cleanTerm}%`
+          )
+        } else {
+          query = query.ilike('client_name', `%${cleanTerm}%`)
+        }
       }
 
       const { data, error } = await query.order('created_at', { ascending: false })
