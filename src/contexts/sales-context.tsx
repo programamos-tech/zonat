@@ -1,8 +1,8 @@
 'use client'
 
-import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode, useRef } from 'react'
 import { Sale } from '@/types'
-import { SalesService, SALES_PAGE_SIZE } from '@/lib/sales-service'
+import { SalesService, SALES_PAGE_SIZE, type SalesStatusFilter } from '@/lib/sales-service'
 import { useAuth } from './auth-context'
 import { useProducts } from './products-context'
 
@@ -12,6 +12,7 @@ interface SalesContextType {
   currentPage: number
   totalSales: number
   hasMore: boolean
+  statusFilter: SalesStatusFilter
   createSale: (saleData: Omit<Sale, 'id' | 'createdAt'>) => Promise<void>
   updateSale: (id: string, saleData: Partial<Sale>) => Promise<void>
   deleteSale: (id: string) => Promise<void>
@@ -20,6 +21,7 @@ interface SalesContextType {
   searchSales: (searchTerm: string) => Promise<Sale[]>
   refreshSales: () => Promise<void>
   goToPage: (page: number) => Promise<void>
+  setStatusFilter: (filter: SalesStatusFilter) => Promise<void>
 }
 
 const SalesContext = createContext<SalesContextType | undefined>(undefined)
@@ -30,20 +32,27 @@ export function SalesProvider({ children }: { children: ReactNode }) {
   const [currentPage, setCurrentPage] = useState(1)
   const [totalSales, setTotalSales] = useState(0)
   const [hasMore, setHasMore] = useState(false)
+  const [statusFilter, setStatusFilterState] = useState<SalesStatusFilter>('all')
+  const statusFilterRef = useRef<SalesStatusFilter>('all')
   const { user: currentUser } = useAuth()
-  const { refreshProducts, returnStockFromSale } = useProducts()
+  const { refreshProducts } = useProducts()
 
-  const fetchSales = useCallback(async (page: number = 1, append: boolean = false) => {
+  const fetchSales = useCallback(async (
+    page: number = 1,
+    append: boolean = false,
+    filter?: SalesStatusFilter
+  ) => {
+    const activeFilter = filter ?? statusFilterRef.current
     try {
       setLoading(true)
-      const result = await SalesService.getAllSales(page, SALES_PAGE_SIZE)
-      
+      const result = await SalesService.getAllSales(page, SALES_PAGE_SIZE, activeFilter)
+
       if (append) {
         setSales(prev => [...prev, ...result.sales])
       } else {
         setSales(result.sales)
       }
-      
+
       setCurrentPage(page)
       setTotalSales(result.total)
       setHasMore(result.hasMore)
@@ -55,7 +64,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
   }, [currentUser?.storeId])
 
   useEffect(() => {
-    fetchSales()
+    fetchSales(1, false, statusFilterRef.current)
   }, [fetchSales, currentUser?.storeId])
 
   const createSale = async (saleData: Omit<Sale, 'id' | 'createdAt'>) => {
@@ -113,14 +122,14 @@ export function SalesProvider({ children }: { children: ReactNode }) {
 
       // Actualizar el estado local con el motivo de cancelación
       setSales(prev => {
-        const updated = prev.map(sale => 
-          sale.id === id 
+        const updated = prev.map(sale =>
+          sale.id === id
             ? { ...sale, status: 'cancelled' as const, cancellationReason: reason }
             : sale
         )
         return updated
       })
-      
+
       // Refrescar las ventas para obtener los datos actualizados de la base de datos
       await fetchSales(currentPage, false)
 
@@ -128,13 +137,9 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       const cancelledSale = sales.find(sale => sale.id === id)
 
       if (cancelledSale?.paymentMethod === 'credit') {
-
-        window.dispatchEvent(new CustomEvent('creditCancelled', { 
-          detail: { invoiceNumber: cancelledSale.invoiceNumber } 
+        window.dispatchEvent(new CustomEvent('creditCancelled', {
+          detail: { invoiceNumber: cancelledSale.invoiceNumber }
         }))
-
-      } else {
-
       }
 
       return result
@@ -150,7 +155,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
           throw new Error(`Error al anular la venta: ${error.message}`)
         }
       }
-      
+
       throw new Error('Error inesperado al anular la venta. Por favor, inténtalo de nuevo.')
     }
   }
@@ -191,6 +196,12 @@ export function SalesProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  const setStatusFilter = async (filter: SalesStatusFilter) => {
+    statusFilterRef.current = filter
+    setStatusFilterState(filter)
+    await fetchSales(1, false, filter)
+  }
+
   return (
     <SalesContext.Provider value={{
       sales,
@@ -198,6 +209,7 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       currentPage,
       totalSales,
       hasMore,
+      statusFilter,
       createSale,
       updateSale,
       deleteSale,
@@ -205,7 +217,8 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       finalizeDraftSale,
       searchSales,
       refreshSales,
-      goToPage
+      goToPage,
+      setStatusFilter
     }}>
       {children}
     </SalesContext.Provider>

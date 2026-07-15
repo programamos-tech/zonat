@@ -7,6 +7,15 @@ import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './sto
 /** Tamaño de página de la lista de ventas (contexto + servicio + tabla). */
 export const SALES_PAGE_SIZE = 20
 
+/** Filtro del listado (coincide con el badge de estado mostrado). */
+export type SalesStatusFilter = 'all' | 'completed' | 'pending' | 'cancelled'
+
+const MAIN_STORE_ID_CONST = '00000000-0000-0000-0000-000000000001'
+
+function quotePostgrestList(values: string[]): string {
+  return values.map((v) => `"${String(v).replace(/"/g, '')}"`).join(',')
+}
+
 function mapWebOrderFields(row: Record<string, unknown>) {
   return {
     orderSource: row.order_source === 'web' ? ('web' as const) : ('pos' as const),
@@ -23,6 +32,153 @@ function mapWebOrderFields(row: Record<string, unknown>) {
 }
 
 export class SalesService {
+  /** Créditos abiertos de la tienda (pendiente / parcial / vencido). */
+  private static async getOpenCreditLookup(storeId: string | null): Promise<{
+    saleIds: string[]
+    invoices: string[]
+  }> {
+    let creditQuery = supabase
+      .from('credits')
+      .select('sale_id, invoice_number, status')
+      .in('status', ['pending', 'partial', 'overdue'])
+
+    if (!storeId || storeId === MAIN_STORE_ID_CONST) {
+      creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST}`)
+    } else {
+      creditQuery = creditQuery.eq('store_id', storeId)
+    }
+
+    const { data } = await creditQuery.limit(8000)
+    const saleIds = [
+      ...new Set(
+        (data || [])
+          .map((c: { sale_id?: string | null }) => c.sale_id)
+          .filter((id): id is string => Boolean(id))
+      ),
+    ]
+    const invoices = [
+      ...new Set(
+        (data || [])
+          .map((c: { invoice_number?: string | null }) => c.invoice_number)
+          .filter((inv): inv is string => Boolean(inv))
+      ),
+    ]
+    return { saleIds, invoices }
+  }
+
+  /** Alcance de tienda + filtro de estado (como se ve en la tabla). */
+  private static async applySalesListFilters(
+    query: any,
+    storeId: string | null,
+    statusFilter: SalesStatusFilter
+  ): Promise<any> {
+    const isMain = !storeId || storeId === MAIN_STORE_ID_CONST
+    const storeScope = isMain
+      ? `or(store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST})`
+      : null
+
+    const withStore = (inner: string) =>
+      storeScope ? `and(${storeScope},${inner})` : inner
+
+    if (statusFilter === 'all') {
+      if (isMain) return query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST}`)
+      return query.eq('store_id', storeId)
+    }
+
+    if (statusFilter === 'cancelled') {
+      if (isMain) {
+        return query.or(
+          [
+            withStore('status.eq.cancelled'),
+          ].join(',')
+        )
+      }
+      return query.eq('store_id', storeId).eq('status', 'cancelled')
+    }
+
+    const { saleIds, invoices } = await this.getOpenCreditLookup(storeId)
+
+    if (statusFilter === 'pending') {
+      const parts: string[] = [
+        withStore('status.eq.pending'),
+        withStore('status.eq.draft'),
+      ]
+      if (saleIds.length > 0) {
+        parts.push(withStore(`id.in.(${saleIds.join(',')})`))
+      }
+      if (invoices.length > 0) {
+        parts.push(
+          withStore(
+            `and(payment_method.eq.credit,invoice_number.in.(${quotePostgrestList(invoices)}))`
+          )
+        )
+      }
+      if (!isMain) {
+        return query.eq('store_id', storeId).or(
+          [
+            'status.eq.pending',
+            'status.eq.draft',
+            ...(saleIds.length > 0 ? [`id.in.(${saleIds.join(',')})`] : []),
+            ...(invoices.length > 0
+              ? [
+                  `and(payment_method.eq.credit,invoice_number.in.(${quotePostgrestList(invoices)}))`,
+                ]
+              : []),
+          ].join(',')
+        )
+      }
+      return query.or(parts.join(','))
+    }
+
+    // Completadas: status=completed y sin crédito abierto
+    if (!isMain) {
+      query = query.eq('store_id', storeId).eq('status', 'completed')
+      if (saleIds.length > 0) {
+        query = query.not('id', 'in', `(${saleIds.join(',')})`)
+      }
+      if (invoices.length > 0) {
+        query = query.or(
+          `payment_method.neq.credit,payment_method.is.null,invoice_number.is.null,invoice_number.not.in.(${quotePostgrestList(invoices)})`
+        )
+      }
+      return query
+    }
+
+    // Tienda principal — un solo `.or` anidando store + condiciones
+    const completedParts: string[] = []
+    if (saleIds.length === 0 && invoices.length === 0) {
+      completedParts.push(withStore('status.eq.completed'))
+    } else {
+      // Completadas no-crédito
+      completedParts.push(
+        withStore('and(status.eq.completed,payment_method.neq.credit)')
+      )
+      completedParts.push(
+        withStore('and(status.eq.completed,payment_method.is.null)')
+      )
+      // Crédito pagado: completed y factura NO abierta
+      if (invoices.length > 0) {
+        completedParts.push(
+          withStore(
+            `and(status.eq.completed,payment_method.eq.credit,invoice_number.not.in.(${quotePostgrestList(invoices)}))`
+          )
+        )
+      } else {
+        completedParts.push(
+          withStore('and(status.eq.completed,payment_method.eq.credit)')
+        )
+      }
+      // Excluir sale_ids abiertos vía filtro negativo no cabe bien en or;
+      // se aplica .not después si hay ids (y store ya acotada por or and).
+    }
+    query = query.or(completedParts.join(','))
+    if (saleIds.length > 0) {
+      query = query.not('id', 'in', `(${saleIds.join(',')})`)
+    }
+    return query
+  }
+
+
   /**
    * Serial por tienda: PREFIX-##### (ej. ZT-00001).
    * Sin argumento usa la tienda del usuario; con `forStoreId` la tienda indicada (traslados/admin).
@@ -81,28 +237,19 @@ export class SalesService {
     }
   }
 
-  static async getAllSales(page: number = 1, limit: number = SALES_PAGE_SIZE): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
+  static async getAllSales(
+    page: number = 1,
+    limit: number = SALES_PAGE_SIZE,
+    statusFilter: SalesStatusFilter = 'all'
+  ): Promise<{ sales: Sale[], total: number, hasMore: boolean }> {
     try {
       const offset = (page - 1) * limit
-      const user = getCurrentUser()
       const storeId = getCurrentUserStoreId()
-      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const MAIN_STORE_ID = MAIN_STORE_ID_CONST
 
-      // Obtener el total de ventas
-      let countQuery = supabase
-        .from('sales')
-        .select('*', { count: 'exact', head: true })
-
-      // Filtrar por store_id:
-      // - Si storeId es null o MAIN_STORE_ID, solo mostrar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
-      // - Si storeId es una microtienda, solo mostrar ventas de esa microtienda
-      if (!storeId || storeId === MAIN_STORE_ID) {
-        // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
-        countQuery = countQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-      } else {
-        // Microtienda: solo ventas de esa microtienda
-        countQuery = countQuery.eq('store_id', storeId)
-      }
+      // Obtener el total de ventas (misma tienda + filtro de estado)
+      let countQuery = supabase.from('sales').select('*', { count: 'exact', head: true })
+      countQuery = await this.applySalesListFilters(countQuery, storeId, statusFilter)
 
       const { count, error: countError } = await countQuery
 
@@ -135,16 +282,7 @@ export class SalesService {
           )
         `)
 
-      // Filtrar por store_id:
-      // - Si storeId es null o MAIN_STORE_ID, solo mostrar ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
-      // - Si storeId es una microtienda, solo mostrar ventas de esa microtienda
-      if (!storeId || storeId === MAIN_STORE_ID) {
-        // Tienda principal: solo ventas de la tienda principal (store_id = MAIN_STORE_ID o null)
-        dataQuery = dataQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-      } else {
-        // Microtienda: solo ventas de esa microtienda
-        dataQuery = dataQuery.eq('store_id', storeId)
-      }
+      dataQuery = await this.applySalesListFilters(dataQuery, storeId, statusFilter)
 
       const { data, error } = await dataQuery
         .order('created_at', { ascending: false })
@@ -179,21 +317,31 @@ export class SalesService {
         }
       }
 
-      // 3. Recolectar invoice_numbers de ventas a crédito
+      // 3. Créditos de estas ventas (priorizar sale_id; fallback invoice_number)
+      const creditSaleIds: string[] = []
       const creditInvoiceNumbers: string[] = []
       for (const sale of data || []) {
-        if (sale.payment_method === 'credit' && sale.invoice_number) {
-          creditInvoiceNumbers.push(sale.invoice_number)
+        if (sale.payment_method === 'credit') {
+          creditSaleIds.push(sale.id)
+          if (sale.invoice_number) creditInvoiceNumbers.push(sale.invoice_number)
         }
       }
 
-      // 4. Una sola query para obtener todos los créditos
-      const creditStatusMap = new Map<string, string>()
-      if (creditInvoiceNumbers.length > 0) {
+      const creditStatusBySaleId = new Map<string, string>()
+      const creditStatusByInvoice = new Map<string, string>()
+      if (creditSaleIds.length > 0 || creditInvoiceNumbers.length > 0) {
         let creditQuery = supabase
           .from('credits')
-          .select('invoice_number, status')
-          .in('invoice_number', creditInvoiceNumbers)
+          .select('id, sale_id, invoice_number, status')
+        if (creditSaleIds.length > 0 && creditInvoiceNumbers.length > 0) {
+          creditQuery = creditQuery.or(
+            `sale_id.in.(${creditSaleIds.join(',')}),invoice_number.in.(${quotePostgrestList(creditInvoiceNumbers)})`
+          )
+        } else if (creditSaleIds.length > 0) {
+          creditQuery = creditQuery.in('sale_id', creditSaleIds)
+        } else {
+          creditQuery = creditQuery.in('invoice_number', creditInvoiceNumbers)
+        }
         if (!storeId || storeId === MAIN_STORE_ID) {
           creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
         } else {
@@ -202,7 +350,8 @@ export class SalesService {
         const { data: creditsData } = await creditQuery
         if (creditsData) {
           for (const c of creditsData) {
-            creditStatusMap.set(c.invoice_number, c.status)
+            if (c.sale_id) creditStatusBySaleId.set(c.sale_id, c.status)
+            if (c.invoice_number) creditStatusByInvoice.set(c.invoice_number, c.status)
           }
         }
       }
@@ -228,9 +377,12 @@ export class SalesService {
           }
         })
 
-        const creditStatus = sale.payment_method === 'credit' && sale.invoice_number
-          ? creditStatusMap.get(sale.invoice_number) || null
-          : null
+        const creditStatus =
+          sale.payment_method === 'credit'
+            ? creditStatusBySaleId.get(sale.id) ||
+              (sale.invoice_number ? creditStatusByInvoice.get(sale.invoice_number) : null) ||
+              null
+            : null
 
         return {
           id: sale.id,
