@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useMemo, useCallback } from 'react'
+import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -629,7 +630,20 @@ export default function ClientCreditsPage() {
                         <div className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-50">
                           #{getCreditDescription(credit)}
                         </div>
-                        <div className="mt-0.5 font-mono text-xs text-zinc-500">{credit.invoiceNumber}</div>
+                        <div className="mt-0.5 font-mono text-xs">
+                          {credit.saleId ? (
+                            <Link
+                              href={`/sales/${credit.saleId}`}
+                              onClick={(e) => e.stopPropagation()}
+                              className="text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                              title="Ver detalle de la factura"
+                            >
+                              {credit.invoiceNumber}
+                            </Link>
+                          ) : (
+                            <span className="text-zinc-500">{credit.invoiceNumber}</span>
+                          )}
+                        </div>
                       </div>
                       <Badge
                         variant="outline"
@@ -755,8 +769,19 @@ export default function ClientCreditsPage() {
                           <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
                             #{getCreditDescription(credit)}
                           </td>
-                          <td className="whitespace-nowrap px-4 py-3 font-mono text-xs text-zinc-600 dark:text-zinc-400">
-                            {credit.invoiceNumber}
+                          <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">
+                            {credit.saleId ? (
+                              <Link
+                                href={`/sales/${credit.saleId}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
+                                title="Ver detalle de la factura"
+                              >
+                                {credit.invoiceNumber}
+                              </Link>
+                            ) : (
+                              <span className="text-zinc-600 dark:text-zinc-400">{credit.invoiceNumber}</span>
+                            )}
                           </td>
                           <td className="whitespace-nowrap px-4 py-3 text-right tabular-nums text-zinc-800 dark:text-zinc-200">
                             {formatCurrency(credit.totalAmount)}

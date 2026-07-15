@@ -291,17 +291,17 @@ export function SalesTable({
   const getPaymentMethodColor = (method: string) => {
     switch (method) {
       case 'cash':
-        return 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300'
+        return 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200 hover:text-emerald-900 dark:bg-emerald-900/25 dark:text-emerald-300 dark:hover:bg-emerald-900/40'
       case 'credit':
-        return 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300'
+        return 'bg-amber-100 text-amber-800 hover:bg-amber-200 hover:text-amber-900 dark:bg-amber-900/25 dark:text-amber-300 dark:hover:bg-amber-900/40'
       case 'transfer':
-        return 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300'
+        return 'bg-sky-100 text-sky-800 hover:bg-sky-200 hover:text-sky-900 dark:bg-sky-900/25 dark:text-sky-300 dark:hover:bg-sky-900/40'
       case 'warranty':
-        return 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300'
+        return 'bg-violet-100 text-violet-800 hover:bg-violet-200 hover:text-violet-900 dark:bg-violet-900/25 dark:text-violet-300 dark:hover:bg-violet-900/40'
       case 'mixed':
-        return 'bg-green-100 text-green-800 hover:bg-green-200 hover:text-green-900 dark:bg-green-900/20 dark:text-green-400 dark:hover:bg-green-900/30 dark:hover:text-green-300'
+        return 'bg-fuchsia-100 text-fuchsia-800 hover:bg-fuchsia-200 hover:text-fuchsia-900 dark:bg-fuchsia-900/25 dark:text-fuchsia-300 dark:hover:bg-fuchsia-900/40'
       default:
-        return 'bg-gray-100 text-gray-800 hover:bg-gray-200 hover:text-gray-900 dark:bg-neutral-800 dark:text-gray-300 dark:hover:bg-neutral-700 dark:hover:text-gray-200'
+        return 'bg-zinc-100 text-zinc-800 hover:bg-zinc-200 hover:text-zinc-900 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700'
     }
   }
 
@@ -322,21 +322,20 @@ export function SalesTable({
     }
   }
 
-  const getPaymentMethodIcon = (method: string) => {
-    const iconClass = 'h-3.5 w-3.5 shrink-0'
+  const getPaymentMethodIcon = (method: string, className = 'h-3.5 w-3.5 shrink-0') => {
     switch (method) {
       case 'cash':
-        return <Banknote className={iconClass} strokeWidth={1.75} aria-hidden />
+        return <Banknote className={className} strokeWidth={1.75} aria-hidden />
       case 'credit':
-        return <CreditCard className={iconClass} strokeWidth={1.75} aria-hidden />
+        return <CreditCard className={className} strokeWidth={1.75} aria-hidden />
       case 'transfer':
-        return <ArrowLeftRight className={iconClass} strokeWidth={1.75} aria-hidden />
+        return <ArrowLeftRight className={className} strokeWidth={1.75} aria-hidden />
       case 'warranty':
-        return <ShieldCheck className={iconClass} strokeWidth={1.75} aria-hidden />
+        return <ShieldCheck className={className} strokeWidth={1.75} aria-hidden />
       case 'mixed':
-        return <Layers className={iconClass} strokeWidth={1.75} aria-hidden />
+        return <Layers className={className} strokeWidth={1.75} aria-hidden />
       default:
-        return <Receipt className={iconClass} strokeWidth={1.75} aria-hidden />
+        return <Receipt className={className} strokeWidth={1.75} aria-hidden />
     }
   }
 
@@ -495,6 +494,15 @@ export function SalesTable({
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">
+                            <span
+                              className={cn(
+                                'inline-flex h-6 w-6 items-center justify-center rounded-md',
+                                getPaymentMethodColor(sale.paymentMethod)
+                              )}
+                              title={getPaymentMethodLabel(sale.paymentMethod)}
+                            >
+                              {getPaymentMethodIcon(sale.paymentMethod, 'h-3.5 w-3.5')}
+                            </span>
                             <span className="font-mono text-xs font-semibold text-zinc-600 dark:text-zinc-400">
                               {generateInvoiceNumber(sale)}
                             </span>
@@ -593,18 +601,29 @@ export function SalesTable({
                             onClick={() => onView(sale)}
                           >
                             <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-medium text-zinc-900 dark:text-zinc-100">
-                              <div className="flex flex-col gap-0.5">
-                                <span>{generateInvoiceNumber(sale)}</span>
-                                {sale.paymentMethod === 'credit' && credits[sale.id] && (
-                                  <span className="text-[11px] font-normal text-zinc-500">
-                                    Crédito #{getCreditId(credits[sale.id])}
-                                  </span>
-                                )}
-                                {isTransferSale(sale) && transfers[sale.id] && (
-                                  <span className="text-[11px] font-normal text-zinc-500">
-                                    TRF {transfers[sale.id].transferNumber || `#${getTransferId(transfers[sale.id])}`}
-                                  </span>
-                                )}
+                              <div className="flex items-start gap-2">
+                                <span
+                                  className={cn(
+                                    'mt-0.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md',
+                                    getPaymentMethodColor(sale.paymentMethod)
+                                  )}
+                                  title={getPaymentMethodLabel(sale.paymentMethod)}
+                                >
+                                  {getPaymentMethodIcon(sale.paymentMethod, 'h-3.5 w-3.5')}
+                                </span>
+                                <div className="flex min-w-0 flex-col gap-0.5">
+                                  <span>{generateInvoiceNumber(sale)}</span>
+                                  {sale.paymentMethod === 'credit' && credits[sale.id] && (
+                                    <span className="text-[11px] font-normal text-zinc-500">
+                                      Crédito #{getCreditId(credits[sale.id])}
+                                    </span>
+                                  )}
+                                  {isTransferSale(sale) && transfers[sale.id] && (
+                                    <span className="text-[11px] font-normal text-zinc-500">
+                                      TRF {transfers[sale.id].transferNumber || `#${getTransferId(transfers[sale.id])}`}
+                                    </span>
+                                  )}
+                                </div>
                               </div>
                             </td>
                             <td className="max-w-[14rem] px-4 py-3 font-medium text-zinc-900 dark:text-zinc-100">
