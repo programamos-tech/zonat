@@ -27,6 +27,7 @@ import {
   creditStatusBadgeClass,
   creditStatusLabel,
   getEffectiveCreditStatus,
+  isCreditCancelled,
 } from '@/lib/credit-status-ui'
 
 const panel =
@@ -239,8 +240,14 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
 
   const titleInvoice = getInvoiceNumber(sale)
   const canVoid = sale.status !== 'cancelled' && sale.status !== 'draft' && !transfer && Boolean(onCancel)
+  const saleCancelled = sale.status === 'cancelled'
+  const creditClosed = Boolean(credit && (isCreditCancelled(credit) || credit.status === 'cancelled'))
   const paidOnCredit = credit ? credit.paidAmount : sale.total
-  const pendingCredit = credit ? Math.max(0, credit.pendingAmount) : 0
+  // Factura/crédito anulados: no mostrar saldo pendiente residual (ni cruce entre tiendas).
+  const pendingCredit =
+    saleCancelled || creditClosed ? 0 : credit ? Math.max(0, credit.pendingAmount) : 0
+  const displayPaidOnCredit =
+    saleCancelled || creditClosed ? 0 : paidOnCredit
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-b from-zinc-50/90 via-white to-zinc-50/80 pb-28 dark:from-zinc-950 dark:via-zinc-950 dark:to-zinc-900 xl:pb-8">
@@ -345,7 +352,7 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                     <div className="px-4 py-3">
                       <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Pagado (crédito)</dt>
                       <dd className="mt-1 text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(credit.paidAmount)}
+                        {formatCurrency(displayPaidOnCredit)}
                       </dd>
                     </div>
                     <div className="px-4 py-3">
@@ -367,7 +374,7 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                     <div className="px-4 py-3">
                       <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Cobrado</dt>
                       <dd className="mt-1 text-base font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
-                        {formatCurrency(sale.status === 'cancelled' ? 0 : paidOnCredit)}
+                        {formatCurrency(saleCancelled ? 0 : paidOnCredit)}
                       </dd>
                     </div>
                     <div className="px-4 py-3">
@@ -602,18 +609,32 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                 <div className="px-4 py-5 md:px-6">
                   <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
                     <Field label="Saldo pendiente">
-                      <span className="text-lg font-semibold tabular-nums">{formatCurrency(credit.pendingAmount)}</span>
+                      <span className="text-lg font-semibold tabular-nums">
+                        {formatCurrency(pendingCredit)}
+                      </span>
                     </Field>
-                    <Field label="Total crédito">{formatCurrency(credit.totalAmount)}</Field>
+                    <Field label="Total crédito">
+                      {formatCurrency(saleCancelled || creditClosed ? 0 : credit.totalAmount)}
+                    </Field>
                     <Field label="Estado">
                       <Badge
                         variant="outline"
                         className={cn(
                           'mt-1 font-medium',
-                          creditStatusBadgeClass(getEffectiveCreditStatus(credit), credit)
+                          creditStatusBadgeClass(
+                            saleCancelled || creditClosed
+                              ? 'cancelled'
+                              : getEffectiveCreditStatus(credit),
+                            credit
+                          )
                         )}
                       >
-                        {creditStatusLabel(getEffectiveCreditStatus(credit), credit)}
+                        {creditStatusLabel(
+                          saleCancelled || creditClosed
+                            ? 'cancelled'
+                            : getEffectiveCreditStatus(credit),
+                          credit
+                        )}
                       </Badge>
                     </Field>
                   </dl>

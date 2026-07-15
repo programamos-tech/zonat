@@ -1265,7 +1265,12 @@ export class SalesService {
     }
   }
 
-  // Actualizar el estado del crédito después de cancelar una venta
+  /**
+   * Tras anular una venta a crédito: cierra ese crédito (relación 1:1 por sale_id).
+   *
+   * Importante: no sumar otras ventas con el mismo invoice_number de otras tiendas.
+   * Cada microtienda reutiliza #001, #002…; mezclarlas deja saldos fantasma.
+   */
   static async updateCreditStatusAfterSaleCancellation(
     creditId: string,
     cancelledSaleId: string,
@@ -1285,37 +1290,31 @@ export class SalesService {
         cancellationReason ||
         `Cancelación de factura: ${cancelledSale.invoiceNumber}`
 
-      const { data: allSales, error: salesError } = await supabaseAdmin
-        .from('sales')
-        .select('id, status, total')
-        .eq('invoice_number', cancelledSale.invoiceNumber)
-        .order('created_at', { ascending: true })
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const storeId = cancelledSale.storeId || MAIN_STORE_ID
 
-      if (salesError || !allSales?.length) {
-        await CreditsService.markCreditAsCancelled(creditId, {
-          reason,
-          userId: cancellingUserId,
-          userName: cancellingUserName,
-        })
+      const { data: creditBeforeUpdate } = await supabaseAdmin
+        .from('credits')
+        .select('*')
+        .eq('id', creditId)
+        .maybeSingle()
+
+      if (!creditBeforeUpdate) {
         return
       }
 
-      const activeSales = allSales.filter((sale) => sale.status !== 'cancelled')
-
-      if (activeSales.length === 0) {
-        const { data: creditBeforeUpdate } = await supabaseAdmin
-          .from('credits')
-          .select('*')
-          .eq('id', creditId)
-          .maybeSingle()
-
+      // Caso normal: el crédito pertenece a esta venta → anular siempre.
+      if (
+        !creditBeforeUpdate.sale_id ||
+        creditBeforeUpdate.sale_id === cancelledSaleId
+      ) {
         await CreditsService.markCreditAsCancelled(creditId, {
           reason,
           userId: cancellingUserId,
           userName: cancellingUserName,
         })
 
-        if (creditBeforeUpdate && cancellingUserId) {
+        if (cancellingUserId) {
           try {
             await AuthService.logActivity(cancellingUserId, 'credit_cancelled', 'credits', {
               description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
@@ -1331,23 +1330,63 @@ export class SalesService {
             // log opcional
           }
         }
+        return
+      }
 
+      // Fallback legacy: solo ventas de la MISMA tienda con el mismo número de factura.
+      let salesQuery = supabaseAdmin
+        .from('sales')
+        .select('id, status, total, store_id')
+        .eq('invoice_number', cancelledSale.invoiceNumber)
+        .order('created_at', { ascending: true })
+
+      if (storeId === MAIN_STORE_ID) {
+        salesQuery = salesQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        salesQuery = salesQuery.eq('store_id', storeId)
+      }
+
+      const { data: allSales, error: salesError } = await salesQuery
+
+      if (salesError || !allSales?.length) {
+        await CreditsService.markCreditAsCancelled(creditId, {
+          reason,
+          userId: cancellingUserId,
+          userName: cancellingUserName,
+        })
+        return
+      }
+
+      const activeSales = allSales.filter((sale) => sale.status !== 'cancelled')
+
+      if (activeSales.length === 0) {
+        await CreditsService.markCreditAsCancelled(creditId, {
+          reason,
+          userId: cancellingUserId,
+          userName: cancellingUserName,
+        })
+
+        if (cancellingUserId) {
+          try {
+            await AuthService.logActivity(cancellingUserId, 'credit_cancelled', 'credits', {
+              description: `Crédito cancelado: ${creditBeforeUpdate.client_name} - Factura: ${creditBeforeUpdate.invoice_number} - Motivo: Cancelación de factura asociada`,
+              creditId,
+              invoiceNumber: creditBeforeUpdate.invoice_number,
+              clientName: creditBeforeUpdate.client_name,
+              totalAmount: creditBeforeUpdate.total_amount,
+              paidAmount: creditBeforeUpdate.paid_amount || 0,
+              reason: 'Cancelación de factura asociada',
+              cancelledSaleId,
+            })
+          } catch {
+            // log opcional
+          }
+        }
         return
       }
 
       const totalAmount = activeSales.reduce((sum, sale) => sum + (sale.total || 0), 0)
-
-      const { data: creditData, error: creditError } = await supabaseAdmin
-        .from('credits')
-        .select('paid_amount')
-        .eq('id', creditId)
-        .single()
-
-      if (creditError) {
-        return
-      }
-
-      const paidAmount = creditData.paid_amount || 0
+      const paidAmount = creditBeforeUpdate.paid_amount || 0
       const pendingAmount = Math.max(0, totalAmount - paidAmount)
 
       let newStatus = 'pending'
