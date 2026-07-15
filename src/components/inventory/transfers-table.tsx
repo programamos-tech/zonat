@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import {
-  ArrowRightLeft,
+  Truck,
   ChevronLeft,
   ChevronRight,
   Package,
@@ -190,16 +190,16 @@ export function TransfersTable({
           <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="min-w-0 flex-1 space-y-1.5">
               <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
-                <ArrowRightLeft
-                  className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500"
+                <Truck
+                  className="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400"
                   strokeWidth={1.5}
                   aria-hidden
                 />
-                <span>Transferencias de Inventario</span>
+                <span>Traslados de inventario</span>
                 <StoreBadge />
               </CardTitle>
               <p className="max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">
-                Gestiona las transferencias de productos entre tiendas
+                Gestiona los traslados de productos entre tiendas
               </p>
             </div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
@@ -210,8 +210,8 @@ export function TransfersTable({
               {canManageAllStores && onCreate && (
                 <Button onClick={onCreate} size="sm" className="flex-1 sm:flex-none">
                   <Plus className="h-3.5 w-3.5 shrink-0" />
-                  <span className="hidden sm:inline">Nueva Transferencia</span>
-                  <span className="sm:hidden">Nueva</span>
+                  <span className="hidden sm:inline">Nuevo traslado</span>
+                  <span className="sm:hidden">Nuevo</span>
                 </Button>
               )}
             </div>
@@ -233,7 +233,7 @@ export function TransfersTable({
                 onChange={e => setSearchTerm(e.target.value)}
                 placeholder="Buscar por ID de venta o tienda…"
                 className={searchInputClass}
-                aria-label="Buscar transferencias por venta o tienda"
+                aria-label="Buscar traslados por venta o tienda"
               />
             </div>
             <select
@@ -256,16 +256,16 @@ export function TransfersTable({
           {loading && transfers.length === 0 ? (
             <div className="py-16 text-center">
               <div className="mx-auto mb-4 h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
-              <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando transferencias…</p>
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando traslados…</p>
             </div>
           ) : transfers.length === 0 ? (
             <div className="py-12 text-center">
-              <Package className="mx-auto mb-4 h-12 w-12 text-zinc-400" />
-              <h3 className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-50">No hay transferencias</h3>
+              <Package className="mx-auto mb-4 h-12 w-12 text-orange-400" />
+              <h3 className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-50">No hay traslados</h3>
               <p className="text-zinc-500 dark:text-zinc-400">
                 {canManageAllStores
-                  ? 'Crea una nueva transferencia para comenzar'
-                  : 'No hay transferencias en este filtro'}
+                  ? 'Crea un nuevo traslado para comenzar'
+                  : 'No hay traslados en este filtro'}
               </p>
             </div>
           ) : displayedTransfers.length === 0 && hasActiveSearch ? (
@@ -273,7 +273,7 @@ export function TransfersTable({
               <Search className="mx-auto mb-4 h-12 w-12 text-zinc-400 opacity-80" />
               <h3 className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-50">Sin coincidencias</h3>
               <p className="text-zinc-500 dark:text-zinc-400">
-                Prueba otro término o cambia de página si la transferencia está en otro lote.
+                Prueba otro término o cambia de página si el traslado está en otro lote.
               </p>
               <Button type="button" variant="outline" size="sm" className="mt-4" onClick={() => setSearchTerm('')}>
                 Limpiar búsqueda
@@ -357,7 +357,7 @@ export function TransfersTable({
                     <thead>
                       <tr className="border-b border-zinc-200 dark:border-zinc-800">
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
-                          Transferencia
+                          Traslado
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-left text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Venta / ID

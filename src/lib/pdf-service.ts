@@ -56,7 +56,7 @@ export class PDFService {
     const titleY = margin + 5
     doc.setFontSize(18)
     doc.setFont('helvetica', 'bold')
-    doc.text('GUÍA DE TRANSFERENCIA', margin, titleY)
+    doc.text('GUÍA DE TRASLADO', margin, titleY)
 
     // Header - Company Info (debajo del título, izquierda)
     const headerY = titleY + 10
@@ -83,7 +83,7 @@ export class PDFService {
 
     // Transfer Number
     doc.setFont('helvetica', 'bold')
-    doc.text('Número de Transferencia:', margin, currentY)
+    doc.text('Número de traslado:', margin, currentY)
     doc.setFont('helvetica', 'normal')
     doc.text(transfer.transferNumber || `#${transfer.id.substring(0, 8)}`, margin + 60, currentY)
 
@@ -282,7 +282,7 @@ export class PDFService {
     }
 
     // Generate filename
-    const filename = `Transferencia_${transfer.transferNumber || transfer.id.substring(0, 8)}_${new Date().toISOString().split('T')[0]}.pdf`
+    const filename = `Traslado_${transfer.transferNumber || transfer.id.substring(0, 8)}_${new Date().toISOString().split('T')[0]}.pdf`
     
     // Save PDF
     doc.save(filename)

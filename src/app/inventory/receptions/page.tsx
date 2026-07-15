@@ -112,7 +112,7 @@ export default function ReceptionsPage() {
       setPendingHasMore(pendingResult.hasMore)
       setReceivedHasMore(receivedResult.hasMore)
     } catch (error) {
-      toast.error('Error al cargar las transferencias')
+      toast.error('Error al cargar los traslados')
       console.error('Error loading transfers:', error)
     } finally {
       setLoading(false)
@@ -135,16 +135,16 @@ export default function ReceptionsPage() {
         receivedItems
       )
       if (success) {
-        toast.success('Transferencia recibida exitosamente. El stock ha sido actualizado.')
+        toast.success('Traslado recibido exitosamente. El stock ha sido actualizado.')
         setIsReceiveModalOpen(false)
         setTransferToReceive(null)
         await loadTransfers()
         await refreshProducts()
       } else {
-        toast.error('Error al recibir la transferencia')
+        toast.error('Error al recibir el traslado')
       }
     } catch (error) {
-      toast.error('Error al recibir la transferencia')
+      toast.error('Error al recibir el traslado')
       console.error('Error receiving transfer:', error)
     }
   }

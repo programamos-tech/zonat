@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { BarChart3, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, UserCog, UserCircle, ArrowRightLeft, CheckCircle, Store, FileText, Globe } from 'lucide-react'
+import { BarChart3, Receipt, Package, Users, CreditCard, ShieldCheck, Activity, UserCog, UserCircle, Truck, PackageCheck, Store, FileText, Globe } from 'lucide-react'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
 import { isMainStoreUser, canAccessAllStores } from '@/lib/store-helper'
@@ -15,8 +15,8 @@ const items = [
   { href: '/reportes', label: 'Reportes', icon: BarChart3, module: 'dashboard', alwaysVisible: true },
   { href: '/inventory/products', label: 'Productos', icon: Package, module: 'products' },
   { href: '/inventory/virtual-store', label: 'Tienda virtual', icon: Globe, module: 'virtual_store' },
-  { href: '/inventory/transfers', label: 'Transferencias', icon: ArrowRightLeft, module: 'transfers', requiresMainStore: true },
-  { href: '/inventory/receptions', label: 'Recepciones', icon: CheckCircle, module: 'receptions' },
+  { href: '/inventory/transfers', label: 'Traslados', icon: Truck, module: 'transfers', requiresMainStore: true },
+  { href: '/inventory/receptions', label: 'Recepciones', icon: PackageCheck, module: 'receptions' },
   { href: '/clients', label: 'Clientes', icon: Users, module: 'clients' },
   { href: '/sales', label: 'Ventas', icon: Receipt, module: 'sales' },
   { href: '/warranties', label: 'Garantías', icon: ShieldCheck, module: 'warranties' },
@@ -78,7 +78,7 @@ export function BottomNav() {
       if (item.alwaysVisible && user) {
         return true
       }
-      // Transferencias: tienda principal o admin/superadmin con acceso global (misma regla que el sidebar)
+      // Traslados: tienda principal o admin/superadmin con acceso global (misma regla que el sidebar)
       if (item.requiresMainStore && !isMainStoreUser(user) && !canAccessAllStores(user)) {
         return false
       }
@@ -181,8 +181,11 @@ export function BottomNav() {
               (href === '/sales' && currentPathname?.startsWith('/sales')) ||
               (href === '/stores' && currentPathname?.startsWith('/stores'))
             
-            // Barra oscura: iconos en zinc; activo resaltado sin verde
+            // Barra oscura: zinc por defecto; Traslados/Recepciones en naranja (misma señal que Ventas)
             const getIconColor = () => {
+              if (href === '/inventory/transfers' || href === '/inventory/receptions') {
+                return active ? 'text-orange-400' : 'text-orange-500/75'
+              }
               if (!active) return 'text-zinc-500'
               return 'text-zinc-100'
             }

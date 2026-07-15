@@ -8,6 +8,7 @@ import { useStoreUrl } from '@/hooks/use-store-url'
 import { useSalesPosPreference } from '@/hooks/use-sales-pos-preference'
 import { cn } from '@/lib/utils'
 import { ReleaseNotesModal } from '@/components/ui/release-notes-modal'
+import { IncomingTransferModal } from '@/components/layout/incoming-transfer-modal'
 import { AppTopBar } from '@/components/layout/app-top-bar'
 
 interface ConditionalLayoutProps {
@@ -85,6 +86,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
         </main>
       </div>
       <ReleaseNotesModal />
+      <IncomingTransferModal />
     </ProtectedRoute>
   )
 }

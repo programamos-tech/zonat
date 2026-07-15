@@ -10,7 +10,7 @@ import {
   Receipt,
   CreditCard,
   FileText,
-  ArrowRightLeft,
+  Truck,
   ShieldCheck,
   Building2,
   Loader2,
@@ -36,7 +36,7 @@ const KIND_ICON: Record<
   credit: CreditCard,
   supplier_invoice: FileText,
   supplier: Building2,
-  transfer: ArrowRightLeft,
+  transfer: Truck,
   warranty: ShieldCheck,
 }
 
@@ -47,7 +47,7 @@ const KIND_LABEL: Record<GlobalSearchKind, string> = {
   credit: 'Crédito',
   supplier_invoice: 'Factura',
   supplier: 'Proveedor',
-  transfer: 'Transferencia',
+  transfer: 'Traslado',
   warranty: 'Garantía',
 }
 
@@ -112,12 +112,12 @@ const KIND_STYLE: Record<
     hover: 'hover:bg-orange-50/80 dark:hover:bg-orange-950/30',
   },
   transfer: {
-    iconWrap: 'bg-cyan-100 dark:bg-cyan-950/70',
-    icon: 'text-cyan-700 dark:text-cyan-400',
-    badge: 'bg-cyan-50 text-cyan-800 dark:bg-cyan-950/50 dark:text-cyan-300',
-    section: 'text-cyan-700 dark:text-cyan-400',
-    dot: 'bg-cyan-500',
-    hover: 'hover:bg-cyan-50/80 dark:hover:bg-cyan-950/30',
+    iconWrap: 'bg-orange-100 dark:bg-orange-950/70',
+    icon: 'text-orange-700 dark:text-orange-400',
+    badge: 'bg-orange-50 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300',
+    section: 'text-orange-700 dark:text-orange-400',
+    dot: 'bg-orange-500',
+    hover: 'hover:bg-orange-50/80 dark:hover:bg-orange-950/30',
   },
   warranty: {
     iconWrap: 'bg-indigo-100 dark:bg-indigo-950/70',

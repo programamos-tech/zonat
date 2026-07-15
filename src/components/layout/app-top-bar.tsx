@@ -15,7 +15,7 @@ import {
   Users,
   Package,
   FileText,
-  ArrowRightLeft,
+  Truck,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/auth-context'
 import { usePermissions } from '@/hooks/usePermissions'
@@ -86,7 +86,7 @@ export function AppTopBar({ className }: { className?: string }) {
     quickActions.push({ label: 'Factura proveedor', href: '/purchases/invoices', icon: FileText })
   }
   if (canCreate('transfers')) {
-    quickActions.push({ label: 'Transferencia', href: '/inventory/transfers', icon: ArrowRightLeft })
+    quickActions.push({ label: 'Traslado', href: '/inventory/transfers', icon: Truck })
   }
 
   const iconBtn =

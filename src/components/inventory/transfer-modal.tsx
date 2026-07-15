@@ -12,7 +12,7 @@ import {
   Package,
   Store as StoreIcon,
   Warehouse,
-  ArrowRightLeft,
+  Truck,
   AlertTriangle,
   Search,
   CheckCircle,
@@ -398,7 +398,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
           toStore: transfer.toStoreName,
           status: transfer.status
         })
-        toast.success('Transferencia creada exitosamente')
+        toast.success('Traslado creado exitosamente')
         setItems([])
         setCollapsedRowIds(new Set())
         setToStoreId('')
@@ -410,15 +410,15 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         setPaymentError('')
         await loadAvailableProducts() // Recargar productos para actualizar stock
         onClose() // Cerrar el modal primero
-        // Luego recargar las transferencias
+        // Luego recargar los traslados
         setTimeout(() => {
-          onSave() // Esto debería recargar las transferencias
+          onSave() // Esto debería recargar los traslados
         }, 100)
       } else {
-        toast.error('Error al crear la transferencia. Verifica que haya stock disponible.')
+        toast.error('Error al crear el traslado. Verifica que haya stock disponible.')
       }
     } catch (error) {
-      toast.error('Error al crear la transferencia')
+      toast.error('Error al crear el traslado')
       console.error('Error creating transfer:', error)
     } finally {
       setIsSaving(false)
@@ -492,9 +492,9 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 !bg-zinc-50 px-4 py-3 dark:border-white/[0.06] dark:!bg-zinc-950">
           <div className="flex min-w-0 items-center gap-2.5">
-            <ArrowRightLeft className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
+            <Truck className="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400" strokeWidth={1.5} />
             <h2 id="transfer-modal-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Nueva Transferencia
+              Nuevo traslado
             </h2>
           </div>
           <Button
@@ -582,7 +582,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               <div className="mb-4 flex items-center gap-2">
                 <Package className="h-4 w-4 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} />
                 <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                  Productos a Transferir
+                  Productos a trasladar
                 </h3>
               </div>
               <div className="space-y-4">
@@ -813,7 +813,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                               {/* Stock y Selección de Ubicación */}
                               <div>
                                 <Label className="mb-2 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-                                  Transferir desde
+                                  Trasladar desde
                                 </Label>
                                 <div
                                   className={cn(
@@ -844,7 +844,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                         ? Warehouse
                                         : location === 'store'
                                           ? StoreIcon
-                                          : ArrowRightLeft
+                                          : Truck
                                     const title =
                                       location === 'warehouse'
                                         ? 'Bodega'
@@ -1181,7 +1181,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
             <div className="flex items-center gap-2 rounded-lg border border-yellow-200 bg-yellow-50 p-3 dark:border-yellow-800 dark:bg-yellow-900/20">
               <AlertTriangle className="h-4 w-4 flex-shrink-0 text-yellow-600 dark:text-yellow-400" />
               <span className="text-sm text-yellow-800 dark:text-yellow-200">
-                Debes seleccionar una tienda destino para crear la transferencia
+                Debes seleccionar una tienda destino para crear el traslado
               </span>
             </div>
           )}
@@ -1204,8 +1204,8 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                 </span>
               ) : (
                 <>
-                  <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
-                  Crear Transferencia
+                  <Truck className="h-4 w-4 text-orange-100" strokeWidth={1.5} />
+                  Crear traslado
                 </>
               )}
             </Button>

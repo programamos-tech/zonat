@@ -111,8 +111,8 @@ export async function fetchAppNotifications(
             title: 'Recepciones pendientes',
             description:
               count === 1
-                ? '1 transferencia por recibir'
-                : `${count} transferencias por recibir`,
+                ? '1 traslado por recibir'
+                : `${count} traslados por recibir`,
             count,
             href: '/inventory/receptions',
           })

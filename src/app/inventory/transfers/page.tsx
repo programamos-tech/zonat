@@ -127,7 +127,7 @@ export default function TransfersPage() {
       setTransfers(filteredTransfers)
       setTotalTransfers(result.total)
     } catch (error) {
-      toast.error('Error al cargar las transferencias')
+      toast.error('Error al cargar los traslados')
       console.error('Error loading transfers:', error)
     } finally {
       setLoading(false)

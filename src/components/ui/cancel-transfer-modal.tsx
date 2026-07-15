@@ -50,7 +50,7 @@ export function CancelTransferModal({
               <AlertTriangle className="h-4 w-4 md:h-5 md:w-5 text-red-400" />
             </div>
             <h2 className="text-base md:text-lg font-semibold text-gray-900 dark:text-white">
-              Cancelar Transferencia
+              Cancelar traslado
             </h2>
           </div>
           <Button
@@ -67,7 +67,7 @@ export function CancelTransferModal({
         {/* Content */}
         <div className="p-4 md:p-6 space-y-4">
           <p className="text-sm md:text-base text-gray-600 dark:text-gray-300 leading-relaxed">
-            ¿Estás seguro de que quieres cancelar la transferencia{' '}
+            ¿Estás seguro de que quieres cancelar el traslado{' '}
             <span className="font-semibold text-gray-900 dark:text-white">
               {transferNumber || 'N/A'}
             </span>?
@@ -87,7 +87,7 @@ export function CancelTransferModal({
               id="reason"
               value={reason}
               onChange={(e) => setReason(e.target.value)}
-              placeholder="Explica por qué se cancela esta transferencia..."
+              placeholder="Explica por qué se cancela este traslado..."
               className="w-full min-h-[100px] px-3 py-2 border-2 border-gray-300 dark:border-neutral-600 rounded-md bg-white dark:bg-neutral-900 text-gray-900 dark:text-white placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-red-500 disabled:cursor-not-allowed disabled:opacity-50 resize-none text-sm"
               disabled={isLoading}
               rows={4}
@@ -113,7 +113,7 @@ export function CancelTransferModal({
             className="bg-red-600 hover:bg-red-700 text-white"
             disabled={!reason.trim() || isLoading}
           >
-            {isLoading ? 'Cancelando...' : 'Cancelar Transferencia'}
+            {isLoading ? 'Cancelando...' : 'Cancelar traslado'}
           </Button>
         </div>
       </div>

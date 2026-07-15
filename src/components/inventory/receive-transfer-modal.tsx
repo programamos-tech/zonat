@@ -141,7 +141,7 @@ export function ReceiveTransferModal({ isOpen, onClose, onConfirm, transfer }: R
             id="receive-transfer-title"
             className="min-w-0 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50"
           >
-            Confirmar Recepción — {transferTitle}
+            Confirmar recepción — {transferTitle}
           </h2>
           <Button
             type="button"

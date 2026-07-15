@@ -6,7 +6,7 @@ import { useEffect, useRef, useState, useCallback } from 'react'
 import {
   Bell,
   CheckCircle2,
-  ArrowRightLeft,
+  Truck,
   CreditCard,
   FileText,
   Package,
@@ -33,7 +33,7 @@ const KIND_ICON: Record<
   AppNotificationKind,
   React.ComponentType<{ className?: string; strokeWidth?: number }>
 > = {
-  receptions_pending: ArrowRightLeft,
+  receptions_pending: Truck,
   products_out_of_stock: Package,
   credits_overdue: CreditCard,
   supplier_invoices_overdue: FileText,
@@ -41,8 +41,8 @@ const KIND_ICON: Record<
 
 const KIND_STYLE: Record<AppNotificationKind, { wrap: string; icon: string }> = {
   receptions_pending: {
-    wrap: 'bg-cyan-100 dark:bg-cyan-950/70',
-    icon: 'text-cyan-700 dark:text-cyan-400',
+    wrap: 'bg-orange-100 dark:bg-orange-950/70',
+    icon: 'text-orange-700 dark:text-orange-400',
   },
   products_out_of_stock: {
     wrap: 'bg-emerald-100 dark:bg-emerald-950/70',

@@ -17,8 +17,8 @@ import {
   UserCog,
   Store,
   Warehouse,
-  ArrowRightLeft,
-  CheckCircle,
+  Truck,
+  PackageCheck,
   ChevronDown,
   ChevronRight,
   FileText,
@@ -45,8 +45,8 @@ const navigation = [
     submenu: [
       { name: 'Productos', href: '/inventory/products', icon: Package, module: 'products' },
       { name: 'Tienda virtual', href: '/inventory/virtual-store', icon: Globe, module: 'virtual_store' },
-      { name: 'Transferencias', href: '/inventory/transfers', icon: ArrowRightLeft, module: 'transfers' },
-      { name: 'Recepciones', href: '/inventory/receptions', icon: CheckCircle, module: 'receptions' },
+      { name: 'Traslados', href: '/inventory/transfers', icon: Truck, module: 'transfers' },
+      { name: 'Recepciones', href: '/inventory/receptions', icon: PackageCheck, module: 'receptions' },
     ]
   },
   { 
@@ -347,7 +347,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                           {item.submenu.map((subitem) => {
                             if (!canView(subitem.module)) return null
                             
-                            // Permitir "Transferencias" en microtiendas a usuarios con acceso global (admin/superadmin).
+                            // Permitir "Traslados" en microtiendas a usuarios con acceso global (admin/superadmin).
                             // Solo usuarios sin acceso global quedan limitados a recepciones.
                             if (subitem.href === '/inventory/transfers' && !isMainStoreUser(user) && !canAccessAllStores(user)) return null
                             
@@ -372,6 +372,14 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                                 return isSubActive
                                   ? 'text-emerald-400'
                                   : 'text-zinc-500 group-hover:text-emerald-400/85'
+                              }
+                              if (
+                                href === '/inventory/transfers' ||
+                                href === '/inventory/receptions'
+                              ) {
+                                return isSubActive
+                                  ? 'text-orange-400'
+                                  : 'text-orange-500/75 group-hover:text-orange-400'
                               }
                               return isSubActive
                                 ? 'text-zinc-100'
@@ -398,8 +406,8 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                                 <span className="flex-1 truncate">{subitem.name}</span>
                                 {subitem.href === '/inventory/receptions' && pendingReceptionsCount > 0 && (
                                   <span
-                                    className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-emerald-600 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"
-                                    title={`${pendingReceptionsCount} pendientes por gestionar`}
+                                    className="ml-2 inline-flex min-w-5 items-center justify-center rounded-full bg-orange-600 px-1.5 py-0.5 text-[10px] font-semibold leading-none text-white"
+                                    title={`${pendingReceptionsCount} traslados pendientes por recibir`}
                                   >
                                     {pendingReceptionsCount > 99 ? '99+' : pendingReceptionsCount}
                                   </span>

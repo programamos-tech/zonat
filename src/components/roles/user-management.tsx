@@ -30,7 +30,7 @@ const moduleOptions = [
   { value: 'dashboard', label: 'Reportes' },
   { value: 'products', label: 'Productos' },
   { value: 'virtual_store', label: 'Tienda virtual' },
-  { value: 'transfers', label: 'Transferencias' },
+  { value: 'transfers', label: 'Traslados' },
   { value: 'receptions', label: 'Recepciones' },
   { value: 'clients', label: 'Clientes' },
   { value: 'sales', label: 'Ventas' },
