@@ -282,7 +282,7 @@ export function ProductTable({
                   </Button>
                 )}
                 {onRefresh && (
-                  <Button onClick={onRefresh} disabled={loading} variant="outline" size="sm" className="flex-1 sm:flex-none">
+                  <Button onClick={onRefresh} disabled={loading} variant="secondary" size="sm" className="flex-1 sm:flex-none">
                     <RefreshCw className={cn('h-3.5 w-3.5 shrink-0', loading && 'animate-spin')} />
                     <span className="hidden md:inline">Actualizar</span>
                   </Button>

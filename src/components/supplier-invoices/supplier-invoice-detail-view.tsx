@@ -161,7 +161,7 @@ export function SupplierInvoiceDetailView({
         </p>
         <Link
           href="/purchases/invoices"
-          className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-zinc-900 px-6 text-base font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
+          className="mt-6 inline-flex h-12 items-center justify-center rounded-xl border border-emerald-600 bg-emerald-600 px-6 text-base font-semibold text-white transition-colors hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400"
         >
           Volver al listado
         </Link>

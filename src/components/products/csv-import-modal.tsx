@@ -331,7 +331,6 @@ export function CSVImportModal({ isOpen, onClose, onImport }: CSVImportModalProp
           <Button
             onClick={handleImport}
             disabled={parsedProducts.length === 0 || errors.length > 0 || isLoading}
-            className="bg-cyan-600 hover:bg-cyan-700 text-white"
           >
             {isLoading ? (
               <>

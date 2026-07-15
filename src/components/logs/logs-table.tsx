@@ -216,9 +216,9 @@ export function LogsTable({
               <Button
                 type="button"
                 onClick={onRefresh}
-                variant="outline"
+                variant="secondary"
                 size="sm"
-                className="h-9 shrink-0 gap-2 border border-zinc-300 bg-white text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="h-9 shrink-0 gap-2"
               >
                 <RefreshCw className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} aria-hidden />
                 Actualizar

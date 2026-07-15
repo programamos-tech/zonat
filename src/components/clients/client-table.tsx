@@ -118,7 +118,7 @@ export function ClientTable({
             </div>
             <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:justify-end">
               {onRefresh && (
-                <Button onClick={onRefresh} variant="outline" size="sm" className="flex-1 sm:flex-none">
+                <Button onClick={onRefresh} variant="secondary" size="sm" className="flex-1 sm:flex-none">
                   <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden md:inline">Actualizar</span>
                 </Button>

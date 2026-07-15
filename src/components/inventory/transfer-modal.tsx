@@ -1195,16 +1195,15 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
               size="sm"
               onClick={handleSave}
               disabled={isSaving}
-              className="dark:border-emerald-600 dark:bg-emerald-600 dark:text-white dark:hover:bg-emerald-500"
             >
               {isSaving ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-300 border-b-zinc-800 dark:border-zinc-600 dark:border-b-zinc-100" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-emerald-200 border-b-white" />
                   Creando...
                 </span>
               ) : (
                 <>
-                  <Truck className="h-4 w-4 text-orange-100" strokeWidth={1.5} />
+                  <Truck className="h-4 w-4" strokeWidth={1.5} />
                   Crear traslado
                 </>
               )}

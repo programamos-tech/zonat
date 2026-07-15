@@ -367,7 +367,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                 type="submit"
                 size="sm"
                 disabled={isUploading}
-                className="h-9 w-full flex-1 touch-manipulation bg-zinc-900 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-zinc-800 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white sm:w-auto sm:flex-none"
+                className="h-9 w-full flex-1 touch-manipulation border border-emerald-600 bg-emerald-600 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:border-emerald-500 hover:bg-emerald-500 disabled:opacity-50 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400 sm:w-auto sm:flex-none"
               >
                 {isEdit ? 'Guardar cambios' : 'Registrar tienda'}
               </Button>

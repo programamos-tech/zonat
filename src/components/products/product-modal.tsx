@@ -700,7 +700,7 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           <button
             type="submit"
             form={formId}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
+            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400"
           >
             <Package className="h-4 w-4 shrink-0" strokeWidth={1.75} />
             {isEdit ? 'Guardar cambios' : 'Crear producto'}

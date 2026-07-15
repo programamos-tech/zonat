@@ -132,7 +132,7 @@ export function WarrantyTable({
               {onRefresh && (
                 <Button
                   onClick={onRefresh}
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
                   className="flex-1 sm:flex-none"
                 >

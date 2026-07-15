@@ -401,7 +401,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-zinc-900 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-zinc-800 dark:bg-white dark:text-zinc-950 dark:hover:bg-zinc-100"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400"
           >
             {isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
           </button>

@@ -1522,7 +1522,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
               <Button
                 onClick={() => handleSave(false)}
                 disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-                className="font-medium px-6 py-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
+                className="font-medium px-6 py-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Crear Venta
               </Button>
@@ -1531,7 +1531,7 @@ export function SaleModal({ isOpen, onClose, onSave, sale, onUpdate }: SaleModal
               <Button
                 onClick={() => handleSave(false)}
                 disabled={!selectedClient || selectedProducts.length === 0 || validProducts.length === 0 || !paymentMethod}
-                className="font-medium px-6 py-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed bg-green-600 hover:bg-green-700 text-white"
+                className="font-medium px-6 py-2.5 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 Finalizar y Crear Venta
               </Button>

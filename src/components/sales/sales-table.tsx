@@ -404,9 +404,9 @@ export function SalesTable({
               {onRefresh && (
                 <Button
                   onClick={onRefresh}
-                  variant="outline"
+                  variant="secondary"
                   size="sm"
-                  className="flex-1 border-emerald-600/30 bg-emerald-50 text-emerald-800 hover:border-emerald-600/45 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-950/40 dark:text-emerald-300 dark:hover:bg-emerald-900/50 sm:flex-none"
+                  className="flex-1 sm:flex-none"
                 >
                   <RefreshCcw className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden md:inline">Actualizar</span>
@@ -416,7 +416,7 @@ export function SalesTable({
                 <Button
                   onClick={onCreate}
                   size="sm"
-                  className="flex-1 border-emerald-600 bg-emerald-600 text-white hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:text-white dark:hover:border-emerald-400 dark:hover:bg-emerald-400 sm:flex-none"
+                  className="flex-1 sm:flex-none"
                 >
                   <Plus className="h-3.5 w-3.5 shrink-0" />
                   <span className="hidden sm:inline">Nueva Venta</span>

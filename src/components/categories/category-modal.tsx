@@ -304,11 +304,10 @@ export function CategoryModal({
               type="button"
               onClick={handleClose}
               variant="outline"
-              className="border-gray-300 dark:border-neutral-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
             >
               Cancelar
             </Button>
-            <Button type="submit" className="bg-cyan-600 hover:bg-cyan-700 text-white">
+            <Button type="submit">
               <Plus className="h-4 w-4 mr-2" />
               Crear Categoría
             </Button>
