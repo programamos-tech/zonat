@@ -12,10 +12,6 @@ export type SalesStatusFilter = 'all' | 'completed' | 'pending' | 'cancelled'
 
 const MAIN_STORE_ID_CONST = '00000000-0000-0000-0000-000000000001'
 
-function quotePostgrestList(values: string[]): string {
-  return values.map((v) => `"${String(v).replace(/"/g, '')}"`).join(',')
-}
-
 function mapWebOrderFields(row: Record<string, unknown>) {
   return {
     orderSource: row.order_source === 'web' ? ('web' as const) : ('pos' as const),
@@ -73,110 +69,41 @@ export class SalesService {
     statusFilter: SalesStatusFilter
   ): Promise<any> {
     const isMain = !storeId || storeId === MAIN_STORE_ID_CONST
-    const storeScope = isMain
-      ? `or(store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST})`
-      : null
 
-    const withStore = (inner: string) =>
-      storeScope ? `and(${storeScope},${inner})` : inner
+    // Tienda primero (nunca anidar dos `.or()` — PostgREST solo respeta uno)
+    if (isMain) {
+      query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST}`)
+    } else {
+      query = query.eq('store_id', storeId)
+    }
 
     if (statusFilter === 'all') {
-      if (isMain) return query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID_CONST}`)
-      return query.eq('store_id', storeId)
-    }
-
-    if (statusFilter === 'cancelled') {
-      if (isMain) {
-        return query.or(
-          [
-            withStore('status.eq.cancelled'),
-          ].join(',')
-        )
-      }
-      return query.eq('store_id', storeId).eq('status', 'cancelled')
-    }
-
-    const { saleIds, invoices } = await this.getOpenCreditLookup(storeId)
-
-    if (statusFilter === 'pending') {
-      const parts: string[] = [
-        withStore('status.eq.pending'),
-        withStore('status.eq.draft'),
-      ]
-      if (saleIds.length > 0) {
-        parts.push(withStore(`id.in.(${saleIds.join(',')})`))
-      }
-      if (invoices.length > 0) {
-        parts.push(
-          withStore(
-            `and(payment_method.eq.credit,invoice_number.in.(${quotePostgrestList(invoices)}))`
-          )
-        )
-      }
-      if (!isMain) {
-        return query.eq('store_id', storeId).or(
-          [
-            'status.eq.pending',
-            'status.eq.draft',
-            ...(saleIds.length > 0 ? [`id.in.(${saleIds.join(',')})`] : []),
-            ...(invoices.length > 0
-              ? [
-                  `and(payment_method.eq.credit,invoice_number.in.(${quotePostgrestList(invoices)}))`,
-                ]
-              : []),
-          ].join(',')
-        )
-      }
-      return query.or(parts.join(','))
-    }
-
-    // Completadas: status=completed y sin crédito abierto
-    if (!isMain) {
-      query = query.eq('store_id', storeId).eq('status', 'completed')
-      if (saleIds.length > 0) {
-        query = query.not('id', 'in', `(${saleIds.join(',')})`)
-      }
-      if (invoices.length > 0) {
-        query = query.or(
-          `payment_method.neq.credit,payment_method.is.null,invoice_number.is.null,invoice_number.not.in.(${quotePostgrestList(invoices)})`
-        )
-      }
       return query
     }
 
-    // Tienda principal — un solo `.or` anidando store + condiciones
-    const completedParts: string[] = []
-    if (saleIds.length === 0 && invoices.length === 0) {
-      completedParts.push(withStore('status.eq.completed'))
-    } else {
-      // Completadas no-crédito
-      completedParts.push(
-        withStore('and(status.eq.completed,payment_method.neq.credit)')
-      )
-      completedParts.push(
-        withStore('and(status.eq.completed,payment_method.is.null)')
-      )
-      // Crédito pagado: completed y factura NO abierta
-      if (invoices.length > 0) {
-        completedParts.push(
-          withStore(
-            `and(status.eq.completed,payment_method.eq.credit,invoice_number.not.in.(${quotePostgrestList(invoices)}))`
-          )
-        )
-      } else {
-        completedParts.push(
-          withStore('and(status.eq.completed,payment_method.eq.credit)')
-        )
+    if (statusFilter === 'cancelled') {
+      return query.eq('status', 'cancelled')
+    }
+
+    if (statusFilter === 'completed') {
+      // Completadas por status de venta (sin anular)
+      return query.eq('status', 'completed')
+    }
+
+    if (statusFilter === 'pending') {
+      // Pendientes = ventas ligadas a créditos abiertos (por sale_id).
+      // Importante: no encadenar otro `.or()` tras el de tienda (PostgREST pisa el anterior).
+      const { saleIds } = await this.getOpenCreditLookup(storeId)
+      if (saleIds.length > 0) {
+        return query.in('id', saleIds.slice(0, 800))
       }
-      // Excluir sale_ids abiertos vía filtro negativo no cabe bien en or;
-      // se aplica .not después si hay ids (y store ya acotada por or and).
+      return query.in('status', ['pending', 'draft'])
     }
-    query = query.or(completedParts.join(','))
-    if (saleIds.length > 0) {
-      query = query.not('id', 'in', `(${saleIds.join(',')})`)
-    }
+
     return query
   }
+
+
 
 
   /**
@@ -254,7 +181,7 @@ export class SalesService {
       const { count, error: countError } = await countQuery
 
       if (countError) {
-        // Error silencioso en producción
+        console.error('[Sales] Error contando ventas:', countError)
         throw countError
       }
 
@@ -289,6 +216,7 @@ export class SalesService {
         .range(offset, offset + limit - 1)
 
       if (error) {
+        console.error('[Sales] Error listando ventas:', error)
         throw error
       }
 
@@ -317,36 +245,28 @@ export class SalesService {
         }
       }
 
-      // 3. Créditos de estas ventas (priorizar sale_id; fallback invoice_number)
-      const creditSaleIds: string[] = []
+      // 3. Una sola query de créditos (sin doble `.or` ni `#` en URLs)
       const creditInvoiceNumbers: string[] = []
       for (const sale of data || []) {
-        if (sale.payment_method === 'credit') {
-          creditSaleIds.push(sale.id)
-          if (sale.invoice_number) creditInvoiceNumbers.push(sale.invoice_number)
+        if (sale.payment_method === 'credit' && sale.invoice_number) {
+          creditInvoiceNumbers.push(sale.invoice_number)
         }
       }
 
       const creditStatusBySaleId = new Map<string, string>()
       const creditStatusByInvoice = new Map<string, string>()
-      if (creditSaleIds.length > 0 || creditInvoiceNumbers.length > 0) {
+      if (creditInvoiceNumbers.length > 0) {
         let creditQuery = supabase
           .from('credits')
-          .select('id, sale_id, invoice_number, status')
-        if (creditSaleIds.length > 0 && creditInvoiceNumbers.length > 0) {
-          creditQuery = creditQuery.or(
-            `sale_id.in.(${creditSaleIds.join(',')}),invoice_number.in.(${quotePostgrestList(creditInvoiceNumbers)})`
-          )
-        } else if (creditSaleIds.length > 0) {
-          creditQuery = creditQuery.in('sale_id', creditSaleIds)
-        } else {
-          creditQuery = creditQuery.in('invoice_number', creditInvoiceNumbers)
-        }
+          .select('sale_id, invoice_number, status')
+          .in('invoice_number', creditInvoiceNumbers)
+
         if (!storeId || storeId === MAIN_STORE_ID) {
           creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
         } else {
           creditQuery = creditQuery.eq('store_id', storeId)
         }
+
         const { data: creditsData } = await creditQuery
         if (creditsData) {
           for (const c of creditsData) {

@@ -57,7 +57,8 @@ export function SalesProvider({ children }: { children: ReactNode }) {
       setTotalSales(result.total)
       setHasMore(result.hasMore)
     } catch (error) {
-      // Error silencioso en producción
+      console.error('[Sales] Error cargando ventas:', error)
+      if (!append) setSales([])
     } finally {
       setLoading(false)
     }
