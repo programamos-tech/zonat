@@ -181,11 +181,8 @@ export function BottomNav() {
               (href === '/sales' && currentPathname?.startsWith('/sales')) ||
               (href === '/stores' && currentPathname?.startsWith('/stores'))
             
-            // Barra oscura: zinc por defecto; Traslados/Recepciones en naranja (misma señal que Ventas)
+            // Barra oscura: iconos en zinc; activo resaltado sin color extra
             const getIconColor = () => {
-              if (href === '/inventory/transfers' || href === '/inventory/receptions') {
-                return active ? 'text-orange-400' : 'text-orange-500/75'
-              }
               if (!active) return 'text-zinc-500'
               return 'text-zinc-100'
             }

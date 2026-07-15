@@ -367,24 +367,10 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                               (subitem.href === '/roles' && pathname?.startsWith('/roles')) ||
                               (subitem.href === '/logs' && pathname?.startsWith('/logs'))
 
-                            const getSubitemIconColor = (href: string) => {
-                              if (href === '/stores' && isMainStoreUser(user)) {
-                                return isSubActive
-                                  ? 'text-emerald-400'
-                                  : 'text-zinc-500 group-hover:text-emerald-400/85'
-                              }
-                              if (
-                                href === '/inventory/transfers' ||
-                                href === '/inventory/receptions'
-                              ) {
-                                return isSubActive
-                                  ? 'text-orange-400'
-                                  : 'text-orange-500/75 group-hover:text-orange-400'
-                              }
-                              return isSubActive
+                            const getSubitemIconColor = () =>
+                              isSubActive
                                 ? 'text-zinc-100'
                                 : 'text-zinc-500 group-hover:text-zinc-300'
-                            }
                             
                             return (
                               <Link
@@ -400,7 +386,7 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                                   strokeWidth={1.5}
                                   className={cn(
                                     'mr-2 h-3.5 w-3.5 shrink-0 transition-colors',
-                                    getSubitemIconColor(subitem.href)
+                                    getSubitemIconColor()
                                   )}
                                 />
                                 <span className="flex-1 truncate">{subitem.name}</span>
