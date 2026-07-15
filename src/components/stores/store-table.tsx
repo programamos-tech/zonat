@@ -127,6 +127,11 @@ function StoreCard({
             <h3 className="line-clamp-2 w-full px-1 text-base font-semibold leading-tight text-zinc-900 dark:text-zinc-50">
               {store.name}
             </h3>
+            {store.invoicePrefix && (
+              <p className="mt-1 font-mono text-[11px] font-medium tracking-wide text-emerald-700 dark:text-emerald-400">
+                Facturas: {store.invoicePrefix}-#####
+              </p>
+            )}
           </div>
 
           <div

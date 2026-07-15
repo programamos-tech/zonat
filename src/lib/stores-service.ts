@@ -1,5 +1,6 @@
 import { supabase, supabaseAdmin } from './supabase'
 import { Store } from '@/types'
+import { deriveInvoicePrefix, normalizeInvoicePrefix, isValidInvoicePrefix } from './invoice-number'
 
 export class StoresService {
   // Obtener todas las tiendas activas
@@ -52,10 +53,19 @@ export class StoresService {
   // Crear nueva tienda
   static async createStore(storeData: Omit<Store, 'id' | 'createdAt' | 'updatedAt' | 'isActive' | 'deletedAt'>): Promise<Store | null> {
     try {
+      const prefix = normalizeInvoicePrefix(
+        storeData.invoicePrefix || deriveInvoicePrefix(storeData.name)
+      )
+      if (!isValidInvoicePrefix(prefix)) {
+        console.error('Invalid invoice prefix:', prefix)
+        return null
+      }
+
       const { data, error } = await supabaseAdmin
         .from('stores')
         .insert({
           name: storeData.name,
+          invoice_prefix: prefix,
           nit: storeData.nit || null,
           logo_url: storeData.logo || null,
           address: storeData.address || null,
@@ -76,26 +86,24 @@ export class StoresService {
       // Crear stock inicial (0) para todos los productos existentes en la nueva micro tienda
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       if (newStore.id !== MAIN_STORE_ID) {
-        // Solo para micro tiendas, no para la tienda principal
         const { data: allProducts, error: productsError } = await supabaseAdmin
           .from('products')
           .select('id')
-        
+
         if (!productsError && allProducts && allProducts.length > 0) {
           const storeStockInserts = allProducts.map((product: any) => ({
             store_id: newStore.id,
             product_id: product.id,
-            quantity: 0, // Stock inicial en 0
-            location: 'local' // Todas las micro tiendas tienen stock en "local"
+            quantity: 0,
+            location: 'local'
           }))
-          
+
           const { error: storeStockError } = await supabaseAdmin
             .from('store_stock')
             .insert(storeStockInserts)
-          
+
           if (storeStockError) {
             console.error('Error creating initial stock for new store:', storeStockError)
-            // No fallar la creación de la tienda si hay error al crear stock
           }
         }
       }
@@ -111,8 +119,16 @@ export class StoresService {
   static async updateStore(id: string, storeData: Partial<Omit<Store, 'id' | 'createdAt' | 'updatedAt'>>): Promise<Store | null> {
     try {
       const updateData: any = {}
-      
+
       if (storeData.name !== undefined) updateData.name = storeData.name
+      if (storeData.invoicePrefix !== undefined) {
+        const prefix = normalizeInvoicePrefix(storeData.invoicePrefix)
+        if (!isValidInvoicePrefix(prefix)) {
+          console.error('Invalid invoice prefix:', prefix)
+          return null
+        }
+        updateData.invoice_prefix = prefix
+      }
       if (storeData.nit !== undefined) updateData.nit = storeData.nit || null
       if (storeData.logo !== undefined) updateData.logo_url = storeData.logo || null
       if (storeData.address !== undefined) updateData.address = storeData.address || null
@@ -188,7 +204,6 @@ export class StoresService {
   // Eliminar tienda permanentemente (solo para admin principal)
   static async deleteStore(id: string): Promise<boolean> {
     try {
-      // No permitir eliminar la tienda principal
       if (id === '00000000-0000-0000-0000-000000000001') {
         console.error('Cannot delete main store')
         return false
@@ -221,6 +236,7 @@ export class StoresService {
     return {
       id: data.id,
       name: data.name,
+      invoicePrefix: data.invoice_prefix || deriveInvoicePrefix(data.name || ''),
       nit: data.nit || undefined,
       logo: data.logo_url || data.logo || undefined,
       address: data.address || undefined,

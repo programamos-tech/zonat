@@ -24,6 +24,7 @@ import { StoreStockTransferService } from '@/lib/store-stock-transfer-service'
 import { InvoiceTemplate } from './invoice-template'
 import { StoresService } from '@/lib/stores-service'
 import { getCurrentUserStoreId } from '@/lib/store-helper'
+import { displayInvoiceNumber } from '@/lib/invoice-number'
 
 interface SaleDetailModalProps {
   isOpen: boolean
@@ -180,16 +181,11 @@ export default function SaleDetailModal({
   }
 
   const generateInvoiceNumber = (sale: Sale) => {
-    return `#${sale.invoiceNumber?.toString().padStart(3, '0') || '000'}`
+    return displayInvoiceNumber(sale.invoiceNumber)
   }
 
   const getInvoiceNumber = (sale: Sale) => {
-    // Si invoiceNumber ya incluye #, devolverlo tal como está
-    if (sale.invoiceNumber?.toString().startsWith('#')) {
-      return sale.invoiceNumber.toString()
-    }
-    // Si no incluye #, agregarlo
-    return `#${sale.invoiceNumber?.toString().padStart(3, '0') || '000'}`
+    return displayInvoiceNumber(sale.invoiceNumber)
   }
 
   const getStatusColor = (status: string) => {

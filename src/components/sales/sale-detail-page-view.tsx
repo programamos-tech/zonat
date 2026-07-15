@@ -29,6 +29,7 @@ import {
   getEffectiveCreditStatus,
   isCreditCancelled,
 } from '@/lib/credit-status-ui'
+import { displayInvoiceNumber } from '@/lib/invoice-number'
 
 const panel =
   'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
@@ -155,10 +156,7 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
     return t.id.substring(t.id.length - 8).toUpperCase()
   }
 
-  const getInvoiceNumber = (s: Sale) => {
-    if (s.invoiceNumber?.toString().startsWith('#')) return s.invoiceNumber.toString()
-    return `#${s.invoiceNumber?.toString().padStart(3, '0') || '000'}`
-  }
+  const getInvoiceNumber = (s: Sale) => displayInvoiceNumber(s.invoiceNumber)
 
   const formatCurrency = (amount: number) =>
     new Intl.NumberFormat('es-CO', {

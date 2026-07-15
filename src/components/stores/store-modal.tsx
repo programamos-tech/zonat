@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { X, Store as StoreIcon, Upload } from 'lucide-react'
 import { Store } from '@/types'
+import { deriveInvoicePrefix, normalizeInvoicePrefix, isValidInvoicePrefix } from '@/lib/invoice-number'
 
 interface StoreModalProps {
   isOpen: boolean
@@ -31,6 +32,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
 
   const [formData, setFormData] = useState({
     name: store?.name || '',
+    invoicePrefix: store?.invoicePrefix || '',
     nit: store?.nit || '',
     logo: store?.logo || '',
     address: store?.address || '',
@@ -40,26 +42,31 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isUploading, setIsUploading] = useState(false)
+  const [prefixTouched, setPrefixTouched] = useState(false)
 
   useEffect(() => {
     if (store) {
       setFormData({
         name: store.name || '',
+        invoicePrefix: store.invoicePrefix || deriveInvoicePrefix(store.name || ''),
         nit: store.nit || '',
         logo: store.logo || '',
         address: store.address || '',
         city: store.city || '',
         phone: store.phone || ''
       })
+      setPrefixTouched(true)
     } else {
       setFormData({
         name: '',
+        invoicePrefix: '',
         nit: '',
         logo: '',
         address: '',
         city: '',
         phone: ''
       })
+      setPrefixTouched(false)
     }
     setErrors({})
   }, [store])
@@ -69,6 +76,12 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
     if (!formData.name.trim()) {
       newErrors.name = 'El nombre de la tienda es requerido'
     }
+    const prefix = normalizeInvoicePrefix(
+      formData.invoicePrefix || deriveInvoicePrefix(formData.name)
+    )
+    if (!isValidInvoicePrefix(prefix)) {
+      newErrors.invoicePrefix = 'Usa 2–6 letras/números (ej. ZT, TCC)'
+    }
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
@@ -76,8 +89,12 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault()
     if (!validateForm()) return
+    const prefix = normalizeInvoicePrefix(
+      formData.invoicePrefix || deriveInvoicePrefix(formData.name)
+    )
     const storeData: Omit<Store, 'id' | 'createdAt' | 'updatedAt' | 'isActive' | 'deletedAt'> = {
       name: formData.name.trim(),
+      invoicePrefix: prefix,
       nit: formData.nit.trim() || undefined,
       logo: formData.logo.trim() || undefined,
       address: formData.address.trim() || undefined,
@@ -282,13 +299,55 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                   <Input
                     id="store-name"
                     value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      setFormData((prev) => ({
+                        ...prev,
+                        name,
+                        invoicePrefix: prefixTouched
+                          ? prev.invoicePrefix
+                          : deriveInvoicePrefix(name),
+                      }))
+                    }}
                     placeholder="Ej: Tienda Centro"
                     className={`${inputClass} ${errors.name ? 'border-red-500' : ''}`}
                   />
                   {errors.name && (
                     <p className="text-sm text-red-600 dark:text-red-400">{errors.name}</p>
                   )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="store-invoice-prefix" className="text-zinc-700 dark:text-zinc-300">
+                    Prefijo de factura *
+                  </Label>
+                  <Input
+                    id="store-invoice-prefix"
+                    value={formData.invoicePrefix}
+                    onChange={(e) => {
+                      setPrefixTouched(true)
+                      setFormData({
+                        ...formData,
+                        invoicePrefix: normalizeInvoicePrefix(e.target.value),
+                      })
+                    }}
+                    placeholder="Ej: ZT"
+                    maxLength={6}
+                    className={`${inputClass} uppercase ${errors.invoicePrefix ? 'border-red-500' : ''}`}
+                  />
+                  {errors.invoicePrefix && (
+                    <p className="text-sm text-red-600 dark:text-red-400">{errors.invoicePrefix}</p>
+                  )}
+                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                    Las facturas nuevas saldrán como{' '}
+                    <span className="font-mono font-medium text-zinc-700 dark:text-zinc-300">
+                      {normalizeInvoicePrefix(
+                        formData.invoicePrefix || deriveInvoicePrefix(formData.name)
+                      ) || 'XX'}
+                      -00001
+                    </span>
+                    . No afecta facturas ya emitidas.
+                  </p>
                 </div>
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">

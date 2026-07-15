@@ -94,10 +94,13 @@ async function searchSalesLite(term: string): Promise<GlobalSearchHit[]> {
   if (isNumber) {
     const padded = numericValue.padStart(3, '0')
     query = query.or(
-      `invoice_number.eq.#${padded},invoice_number.ilike.%${numericValue}%,client_name.ilike.%${cleanTerm}%`
+      `invoice_number.eq.#${padded},invoice_number.ilike.%${numericValue}%,invoice_number.ilike.%-${padded},invoice_number.ilike.%-${numericValue},client_name.ilike.%${cleanTerm}%`
     )
   } else {
-    query = query.ilike('client_name', `%${cleanTerm}%`)
+    // Prefijo o serial completo (ZT, ZT-00001, etc.)
+    query = query.or(
+      `invoice_number.ilike.%${cleanTerm}%,client_name.ilike.%${cleanTerm}%`
+    )
   }
 
   const { data, error } = await query.order('created_at', { ascending: false }).limit(LIMIT)

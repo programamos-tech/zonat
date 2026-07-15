@@ -24,35 +24,60 @@ function mapWebOrderFields(row: Record<string, unknown>) {
 
 export class SalesService {
   /**
-   * Siguiente número de factura por tienda.
-   * Sin argumento: usa la tienda del usuario actual (comportamiento previo).
-   * Con `forStoreId`: secuencia para esa tienda (traslados / admin); usa service role para contar bien.
+   * Serial por tienda: PREFIX-##### (ej. ZT-00001).
+   * Sin argumento usa la tienda del usuario; con `forStoreId` la tienda indicada (traslados/admin).
+   * Las facturas legacy (#661) no se mezclan en la secuencia nueva.
    */
   static async getNextInvoiceNumber(forStoreId?: string): Promise<string> {
+    const { formatStoreInvoiceNumber, deriveInvoicePrefix, normalizeInvoicePrefix } = await import(
+      './invoice-number'
+    )
     try {
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const useExplicit = typeof forStoreId === 'string' && forStoreId.length > 0
-      const storeId = useExplicit ? forStoreId : getCurrentUserStoreId()
-      const db = useExplicit ? supabaseAdmin : supabase
+      const storeId = useExplicit ? forStoreId : getCurrentUserStoreId() || MAIN_STORE_ID
+      const resolvedStoreId = storeId || MAIN_STORE_ID
 
-      let query = db.from('sales').select('*', { count: 'exact', head: true })
+      const { data: storeRow } = await supabaseAdmin
+        .from('stores')
+        .select('id, name, invoice_prefix')
+        .eq('id', resolvedStoreId)
+        .maybeSingle()
 
-      if (!storeId || storeId === MAIN_STORE_ID) {
-        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      const prefix = normalizeInvoicePrefix(
+        storeRow?.invoice_prefix || deriveInvoicePrefix(storeRow?.name || 'ZT')
+      )
+
+      // Secuencia solo entre facturas nuevas del mismo prefijo en esa tienda.
+      let salesQuery = supabaseAdmin
+        .from('sales')
+        .select('invoice_number')
+        .ilike('invoice_number', `${prefix}-%`)
+
+      if (resolvedStoreId === MAIN_STORE_ID) {
+        salesQuery = salesQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
       } else {
-        query = query.eq('store_id', storeId)
+        salesQuery = salesQuery.eq('store_id', resolvedStoreId)
       }
 
-      const { count, error } = await query
-
+      const { data: rows, error } = await salesQuery.limit(5000)
       if (error) {
-        return '#001'
+        return formatStoreInvoiceNumber(prefix, 1)
       }
 
-      const nextNumber = (count || 0) + 1
-      return `#${nextNumber.toString().padStart(3, '0')}`
-    } catch (error) {
-      return '#001'
+      let maxSeq = 0
+      for (const row of rows || []) {
+        const inv = String(row.invoice_number || '')
+        const m = inv.match(new RegExp(`^${prefix}-(\\d+)$`, 'i'))
+        if (m) {
+          const n = Number(m[1])
+          if (Number.isFinite(n) && n > maxSeq) maxSeq = n
+        }
+      }
+
+      return formatStoreInvoiceNumber(prefix, maxSeq + 1)
+    } catch {
+      return formatStoreInvoiceNumber('XX', 1)
     }
   }
 
@@ -1455,8 +1480,10 @@ export class SalesService {
         // Buscar por número de factura exacto (sin el #)
         searchConditions.push(`invoice_number.eq.#${cleanTerm.padStart(3, '0')}`)
 
-        // Buscar por número de factura que contenga el número (para casos como #010, #100, etc.)
+        // Buscar por número de factura que contenga el número (legacy y PREFIX-#####)
         searchConditions.push(`invoice_number.ilike.%${cleanTerm}%`)
+        searchConditions.push(`invoice_number.ilike.%-${cleanTerm.padStart(5, '0')}`)
+        searchConditions.push(`invoice_number.ilike.%-${cleanTerm}`)
 
         // Buscar por monto exacto
         searchConditions.push(`total.eq.${numericValue}`)
@@ -1600,10 +1627,13 @@ export class SalesService {
         const storeScope = `or(store_id.is.null,store_id.eq.${MAIN_STORE_ID})`
         if (isNumber) {
           const invoiceExact = `#${numericValue.padStart(3, '0')}`
+          const padded5 = numericValue.padStart(5, '0')
           query = query.or(
             [
               `and(${storeScope},invoice_number.eq.${invoiceExact})`,
               `and(${storeScope},invoice_number.ilike.%${numericValue}%)`,
+              `and(${storeScope},invoice_number.ilike.%-${padded5})`,
+              `and(${storeScope},invoice_number.ilike.%-${numericValue})`,
               `and(${storeScope},client_name.ilike.%${cleanTerm}%)`
             ].join(',')
           )
@@ -1616,11 +1646,14 @@ export class SalesService {
         query = query.eq('store_id', storeId)
         if (isNumber) {
           const invoiceExact = `#${numericValue.padStart(3, '0')}`
+          const padded5 = numericValue.padStart(5, '0')
           query = query.or(
-            `invoice_number.eq.${invoiceExact},invoice_number.ilike.%${numericValue}%,client_name.ilike.%${cleanTerm}%`
+            `invoice_number.eq.${invoiceExact},invoice_number.ilike.%${numericValue}%,invoice_number.ilike.%-${padded5},invoice_number.ilike.%-${numericValue},client_name.ilike.%${cleanTerm}%`
           )
         } else {
-          query = query.ilike('client_name', `%${cleanTerm}%`)
+          query = query.or(
+            `client_name.ilike.%${cleanTerm}%,invoice_number.ilike.%${cleanTerm}%`
+          )
         }
       }
 

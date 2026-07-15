@@ -2,6 +2,7 @@
 
 import { Sale, CompanyConfig, Client } from '@/types'
 import { formatCurrency } from '@/lib/utils'
+import { displayInvoiceNumber } from '@/lib/invoice-number'
 
 interface InvoiceTemplateProps {
   sale: Sale
@@ -30,12 +31,7 @@ export function InvoiceTemplate({ sale, company, client }: InvoiceTemplateProps)
     })
   }
 
-  const getInvoiceNumber = (sale: Sale) => {
-    if (sale.invoiceNumber?.toString().startsWith('#')) {
-      return sale.invoiceNumber.toString()
-    }
-    return `#${sale.invoiceNumber?.toString().padStart(3, '0') || '000'}`
-  }
+  const getInvoiceNumber = (sale: Sale) => displayInvoiceNumber(sale.invoiceNumber)
 
   const getPaymentMethodLabel = (method: string) => {
     switch (method) {
