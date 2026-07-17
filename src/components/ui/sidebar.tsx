@@ -223,16 +223,16 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                   <img
                     src={currentStore.logo}
                     alt={currentStore.name}
-                    className="mb-1.5 h-11 w-11 object-cover"
+                    className="mb-2 h-24 w-24 rounded-full object-cover ring-1 ring-zinc-700/80"
                   />
                 ) : (
-                  <div className="mb-1.5">
-                    <Logo size="lg" />
+                  <div className="mb-2">
+                    <Logo size="xl" />
                   </div>
                 )}
               </div>
               {currentStore && (
-                <p className="max-w-[180px] truncate text-center text-xs font-medium text-zinc-200">
+                <p className="max-w-[200px] truncate text-center text-sm font-medium text-zinc-200">
                   {currentStore.name}
                 </p>
               )}

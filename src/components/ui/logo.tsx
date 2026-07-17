@@ -6,14 +6,15 @@ import Image from 'next/image'
 interface LogoProps {
   className?: string
   showText?: boolean
-  size?: 'sm' | 'md' | 'lg'
+  size?: 'sm' | 'md' | 'lg' | 'xl'
 }
 
 export function Logo({ className, showText = false, size = 'md' }: LogoProps) {
   const logoSize = {
     sm: 32,
     md: 48,
-    lg: 64
+    lg: 64,
+    xl: 96,
   }[size]
 
   return (
