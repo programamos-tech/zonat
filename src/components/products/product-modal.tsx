@@ -2,10 +2,8 @@
 
 import { useState, useEffect, useLayoutEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
-import type { LucideIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
-import { X, Package, DollarSign, BarChart3, AlertTriangle, Store, ImageIcon } from 'lucide-react'
+import { X, Package, Store, ImageIcon } from 'lucide-react'
 import { Product, Category } from '@/types'
 import { useProducts } from '@/contexts/products-context'
 import { useAuth } from '@/contexts/auth-context'
@@ -15,26 +13,33 @@ import { cn } from '@/lib/utils'
 const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
 const inputBase =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-600/80 dark:bg-zinc-800/80 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20'
+  'w-full rounded-lg border border-zinc-200/90 bg-white/95 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition-[opacity,background-color,border-color] focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-900/95 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
 
 function SectionCard({
-  icon: Icon,
   title,
   children,
   description,
+  className,
 }: {
-  icon: LucideIcon
   title: string
   children: React.ReactNode
   description?: string
+  className?: string
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/50 md:p-5">
-      <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} aria-hidden />
-        <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
+    <div
+      className={cn(
+        'product-modal-section rounded-xl border border-zinc-200/90 bg-white/80 p-3.5 transition-opacity duration-200 dark:border-zinc-700/80 dark:bg-zinc-900/80',
+        'focus-within:border-zinc-300 focus-within:bg-white dark:focus-within:border-zinc-600 dark:focus-within:bg-zinc-900',
+        className
+      )}
+    >
+      <div className="mb-3">
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
+        {description ? (
+          <p className="mt-0.5 text-xs leading-snug text-zinc-500 dark:text-zinc-400">{description}</p>
+        ) : null}
       </div>
-      {description ? <p className="mb-4 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">{description}</p> : null}
       {children}
     </div>
   )
@@ -129,18 +134,18 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
     return parseFloat(cleanValue) || 0
   }
 
-  const getStatusColor = (status: string) => {
+  const getStatusSelectedClass = (status: string) => {
     switch (status) {
       case 'active':
-        return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-zinc-500/45 dark:bg-zinc-700/40 dark:text-zinc-100'
+        return 'bg-brand-lime text-white shadow-sm'
       case 'inactive':
-        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/90 dark:text-zinc-300'
+        return 'bg-zinc-500 text-white shadow-sm dark:bg-zinc-600'
       case 'discontinued':
-        return 'border-zinc-200 bg-zinc-100 text-zinc-700 dark:border-zinc-500/50 dark:bg-zinc-800/90 dark:text-zinc-300'
+        return 'bg-zinc-700 text-white shadow-sm dark:bg-zinc-500'
       case 'out_of_stock':
-        return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-500/35 dark:bg-amber-500/10 dark:text-amber-200'
+        return 'bg-brand-coral text-white shadow-sm'
       default:
-        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-300'
+        return 'bg-zinc-500 text-white shadow-sm'
     }
   }
 
@@ -299,23 +304,21 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
   const isEdit = !!product
 
   const modal = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 px-3 py-5 backdrop-blur-md dark:bg-black/75 sm:py-8 xl:left-56">
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center px-3 py-3 sm:py-5 xl:left-60">
       <div
-        className="zonat-preserve-surface flex max-h-[calc(100dvh-2.5rem)] w-full max-w-[min(72rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950 sm:max-h-[calc(100dvh-4rem)]"
+        className="zonat-preserve-surface flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(68rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/95 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-950/95 sm:max-h-[calc(100dvh-2.5rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="product-modal-title"
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 bg-white px-4 py-4 md:px-6 md:py-5 dark:border-zinc-800 dark:bg-zinc-950">
-          <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-600/90 dark:bg-zinc-800/80">
-              <Package className="h-5 w-5 text-zinc-500 dark:text-zinc-300" strokeWidth={1.75} aria-hidden />
-            </div>
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-white/90 px-4 py-3 md:px-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Package className="h-5 w-5 shrink-0 text-zinc-400" strokeWidth={1.75} aria-hidden />
             <div className="min-w-0">
-              <h2 id="product-modal-title" className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white md:text-xl">
+              <h2 id="product-modal-title" className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white">
                 {isEdit ? 'Editar producto' : 'Nuevo producto'}
               </h2>
-              <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+              <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
                 {isEdit ? `Editando ${product.name}` : 'Crea un producto en tu inventario'}
               </p>
             </div>
@@ -323,14 +326,14 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
           <button
             type="button"
             onClick={handleClose}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
             aria-label="Cerrar"
           >
-            <X className="h-5 w-5" strokeWidth={1.75} />
+            <X className="h-4 w-4" strokeWidth={1.75} />
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50 px-4 py-4 md:px-6 md:py-5 dark:bg-zinc-950">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-transparent px-4 py-3 md:px-5 md:py-4">
           <form
             id={formId}
             onSubmit={e => {
@@ -338,155 +341,155 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
               handleSave()
             }}
           >
-            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:gap-5">
-              <div className="space-y-4 lg:space-y-5">
-                <SectionCard icon={Package} title="Información básica">
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <div className="flex flex-col gap-3">
+                <SectionCard title="Información básica">
+                  <div className="space-y-2.5">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       <div>
-                        <label htmlFor="product-name" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                          Nombre del producto <span className="text-zinc-400 dark:text-zinc-500">*</span>
+                        <label htmlFor="product-name" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          Nombre <span className="text-zinc-400">*</span>
                         </label>
                         <input
                           id="product-name"
                           type="text"
                           value={formData.name}
                           onChange={e => handleInputChange('name', e.target.value)}
-                          className={cn(inputBase, errors.name && 'border-red-500/70 ring-1 ring-red-500/30')}
+                          className={cn(inputBase, errors.name && 'border-red-400')}
                           placeholder="Nombre del producto"
                         />
-                        {errors.name && <p className="mt-1.5 text-sm text-red-400">{errors.name}</p>}
+                        {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
                       </div>
                       <div>
-                        <label htmlFor="product-ref" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                          Referencia <span className="text-zinc-400 dark:text-zinc-500">*</span>
+                        <label htmlFor="product-ref" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          Referencia <span className="text-zinc-400">*</span>
                         </label>
                         <input
                           id="product-ref"
                           type="text"
                           value={formData.reference}
                           onChange={e => handleInputChange('reference', e.target.value)}
-                          className={cn(inputBase, errors.reference && 'border-red-500/70 ring-1 ring-red-500/30')}
+                          className={cn(inputBase, errors.reference && 'border-red-400')}
                           placeholder="REF-001"
                         />
-                        {errors.reference && <p className="mt-1.5 text-sm text-red-400">{errors.reference}</p>}
+                        {errors.reference && <p className="mt-1 text-xs text-red-500">{errors.reference}</p>}
                       </div>
                     </div>
 
                     <div>
-                      <label htmlFor="product-desc" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Descripción <span className="font-normal text-zinc-500">(opcional)</span>
+                      <label htmlFor="product-desc" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Descripción
                       </label>
                       <textarea
                         id="product-desc"
                         value={formData.description}
                         onChange={e => handleInputChange('description', e.target.value)}
-                        className={cn(inputBase, 'min-h-[5.5rem] resize-none', errors.description && 'border-red-500/70')}
-                        placeholder="Descripción detallada del producto"
-                        rows={3}
+                        className={cn(inputBase, 'min-h-[2.5rem] resize-none')}
+                        placeholder="Opcional"
+                        rows={2}
                       />
-                      {errors.description && <p className="mt-1.5 text-sm text-red-400">{errors.description}</p>}
                     </div>
 
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                       <div>
-                        <label htmlFor="product-brand" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                          Marca <span className="font-normal text-zinc-500">(opcional)</span>
+                        <label htmlFor="product-brand" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          Marca
                         </label>
                         <input
                           id="product-brand"
                           type="text"
                           value={formData.brand}
                           onChange={e => handleInputChange('brand', e.target.value)}
-                          className={cn(inputBase, errors.brand && 'border-red-500/70')}
-                          placeholder="Marca"
+                          className={inputBase}
+                          placeholder="Opcional"
                         />
-                        {errors.brand && <p className="mt-1.5 text-sm text-red-400">{errors.brand}</p>}
                       </div>
                       <div>
-                        <label htmlFor="product-cat" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                          Categoría <span className="font-normal text-zinc-500">(opcional)</span>
+                        <label htmlFor="product-cat" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                          Categoría
                         </label>
                         <select
                           id="product-cat"
                           value={formData.categoryId}
                           onChange={e => handleInputChange('categoryId', e.target.value)}
-                          className={cn(inputBase, errors.categoryId && 'border-red-500/70')}
+                          className={inputBase}
                         >
-                          <option value="">Seleccionar categoría</option>
+                          <option value="">Seleccionar</option>
                           {categories.map(category => (
                             <option key={category.id} value={category.id}>
                               {category.name}
                             </option>
                           ))}
                         </select>
-                        {errors.categoryId && <p className="mt-1.5 text-sm text-red-400">{errors.categoryId}</p>}
                       </div>
                     </div>
                   </div>
                 </SectionCard>
 
-                <SectionCard
-                  icon={ImageIcon}
-                  title="Imagen del catálogo"
-                  description="Foto para ficha y listados (máx. 5MB)."
-                >
-                  <div className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700/80 dark:bg-zinc-900/60">
-                    {uploadPreview || catalogImageUrl ? (
-                      /* eslint-disable-next-line @next/next/no-img-element */
-                      <img
-                        src={uploadPreview || catalogImageUrl || ''}
-                        alt="Vista previa catálogo"
-                        className="mx-auto block max-h-56 w-full object-contain"
-                      />
-                    ) : (
-                      <div className="flex min-h-[140px] items-center justify-center px-4 py-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
-                        Sin imagen · sube una foto del producto
-                      </div>
-                    )}
-                  </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    <input
-                      ref={catalogFileInputRef}
-                      type="file"
-                      accept="image/*"
-                      className="sr-only"
-                      disabled={uploadingImage}
-                      onChange={handleCatalogImageFile}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploadingImage}
-                      onClick={() => catalogFileInputRef.current?.click()}
-                      className="border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-100 dark:border-zinc-600 dark:bg-zinc-900/50 dark:text-zinc-200 dark:hover:bg-zinc-800"
-                    >
-                      {uploadingImage ? 'Subiendo…' : 'Subir imagen'}
-                    </Button>
-                    {catalogImageUrl && (
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        className="text-rose-400 hover:bg-rose-500/10 hover:text-rose-300"
+                <SectionCard title="Imagen" description="Máx. 5MB">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-dashed border-zinc-300 bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900/60">
+                      {uploadPreview || catalogImageUrl ? (
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={uploadPreview || catalogImageUrl || ''}
+                          alt="Vista previa"
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <ImageIcon className="h-6 w-6 text-zinc-400" strokeWidth={1.5} aria-hidden />
+                      )}
+                    </div>
+                    <div className="flex min-w-0 flex-1 flex-col items-end justify-center gap-2 sm:flex-row sm:items-center sm:justify-end">
+                      <input
+                        ref={catalogFileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="sr-only"
                         disabled={uploadingImage}
-                        onClick={() => setCatalogImageUrl(null)}
-                      >
-                        Quitar imagen
-                      </Button>
-                    )}
+                        onChange={handleCatalogImageFile}
+                      />
+                      <p className="mr-auto hidden text-xs text-zinc-500 sm:block dark:text-zinc-400">
+                        {uploadPreview || catalogImageUrl
+                          ? 'Imagen lista para el catálogo'
+                          : 'Foto para ficha y listados'}
+                      </p>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={uploadingImage}
+                          onClick={() => catalogFileInputRef.current?.click()}
+                          className="h-9 min-w-[5.5rem]"
+                        >
+                          {uploadingImage ? 'Subiendo…' : 'Subir'}
+                        </Button>
+                        {catalogImageUrl && (
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="h-9 text-zinc-500"
+                            disabled={uploadingImage}
+                            onClick={() => setCatalogImageUrl(null)}
+                          >
+                            Quitar
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </SectionCard>
 
-                <SectionCard icon={DollarSign} title="Información financiera">
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <SectionCard title="Precios">
+                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3">
                     <div>
-                      <label htmlFor="product-price" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Precio por mayor <span className="text-zinc-400 dark:text-zinc-500">*</span>
+                      <label htmlFor="product-price" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Mayor <span className="text-zinc-400">*</span>
                       </label>
                       <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-sm text-zinc-400">
                           $
                         </span>
                         <input
@@ -494,18 +497,18 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                           type="text"
                           value={formatNumber(formData.price)}
                           onChange={e => handleInputChange('price', parseFormattedNumber(e.target.value))}
-                          className={cn(inputBase, 'pl-8', errors.price && 'border-red-500/70')}
+                          className={cn(inputBase, 'pl-7', errors.price && 'border-red-400')}
                           placeholder="0"
                         />
                       </div>
-                      {errors.price && <p className="mt-1.5 text-sm text-red-400">{errors.price}</p>}
+                      {errors.price && <p className="mt-1 text-xs text-red-500">{errors.price}</p>}
                     </div>
                     <div>
-                      <label htmlFor="product-online-price" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Precio tienda virtual
+                      <label htmlFor="product-online-price" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Web
                       </label>
                       <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-sm text-zinc-400">
                           $
                         </span>
                         <input
@@ -513,21 +516,17 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                           type="text"
                           value={formatNumber(formData.onlinePrice)}
                           onChange={e => handleInputChange('onlinePrice', parseFormattedNumber(e.target.value))}
-                          className={cn(inputBase, 'pl-8', errors.onlinePrice && 'border-red-500/70')}
+                          className={cn(inputBase, 'pl-7')}
                           placeholder="0"
                         />
                       </div>
-                      <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                        Precio público en /tienda. Si queda en 0, el producto no aparece en el catálogo web.
-                      </p>
-                      {errors.onlinePrice && <p className="mt-1.5 text-sm text-red-400">{errors.onlinePrice}</p>}
                     </div>
-                    <div className="md:col-span-2 md:max-w-[calc(50%-0.5rem)]">
-                      <label htmlFor="product-cost" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                        Costo de adquisición
+                    <div>
+                      <label htmlFor="product-cost" className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Costo
                       </label>
                       <div className="relative">
-                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3 text-sm text-zinc-400 dark:text-zinc-500">
+                        <span className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-2.5 text-sm text-zinc-400">
                           $
                         </span>
                         <input
@@ -535,150 +534,152 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
                           type="text"
                           value={formatNumber(formData.cost)}
                           onChange={e => handleInputChange('cost', parseFormattedNumber(e.target.value))}
-                          className={cn(inputBase, 'pl-8', errors.cost && 'border-red-500/70')}
+                          className={cn(inputBase, 'pl-7')}
                           placeholder="0"
                         />
                       </div>
-                      {errors.cost && <p className="mt-1.5 text-sm text-red-400">{errors.cost}</p>}
                     </div>
                   </div>
+                  <p className="mt-2 text-[11px] text-zinc-500">Web en 0 = no aparece en /tienda.</p>
                 </SectionCard>
               </div>
 
-              <div className="space-y-4 lg:space-y-5">
-                <SectionCard icon={BarChart3} title="Control de stock">
+              <div className="flex flex-col gap-3">
+                <SectionCard title="Control de stock">
                   {product && (
-                    <div className="-mt-2 mb-4 flex items-start gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-700/60 dark:bg-zinc-900/50">
-                      <BarChart3 className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} />
-                      <p className="text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
-                        El stock se muestra solo como referencia. Para ajustar o transferir, usa la tabla de productos.
-                      </p>
-                    </div>
+                    <p className="mb-2.5 text-xs text-zinc-500 dark:text-zinc-400">
+                      Solo referencia. Ajusta o transfiere desde la tabla de productos.
+                    </p>
                   )}
 
                   {!product && isMainStore && (
-                    <div className="mb-4">
-                      <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Ubicación inicial</span>
-                      <div className="flex rounded-xl bg-zinc-100 p-1 ring-1 ring-zinc-200 dark:bg-zinc-800/90 dark:ring-zinc-700/80">
+                    <div className="mb-3">
+                      <span className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                        Ubicación inicial
+                      </span>
+                      <div className="flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50">
                         <button
                           type="button"
                           onClick={() => handleInputChange('initialLocation', 'store')}
                           className={cn(
-                            'flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                            'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors',
                             formData.initialLocation === 'store'
-                              ? 'bg-white text-zinc-950 shadow-sm'
-                              : 'text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-200'
+                              ? 'bg-brand-lime text-white shadow-sm'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                           )}
                         >
-                          <Store className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                          <Store className="h-3.5 w-3.5" strokeWidth={1.75} />
                           Local
                         </button>
                         <button
                           type="button"
                           onClick={() => handleInputChange('initialLocation', 'warehouse')}
                           className={cn(
-                            'flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-all',
+                            'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors',
                             formData.initialLocation === 'warehouse'
-                              ? 'bg-white text-zinc-950 shadow-sm'
-                              : 'text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-200'
+                              ? 'bg-brand-coral text-white shadow-sm'
+                              : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                           )}
                         >
-                          <Package className="h-4 w-4 shrink-0" strokeWidth={1.75} />
+                          <Package className="h-3.5 w-3.5" strokeWidth={1.75} />
                           Bodega
                         </button>
                       </div>
                     </div>
                   )}
 
-                  <div className={cn('grid grid-cols-1 gap-6', isMainStore && 'md:grid-cols-2')}>
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                        <Store className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} />
-                        <h4 className="text-sm font-semibold">Local</h4>
+                  <div className={cn('grid grid-cols-1 gap-3', isMainStore && 'sm:grid-cols-2')}>
+                    <div
+                      className={cn(
+                        'rounded-lg border border-zinc-200 bg-white p-2.5 transition-shadow dark:border-zinc-700 dark:bg-zinc-900/40',
+                        !product && formData.initialLocation === 'store'
+                          ? 'shadow-md ring-1 ring-zinc-200/80 dark:ring-zinc-600/60'
+                          : 'shadow-none'
+                      )}
+                    >
+                      <div className="mb-1.5 flex items-center gap-1.5">
+                        <Store className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.75} />
+                        <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Local</span>
                       </div>
-                      <div>
-                        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Stock actual</label>
+                      {product ? (
+                        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/60">
+                          {formatNumber(formData.stock.store)} u.
+                        </div>
+                      ) : (
+                        <input
+                          type="text"
+                          value={formatNumber(formData.stock.store)}
+                          onChange={e => handleInputChange('stock.store', parseFormattedNumber(e.target.value))}
+                          className={cn(inputBase, errors.stockStore && 'border-red-400')}
+                          placeholder="0"
+                        />
+                      )}
+                      {errors.stockStore && <p className="mt-1 text-xs text-red-500">{errors.stockStore}</p>}
+                    </div>
+
+                    {isMainStore && (
+                      <div
+                        className={cn(
+                          'rounded-lg border border-zinc-200 bg-white p-2.5 transition-shadow dark:border-zinc-700 dark:bg-zinc-900/40',
+                          !product && formData.initialLocation === 'warehouse'
+                            ? 'shadow-md ring-1 ring-zinc-200/80 dark:ring-zinc-600/60'
+                            : 'shadow-none'
+                        )}
+                      >
+                        <div className="mb-1.5 flex items-center gap-1.5">
+                          <Package className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.75} />
+                          <span className="text-xs font-medium text-zinc-700 dark:text-zinc-300">Bodega</span>
+                        </div>
                         {product ? (
-                            <div className="w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-500 dark:border-zinc-600/80 dark:bg-zinc-900/60 dark:text-zinc-400">
-                            {formatNumber(formData.stock.store)} unidades
+                          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500 dark:border-zinc-700 dark:bg-zinc-900/60">
+                            {formatNumber(formData.stock.warehouse)} u.
                           </div>
                         ) : (
                           <input
                             type="text"
-                            value={formatNumber(formData.stock.store)}
-                            onChange={e => handleInputChange('stock.store', parseFormattedNumber(e.target.value))}
-                            className={cn(inputBase, errors.stockStore && 'border-red-500/70')}
+                            value={formatNumber(formData.stock.warehouse)}
+                            onChange={e =>
+                              handleInputChange('stock.warehouse', parseFormattedNumber(e.target.value))
+                            }
+                            className={cn(inputBase, errors.stockWarehouse && 'border-red-400')}
                             placeholder="0"
                           />
                         )}
-                        {errors.stockStore && <p className="mt-1.5 text-sm text-red-400">{errors.stockStore}</p>}
-                      </div>
-                    </div>
-
-                    {isMainStore && (
-                      <div className="space-y-3">
-                      <div className="flex items-center gap-2 text-zinc-700 dark:text-zinc-200">
-                        <Package className="h-4 w-4 text-zinc-400 dark:text-zinc-500" strokeWidth={1.75} />
-                          <h4 className="text-sm font-semibold">Bodega</h4>
-                        </div>
-                        <div>
-                          <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Stock actual</label>
-                          {product ? (
-                            <div className="w-full cursor-not-allowed rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-500 dark:border-zinc-600/80 dark:bg-zinc-900/60 dark:text-zinc-400">
-                              {formatNumber(formData.stock.warehouse)} unidades
-                            </div>
-                          ) : (
-                            <input
-                              type="text"
-                              value={formatNumber(formData.stock.warehouse)}
-                              onChange={e => handleInputChange('stock.warehouse', parseFormattedNumber(e.target.value))}
-                              className={cn(inputBase, errors.stockWarehouse && 'border-red-500/70')}
-                              placeholder="0"
-                            />
-                          )}
-                          {errors.stockWarehouse && (
-                            <p className="mt-1.5 text-sm text-red-400">{errors.stockWarehouse}</p>
-                          )}
-                        </div>
+                        {errors.stockWarehouse && (
+                          <p className="mt-1 text-xs text-red-500">{errors.stockWarehouse}</p>
+                        )}
                       </div>
                     )}
                   </div>
 
-                  <div className="mt-4 rounded-xl border border-zinc-200 bg-white px-4 py-3 dark:border-zinc-700/60 dark:bg-zinc-800/40">
-                    <div className="flex items-center justify-between gap-3">
-                      <span className="text-sm font-medium text-zinc-500 dark:text-zinc-400">Stock total</span>
-                      <span className="text-lg font-semibold tabular-nums text-zinc-900 dark:text-white">
-                        {formatNumber(
-                          isMainStore ? formData.stock.warehouse + formData.stock.store : formData.stock.store
-                        )}{' '}
-                        <span className="text-sm font-normal text-zinc-500 dark:text-zinc-500">unidades</span>
-                      </span>
-                    </div>
+                  <div className="mt-3 flex items-center justify-between border-t border-zinc-100 pt-2.5 dark:border-zinc-800">
+                    <span className="text-xs font-medium text-zinc-500">Stock total</span>
+                    <span className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-white">
+                      {formatNumber(
+                        isMainStore ? formData.stock.warehouse + formData.stock.store : formData.stock.store
+                      )}{' '}
+                      <span className="font-normal text-zinc-500">u.</span>
+                    </span>
                   </div>
                 </SectionCard>
 
-                <SectionCard icon={AlertTriangle} title="Estado del producto">
-                  <div className="flex flex-wrap gap-2">
+                <SectionCard title="Estado">
+                  <div className="flex flex-wrap gap-0.5 rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50">
                     {(['active', 'inactive', 'discontinued', 'out_of_stock'] as const).map(status => (
                       <button
                         key={status}
                         type="button"
                         onClick={() => handleInputChange('status', status)}
                         className={cn(
-                          'rounded-lg border px-3 py-2 text-sm font-medium transition-all',
+                          'min-h-9 flex-1 rounded-md px-2.5 text-xs font-medium transition-colors sm:text-sm',
                           formData.status === status
-                            ? 'border-zinc-300 bg-white text-zinc-950 shadow-sm'
-                            : 'border-zinc-200 bg-zinc-50 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-100 dark:border-zinc-600/80 dark:bg-zinc-800/50 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800'
+                            ? getStatusSelectedClass(status)
+                            : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                         )}
                       >
                         {getStatusLabel(status)}
                       </button>
                     ))}
-                  </div>
-                  <div className="mt-3">
-                    <Badge variant="outline" className={cn('border px-2 py-0.5 text-xs font-normal', getStatusColor(formData.status))}>
-                      {getStatusLabel(formData.status)}
-                    </Badge>
                   </div>
                 </SectionCard>
               </div>
@@ -687,20 +688,20 @@ export function ProductModal({ isOpen, onClose, onSave, product, categories }: P
         </div>
 
         <footer
-          className="flex shrink-0 flex-wrap items-center justify-end gap-3 border-t border-zinc-200 bg-white px-4 py-4 md:px-6 dark:border-zinc-800 dark:bg-zinc-950"
-          style={{ paddingBottom: `max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))` }}
+          className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-zinc-100 bg-white/90 px-4 py-3 md:px-5 dark:border-zinc-800 dark:bg-zinc-950/90"
+          style={{ paddingBottom: `max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))` }}
         >
           <button
             type="button"
             onClick={handleClose}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-zinc-300 bg-transparent px-5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-100 dark:border-zinc-500/80 dark:text-white dark:hover:bg-zinc-800/80"
+            className="inline-flex min-h-9 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             Cancelar
           </button>
           <button
             type="submit"
             form={formId}
-            className="inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border border-emerald-600 bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400"
+            className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg bg-emerald-600 px-5 text-sm font-semibold text-white transition-colors hover:bg-emerald-500"
           >
             <Package className="h-4 w-4 shrink-0" strokeWidth={1.75} />
             {isEdit ? 'Guardar cambios' : 'Crear producto'}

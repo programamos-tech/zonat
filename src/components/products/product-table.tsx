@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -12,10 +11,6 @@ import {
   Edit,
   Trash2,
   ArrowRightLeft,
-  AlertTriangle,
-  CheckCircle,
-  XCircle,
-  Pause,
   Tag,
   X,
   RefreshCw,
@@ -36,11 +31,14 @@ import { cardShell } from '@/lib/card-shell'
 
 const ITEMS_PER_PAGE = 15
 
-const actionIconBtnClass =
-  'h-9 w-9 p-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
-
+const actionEditBtnClass =
+  'h-9 w-9 p-0 text-brand-lime hover:bg-brand-lime-soft hover:text-brand-lime dark:hover:bg-emerald-950/40'
+const actionAdjustBtnClass =
+  'h-9 w-9 p-0 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/40 dark:hover:text-amber-300'
+const actionTransferBtnClass =
+  'h-9 w-9 p-0 text-sky-600 hover:bg-sky-50 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/40 dark:hover:text-sky-300'
 const actionDeleteBtnClass =
-  'h-9 w-9 p-0 text-zinc-500 hover:bg-zinc-100 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-red-400'
+  'h-9 w-9 p-0 text-brand-coral hover:bg-brand-coral-soft hover:text-brand-coral dark:hover:bg-orange-950/40'
 
 interface ProductTableProps {
   products: Product[]
@@ -85,7 +83,6 @@ export function ProductTable({
   onSearch,
   onView,
 }: ProductTableProps) {
-  const router = useRouter()
   const { hasPermission } = usePermissions()
   const { user } = useAuth()
 
@@ -132,57 +129,12 @@ export function ProductTable({
 
   const goProduct = (p: Product) => {
     if (onView) onView(p)
-    else router.push(`/inventory/products/${p.id}`)
+    else onEdit(p)
   }
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find((c) => c.id === categoryId)
     return category?.name || 'Sin categoría'
-  }
-
-  const getStatusBadgeClass = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'border-emerald-300/80 bg-emerald-100/75 text-emerald-900 dark:border-emerald-500/35 dark:bg-emerald-950/45 dark:text-emerald-300/95'
-      case 'inactive':
-        return 'border-zinc-300/90 bg-zinc-100/90 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-900/55 dark:text-zinc-400'
-      case 'discontinued':
-        return 'border-violet-200/90 bg-violet-50/85 text-violet-900 dark:border-violet-900/45 dark:bg-violet-950/35 dark:text-violet-300/90'
-      case 'out_of_stock':
-        return 'border-rose-200/90 bg-rose-50/85 text-rose-900 dark:border-rose-900/45 dark:bg-rose-950/35 dark:text-rose-300/90'
-      default:
-        return 'border-zinc-200 bg-zinc-50 text-zinc-700 dark:border-zinc-600 dark:bg-zinc-800/60 dark:text-zinc-300'
-    }
-  }
-
-  const getStatusLabel = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'Activo'
-      case 'inactive':
-        return 'Inactivo'
-      case 'discontinued':
-        return 'Descontinuado'
-      case 'out_of_stock':
-        return 'Sin Stock'
-      default:
-        return status
-    }
-  }
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return CheckCircle
-      case 'inactive':
-        return Pause
-      case 'discontinued':
-        return XCircle
-      case 'out_of_stock':
-        return AlertTriangle
-      default:
-        return CheckCircle
-    }
   }
 
   const getStockStatusLabel = (product: Product) => {
@@ -204,22 +156,36 @@ export function ProductTable({
   const getStockStatusBadgeClass = (product: Product) => {
     const { warehouse, store, total } = product.stock
     if (total === 0) {
-      return 'border-rose-200/90 bg-rose-50/85 text-rose-900 dark:border-rose-900/45 dark:bg-rose-950/40 dark:text-rose-300/90'
+      return 'border-brand-coral/40 bg-brand-coral-soft text-brand-coral dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-300'
     }
     if (store > 0) {
       if (store >= 10) {
-        return 'border-emerald-300/80 bg-emerald-100/75 text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-950/35 dark:text-emerald-300/90'
+        return 'border-brand-lime/40 bg-brand-lime-soft text-brand-lime dark:border-emerald-700/40 dark:bg-emerald-950/40 dark:text-emerald-300'
       }
       if (store >= 5) {
-        return 'border-amber-200/90 bg-amber-50/90 text-amber-950 dark:border-amber-900/40 dark:bg-amber-950/35 dark:text-amber-200/90'
+        return 'border-amber-300/80 bg-amber-50 text-amber-800 dark:border-amber-700/45 dark:bg-amber-950/40 dark:text-amber-200'
       }
-      return 'border-orange-200/90 bg-orange-50/90 text-orange-950 dark:border-orange-900/45 dark:bg-orange-950/35 dark:text-orange-300/90'
+      return 'border-orange-300/80 bg-orange-50 text-orange-800 dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-300'
     }
     if (warehouse > 0) {
-      return 'border-sky-200/90 bg-sky-50/85 text-sky-900 dark:border-sky-900/45 dark:bg-sky-950/35 dark:text-sky-300/90'
+      if (warehouse >= 20) {
+        return 'border-brand-coral/35 bg-brand-coral-soft/80 text-brand-coral dark:border-orange-800/40 dark:bg-orange-950/35 dark:text-orange-300'
+      }
+      if (warehouse >= 10) {
+        return 'border-orange-300/70 bg-orange-50/90 text-orange-800 dark:border-orange-800/40 dark:bg-orange-950/35 dark:text-orange-300'
+      }
+      return 'border-rose-300/80 bg-rose-50 text-rose-800 dark:border-rose-800/45 dark:bg-rose-950/40 dark:text-rose-300'
     }
-    return 'border-rose-200/90 bg-rose-50/85 text-rose-900 dark:border-rose-900/45 dark:bg-rose-950/40 dark:text-rose-300/90'
+    return 'border-brand-coral/40 bg-brand-coral-soft text-brand-coral dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-300'
   }
+
+  const formatPrice = (value: number) =>
+    value.toLocaleString('es-CO', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    })
 
   const stockStatusOptions = [
     { value: 'all', label: 'Todos los estados' },
@@ -247,7 +213,7 @@ export function ProductTable({
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 flex-1 space-y-1.5">
                 <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
-                  <Package className="h-5 w-5 shrink-0 text-emerald-600/85 dark:text-emerald-500/80" strokeWidth={1.5} aria-hidden />
+                  <Package className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
                   <span>Gestión de productos</span>
                   <StoreBadge />
                   {isSearching && (
@@ -380,7 +346,6 @@ export function ProductTable({
               <>
                 <div className="space-y-2 p-3 lg:hidden">
                   {products.map((product) => {
-                    const StatusIcon = getStatusIcon(product.status)
                     return (
                       <div
                         key={product.id}
@@ -402,12 +367,9 @@ export function ProductTable({
                               <p className="mt-0.5 text-base font-semibold leading-snug text-zinc-900 dark:text-zinc-50">{product.name}</p>
                               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">{getCategoryName(product.categoryId)}</p>
                             </div>
-                            <Badge variant="outline" className={cn('shrink-0 border px-2 py-0.5 text-[11px] font-normal', getStatusBadgeClass(product.status))}>
-                              <span className="flex items-center gap-1">
-                                <StatusIcon className="h-3 w-3" />
-                                {getStatusLabel(product.status)}
-                              </span>
-                            </Badge>
+                            <span className="shrink-0 text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                              {formatPrice(product.price)}
+                            </span>
                           </div>
                           {isMainStore ? (
                             <div className="mt-3 grid grid-cols-3 gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
@@ -422,30 +384,30 @@ export function ProductTable({
                             </div>
                           ) : (
                             <div className="mt-3 border-t border-zinc-200/80 pt-3 text-center dark:border-zinc-800">
-                              <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Stock</div>
-                              <div className="mt-0.5 text-sm font-semibold tabular-nums">{product.stock.store}</div>
+                              <div className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Local</div>
+                              <div className="mt-0.5 text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{product.stock.store}</div>
                             </div>
                           )}
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
                             <Badge
                               variant="outline"
-                              className={cn('border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}
+                              className={cn('w-fit border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}
                             >
                               {getStockStatusLabel(product)}
                             </Badge>
                             <div className="flex shrink-0 gap-0.5" role="none" onClick={(e) => e.stopPropagation()}>
                               {canEdit && (
-                                <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onEdit(product)} title="Editar">
+                                <Button type="button" size="sm" variant="ghost" className={actionEditBtnClass} onClick={() => onEdit(product)} title="Editar">
                                   <Edit className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
                               {canAdjust && onStockAdjustment && (
-                                <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockAdjustment(product)} title="Ajustar stock">
+                                <Button type="button" size="sm" variant="ghost" className={actionAdjustBtnClass} onClick={() => onStockAdjustment(product)} title="Ajustar stock">
                                   <Package className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
                               {canTransfer && onStockTransfer && (
-                                <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockTransfer(product)} title="Transferir">
+                                <Button type="button" size="sm" variant="ghost" className={actionTransferBtnClass} onClick={() => onStockTransfer(product)} title="Transferir">
                                   <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
@@ -475,16 +437,15 @@ export function ProductTable({
                               <th className={thClass}>Total</th>
                             </>
                           ) : (
-                            <th className={thClass}>Stock</th>
+                            <th className={thClass}>Local</th>
                           )}
                           <th className={thClass}>Estado stock</th>
-                          <th className={thClass}>Catálogo</th>
+                          <th className={thClass}>Precio</th>
                           <th className="w-[11rem] bg-zinc-50/80 px-2 py-3 dark:bg-zinc-900/50" />
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800/80">
                         {products.map((product) => {
-                          const StatusIcon = getStatusIcon(product.status)
                           return (
                             <tr
                               key={product.id}
@@ -500,30 +461,35 @@ export function ProductTable({
                               </td>
                               {isMainStore ? (
                                 <>
-                                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-zinc-800 dark:text-zinc-200">{product.stock.warehouse}</td>
-                                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-zinc-800 dark:text-zinc-200">{product.stock.store}</td>
-                                  <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-zinc-900 dark:text-zinc-100">{product.stock.total}</td>
+                                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-zinc-800 dark:text-zinc-200">
+                                    {product.stock.warehouse}
+                                  </td>
+                                  <td className="whitespace-nowrap px-3 py-3 tabular-nums text-zinc-800 dark:text-zinc-200">
+                                    {product.stock.store}
+                                  </td>
+                                  <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
+                                    {product.stock.total}
+                                  </td>
                                 </>
                               ) : (
-                                <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-zinc-900 dark:text-zinc-100">{product.stock.store}</td>
+                                <td className="whitespace-nowrap px-3 py-3 font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
+                                  {product.stock.store}
+                                </td>
                               )}
                               <td className="px-3 py-3">
                                 <Badge variant="outline" className={cn('inline-flex border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}>
                                   {getStockStatusLabel(product)}
                                 </Badge>
                               </td>
-                              <td className="px-3 py-3">
-                                <Badge variant="outline" className={cn('inline-flex items-center gap-1 border px-2 py-0.5 text-[11px] font-normal', getStatusBadgeClass(product.status))}>
-                                  <StatusIcon className="h-3 w-3 shrink-0" />
-                                  {getStatusLabel(product.status)}
-                                </Badge>
+                              <td className="whitespace-nowrap px-3 py-3 text-sm font-semibold tabular-nums text-zinc-800 dark:text-zinc-200">
+                                {formatPrice(product.price)}
                               </td>
                               <td className="px-1 py-2" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex flex-wrap items-center justify-end gap-0.5">
                                   {canEdit && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onEdit(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionEditBtnClass} onClick={() => onEdit(product)}>
                                           <Edit className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>
@@ -535,7 +501,7 @@ export function ProductTable({
                                   {canAdjust && onStockAdjustment && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockAdjustment(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionAdjustBtnClass} onClick={() => onStockAdjustment(product)}>
                                           <Package className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>
@@ -547,7 +513,7 @@ export function ProductTable({
                                   {canTransfer && onStockTransfer && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionIconBtnClass} onClick={() => onStockTransfer(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionTransferBtnClass} onClick={() => onStockTransfer(product)}>
                                           <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>

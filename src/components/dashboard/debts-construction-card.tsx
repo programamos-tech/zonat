@@ -10,7 +10,7 @@ export function DebtsConstructionCard() {
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center">
           <div className="p-2 rounded-xl bg-orange-50 dark:bg-orange-900/20 mr-3">
-            <Construction className="h-5 w-5 text-orange-600" />
+            <Construction className="h-5 w-5 text-brand-gold" />
           </div>
           <span className="text-lg font-medium text-gray-800 dark:text-gray-200">Gestión de Deudas</span>
           <Badge className="ml-3 bg-orange-100 text-orange-800 dark:bg-orange-900/20 dark:text-orange-400 text-xs">

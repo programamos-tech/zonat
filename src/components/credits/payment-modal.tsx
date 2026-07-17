@@ -229,58 +229,64 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
 
   if (!isOpen || !credit) return null
 
+  const methodOptions = [
+    { v: 'transfer' as const, label: 'Transferencia', Icon: CreditCard, selected: 'border-brand-lime bg-brand-lime text-white shadow-sm' },
+    { v: 'cash' as const, label: 'Efectivo', Icon: Banknote, selected: 'border-brand-gold bg-brand-gold text-white shadow-sm' },
+    { v: 'mixed' as const, label: 'Mixto', Icon: Shuffle, selected: 'border-brand-coral bg-brand-coral text-white shadow-sm' },
+  ] as const
+
   const modal = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56">
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60">
       <div
-        className="max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-md overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
+        className="zonat-preserve-surface flex max-h-[min(90dvh,calc(100dvh-2rem))] w-full max-w-[min(28rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
         role="dialog"
         aria-modal="true"
         aria-labelledby="credit-payment-modal-title"
       >
-        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-3.5 dark:border-zinc-700">
           <div className="flex min-w-0 items-center gap-2.5">
-            <DollarSign className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
-            <h2
-              id="credit-payment-modal-title"
-              className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50"
-            >
-              Registrar abono
-            </h2>
+            <DollarSign className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} />
+            <div className="min-w-0">
+              <h2
+                id="credit-payment-modal-title"
+                className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+              >
+                Registrar abono
+              </h2>
+              <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                {credit.clientName} · Factura {credit.invoiceNumber}
+              </p>
+            </div>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0"
+            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             onClick={handleClose}
           >
             <X className="h-5 w-5" />
           </Button>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="space-y-4 p-4">
-            <div className="space-y-1">
-              <p className="text-sm text-zinc-600 dark:text-zinc-400">
-                {credit.clientName} · Factura {credit.invoiceNumber}
-              </p>
-              <p className="text-xs text-zinc-500 dark:text-zinc-500">
-                Total {formatCurrency(credit.totalAmount)}
-                {' · '}
-                Pendiente{' '}
-                <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
-                  {formatCurrency(credit.pendingAmount)}
-                </span>
-              </p>
-            </div>
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
+            <p className="text-xs text-zinc-500 dark:text-zinc-500">
+              Total {formatCurrency(credit.totalAmount)}
+              {' · '}
+              Pendiente{' '}
+              <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
+                {formatCurrency(credit.pendingAmount)}
+              </span>
+            </p>
 
             <div className="space-y-2">
-              <Label className="text-zinc-700 dark:text-zinc-300">Monto del abono</Label>
+              <Label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Monto del abono</Label>
               <input
                 type="text"
                 value={formData.amount}
                 onChange={e => handleNumberChange('amount', e.target.value)}
-                placeholder="0"
+                placeholder="Ej. 500.000"
                 inputMode="numeric"
                 autoComplete="off"
                 className={cn(
@@ -306,38 +312,35 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
             </div>
 
             <div className="space-y-2">
-              <Label className="text-zinc-700 dark:text-zinc-300">Método</Label>
-              <div className="grid grid-cols-3 gap-2">
-                {(
-                  [
-                    { v: 'transfer' as const, label: 'Transferencia', Icon: CreditCard },
-                    { v: 'cash' as const, label: 'Efectivo', Icon: Banknote },
-                    { v: 'mixed' as const, label: 'Mixto', Icon: Shuffle }
-                  ] as const
-                ).map(({ v, label, Icon }) => (
-                  <button
-                    key={v}
-                    type="button"
-                    onClick={() => handlePaymentMethodChange(v)}
-                    className={cn(
-                      'flex flex-col items-center gap-1.5 rounded-lg border p-2.5 text-xs font-medium transition-colors',
-                      formData.paymentMethod === v
-                        ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-zinc-400 dark:bg-zinc-800 dark:text-zinc-50'
-                        : 'border-zinc-200 bg-transparent text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-zinc-600 dark:hover:bg-zinc-800/50'
-                    )}
-                  >
-                    <Icon className="h-5 w-5" strokeWidth={1.5} />
-                    {label}
-                  </button>
-                ))}
+              <Label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Método</Label>
+              <div className="flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50">
+                {methodOptions.map(({ v, label, Icon, selected }) => {
+                  const active = formData.paymentMethod === v
+                  return (
+                    <button
+                      key={v}
+                      type="button"
+                      onClick={() => handlePaymentMethodChange(v)}
+                      className={cn(
+                        'flex min-h-11 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1 py-1.5 text-[11px] font-medium transition-colors sm:text-xs',
+                        active
+                          ? selected
+                          : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                      )}
+                    >
+                      <Icon className="h-4 w-4" strokeWidth={1.5} />
+                      {label}
+                    </button>
+                  )
+                })}
               </div>
             </div>
 
             {(formData.paymentMethod === 'cash' || formData.paymentMethod === 'mixed') && (
               <div className="space-y-2 rounded-lg border border-zinc-200 bg-zinc-50/80 p-3 dark:border-zinc-700 dark:bg-zinc-950/40">
-                <Label className="text-zinc-700 dark:text-zinc-300">
+                <Label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   {formData.paymentMethod === 'cash' ? 'Monto recibido' : 'Monto recibido en efectivo'}{' '}
-                  <span className="font-normal text-zinc-500">(opcional)</span>
+                  <span className="font-normal text-zinc-400">(opcional)</span>
                 </Label>
                 <p className="text-xs text-zinc-500 dark:text-zinc-500">
                   Para calcular vuelto respecto al efectivo del abono
@@ -346,7 +349,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                   type="text"
                   value={formData.receivedAmount}
                   onChange={e => handleNumberChange('receivedAmount', e.target.value)}
-                  placeholder="0"
+                  placeholder="Ej. 550.000"
                   inputMode="numeric"
                   autoComplete="off"
                   className={cn(
@@ -376,7 +379,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
               <div className="space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/40">
                 <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Desglose del abono mixto</p>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                  <Label className="flex items-center gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     <Banknote className="h-4 w-4" strokeWidth={1.5} />
                     Monto en efectivo
                   </Label>
@@ -384,7 +387,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                     type="text"
                     value={formData.cashAmount}
                     onChange={e => handleNumberChange('cashAmount', e.target.value)}
-                    placeholder="0"
+                    placeholder="Ej. 200.000"
                     inputMode="numeric"
                     autoComplete="off"
                     className={cn(inputClass, 'h-11 text-base', errors.cashAmount ? 'border-red-500/80' : '')}
@@ -392,7 +395,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                   {errors.cashAmount && <p className="text-sm text-red-600 dark:text-red-400">{errors.cashAmount}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label className="flex items-center gap-2 text-zinc-700 dark:text-zinc-300">
+                  <Label className="flex items-center gap-2 text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     <CreditCard className="h-4 w-4" strokeWidth={1.5} />
                     Monto en transferencia
                   </Label>
@@ -400,7 +403,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
                     type="text"
                     value={formData.transferAmount}
                     onChange={e => handleNumberChange('transferAmount', e.target.value)}
-                    placeholder="0"
+                    placeholder="Ej. 300.000"
                     inputMode="numeric"
                     autoComplete="off"
                     className={cn(inputClass, 'h-11 text-base', errors.transferAmount ? 'border-red-500/80' : '')}
@@ -427,7 +430,7 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
             )}
 
             <div className="space-y-2">
-              <Label className="text-zinc-700 dark:text-zinc-300">Notas (opcional)</Label>
+              <Label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Notas (opcional)</Label>
               <textarea
                 value={formData.description}
                 onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
@@ -438,11 +441,18 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
             </div>
           </div>
 
-          <div className="flex flex-wrap justify-end gap-2 border-t border-zinc-200 bg-zinc-50/80 p-4 dark:border-zinc-700 dark:bg-zinc-950/50">
+          <div
+            className="flex shrink-0 flex-wrap justify-end gap-2 border-t border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900"
+            style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}
+          >
             <Button type="button" variant="outline" size="sm" onClick={handleClose}>
               Cancelar
             </Button>
-            <Button type="submit" size="sm">
+            <Button
+              type="submit"
+              size="sm"
+              className="border-0 bg-brand-lime text-white hover:bg-brand-lime-muted"
+            >
               Registrar abono
             </Button>
           </div>

@@ -43,7 +43,7 @@ const itemCardClass =
   'rounded-xl border border-zinc-200 bg-white p-3 dark:border-0 dark:bg-zinc-800/50'
 
 const overlayClass =
-  'fixed inset-0 z-[100] flex items-center justify-center !bg-black/75 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] xl:left-56'
+  'fixed inset-0 z-[100] flex items-center justify-center !bg-black/75 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] xl:left-60'
 
 const shellClass =
   'flex max-h-[min(92dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-[min(1200px,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200 !bg-white shadow-2xl dark:border dark:border-white/[0.08] dark:!bg-zinc-950 dark:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.85)]'
@@ -492,7 +492,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
         {/* Header */}
         <div className="flex flex-shrink-0 items-center justify-between border-b border-zinc-200 !bg-zinc-50 px-4 py-3 dark:border-white/[0.06] dark:!bg-zinc-950">
           <div className="flex min-w-0 items-center gap-2.5">
-            <Truck className="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400" strokeWidth={1.5} />
+            <Truck className="h-5 w-5 shrink-0 text-brand-coral" strokeWidth={1.5} />
             <h2 id="transfer-modal-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
               Nuevo traslado
             </h2>
@@ -783,7 +783,16 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
 
                           {item.productId && isCollapsed && (
                             <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-zinc-200 pt-3 text-sm dark:border-white/[0.06]">
-                              <span className="inline-flex items-center rounded-md border border-zinc-200 bg-zinc-100 px-2 py-0.5 text-xs font-medium text-zinc-700 dark:border-0 dark:bg-zinc-950/60 dark:text-zinc-200">
+                              <span
+                                className={cn(
+                                  'inline-flex items-center rounded-md border px-2 py-0.5 text-xs font-medium',
+                                  item.fromLocation === 'warehouse'
+                                    ? 'border-brand-coral/35 bg-brand-coral-soft text-brand-coral'
+                                    : item.fromLocation === 'store'
+                                      ? 'border-brand-lime/35 bg-brand-lime-soft text-brand-lime'
+                                      : 'border-brand-gold/40 bg-brand-gold-soft text-brand-gold'
+                                )}
+                              >
                                 {item.fromLocation === 'warehouse'
                                   ? 'Bodega'
                                   : item.fromLocation === 'store'
@@ -856,6 +865,31 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                         ? `Disponible en total: ${formatNumber(remaining)} (primero local, luego bodega)`
                                         : `Stock: ${formatNumber(stock)} · Disponible: ${formatNumber(remaining)}`
 
+                                    const tone =
+                                      location === 'warehouse'
+                                        ? {
+                                            selected:
+                                              'border-brand-coral bg-brand-coral text-white shadow-sm',
+                                            iconSelected: 'text-white',
+                                            titleSelected: 'text-white',
+                                            subSelected: 'text-white/85',
+                                          }
+                                        : location === 'store'
+                                          ? {
+                                              selected:
+                                                'border-brand-lime bg-brand-lime text-white shadow-sm',
+                                              iconSelected: 'text-white',
+                                              titleSelected: 'text-white',
+                                              subSelected: 'text-white/85',
+                                            }
+                                          : {
+                                              selected:
+                                                'border-brand-gold bg-brand-gold text-white shadow-sm',
+                                              iconSelected: 'text-white',
+                                              titleSelected: 'text-white',
+                                              subSelected: 'text-white/85',
+                                            }
+
                                     return (
                                       <button
                                         key={location}
@@ -869,7 +903,7 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                           isDisabled
                                             ? 'cursor-not-allowed border-zinc-200 text-zinc-400 opacity-50 dark:border-0 dark:bg-zinc-950/30'
                                             : isSelected
-                                              ? 'border-zinc-500 bg-zinc-100 text-zinc-900 dark:border-0 dark:bg-zinc-700/70 dark:text-zinc-50'
+                                              ? tone.selected
                                               : 'border-zinc-200 text-zinc-600 hover:border-zinc-300 hover:bg-zinc-50 dark:border-0 dark:bg-zinc-950/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60'
                                         )}
                                       >
@@ -877,16 +911,22 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                           <Icon
                                             className={cn(
                                               'h-4 w-4 shrink-0',
-                                              isSelected ? 'text-zinc-900 dark:text-zinc-100' : 'text-zinc-400 dark:text-zinc-500'
+                                              isDisabled
+                                                ? 'text-zinc-400'
+                                                : isSelected
+                                                  ? tone.iconSelected
+                                                  : 'text-zinc-400 dark:text-zinc-500'
                                             )}
                                             strokeWidth={1.5}
                                           />
                                           <span
                                             className={cn(
                                               'text-sm font-medium',
-                                              isSelected
-                                                ? 'text-zinc-900 dark:text-zinc-50'
-                                                : 'text-zinc-700 dark:text-zinc-300'
+                                              isDisabled
+                                                ? 'text-zinc-400'
+                                                : isSelected
+                                                  ? tone.titleSelected
+                                                  : 'text-zinc-700 dark:text-zinc-300'
                                             )}
                                           >
                                             {title}
@@ -895,9 +935,11 @@ export function TransferModal({ isOpen, onClose, onSave, stores, fromStoreId }: 
                                         <div
                                           className={cn(
                                             'text-xs leading-snug',
-                                            isSelected
-                                              ? 'text-zinc-600 dark:text-zinc-300'
-                                              : 'text-zinc-500 dark:text-zinc-400'
+                                            isDisabled
+                                              ? 'text-zinc-400'
+                                              : isSelected
+                                                ? tone.subSelected
+                                                : 'text-zinc-500 dark:text-zinc-400'
                                           )}
                                         >
                                           {subtitle}

@@ -36,15 +36,15 @@ export function SalesPeriodCard({ period, sales, previousSales, label }: SalesPe
   const getPeriodIcon = () => {
     switch (period) {
       case 'week':
-        return <Calendar className="h-5 w-5 text-blue-500" />
+        return <Calendar className="h-5 w-5 text-brand-coral" />
       case 'month':
-        return <BarChart3 className="h-5 w-5 text-emerald-500" />
+        return <BarChart3 className="h-5 w-5 text-brand-lime" />
       case 'quarter':
-        return <TrendingUp className="h-5 w-5 text-purple-500" />
+        return <TrendingUp className="h-5 w-5 text-brand-gold" />
       case 'year':
-        return <Target className="h-5 w-5 text-orange-500" />
+        return <Target className="h-5 w-5 text-brand-coral" />
       default:
-        return <BarChart3 className="h-5 w-5 text-emerald-500" />
+        return <BarChart3 className="h-5 w-5 text-brand-lime" />
     }
   }
 

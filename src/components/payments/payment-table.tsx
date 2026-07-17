@@ -152,7 +152,7 @@ export function CreditTable({
             <div className="min-w-0 flex-1 space-y-1.5">
               <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
                 <CreditCard
-                  className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500"
+                  className="h-5 w-5 shrink-0 text-brand-gold"
                   strokeWidth={1.5}
                   aria-hidden
                 />

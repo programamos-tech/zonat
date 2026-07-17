@@ -110,7 +110,7 @@ export function UsersTable({ users, roles, onView, onEdit, onDelete, onCreate }:
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center text-gray-900 dark:text-white">
-            <Users className="h-5 w-5 mr-2 text-emerald-600" />
+            <Users className="h-5 w-5 mr-2 text-brand-lime" />
             Gestión de Usuarios
           </CardTitle>
           <Button onClick={onCreate} className="bg-emerald-700 hover:bg-emerald-800">

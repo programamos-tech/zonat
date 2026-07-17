@@ -191,7 +191,7 @@ export function TransfersTable({
             <div className="min-w-0 flex-1 space-y-1.5">
               <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
                 <Truck
-                  className="h-5 w-5 shrink-0 text-orange-600 dark:text-orange-400"
+                  className="h-5 w-5 shrink-0 text-brand-coral"
                   strokeWidth={1.5}
                   aria-hidden
                 />
@@ -260,7 +260,7 @@ export function TransfersTable({
             </div>
           ) : transfers.length === 0 ? (
             <div className="py-12 text-center">
-              <Package className="mx-auto mb-4 h-12 w-12 text-orange-400" />
+              <Package className="mx-auto mb-4 h-12 w-12 text-brand-coral" />
               <h3 className="mb-2 text-lg font-medium text-zinc-900 dark:text-zinc-50">No hay traslados</h3>
               <p className="text-zinc-500 dark:text-zinc-400">
                 {canManageAllStores

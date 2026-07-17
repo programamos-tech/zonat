@@ -425,11 +425,7 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
   const modal = (
     <div
-      className="scrollbar-hide fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto overscroll-contain bg-black/45 px-3 backdrop-blur-sm dark:bg-black/65 sm:px-6"
-      style={{
-        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
-      }}
+      className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60"
       role="dialog"
       aria-modal="true"
       aria-labelledby="log-detail-title"
@@ -438,25 +434,20 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
       }}
     >
       <div
-        className="my-4 flex w-full max-w-4xl flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95"
+        className="zonat-preserve-surface flex w-full max-w-[min(44rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header — misma línea visual que registro de actividades */}
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/80 bg-zinc-50/90 px-4 py-3.5 dark:border-zinc-800 dark:bg-zinc-900/60 md:px-6 md:py-4">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <Activity
-              className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400"
-              strokeWidth={1.5}
-              aria-hidden
-            />
-            <div className="min-w-0 flex-1">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-2.5 sm:px-5 dark:border-zinc-800">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Activity className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
+            <div className="min-w-0">
               <h2
                 id="log-detail-title"
-                className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl"
+                className="truncate text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50"
               >
                 Detalle del registro
               </h2>
-              <p className="mt-0.5 hidden text-sm text-zinc-500 dark:text-zinc-400 md:block">
+              <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
                 Información completa de la actividad
               </p>
             </div>
@@ -466,75 +457,65 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="h-9 w-9 shrink-0 rounded-lg border-0 p-0 text-zinc-500 shadow-none hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="h-8 w-8 shrink-0 rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none hover:translate-y-0 hover:bg-zinc-100 hover:shadow-none hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" strokeWidth={1.5} />
           </Button>
         </div>
 
-        {/* Content: altura según contenido; scroll solo si supera el tope (sin barra visible) */}
-        <div className="max-h-[min(72dvh,560px)] overflow-y-auto overscroll-contain p-4 scrollbar-hide md:p-6">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-            {/* Información General */}
-            <div className="rounded-xl border border-solid border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
-              <div className="flex items-center gap-2 border-b border-zinc-200/80 p-3 dark:border-zinc-800 md:gap-3 md:p-4">
-                <FileText
-                  className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 md:h-5 md:w-5"
-                  strokeWidth={1.5}
-                />
-                <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 md:text-lg">
-                  Información general
-                </h3>
-              </div>
-              <div className="space-y-3 p-3 md:space-y-4 md:p-4">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 md:text-sm">Acción</span>
-                  <Badge className={`${getTypeColor(logType)} text-xs md:text-sm`}>
-                    <TypeIcon className="mr-1 h-3 w-3" />
+        <div className="min-h-0 max-h-[min(75dvh,calc(100dvh-8rem))] space-y-3 overflow-y-auto overscroll-contain bg-zinc-50/50 px-4 py-3 scrollbar-hide dark:bg-zinc-950/80 sm:px-5">
+          {/* Información general — franja compacta */}
+          <div className="rounded-lg border border-zinc-200/90 bg-white p-3 dark:border-zinc-700 dark:bg-zinc-900">
+            <div className="mb-2.5 flex items-center gap-2 text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              <FileText className="h-4 w-4 text-brand-lime" strokeWidth={1.5} aria-hidden />
+              Información general
+            </div>
+            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+              <div className="min-w-0">
+                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Acción</span>
+                <div className="mt-1">
+                  <Badge className={`${getTypeColor(logType)} max-w-full text-xs`}>
+                    <TypeIcon className="mr-1 h-3 w-3 shrink-0" />
                     <span className="truncate">
                       {getActionLabel(log.action, (log as any).module, log.details)}
                     </span>
                   </Badge>
                 </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 md:text-sm">Realizado por</span>
-                  <div className="flex min-w-0 items-center gap-2 sm:justify-end">
-                    <UserAvatar
-                      name={(log as any).user_name || 'Desconocido'}
-                      seed={(log as any).user_id || (log as any).id}
-                      size="sm"
-                      className="ring-1 ring-zinc-200/80 dark:ring-zinc-700"
-                    />
-                    <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100 md:text-base">
-                      {(log as any).user_name || 'Desconocido'}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400 md:text-sm">Fecha</span>
-                  <span className="text-xs tabular-nums text-zinc-900 dark:text-zinc-100 md:text-sm">
-                    {formatDateTime((log as any).created_at)}
+              </div>
+              <div className="min-w-0">
+                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Realizado por</span>
+                <div className="mt-1 flex min-w-0 items-center gap-2">
+                  <UserAvatar
+                    name={(log as any).user_name || 'Desconocido'}
+                    seed={(log as any).user_id || (log as any).id}
+                    size="sm"
+                    className="shrink-0 ring-1 ring-zinc-200/80 dark:ring-zinc-700"
+                  />
+                  <span className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {(log as any).user_name || 'Desconocido'}
                   </span>
                 </div>
               </div>
-            </div>
-
-            {/* Información específica según el tipo de acción */}
-            {log.details && (
-              <div className="rounded-xl border border-solid border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
-                <div className="flex items-center gap-2 border-b border-zinc-200/80 p-3 dark:border-zinc-800 md:gap-3 md:p-4">
-                  <TypeIcon
-                    className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400 md:h-5 md:w-5"
-                    strokeWidth={1.5}
-                  />
-                  <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-50 md:text-lg">
-                    Detalles de la acción
-                  </h3>
+              <div className="min-w-0">
+                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">Fecha</span>
+                <div className="mt-1 text-sm tabular-nums text-zinc-900 dark:text-zinc-100">
+                  {formatDateTime((log as any).created_at)}
                 </div>
-                <div className="p-3 md:p-4 max-h-[60vh] md:max-h-96 xl:max-h-none xl:overflow-visible overflow-y-auto">
+              </div>
+            </div>
+          </div>
+
+          {/* Detalles a ancho completo */}
+          {log.details && (
+            <div className="rounded-lg border border-zinc-200/90 bg-white dark:border-zinc-700 dark:bg-zinc-900">
+              <div className="flex items-center gap-2 border-b border-zinc-200/80 px-3 py-2.5 dark:border-zinc-800">
+                <TypeIcon className="h-4 w-4 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
+                <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                  Detalles de la acción
+                </h3>
+              </div>
+              <div className="p-3">
                   {/* Información específica para ventas */}
                   {log.action === 'sale_create' && log.details && (
                     <div className="space-y-4">
@@ -2325,91 +2306,84 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
 
                   {/* Detalles específicos para garantías */}
                   {log.action === 'warranty_create' && log.details && (
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 font-medium text-gray-600 mb-3">
-                            <Shield className="h-4 w-4" />
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                        <Shield className="h-4 w-4 text-brand-lime" strokeWidth={1.5} aria-hidden />
                         <span>Detalles de la Garantía</span>
-                          </div>
-                          
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-4">
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Cliente:</span>
-                              <div className="text-gray-900 dark:text-white font-medium">{log.details.clientName || 'N/A'}</div>
-                            </div>
-                            <div>
-                              <span className="text-gray-600 dark:text-gray-300 text-xs">Estado:</span>
-                              <div className="text-gray-900 dark:text-white">
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  log.details.status === 'completed' 
-                                    ? 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400'
-                                    : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400'
-                                }`}>
-                                  {log.details.status === 'completed' ? 'Completada' : log.details.status}
-                                </span>
-                              </div>
-                            </div>
                       </div>
-                      
-                      {/* Producto Defectuoso */}
-                      <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                        <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Producto Defectuoso:</span>
-                        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-700 rounded-lg p-3">
-                          <div className="font-medium text-gray-900 dark:text-white">{log.details.productReceivedName || 'N/A'}</div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Cliente</span>
+                          <div className="text-sm font-medium text-zinc-900 dark:text-zinc-100">{log.details.clientName || 'N/A'}</div>
+                        </div>
+                        <div>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Estado</span>
+                          <div className="mt-0.5">
+                            <span
+                              className={`inline-flex rounded-md px-2 py-0.5 text-[11px] font-medium ${
+                                log.details.status === 'completed'
+                                  ? 'bg-brand-lime-soft text-[color:var(--brand-lime-muted)] dark:text-brand-lime'
+                                  : 'bg-brand-gold-soft text-[color:var(--brand-gold-muted)] dark:text-brand-gold'
+                              }`}
+                            >
+                              {log.details.status === 'completed' ? 'Completada' : log.details.status}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        <div className="rounded-lg border border-[color:var(--brand-coral)]/35 bg-brand-coral-soft/80 p-2.5 dark:border-[color:var(--brand-coral)]/30">
+                          <span className="text-[11px] font-medium text-brand-coral">Producto defectuoso</span>
+                          <div className="mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">{log.details.productReceivedName || 'N/A'}</div>
+                          <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-[11px]">
                             <div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Referencia:</div>
-                              <div className="text-xs font-semibold text-gray-900 dark:text-white">{log.details.productReceivedReference || 'N/A'}</div>
+                              <div className="text-zinc-500 dark:text-zinc-400">Ref.</div>
+                              <div className="font-semibold text-zinc-900 dark:text-zinc-100">{log.details.productReceivedReference || 'N/A'}</div>
                             </div>
                             <div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Cantidad:</div>
-                              <div className="text-xs font-semibold text-gray-900 dark:text-white">{log.details.quantityReceived || 1} unidad</div>
+                              <div className="text-zinc-500 dark:text-zinc-400">Cant.</div>
+                              <div className="font-semibold text-zinc-900 dark:text-zinc-100">{log.details.quantityReceived || 1}</div>
                             </div>
                             <div className="col-span-2">
-                              <div className="text-xs text-gray-500 dark:text-gray-400">Valor:</div>
-                              <div className="text-sm font-bold text-gray-900 dark:text-white">
+                              <div className="text-zinc-500 dark:text-zinc-400">Valor</div>
+                              <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                                 ${(log.details.productReceivedPrice || 0).toLocaleString('es-CO')}
+                              </div>
                             </div>
                           </div>
                         </div>
-                        </div>
-                      </div>
-                      
-                      {/* Producto de Reemplazo */}
-                      {log.details.productDeliveredName && (
-                        <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                          <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Producto Entregado:</span>
-                          <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-700 rounded-lg p-3">
-                            <div className="font-medium text-gray-900 dark:text-white">{log.details.productDeliveredName}</div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-2">
+
+                        {log.details.productDeliveredName && (
+                          <div className="rounded-lg border border-[color:var(--brand-lime)]/35 bg-brand-lime-soft/80 p-2.5 dark:border-[color:var(--brand-lime)]/30">
+                            <span className="text-[11px] font-medium text-brand-lime">Producto entregado</span>
+                            <div className="mt-1 text-sm font-medium text-zinc-900 dark:text-zinc-100">{log.details.productDeliveredName}</div>
+                            <div className="mt-1.5 grid grid-cols-2 gap-1.5 text-[11px]">
                               <div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">Referencia:</div>
-                                <div className="text-xs font-semibold text-gray-900 dark:text-white">{log.details.productDeliveredReference || 'N/A'}</div>
+                                <div className="text-zinc-500 dark:text-zinc-400">Ref.</div>
+                                <div className="font-semibold text-zinc-900 dark:text-zinc-100">{log.details.productDeliveredReference || 'N/A'}</div>
                               </div>
                               <div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">Cantidad:</div>
-                                <div className="text-xs font-semibold text-gray-900 dark:text-white">{log.details.quantityDelivered || 1} unidad</div>
+                                <div className="text-zinc-500 dark:text-zinc-400">Cant.</div>
+                                <div className="font-semibold text-zinc-900 dark:text-zinc-100">{log.details.quantityDelivered || 1}</div>
                               </div>
                               <div className="col-span-2">
-                                <div className="text-xs text-gray-500 dark:text-gray-400">Valor:</div>
-                                <div className="text-sm font-bold text-gray-900 dark:text-white">
+                                <div className="text-zinc-500 dark:text-zinc-400">Valor</div>
+                                <div className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
                                   ${(log.details.productDeliveredPrice || 0).toLocaleString('es-CO')}
                                 </div>
                               </div>
                             </div>
-                            
-                            {/* Información de descuento de stock */}
                             {log.details.stockInfo && (
-                              <div className="mt-3 border-t border-zinc-200/80 pt-3 dark:border-zinc-700">
-                                <div className="mb-2 text-xs text-zinc-500 dark:text-zinc-400">Descuento de stock</div>
-                                <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                              <div className="mt-2 border-t border-zinc-200/80 pt-2 dark:border-zinc-700">
+                                <div className="mb-1.5 text-[10px] text-zinc-500 dark:text-zinc-400">Descuento de stock</div>
+                                <div className="grid grid-cols-1 gap-1.5 sm:grid-cols-2">
                                   {log.details.stockInfo.storeDeduction > 0 && (
-                                    <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
-                                      <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
-                                        <Store className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
-                                        Local
-                                      </div>
-                                      <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                                        -{log.details.stockInfo.storeDeduction} unidad{log.details.stockInfo.storeDeduction !== 1 ? 'es' : ''}
+                                    <div className="rounded-md border border-zinc-200/80 bg-white/70 px-2 py-1.5 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                      <div className="flex items-center gap-1 text-[10px] font-medium text-brand-lime">
+                                        <Store className="h-3 w-3 shrink-0" strokeWidth={1.5} aria-hidden />
+                                        Local −{log.details.stockInfo.storeDeduction}
                                       </div>
                                       <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                         {log.details.stockInfo.previousStoreStock} → {log.details.stockInfo.newStoreStock}
@@ -2417,13 +2391,10 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                     </div>
                                   )}
                                   {log.details.stockInfo.warehouseDeduction > 0 && (
-                                    <div className="rounded-md border border-zinc-200/80 bg-zinc-50/90 p-2 dark:border-zinc-700 dark:bg-zinc-900/50">
-                                      <div className="flex items-center gap-1 text-[10px] font-medium text-zinc-600 dark:text-zinc-400">
-                                        <Warehouse className="h-3 w-3 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.5} aria-hidden />
-                                        Bodega
-                                      </div>
-                                      <div className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
-                                        -{log.details.stockInfo.warehouseDeduction} unidad{log.details.stockInfo.warehouseDeduction !== 1 ? 'es' : ''}
+                                    <div className="rounded-md border border-zinc-200/80 bg-white/70 px-2 py-1.5 dark:border-zinc-700 dark:bg-zinc-900/50">
+                                      <div className="flex items-center gap-1 text-[10px] font-medium text-brand-coral">
+                                        <Warehouse className="h-3 w-3 shrink-0" strokeWidth={1.5} aria-hidden />
+                                        Bodega −{log.details.stockInfo.warehouseDeduction}
                                       </div>
                                       <div className="text-[10px] text-zinc-500 dark:text-zinc-400">
                                         {log.details.stockInfo.previousWarehouseStock} → {log.details.stockInfo.newWarehouseStock}
@@ -2433,23 +2404,23 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                                 </div>
                               </div>
                             )}
+                          </div>
+                        )}
                       </div>
-                        </div>
-                      )}
-                      
+
                       {log.details.reason && (
-                        <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                          <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Motivo:</span>
-                          <div className="text-gray-900 dark:text-white bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
+                        <div>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Motivo</span>
+                          <div className="mt-1 rounded-md bg-zinc-50 px-2.5 py-2 text-sm text-zinc-900 dark:bg-zinc-800/60 dark:text-zinc-100">
                             {log.details.reason}
                           </div>
                         </div>
                       )}
-                      
+
                       {log.details.notes && (
-                        <div className="border-t border-gray-200 dark:border-neutral-600 pt-3">
-                          <span className="text-gray-600 dark:text-gray-300 text-xs block mb-2">Notas:</span>
-                          <div className="text-gray-900 dark:text-white bg-gray-50 dark:bg-neutral-800 p-3 rounded-lg">
+                        <div>
+                          <span className="text-[11px] text-zinc-500 dark:text-zinc-400">Notas</span>
+                          <div className="mt-1 rounded-md bg-zinc-50 px-2.5 py-2 text-sm text-zinc-900 dark:bg-zinc-800/60 dark:text-zinc-100">
                             {log.details.notes}
                           </div>
                         </div>
@@ -2673,15 +2644,13 @@ export function LogDetailModal({ isOpen, onClose, log }: LogDetailModalProps) {
                 </div>
               </div>
             )}
-          </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex shrink-0 items-center justify-end border-t border-zinc-200/80 bg-zinc-50/90 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-900/60 md:px-6">
+        <div className="flex shrink-0 items-center justify-end border-t border-zinc-200/90 bg-white px-4 py-2.5 dark:border-zinc-800 dark:bg-zinc-950 sm:px-5">
           <Button
             type="button"
             onClick={onClose}
-            className="h-9 rounded-lg border border-zinc-200/90 bg-white px-4 text-sm font-medium text-zinc-700 shadow-none hover:bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200 dark:hover:bg-zinc-800"
+            className="h-9 rounded-lg border border-zinc-300 bg-white px-4 text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800"
           >
             Cerrar
           </Button>

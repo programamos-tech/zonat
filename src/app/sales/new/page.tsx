@@ -805,7 +805,7 @@ export default function NewSalePage() {
             >
               <ArrowLeft className="h-5 w-5" strokeWidth={1.5} />
             </Button>
-            <FileText className="h-6 w-6 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
+            <FileText className="h-6 w-6 shrink-0 text-brand-lime" strokeWidth={1.5} />
             <div className="min-w-0 flex-1">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">

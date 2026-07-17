@@ -307,24 +307,23 @@ export function SupplierInvoiceModal({
   const blocked =
     invoice?.status === 'cancelled' || invoice?.status === 'paid'
 
-  /* Portal + z-[100]: el <main> tiene z-10; la bottom nav del body es z-40 y robaba los toques en iPad.
-     Overlay con overflow-y-auto + min-h-full para poder desplazar modales altos en tablet. */
+  /* Portal: blur + scrim como crédito, pero tamaño compacto (formulario corto). */
   const modal = (
-    <div className="fixed inset-0 z-[100] overflow-y-auto overflow-x-hidden bg-white/70 backdrop-blur-sm dark:bg-black/60 xl:left-56">
-      <div
-        className="flex min-h-[100dvh] w-full items-center justify-center p-3 sm:p-6 sm:py-8 lg:px-12"
-        style={{
-          paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-          paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
-        }}
-      >
-        <div className="my-auto flex w-full max-h-[min(92dvh,880px)] min-h-0 max-w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-w-2xl lg:max-w-3xl">
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60">
+      <div className="zonat-preserve-surface flex max-h-[min(92dvh,calc(100dvh-2rem))] w-full max-w-[min(40rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
           <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
             <div className="flex min-w-0 items-center gap-2.5">
-              <FileText className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
-              <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
-                {isEdit ? 'Editar factura' : 'Nueva factura de proveedor'}
-              </h2>
+              <FileText className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
+              <div className="min-w-0">
+                <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
+                  {isEdit ? 'Editar factura' : 'Nueva factura de proveedor'}
+                </h2>
+                <p className="mt-0.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
+                  {isEdit
+                    ? 'Actualiza los datos y comprobantes de la factura.'
+                    : 'Registra una factura pendiente de pago a un proveedor.'}
+                </p>
+              </div>
             </div>
             <Button
               type="button"
@@ -340,7 +339,7 @@ export function SupplierInvoiceModal({
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
           <Card className="rounded-none border-0 shadow-none">
-            <CardHeader className="px-3 pb-2 pt-4 sm:px-6 sm:pt-5">
+            <CardHeader className="px-4 pb-2 pt-4 sm:px-5 sm:pt-4">
               <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">
                 Datos de la factura
               </CardTitle>
@@ -353,7 +352,7 @@ export function SupplierInvoiceModal({
                 </p>
               )}
             </CardHeader>
-            <CardContent className="space-y-4 px-3 pb-4 pt-0 sm:px-6">
+            <CardContent className="space-y-4 px-4 pb-4 pt-0 sm:px-5">
               {blocked && (
                 <p className="rounded-lg border border-zinc-200/90 bg-zinc-50 p-3 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800/50 dark:text-zinc-300">
                   Esta factura no se puede editar (pagada o anulada).
@@ -365,7 +364,7 @@ export function SupplierInvoiceModal({
                   <Label className="text-zinc-700 dark:text-zinc-300">Proveedor</Label>
                   <button
                     type="button"
-                    className="flex items-center gap-1 text-xs font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+                    className="flex items-center gap-1 text-xs font-medium text-brand-lime underline-offset-4 hover:underline"
                     onClick={() => setShowNewSupplier((v) => !v)}
                   >
                     <Plus className="h-3 w-3" />
@@ -396,7 +395,7 @@ export function SupplierInvoiceModal({
                   disabled={blocked || isEdit}
                   className="h-11 w-full rounded-lg border border-zinc-200 bg-white px-3 text-sm text-zinc-900 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20"
                 >
-                  <option value="">Seleccionar…</option>
+                  <option value="">Seleccionar proveedor…</option>
                   {suppliers.map((s) => (
                     <option key={s.id} value={s.id}>
                       {s.name}
@@ -411,7 +410,7 @@ export function SupplierInvoiceModal({
                   <DatePicker
                     selectedDate={issueDate}
                     onDateSelect={setIssueDate}
-                    placeholder="Fecha"
+                    placeholder="Seleccionar fecha"
                     className="w-full"
                   />
                 </div>
@@ -432,7 +431,7 @@ export function SupplierInvoiceModal({
                   value={totalStr}
                   onChange={(e) => setTotalStr(formatNumber(e.target.value))}
                   disabled={blocked}
-                  placeholder="0"
+                  placeholder="Ej. 1.500.000"
                   className="h-10 border-zinc-200 bg-white text-base tabular-nums dark:border-zinc-700 dark:bg-zinc-950"
                 />
               </div>
@@ -443,7 +442,7 @@ export function SupplierInvoiceModal({
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   disabled={blocked}
-                  rows={2}
+                  rows={3}
                   className="w-full rounded-lg border border-zinc-200 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20"
                   placeholder="Orden de compra, observaciones…"
                 />
@@ -499,7 +498,7 @@ export function SupplierInvoiceModal({
                                 rel="noopener noreferrer"
                                 className="flex items-center gap-2 text-sm font-medium text-zinc-800 hover:underline dark:text-zinc-200"
                               >
-                                <FileText className="h-8 w-8 shrink-0 text-red-600/90 dark:text-red-400/90" />
+                                <FileText className="h-8 w-8 shrink-0 text-brand-coral" />
                                 <span className="truncate">{label}</span>
                               </a>
                             ) : (
@@ -524,7 +523,7 @@ export function SupplierInvoiceModal({
                               type="button"
                               variant="ghost"
                               size="sm"
-                              className="h-8 w-8 shrink-0 p-0 text-zinc-500 hover:text-red-600 dark:hover:text-red-400"
+                              className="h-8 w-8 shrink-0 p-0 text-zinc-500 hover:text-brand-coral"
                               onClick={() => removeAttachment(index)}
                               aria-label="Quitar archivo"
                             >
@@ -542,7 +541,7 @@ export function SupplierInvoiceModal({
           </div>
 
           <div
-            className="flex shrink-0 justify-end gap-2 border-t border-zinc-200/90 bg-white px-3 pb-3 pt-4 dark:border-zinc-800 dark:bg-neutral-950 sm:gap-2.5 sm:px-6 sm:pb-4"
+            className="flex shrink-0 justify-end gap-2 border-t border-zinc-200/90 bg-white px-4 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-900 sm:gap-2.5 sm:px-6 sm:pb-4"
             style={{
               paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
             }}
@@ -560,13 +559,12 @@ export function SupplierInvoiceModal({
               type="submit"
               size="sm"
               disabled={saving || blocked || uploading}
-              className="h-9 w-full flex-1 touch-manipulation border border-emerald-600 bg-emerald-600 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:border-emerald-500 hover:bg-emerald-500 disabled:opacity-50 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400 sm:w-auto sm:flex-none"
+              className="h-9 w-full flex-1 touch-manipulation border-0 bg-brand-lime text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-brand-lime-muted disabled:opacity-50 sm:w-auto sm:flex-none"
             >
               {saving ? 'Guardando…' : isEdit ? 'Guardar cambios' : 'Registrar'}
             </Button>
           </div>
         </form>
-        </div>
       </div>
     </div>
   )

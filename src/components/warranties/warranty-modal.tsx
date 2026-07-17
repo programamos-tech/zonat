@@ -304,23 +304,17 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
   if (!isOpen) return null
 
   const modal = (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-3 backdrop-blur-sm dark:bg-black/60 sm:p-6 sm:py-10 lg:px-12 xl:left-56"
-      style={{
-        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
-      }}
-    >
-      <div className="flex max-h-[min(88dvh,880px)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-h-[min(94vh,900px)] sm:max-w-2xl lg:max-w-5xl">
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60">
+      <div className="zonat-preserve-surface flex max-h-[min(90dvh,calc(100dvh-2rem))] min-h-0 w-full max-w-[min(64rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
           <div className="flex items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
             <div className="flex min-w-0 items-center gap-2.5">
-              <Shield className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+              <Shield className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
               <div className="min-w-0">
                 <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
                   {warranty ? 'Editar garantía' : 'Nueva garantía'}
                 </h2>
-                <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
+                <p className="mt-0.5 text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 sm:text-sm">
                   Registra una garantía entregando un producto en reemplazo.
                 </p>
               </div>
@@ -342,7 +336,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
               <CardHeader className="p-3 pb-2 sm:p-4 sm:pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-medium text-zinc-900 dark:text-zinc-100">
-                    <Package className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+                    <Package className="h-5 w-5 shrink-0 text-brand-coral" strokeWidth={1.5} aria-hidden />
                     Producto defectuoso
                 </CardTitle>
               </CardHeader>
@@ -449,7 +443,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
               <CardHeader className="p-3 pb-2 sm:p-4 sm:pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-medium text-zinc-900 dark:text-zinc-100">
-                    <Package className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+                    <Package className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
                     Producto de reemplazo
                 </CardTitle>
               </CardHeader>
@@ -582,7 +576,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             <Card className="rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
               <CardHeader className="p-3 pb-2 sm:p-4 sm:pb-2">
                 <CardTitle className="flex items-center gap-2 text-base font-medium text-zinc-900 dark:text-zinc-100">
-                    <User className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+                    <User className="h-5 w-5 shrink-0 text-brand-gold" strokeWidth={1.5} aria-hidden />
                     Información del cliente
                 </CardTitle>
               </CardHeader>
@@ -642,7 +636,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
               <Card className="rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/40">
                 <CardHeader className="p-3 pb-2 sm:p-4 sm:pb-2">
                   <CardTitle className="flex items-center gap-2 text-base font-medium text-zinc-900 dark:text-zinc-100">
-                    <ClipboardList className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
+                    <ClipboardList className="h-5 w-5 shrink-0 text-brand-coral" strokeWidth={1.5} aria-hidden />
                     Notas adicionales
                   </CardTitle>
                 </CardHeader>
@@ -664,7 +658,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
         </div>
 
         <div
-          className="flex justify-end gap-2 border-t border-zinc-200/90 bg-white px-3 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-950 sm:gap-2.5 sm:px-5"
+          className="flex shrink-0 justify-end gap-2 border-t border-zinc-200/90 bg-white px-3 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-900 sm:gap-2.5 sm:px-5"
           style={{
             paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
           }}
@@ -683,11 +677,11 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
             onClick={handleSave}
             disabled={loading}
             size="sm"
-            className="h-9 w-full flex-1 touch-manipulation border border-emerald-600 bg-emerald-600 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:border-emerald-500 hover:bg-emerald-500 disabled:opacity-50 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400 sm:w-auto sm:flex-none"
+            className="h-9 w-full flex-1 touch-manipulation border-0 bg-brand-lime text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-brand-lime-muted disabled:opacity-50 sm:w-auto sm:flex-none"
           >
             {loading ? (
               <span className="flex items-center justify-center gap-2">
-                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent dark:border-zinc-900 dark:border-t-transparent" />
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Guardando…
               </span>
             ) : (
@@ -700,7 +694,7 @@ export function WarrantyModal({ isOpen, onClose, onSave, warranty }: WarrantyMod
     </div>
   )
 
-  if (!mounted || typeof document === 'undefined') return null
+  if (!mounted || typeof document === 'undefined' || !document.body) return null
   return createPortal(modal, document.body)
 }
 

@@ -1,11 +1,36 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { X, Tag, Plus, Trash2, FileText } from 'lucide-react'
+import { X, Tag, Plus, Trash2 } from 'lucide-react'
 import { Category } from '@/types'
+import { cn } from '@/lib/utils'
+
+const inputBase =
+  'w-full rounded-lg border border-zinc-200/90 bg-white/95 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition-[border-color,box-shadow] focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-900/95 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+
+function SectionCard({
+  title,
+  children,
+  className,
+}: {
+  title: string
+  children: React.ReactNode
+  className?: string
+}) {
+  return (
+    <div
+      className={cn(
+        'rounded-xl border border-zinc-200/90 bg-white/80 p-3.5 dark:border-zinc-700/80 dark:bg-zinc-900/80',
+        className
+      )}
+    >
+      <h3 className="mb-3 text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
+      {children}
+    </div>
+  )
+}
 
 interface CategoryModalProps {
   isOpen: boolean
@@ -16,32 +41,39 @@ interface CategoryModalProps {
   categories: Category[]
 }
 
-export function CategoryModal({ 
-  isOpen, 
-  onClose, 
+export function CategoryModal({
+  isOpen,
+  onClose,
   onSave,
-  onToggleStatus, 
+  onToggleStatus,
   onDelete,
-  categories 
+  categories,
 }: CategoryModalProps) {
+  const [mounted, setMounted] = useState(false)
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    status: 'active' as 'active' | 'inactive'
+    status: 'active' as 'active' | 'inactive',
   })
-
   const [errors, setErrors] = useState<Record<string, string>>({})
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-900/20 dark:text-cyan-400'
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-950/20 dark:text-gray-400'
-      default:
-        return 'bg-gray-100 text-gray-800 dark:bg-neutral-950/20 dark:text-gray-400'
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  useEffect(() => {
+    if (!isOpen) return
+    const html = document.documentElement
+    const body = document.body
+    const prevHtml = html.style.overflow
+    const prevBody = body.style.overflow
+    html.style.overflow = 'hidden'
+    body.style.overflow = 'hidden'
+    return () => {
+      html.style.overflow = prevHtml
+      body.style.overflow = prevBody
     }
-  }
+  }, [isOpen])
 
   const getStatusLabel = (status: string) => {
     switch (status) {
@@ -56,265 +88,243 @@ export function CategoryModal({
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
-    
-    if (!formData.name.trim()) {
-      newErrors.name = 'El nombre es requerido'
-    }
-    if (!formData.description.trim()) {
-      newErrors.description = 'La descripción es requerida'
-    }
-    
+    if (!formData.name.trim()) newErrors.name = 'El nombre es requerido'
+    if (!formData.description.trim()) newErrors.description = 'La descripción es requerida'
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }))
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }))
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: '' }))
   }
 
   const handleSave = () => {
-    if (validateForm()) {
-      onSave({
-        name: formData.name.trim(),
-        description: formData.description.trim(),
-        status: formData.status
-      })
-      // Limpiar el formulario después de crear una categoría
-      setFormData({
-        name: '',
-        description: '',
-        status: 'active'
-      })
-      setErrors({})
-    }
+    if (!validateForm()) return
+    onSave({
+      name: formData.name.trim(),
+      description: formData.description.trim(),
+      status: formData.status,
+    })
+    setFormData({ name: '', description: '', status: 'active' })
+    setErrors({})
   }
 
   const handleClose = () => {
-    setFormData({
-      name: '',
-      description: '',
-      status: 'active'
-    })
+    setFormData({ name: '', description: '', status: 'active' })
     setErrors({})
     onClose()
   }
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted || typeof document === 'undefined') return null
 
-  return (
-    <div className="fixed inset-0 bg-white/70 dark:bg-black/60 backdrop-blur-sm z-50 flex flex-col xl:items-center xl:justify-center p-4">
-      <div className="bg-white dark:bg-neutral-950 rounded-none xl:rounded-2xl shadow-2xl w-full h-full xl:h-auto xl:w-auto xl:max-w-6xl xl:max-h-[95vh] overflow-hidden flex flex-col border-0 xl:border border-gray-200 dark:border-neutral-700">
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain flex flex-col">
-        <div className="flex items-center justify-between border-b border-gray-200 bg-gradient-to-r from-cyan-50 to-cyan-100 p-4 dark:border-neutral-700 dark:from-cyan-900/20 dark:to-cyan-800/20 md:p-6">
-          <div className="flex items-center gap-3">
-            <Tag className="h-5 w-5 md:h-8 md:w-8 text-cyan-600" />
-            <div>
-              <h2 className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
-                Gestión de Categorías
+  const sortedCategories = [...categories].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  )
+
+  return createPortal(
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-none px-3 py-3 sm:py-5 xl:left-60">
+      <div
+        className="zonat-preserve-surface flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(68rem,calc(100vw-1.5rem))] touch-auto flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/95 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-950/95 sm:max-h-[calc(100dvh-2.5rem)]"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="category-modal-title"
+      >
+        <header className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-100 bg-white/90 px-4 py-3 md:px-5 dark:border-zinc-800 dark:bg-zinc-950/90">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Tag className="h-5 w-5 shrink-0 text-zinc-400" strokeWidth={1.75} aria-hidden />
+            <div className="min-w-0">
+              <h2
+                id="category-modal-title"
+                className="text-base font-semibold tracking-tight text-zinc-900 dark:text-white"
+              >
+                Gestión de categorías
               </h2>
-              <p className="text-xs md:text-sm text-gray-600 dark:text-gray-300">
-                Crea nuevas categorías y gestiona las existentes
+              <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
+                Crea nuevas y administra las existentes
               </p>
             </div>
           </div>
-          <Button
+          <button
             type="button"
             onClick={handleClose}
-            variant="ghost"
-            size="sm"
-            className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition-colors hover:bg-zinc-100 hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-white"
+            aria-label="Cerrar"
           >
-            <X className="h-5 w-5" />
-          </Button>
-        </div>
+            <X className="h-4 w-4" strokeWidth={1.75} />
+          </button>
+        </header>
 
         <form
-          onSubmit={(e) => { e.preventDefault(); handleSave() }}
-          className="flex flex-col p-4 md:p-6"
-          style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}
+          className="flex min-h-0 flex-1 flex-col"
+          onSubmit={e => {
+            e.preventDefault()
+            handleSave()
+          }}
         >
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
-            {/* Información de la Categoría */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <FileText className="h-5 w-5 text-cyan-600" />
-                  Información de la Categoría
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Nombre de la Categoría *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 ${
-                      errors.name ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
-                    }`}
-                    placeholder="Nombre de la categoría"
-                  />
-                  {errors.name && (
-                    <p className="mt-1 text-sm text-red-500">{errors.name}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Descripción *
-                  </label>
-                  <textarea
-                    value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    className={`w-full px-3 py-2 border rounded-md focus:ring-2 focus:ring-cyan-500 focus:border-transparent text-gray-900 dark:text-white bg-white dark:bg-neutral-800 ${
-                      errors.description ? 'border-red-500' : 'border-gray-300 dark:border-neutral-600'
-                    }`}
-                    placeholder="Descripción de la categoría"
-                    rows={3}
-                  />
-                  {errors.description && (
-                    <p className="mt-1 text-sm text-red-500">{errors.description}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-                    Estado
-                  </label>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('status', 'active')}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.status === 'active'
-                          ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                          : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500'
-                      }`}
+          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-3 md:px-5 md:py-4">
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              <SectionCard title="Nueva categoría">
+                <div className="space-y-2.5">
+                  <div>
+                    <label
+                      htmlFor="category-name"
+                      className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${formData.status === 'active' ? 'bg-cyan-500' : 'bg-gray-400'}`}></div>
-                        <div className="text-left">
-                          <div className={`font-medium ${formData.status === 'active' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Activa
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Categoría disponible
-                          </div>
-                        </div>
-                      </div>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleInputChange('status', 'inactive')}
-                      className={`p-4 rounded-lg border-2 transition-all ${
-                        formData.status === 'inactive'
-                          ? 'border-cyan-500 bg-cyan-50 dark:bg-cyan-900/20'
-                          : 'border-gray-300 dark:border-neutral-600 hover:border-gray-400 dark:hover:border-gray-500'
-                      }`}
+                      Nombre <span className="text-zinc-400">*</span>
+                    </label>
+                    <input
+                      id="category-name"
+                      type="text"
+                      value={formData.name}
+                      onChange={e => handleInputChange('name', e.target.value)}
+                      className={cn(inputBase, errors.name && 'border-red-400')}
+                      placeholder="Nombre de la categoría"
+                    />
+                    {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="category-desc"
+                      className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-3 h-3 rounded-full ${formData.status === 'inactive' ? 'bg-cyan-500' : 'bg-gray-400'}`}></div>
-                        <div className="text-left">
-                          <div className={`font-medium ${formData.status === 'inactive' ? 'text-cyan-600' : 'text-gray-700 dark:text-gray-300'}`}>
-                            Inactiva
-                          </div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            Categoría deshabilitada
-                          </div>
-                        </div>
-                      </div>
-                    </button>
+                      Descripción <span className="text-zinc-400">*</span>
+                    </label>
+                    <textarea
+                      id="category-desc"
+                      value={formData.description}
+                      onChange={e => handleInputChange('description', e.target.value)}
+                      className={cn(inputBase, 'min-h-[4rem] resize-y', errors.description && 'border-red-400')}
+                      placeholder="Descripción breve"
+                      rows={3}
+                    />
+                    {errors.description && (
+                      <p className="mt-1 text-xs text-red-500">{errors.description}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <span className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                      Estado
+                    </span>
+                    <div className="flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50">
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('status', 'active')}
+                        className={cn(
+                          'flex min-h-9 flex-1 items-center justify-center rounded-md text-sm font-medium transition-colors',
+                          formData.status === 'active'
+                            ? 'bg-brand-lime text-white shadow-sm'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                        )}
+                      >
+                        Activa
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleInputChange('status', 'inactive')}
+                        className={cn(
+                          'flex min-h-9 flex-1 items-center justify-center rounded-md text-sm font-medium transition-colors',
+                          formData.status === 'inactive'
+                            ? 'bg-zinc-500 text-white shadow-sm dark:bg-zinc-600'
+                            : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                        )}
+                      >
+                        Inactiva
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </CardContent>
-            </Card>
+              </SectionCard>
 
-            {/* Categorías Existentes */}
-            <Card className="bg-white dark:bg-neutral-900 border-gray-200 dark:border-neutral-700">
-              <CardHeader>
-                <CardTitle className="text-lg text-gray-900 dark:text-white flex items-center gap-2">
-                  <Tag className="h-5 w-5 text-cyan-600" />
-                  Categorías Existentes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-96 overflow-y-auto">
-                  {categories
-                    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-                    .map((cat) => (
-                    <div key={cat.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-neutral-600 rounded-lg bg-gray-50 dark:bg-neutral-800 hover:bg-gray-100 dark:hover:bg-neutral-700 transition-colors">
-                      <div className="flex-1">
-                        <div className="flex items-center space-x-3">
-                          <h4 className="font-medium text-gray-900 dark:text-white">{cat.name}</h4>
-                          <Badge className={getStatusColor(cat.status)}>
+              <SectionCard title="Categorías existentes" className="flex min-h-0 flex-col">
+                <div className="max-h-[min(22rem,50dvh)] space-y-2 overflow-y-auto overscroll-contain pr-0.5">
+                  {sortedCategories.map(cat => (
+                    <div
+                      key={cat.id}
+                      className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900/50"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="truncate text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                            {cat.name}
+                          </h4>
+                          <span
+                            className={cn(
+                              'rounded-md px-1.5 py-0.5 text-[11px] font-medium',
+                              cat.status === 'active'
+                                ? 'bg-brand-lime-soft text-brand-lime dark:bg-emerald-950/50 dark:text-emerald-300'
+                                : 'bg-zinc-200/80 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-400'
+                            )}
+                          >
                             {getStatusLabel(cat.status)}
-                          </Badge>
+                          </span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-300 mt-1">{cat.description}</p>
+                        {cat.description ? (
+                          <p className="mt-0.5 line-clamp-2 text-xs text-zinc-500 dark:text-zinc-400">
+                            {cat.description}
+                          </p>
+                        ) : null}
                       </div>
-                      <div className="flex items-center space-x-3">
-                        {/* Toggle estilo iOS */}
+                      <div className="flex shrink-0 items-center gap-1.5">
                         <button
-                          onClick={() => onToggleStatus(cat.id, cat.status === 'active' ? 'inactive' : 'active')}
-                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 ${
-                            cat.status === 'active' 
-                              ? 'bg-cyan-600' 
-                              : 'bg-gray-200 dark:bg-neutral-700'
-                          }`}
-                          title={cat.status === 'active' ? 'Desactivar categoría' : 'Activar categoría'}
+                          type="button"
+                          onClick={() =>
+                            onToggleStatus(cat.id, cat.status === 'active' ? 'inactive' : 'active')
+                          }
+                          className={cn(
+                            'relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40',
+                            cat.status === 'active' ? 'bg-brand-lime' : 'bg-zinc-300 dark:bg-zinc-600'
+                          )}
+                          title={cat.status === 'active' ? 'Desactivar' : 'Activar'}
+                          aria-label={cat.status === 'active' ? 'Desactivar categoría' : 'Activar categoría'}
                         >
                           <span
-                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                              cat.status === 'active' ? 'translate-x-6' : 'translate-x-1'
-                            }`}
+                            className={cn(
+                              'inline-block h-3.5 w-3.5 transform rounded-full bg-white transition-transform',
+                              cat.status === 'active' ? 'translate-x-[1.125rem]' : 'translate-x-0.5'
+                            )}
                           />
                         </button>
-                        
-                        {/* Botón de eliminar */}
-                        <Button
-                          size="sm"
-                          variant="ghost"
+                        <button
+                          type="button"
                           onClick={() => onDelete(cat.id)}
-                          className="h-8 w-8 p-0 text-red-500 hover:text-red-700 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-900/20"
+                          className="flex h-8 w-8 items-center justify-center rounded-lg text-brand-coral transition-colors hover:bg-brand-coral-soft dark:hover:bg-orange-950/40"
                           title="Eliminar categoría"
+                          aria-label="Eliminar categoría"
                         >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                          <Trash2 className="h-3.5 w-3.5" strokeWidth={1.75} />
+                        </button>
                       </div>
                     </div>
                   ))}
                   {categories.length === 0 && (
-                    <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                      <Tag className="h-12 w-12 text-gray-400 dark:text-gray-500 mx-auto mb-4" />
-                      <p>No hay categorías creadas</p>
+                    <div className="py-8 text-center">
+                      <Tag className="mx-auto mb-2 h-8 w-8 text-zinc-300 dark:text-zinc-600" strokeWidth={1.5} />
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">No hay categorías creadas</p>
                     </div>
                   )}
                 </div>
-              </CardContent>
-            </Card>
+              </SectionCard>
+            </div>
           </div>
 
-          <div className="mt-6 flex items-center justify-end space-x-3 pt-2">
-            <Button
-              type="button"
-              onClick={handleClose}
-              variant="outline"
-            >
+          <footer
+            className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-zinc-100 bg-white/90 px-4 py-3 md:px-5 dark:border-zinc-800 dark:bg-zinc-950/90"
+            style={{ paddingBottom: `max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))` }}
+          >
+            <Button type="button" variant="outline" size="sm" onClick={handleClose} className="min-h-9">
               Cancelar
             </Button>
-            <Button type="submit">
-              <Plus className="h-4 w-4 mr-2" />
-              Crear Categoría
+            <Button type="submit" size="sm" className="min-h-9 gap-1.5">
+              <Plus className="h-4 w-4" strokeWidth={1.75} />
+              Crear categoría
             </Button>
-          </div>
+          </footer>
         </form>
-        </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

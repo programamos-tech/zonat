@@ -1,27 +1,24 @@
 'use client'
 
 import { useEffect } from 'react'
-import { useRouter, useParams, useSearchParams } from 'next/navigation'
+import { useRouter, useParams } from 'next/navigation'
 
 export default function ProductDetailRedirect() {
   const router = useRouter()
   const params = useParams()
-  const searchParams = useSearchParams()
-  const productId = params?.productId as string
-  
+  const productId = params?.productId as string | undefined
+
   useEffect(() => {
-    if (productId) {
-      // Preservar los query params si existen
-      const queryString = searchParams.toString()
-      const newPath = `/inventory/products/${productId}${queryString ? `?${queryString}` : ''}`
-      console.log('[PRODUCT REDIRECT] Redirecting to:', newPath)
-      router.replace(newPath)
+    if (!productId) {
+      router.replace('/inventory/products')
+      return
     }
-  }, [router, productId, searchParams])
+    router.replace(`/inventory/products?edit=${encodeURIComponent(productId)}`)
+  }, [router, productId])
 
   return (
-    <div className="flex items-center justify-center h-screen">
-      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600"></div>
+    <div className="flex h-screen items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-emerald-600" />
     </div>
   )
 }

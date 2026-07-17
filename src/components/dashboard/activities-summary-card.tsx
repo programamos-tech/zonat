@@ -111,8 +111,8 @@ export function ActivitiesSummaryCard({ activities, limit = 10 }: ActivitiesSumm
     <Card className="border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-sm h-96">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center">
-          <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/20 mr-3">
-            <Activity className="h-5 w-5 text-purple-600" />
+          <div className="p-2 rounded-xl bg-brand-gold-soft dark:bg-amber-900/20 mr-3">
+            <Activity className="h-5 w-5 text-brand-gold" />
           </div>
           <span className="text-lg font-medium text-gray-800 dark:text-gray-200">Resumen de Actividades</span>
         </CardTitle>

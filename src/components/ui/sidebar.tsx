@@ -1,7 +1,6 @@
 'use client'
 
 import Link from 'next/link'
-import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { cn } from '@/lib/utils'
 import {
@@ -23,7 +22,6 @@ import {
   ChevronRight,
   FileText,
   Globe,
-  ExternalLink
 } from 'lucide-react'
 import React, { useState, useEffect, useRef } from 'react'
 import { Logo } from './logo'
@@ -239,15 +237,6 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
                 </p>
               )}
             </Link>
-            <Link
-              href="/tienda"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2.5 flex w-full items-center justify-center gap-1.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 px-2 py-2 text-[11px] font-semibold text-emerald-400 transition-colors hover:border-emerald-500/40 hover:bg-emerald-500/15 hover:text-emerald-300"
-            >
-              <ExternalLink className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
-              Ver tienda web
-            </Link>
           </div>
 
           {/* Navigation */}
@@ -443,19 +432,31 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             })}
           </nav>
 
-          <div className="border-t border-zinc-800 px-2.5 pb-3 pt-3">
-            <div className="mb-2.5 flex justify-center px-1">
-              <Image
-                src="/logo-berea12.png"
-                alt="Hecho por Berea — Software e IA a medida"
-                width={96}
-                height={40}
-                className="h-auto w-[5.5rem] max-w-full object-contain opacity-95"
-              />
+          <div className="border-t border-zinc-800/90 px-2.5 pb-3 pt-2.5">
+            <div className="rounded-lg border border-zinc-800/90 bg-zinc-900/50 px-2.5 py-2.5">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[color:var(--brand-lime)]/25 bg-[color:var(--brand-lime)]/10"
+                  aria-hidden
+                >
+                  <BarChart3 className="h-3.5 w-3.5 text-brand-lime" strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[11px] font-semibold tracking-[0.14em] text-zinc-200">
+                    ZONA T<span className="ml-1 font-medium tracking-normal text-zinc-500">ERP</span>
+                  </p>
+                  <div className="mt-0.5 flex items-center gap-1.5">
+                    <span className="relative flex h-1.5 w-1.5 shrink-0">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-lime opacity-40" />
+                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-lime" />
+                    </span>
+                    <span className="truncate text-[10px] font-medium text-zinc-500">
+                      Operativo · v{APP_VERSION}
+                    </span>
+                  </div>
+                </div>
+              </div>
             </div>
-            <p className="text-center text-[11px] font-medium leading-snug tracking-wide text-zinc-400">
-              <span className="font-semibold text-zinc-300 tabular-nums">zonat V.{APP_VERSION}</span>
-            </p>
           </div>
         </div>
       </div>

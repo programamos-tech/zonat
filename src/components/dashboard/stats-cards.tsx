@@ -38,73 +38,73 @@ export function StatsCards({ stats, period = 'month' }: StatsCardsProps) {
       title: 'Ventas Totales',
       value: formatCurrency(stats.totalSales),
       icon: DollarSign,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
+      color: 'text-brand-lime',
+      bgColor: 'bg-brand-lime-soft',
       change: changes.sales,
-      changeColor: 'text-emerald-600'
+      changeColor: 'text-brand-lime'
     },
     {
       title: 'Inversión Total',
       value: formatCurrency(stats.totalInvestment),
       icon: TrendingUp,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-100',
+      color: 'text-brand-coral',
+      bgColor: 'bg-brand-coral-soft',
       change: changes.investment,
-      changeColor: 'text-blue-600'
+      changeColor: 'text-brand-coral'
     },
     {
       title: 'Ganancia Total',
       value: formatCurrency(stats.totalProfit),
       icon: BarChart3,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-100',
+      color: 'text-brand-gold',
+      bgColor: 'bg-brand-gold-soft',
       change: changes.profit,
-      changeColor: 'text-purple-600'
+      changeColor: 'text-brand-gold'
     },
     {
       title: 'Margen de Ganancia',
       value: formatPercentage(stats.profitMargin),
       icon: TrendingUp,
-      color: 'text-orange-600',
-      bgColor: 'bg-orange-100',
+      color: 'text-brand-gold',
+      bgColor: 'bg-brand-gold-soft',
       change: changes.margin,
-      changeColor: 'text-orange-600'
+      changeColor: 'text-brand-gold'
     },
     {
       title: 'Productos en Stock',
       value: stats.totalProducts.toString(),
       icon: Package,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-100',
+      color: 'text-brand-lime',
+      bgColor: 'bg-brand-lime-soft',
       change: changes.products,
-      changeColor: 'text-indigo-600'
+      changeColor: 'text-brand-lime'
     },
     {
       title: 'Clientes Activos',
       value: stats.totalClients.toString(),
       icon: Users,
-      color: 'text-emerald-600',
-      bgColor: 'bg-emerald-100',
+      color: 'text-brand-coral',
+      bgColor: 'bg-brand-coral-soft',
       change: changes.clients,
-      changeColor: 'text-emerald-600'
+      changeColor: 'text-brand-coral'
     },
     {
       title: 'Pagos Pendientes',
       value: formatCurrency(stats.pendingPayments),
       icon: CreditCard,
-      color: 'text-red-600',
-      bgColor: 'bg-red-100',
+      color: 'text-brand-coral',
+      bgColor: 'bg-brand-coral-soft',
       change: changes.payments,
-      changeColor: 'text-red-600'
+      changeColor: 'text-brand-coral'
     },
     {
       title: 'Stock Bajo',
       value: stats.lowStockProducts.toString(),
       icon: AlertTriangle,
-      color: 'text-yellow-600',
-      bgColor: 'bg-yellow-100',
+      color: 'text-brand-gold',
+      bgColor: 'bg-brand-gold-soft',
       change: changes.stock,
-      changeColor: 'text-yellow-600'
+      changeColor: 'text-brand-gold'
     }
   ]
 

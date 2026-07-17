@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { ProductTable } from '@/components/products/product-table'
 import { ProductModal } from '@/components/products/product-modal'
 import { CategoryModal } from '@/components/categories/category-modal'
@@ -28,6 +28,7 @@ const STOCK_FILTERS: StockFilter[] = [
 
 export default function ProductsPage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const { products, loading, currentPage, totalProducts, hasMore, isSearching, stockFilter, setStockFilter, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, refreshProducts, goToPage, searchProducts, productsLastUpdated } = useProducts()
   const { categories, createCategory, toggleCategoryStatus, deleteCategory } = useCategories()
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -40,6 +41,7 @@ export default function ProductsPage() {
   const [productToTransfer, setProductToTransfer] = useState<Product | null>(null)
   const [isAdjustmentModalOpen, setIsAdjustmentModalOpen] = useState(false)
   const [productToAdjust, setProductToAdjust] = useState<Product | null>(null)
+  const openedEditIdRef = useRef<string | null>(null)
 
   useEffect(() => {
     const stock = searchParams.get('stock')
@@ -47,6 +49,44 @@ export default function ProductsPage() {
       setStockFilter(stock as StockFilter)
     }
   }, [searchParams, setStockFilter])
+
+  // Abrir edición desde ?edit=id (lista, búsqueda global o URLs antiguas de ficha)
+  useEffect(() => {
+    const editId = searchParams.get('edit')
+    if (!editId || loading) return
+    if (openedEditIdRef.current === editId) return
+
+    const openEdit = (product: Product) => {
+      openedEditIdRef.current = editId
+      setSelectedProduct(product)
+      setIsModalOpen(true)
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete('edit')
+      const qs = params.toString()
+      router.replace(qs ? `/inventory/products?${qs}` : '/inventory/products', { scroll: false })
+    }
+
+    const fromList = products.find(p => p.id === editId)
+    if (fromList) {
+      openEdit(fromList)
+      return
+    }
+
+    let cancelled = false
+    void (async () => {
+      try {
+        const { ProductsService } = await import('@/lib/products-service')
+        const product = await ProductsService.getProductById(editId)
+        if (!cancelled && product) openEdit(product)
+      } catch {
+        // Si no existe, no abrimos modal
+      }
+    })()
+
+    return () => {
+      cancelled = true
+    }
+  }, [searchParams, products, loading, router])
 
   const handleEdit = (product: Product) => {
     setSelectedProduct(product)

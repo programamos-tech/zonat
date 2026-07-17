@@ -188,55 +188,44 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
   const isEdit = Boolean(store)
 
   const modal = (
-    <div
-      className="fixed inset-0 z-[100] flex items-center justify-center bg-white/70 p-3 backdrop-blur-sm dark:bg-black/60 sm:p-6 sm:py-10 lg:px-12 xl:left-56"
-      style={{
-        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
-        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))'
-      }}
-    >
-      <div className="flex max-h-[min(88dvh,880px)] min-h-0 w-full flex-col overflow-hidden rounded-2xl border border-zinc-200/90 bg-white shadow-xl dark:border-zinc-800 dark:bg-zinc-900/95 sm:max-h-[min(94vh,880px)] sm:max-w-2xl lg:max-w-3xl">
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
-            <div className="flex min-w-0 items-center gap-2.5">
-              <StoreIcon className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
-              <div className="min-w-0">
-                <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
-                  {isEdit ? 'Editar tienda' : 'Nueva tienda'}
-                </h2>
-                {isEdit && store?.name && (
-                  <p className="mt-0.5 truncate text-sm text-zinc-500 dark:text-zinc-400">
-                    Editando {store.name}
-                  </p>
-                )}
-              </div>
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60">
+      <div className="zonat-preserve-surface flex max-h-[min(90dvh,calc(100dvh-2rem))] min-h-0 w-full max-w-[min(32rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900">
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3.5 sm:px-5 dark:border-zinc-800">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <StoreIcon className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
+            <div className="min-w-0">
+              <h2 className="line-clamp-2 text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-lg">
+                {isEdit ? 'Editar tienda' : 'Nueva tienda'}
+              </h2>
+              <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                {isEdit && store?.name
+                  ? `Editando ${store.name}`
+                  : 'Completa los datos de la nueva ubicación'}
+              </p>
             </div>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              className="h-9 w-9 shrink-0 touch-manipulation rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none hover:translate-y-0 hover:bg-zinc-100 hover:shadow-none hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
-              onClick={onClose}
-            >
-              <X className="h-5 w-5" />
-            </Button>
           </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="h-9 w-9 shrink-0 touch-manipulation rounded-lg border-0 bg-transparent p-0 text-zinc-500 shadow-none hover:translate-y-0 hover:bg-zinc-100 hover:shadow-none hover:text-zinc-900 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            onClick={onClose}
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col">
+        <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain scrollbar-hide">
             <Card className="rounded-none border-0 shadow-none">
-              <CardHeader className="px-3 pb-2 pt-4 sm:px-6 sm:pt-5">
-                <CardTitle className="text-base font-medium text-zinc-900 dark:text-zinc-100">
+              <CardHeader className="px-4 pb-2 pt-4 sm:px-5 sm:pt-4">
+                <CardTitle className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
                   Datos de la tienda
                 </CardTitle>
-                {!isEdit && (
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    Completa los campos para registrar una nueva ubicación.
-                  </p>
-                )}
               </CardHeader>
-              <CardContent className="space-y-4 px-3 pb-4 pt-0 sm:px-6">
+              <CardContent className="space-y-4 px-4 pb-4 pt-0 sm:px-5">
                 <div className="space-y-2">
-                  <Label className="text-zinc-700 dark:text-zinc-300">Logo (opcional)</Label>
+                  <Label className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Logo (opcional)</Label>
                   <div className="flex flex-wrap items-center gap-2">
                     <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2.5 text-sm text-zinc-700 transition-colors hover:border-zinc-400 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-300 dark:hover:border-zinc-500 dark:hover:bg-zinc-800/50">
                       <Upload className="h-4 w-4 text-zinc-500" />
@@ -254,7 +243,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                         <button
                           type="button"
                           onClick={handleRemoveLogo}
-                          className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+                          className="text-sm font-medium text-brand-coral underline-offset-4 hover:underline"
                         >
                           Quitar
                         </button>
@@ -262,9 +251,9 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                           href={formData.logo}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-sm font-medium text-zinc-600 underline-offset-4 hover:text-zinc-900 hover:underline dark:text-zinc-400 dark:hover:text-zinc-200"
+                          className="text-sm font-medium text-brand-lime underline-offset-4 hover:underline"
                         >
-                          Abrir en pestaña nueva
+                          Abrir
                         </a>
                       </>
                     )}
@@ -293,8 +282,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="store-name" className="text-zinc-700 dark:text-zinc-300">
-                    Nombre de la tienda *
+                  <Label htmlFor="store-name" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    Nombre de la tienda <span className="text-brand-coral">*</span>
                   </Label>
                   <Input
                     id="store-name"
@@ -318,8 +307,8 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="store-invoice-prefix" className="text-zinc-700 dark:text-zinc-300">
-                    Prefijo de factura *
+                  <Label htmlFor="store-invoice-prefix" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    Prefijo de factura <span className="text-brand-coral">*</span>
                   </Label>
                   <Input
                     id="store-invoice-prefix"
@@ -352,7 +341,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
 
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="store-nit" className="text-zinc-700 dark:text-zinc-300">
+                    <Label htmlFor="store-nit" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                       NIT
                     </Label>
                     <Input
@@ -364,7 +353,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="store-city" className="text-zinc-700 dark:text-zinc-300">
+                    <Label htmlFor="store-city" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                       Ciudad
                     </Label>
                     <Input
@@ -378,7 +367,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="store-phone" className="text-zinc-700 dark:text-zinc-300">
+                  <Label htmlFor="store-phone" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     Teléfono
                   </Label>
                   <Input
@@ -392,7 +381,7 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="store-address" className="text-zinc-700 dark:text-zinc-300">
+                  <Label htmlFor="store-address" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     Dirección
                   </Label>
                   <textarea
@@ -406,37 +395,37 @@ export function StoreModal({ isOpen, onClose, onSave, store }: StoreModalProps) 
                 </div>
               </CardContent>
             </Card>
+          </div>
 
-            <div
-              className="flex justify-end gap-2 bg-white px-3 pb-3 pt-4 dark:bg-zinc-950 sm:gap-2.5 sm:px-6 sm:pb-4"
-              style={{
-                paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
-              }}
+          <div
+            className="flex shrink-0 justify-end gap-2 border-t border-zinc-200 bg-white px-4 pb-3 pt-4 dark:border-zinc-800 dark:bg-zinc-900 sm:gap-2.5 sm:px-5"
+            style={{
+              paddingBottom: 'max(0.875rem, env(safe-area-inset-bottom, 0px))'
+            }}
+          >
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="h-9 w-full flex-1 touch-manipulation border border-zinc-300 bg-white text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto sm:flex-none"
             >
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={onClose}
-                className="h-9 w-full flex-1 touch-manipulation border border-zinc-300 bg-white text-sm font-medium text-zinc-700 shadow-none hover:translate-y-0 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-800 sm:w-auto sm:flex-none"
-              >
-                Cancelar
-              </Button>
-              <Button
-                type="submit"
-                size="sm"
-                disabled={isUploading}
-                className="h-9 w-full flex-1 touch-manipulation border border-emerald-600 bg-emerald-600 text-sm font-medium text-white shadow-none hover:translate-y-0 hover:border-emerald-500 hover:bg-emerald-500 disabled:opacity-50 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400 sm:w-auto sm:flex-none"
-              >
-                {isEdit ? 'Guardar cambios' : 'Registrar tienda'}
-              </Button>
-            </div>
-          </form>
-        </div>
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              size="sm"
+              disabled={isUploading}
+              className="h-9 w-full flex-1 touch-manipulation border-0 bg-brand-lime text-sm font-medium text-white shadow-none hover:translate-y-0 hover:bg-brand-lime-muted disabled:opacity-50 sm:w-auto sm:flex-none"
+            >
+              {isEdit ? 'Guardar cambios' : 'Registrar tienda'}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   )
 
-  if (!mounted || typeof document === 'undefined') return null
+  if (!mounted || typeof document === 'undefined' || !document.body) return null
   return createPortal(modal, document.body)
 }

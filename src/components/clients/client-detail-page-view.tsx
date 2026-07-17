@@ -41,9 +41,24 @@ const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 const panel =
   'rounded-xl border border-zinc-200/90 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50'
 
-const linkOutlineSm = cn(
-  'inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-zinc-800 shadow-none transition-colors duration-150 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/45 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70 sm:flex-none'
+const linkCreditsSm = cn(
+  'inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-3.5 text-sm font-medium text-brand-gold shadow-none transition-colors duration-150 hover:bg-zinc-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-400/40 dark:border-zinc-600 dark:bg-zinc-950/40 dark:hover:bg-zinc-900/70 sm:flex-none'
 )
+
+const btnVolverClass =
+  'flex-1 border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:text-zinc-200 dark:hover:bg-zinc-900/70 sm:flex-none'
+
+const btnEditClass =
+  'flex-1 border-zinc-300 bg-white text-brand-lime hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:hover:bg-zinc-900/70 sm:flex-none'
+
+const btnDeleteClass =
+  'flex-1 border-zinc-300 bg-white text-brand-coral hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950/40 dark:hover:bg-zinc-900/70 sm:flex-none'
+
+const btnSaveClass =
+  'flex-1 bg-brand-lime text-white hover:bg-brand-lime-muted sm:flex-none'
+
+const btnCancelClass =
+  'flex-1 border-zinc-300 bg-white text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-200 dark:hover:bg-zinc-900/70 sm:flex-none'
 
 const inputClass =
   'mt-1 w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/25 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/20'
@@ -306,27 +321,21 @@ export function ClientDetailPageView({
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 sm:justify-end">
-            <Button type="button" variant="outline" size="sm" onClick={onBack} className="flex-1 sm:flex-none" disabled={saving}>
+            <Button type="button" variant="outline" size="sm" onClick={onBack} className={btnVolverClass} disabled={saving}>
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
               Volver
             </Button>
-            <Link href={`/payments/${client.id}`} className={cn(linkOutlineSm, saving && 'pointer-events-none opacity-50')}>
+            <Link href={`/payments/${client.id}`} className={cn(linkCreditsSm, saving && 'pointer-events-none opacity-50')}>
               <CreditCard className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
               Créditos
             </Link>
             {canMutate && !editing && (
               <>
-                <Button type="button" size="sm" variant="secondary" onClick={onEdit} className="flex-1 sm:flex-none">
+                <Button type="button" size="sm" variant="outline" onClick={onEdit} className={btnEditClass}>
                   <Edit className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                   Editar
                 </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={onDelete}
-                  className="flex-1 border-rose-200 text-rose-700 hover:bg-rose-50 dark:border-rose-900/50 dark:text-rose-400 dark:hover:bg-rose-950/40 sm:flex-none"
-                >
+                <Button type="button" size="sm" variant="outline" onClick={onDelete} className={btnDeleteClass}>
                   <Trash2 className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                   Eliminar
                 </Button>
@@ -340,12 +349,12 @@ export function ClientDetailPageView({
                   size="sm"
                   onClick={onCancelEdit}
                   disabled={saving}
-                  className="flex-1 sm:flex-none"
+                  className={btnCancelClass}
                 >
                   <X className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                   Cancelar
                 </Button>
-                <Button type="button" size="sm" onClick={onSaveEdit} disabled={saving} className="flex-1 sm:flex-none">
+                <Button type="button" size="sm" onClick={onSaveEdit} disabled={saving} className={btnSaveClass}>
                   <Check className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
                   {saving ? 'Guardando…' : 'Guardar cambios'}
                 </Button>

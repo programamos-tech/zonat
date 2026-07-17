@@ -82,9 +82,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: salesChange.change,
       changeType: salesChange.changeType,
       icon: DollarSign,
-      color: 'emerald',
-      bgColor: 'bg-emerald-100 dark:bg-emerald-900/20',
-      iconColor: 'text-emerald-600'
+      color: 'lime',
+      bgColor: 'bg-brand-lime-soft dark:bg-emerald-900/20',
+      iconColor: 'text-brand-lime'
     },
     {
       title: 'Ganancia Total',
@@ -92,9 +92,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: profitChange.change,
       changeType: profitChange.changeType,
       icon: TrendingUp,
-      color: 'purple',
-      bgColor: 'bg-purple-100 dark:bg-purple-900/20',
-      iconColor: 'text-purple-600'
+      color: 'gold',
+      bgColor: 'bg-brand-gold-soft dark:bg-amber-900/20',
+      iconColor: 'text-brand-gold'
     },
     {
       title: 'Productos Activos',
@@ -102,9 +102,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: productsChange.change,
       changeType: productsChange.changeType,
       icon: Package,
-      color: 'blue',
-      bgColor: 'bg-blue-100 dark:bg-blue-900/20',
-      iconColor: 'text-blue-600'
+      color: 'coral',
+      bgColor: 'bg-brand-coral-soft dark:bg-orange-900/20',
+      iconColor: 'text-brand-coral'
     },
     {
       title: 'Clientes Activos',
@@ -112,9 +112,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: clientsChange.change,
       changeType: clientsChange.changeType,
       icon: Users,
-      color: 'green',
-      bgColor: 'bg-green-100 dark:bg-green-900/20',
-      iconColor: 'text-green-600'
+      color: 'lime',
+      bgColor: 'bg-brand-lime-soft dark:bg-emerald-900/20',
+      iconColor: 'text-brand-lime'
     },
     {
       title: 'Margen de Ganancia',
@@ -122,9 +122,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: marginChange.change,
       changeType: marginChange.changeType,
       icon: Target,
-      color: 'orange',
-      bgColor: 'bg-orange-100 dark:bg-orange-900/20',
-      iconColor: 'text-orange-600'
+      color: 'gold',
+      bgColor: 'bg-brand-gold-soft dark:bg-amber-900/20',
+      iconColor: 'text-brand-gold'
     },
     {
       title: 'Pagos Pendientes',
@@ -132,9 +132,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: paymentsChange.change,
       changeType: paymentsChange.changeType,
       icon: CreditCard,
-      color: 'red',
-      bgColor: 'bg-red-100 dark:bg-red-900/20',
-      iconColor: 'text-red-600'
+      color: 'coral',
+      bgColor: 'bg-brand-coral-soft dark:bg-rose-900/20',
+      iconColor: 'text-brand-coral'
     },
     {
       title: 'Stock Bajo',
@@ -142,9 +142,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: stats.lowStockProducts > 0 ? 'Requiere atención' : stockChange.change,
       changeType: stats.lowStockProducts > 0 ? 'warning' as const : stockChange.changeType,
       icon: AlertTriangle,
-      color: 'yellow',
-      bgColor: 'bg-yellow-100 dark:bg-yellow-900/20',
-      iconColor: 'text-yellow-600'
+      color: 'gold',
+      bgColor: 'bg-brand-gold-soft dark:bg-amber-900/20',
+      iconColor: 'text-brand-gold'
     },
     {
       title: 'Ventas Este Mes',
@@ -152,9 +152,9 @@ export function StatisticsCards({ stats, previousStats }: StatisticsCardsProps) 
       change: `${monthlySalesChange.change} transacciones`,
       changeType: monthlySalesChange.changeType,
       icon: ShoppingCart,
-      color: 'emerald',
-      bgColor: 'bg-emerald-100 dark:bg-emerald-900/20',
-      iconColor: 'text-emerald-600'
+      color: 'lime',
+      bgColor: 'bg-brand-lime-soft dark:bg-emerald-900/20',
+      iconColor: 'text-brand-lime'
     }
   ]
 

@@ -7,7 +7,6 @@ import {
   User,
   Building2,
   Mail,
-  Phone,
   MapPin,
   UserPen,
   ToggleLeft,
@@ -23,22 +22,28 @@ interface ClientModalProps {
 }
 
 const inputBase =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 placeholder:text-zinc-400 transition-colors focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-500/20 dark:border-zinc-600/80 dark:bg-zinc-800/80 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-400 dark:focus:ring-zinc-400/20'
+  'w-full rounded-lg border border-zinc-200/90 bg-white/95 px-3 py-2 text-sm text-zinc-900 placeholder:text-zinc-400 transition-[opacity,background-color,border-color] focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-900/95 dark:text-zinc-100 dark:placeholder:text-zinc-500 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
 
 function SectionCard({
   icon: Icon,
+  iconClassName,
   title,
   children,
 }: {
   icon: typeof User
+  iconClassName?: string
   title: string
   children: React.ReactNode
 }) {
   return (
-    <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-700/80 dark:bg-zinc-900/50 md:p-5">
-      <div className="mb-4 flex items-center gap-2">
-        <Icon className="h-5 w-5 shrink-0 text-zinc-500 dark:text-zinc-400" strokeWidth={1.75} aria-hidden />
-        <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
+    <div className="rounded-xl border border-zinc-200/90 bg-white/80 p-3.5 dark:border-zinc-700/80 dark:bg-zinc-900/80 md:p-4">
+      <div className="mb-3 flex items-center gap-2">
+        <Icon
+          className={cn('h-4 w-4 shrink-0', iconClassName ?? 'text-zinc-500 dark:text-zinc-400')}
+          strokeWidth={1.75}
+          aria-hidden
+        />
+        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{title}</h3>
       </div>
       {children}
     </div>
@@ -101,6 +106,19 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
         return Building2
       default:
         return User
+    }
+  }
+
+  const getTypeSelectedClass = (type: string) => {
+    switch (type) {
+      case 'mayorista':
+        return 'bg-brand-coral text-white shadow-sm'
+      case 'minorista':
+        return 'bg-brand-gold text-white shadow-sm'
+      case 'consumidor_final':
+        return 'bg-brand-lime text-white shadow-sm'
+      default:
+        return 'bg-zinc-500 text-white shadow-sm'
     }
   }
 
@@ -183,20 +201,21 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
   ]
 
   const modal = (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/40 p-3 backdrop-blur-md dark:bg-black/75 xl:left-56">
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center px-3 py-3 sm:py-5 xl:left-60">
       <div
-        className="zonat-preserve-surface flex max-h-[min(100dvh,100vh)] w-full max-w-3xl flex-col overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-50 shadow-2xl dark:border-zinc-800 dark:bg-zinc-950"
+        className="zonat-preserve-surface flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(68rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/95 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-950/95 sm:max-h-[calc(100dvh-2.5rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="client-modal-title"
       >
-        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 bg-white px-4 py-4 md:px-6 md:py-5 dark:border-zinc-800 dark:bg-zinc-950">
+        <header className="flex shrink-0 items-start justify-between gap-4 border-b border-zinc-200 bg-white px-4 py-4 md:px-6 dark:border-zinc-800 dark:bg-zinc-950">
           <div className="flex min-w-0 items-start gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-zinc-200 bg-zinc-50 dark:border-zinc-600/90 dark:bg-zinc-800/80">
-              <UserPen className="h-5 w-5 text-zinc-600 dark:text-zinc-300" strokeWidth={1.75} aria-hidden />
-            </div>
+            <UserPen className="mt-0.5 h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.75} aria-hidden />
             <div className="min-w-0">
-              <h2 id="client-modal-title" className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white md:text-xl">
+              <h2
+                id="client-modal-title"
+                className="text-lg font-bold tracking-tight text-zinc-900 dark:text-white"
+              >
                 {isEdit ? 'Editar Cliente' : 'Nuevo Cliente'}
               </h2>
               <p className="mt-0.5 text-sm text-zinc-500 dark:text-zinc-400">
@@ -214,27 +233,33 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           </button>
         </header>
 
-        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50 px-4 py-4 md:px-6 md:py-5 dark:bg-zinc-950">
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 md:gap-5">
-            <SectionCard icon={User} title="Información Básica">
-              <div className="space-y-4">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain bg-zinc-50 px-4 py-4 md:px-6 dark:bg-zinc-950">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-4">
+            <SectionCard icon={User} iconClassName="text-brand-lime" title="Información Básica">
+              <div className="space-y-3.5">
                 <div>
-                  <label htmlFor="client-name" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Nombre del Cliente <span className="text-zinc-500 dark:text-zinc-500">*</span>
+                  <label
+                    htmlFor="client-name"
+                    className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    Nombre del Cliente <span className="text-brand-coral">*</span>
                   </label>
                   <input
                     id="client-name"
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={cn(inputBase, errors.name && 'border-red-500/70 ring-1 ring-red-500/30')}
+                    placeholder="Ej. Juan Pérez"
+                    className={cn(inputBase, errors.name && 'border-red-400')}
                   />
-                  {errors.name && <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{errors.name}</p>}
+                  {errors.name && <p className="mt-1 text-xs text-red-500">{errors.name}</p>}
                 </div>
 
                 <div>
-                  <span className="mb-2 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Tipo de Cliente</span>
-                  <div className="flex rounded-xl bg-zinc-100 p-1 ring-1 ring-zinc-200 dark:bg-zinc-800/90 dark:ring-zinc-700/80">
+                  <span className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                    Tipo de Cliente
+                  </span>
+                  <div className="flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50">
                     {typeOptions.map((opt) => {
                       const Icon = getTypeIcon(opt.value)
                       const active = formData.type === opt.value
@@ -244,18 +269,13 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                           type="button"
                           onClick={() => handleInputChange('type', opt.value)}
                           className={cn(
-                            'flex min-h-[2.75rem] flex-1 flex-col items-center justify-center gap-1 rounded-lg px-2 py-2 text-center text-xs font-medium transition-all sm:flex-row sm:text-sm',
+                            'flex min-h-10 flex-1 flex-col items-center justify-center gap-1 rounded-md px-1.5 py-1.5 text-center text-[11px] font-medium transition-colors sm:flex-row sm:gap-1.5 sm:text-sm',
                             active
-                              ? 'bg-white text-zinc-950 shadow-sm dark:bg-white dark:text-zinc-950'
-                              : 'text-zinc-600 hover:bg-zinc-200/70 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-700/50 dark:hover:text-zinc-200'
+                              ? getTypeSelectedClass(opt.value)
+                              : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
                           )}
                         >
-                          <Icon
-                            className={cn(
-                              'h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4',
-                              active ? 'text-zinc-800 dark:text-zinc-800' : 'text-zinc-500 dark:text-zinc-500'
-                            )}
-                          />
+                          <Icon className="h-3.5 w-3.5 shrink-0" strokeWidth={1.75} />
                           <span className="leading-tight">{opt.label}</span>
                         </button>
                       )
@@ -265,24 +285,33 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
               </div>
             </SectionCard>
 
-            <SectionCard icon={Mail} title="Información de Contacto">
-              <div className="space-y-4">
+            <SectionCard icon={Mail} iconClassName="text-brand-gold" title="Información de Contacto">
+              <div className="space-y-3.5">
                 <div>
-                  <label htmlFor="client-document" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Cédula/NIT <span className="text-zinc-500">*</span>
+                  <label
+                    htmlFor="client-document"
+                    className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    Cédula/NIT <span className="text-brand-coral">*</span>
                   </label>
                   <input
                     id="client-document"
                     type="text"
                     value={formData.document}
                     onChange={(e) => handleInputChange('document', e.target.value)}
-                    className={cn(inputBase, errors.document && 'border-red-500/70')}
+                    placeholder="Ej. 1234567890"
+                    className={cn(inputBase, errors.document && 'border-red-400')}
                   />
-                  {errors.document && <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{errors.document}</p>}
+                  {errors.document && (
+                    <p className="mt-1 text-xs text-red-500">{errors.document}</p>
+                  )}
                 </div>
 
                 <div>
-                  <label htmlFor="client-phone" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <label
+                    htmlFor="client-phone"
+                    className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
                     Teléfono
                   </label>
                   <input
@@ -290,33 +319,41 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="tel"
                     value={formData.phone}
                     onChange={(e) => handleInputChange('phone', e.target.value)}
+                    placeholder="Ej. 3001234567"
                     className={inputBase}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="client-email" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-                    Email <span className="font-normal text-zinc-500">(opcional)</span>
+                  <label
+                    htmlFor="client-email"
+                    className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    Email <span className="font-normal text-zinc-400">(opcional)</span>
                   </label>
                   <input
                     id="client-email"
                     type="email"
                     value={formData.email}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className={cn(inputBase, errors.email && 'border-red-500/70')}
+                    placeholder="Ej. correo@ejemplo.com"
+                    className={cn(inputBase, errors.email && 'border-red-400')}
                   />
-                  {errors.email && <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">{errors.email}</p>}
-                  <p className="mt-1.5 text-xs leading-relaxed text-zinc-500 dark:text-zinc-500">
+                  {errors.email && <p className="mt-1 text-xs text-red-500">{errors.email}</p>}
+                  <p className="mt-1.5 text-[11px] leading-relaxed text-zinc-500">
                     Si no tienes email, déjalo vacío o escribe &quot;N/A&quot;
                   </p>
                 </div>
               </div>
             </SectionCard>
 
-            <SectionCard icon={MapPin} title="Información de Ubicación">
-              <div className="space-y-4">
+            <SectionCard icon={MapPin} iconClassName="text-brand-coral" title="Información de Ubicación">
+              <div className="space-y-3.5">
                 <div>
-                  <label htmlFor="client-address" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                  <label
+                    htmlFor="client-address"
+                    className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
                     Dirección
                   </label>
                   <input
@@ -324,13 +361,17 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                     type="text"
                     value={formData.address}
                     onChange={(e) => handleInputChange('address', e.target.value)}
+                    placeholder="Ej. Calle 10 #20-30"
                     className={inputBase}
                   />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div>
-                    <label htmlFor="client-city" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <label
+                      htmlFor="client-city"
+                      className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                    >
                       Ciudad
                     </label>
                     <input
@@ -338,11 +379,15 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       type="text"
                       value={formData.city}
                       onChange={(e) => handleInputChange('city', e.target.value)}
+                      placeholder="Ej. Sincelejo"
                       className={inputBase}
                     />
                   </div>
                   <div>
-                    <label htmlFor="client-state" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                    <label
+                      htmlFor="client-state"
+                      className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                    >
                       Estado
                     </label>
                     <input
@@ -350,6 +395,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
                       type="text"
                       value={formData.state}
                       onChange={(e) => handleInputChange('state', e.target.value)}
+                      placeholder="Ej. Sucre"
                       className={inputBase}
                     />
                   </div>
@@ -357,32 +403,33 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
               </div>
             </SectionCard>
 
-            <SectionCard icon={ToggleLeft} title="Estado del Cliente">
-              <fieldset className="flex flex-wrap gap-6">
-                <legend className="sr-only">Estado del cliente</legend>
-                <label className="flex cursor-pointer items-center gap-2.5">
-                  <input
-                    type="radio"
-                    name="client-status"
-                    value="active"
-                    checked={formData.status === 'active'}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="h-4 w-4 border-zinc-300 bg-white accent-zinc-700 focus:ring-2 focus:ring-zinc-400/30 focus:ring-offset-0 dark:border-zinc-500 dark:bg-zinc-800 dark:accent-zinc-300 dark:focus:ring-offset-zinc-950"
-                  />
-                  <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Activo</span>
-                </label>
-                <label className="flex cursor-pointer items-center gap-2.5">
-                  <input
-                    type="radio"
-                    name="client-status"
-                    value="inactive"
-                    checked={formData.status === 'inactive'}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    className="h-4 w-4 border-zinc-300 bg-white accent-zinc-700 focus:ring-2 focus:ring-zinc-400/30 focus:ring-offset-0 dark:border-zinc-500 dark:bg-zinc-800 dark:accent-zinc-300 dark:focus:ring-offset-zinc-950"
-                  />
-                  <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Inactivo</span>
-                </label>
-              </fieldset>
+            <SectionCard icon={ToggleLeft} iconClassName="text-brand-lime" title="Estado del Cliente">
+              <div className="flex max-w-xs rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50">
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('status', 'active')}
+                  className={cn(
+                    'flex min-h-9 flex-1 items-center justify-center rounded-md text-sm font-medium transition-colors',
+                    formData.status === 'active'
+                      ? 'bg-brand-lime text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                  )}
+                >
+                  Activo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleInputChange('status', 'inactive')}
+                  className={cn(
+                    'flex min-h-9 flex-1 items-center justify-center rounded-md text-sm font-medium transition-colors',
+                    formData.status === 'inactive'
+                      ? 'bg-brand-coral text-white shadow-sm'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
+                  )}
+                >
+                  Inactivo
+                </button>
+              </div>
             </SectionCard>
           </div>
         </div>
@@ -401,7 +448,7 @@ export function ClientModal({ isOpen, onClose, onSave, client }: ClientModalProp
           <button
             type="button"
             onClick={handleSave}
-            className="inline-flex min-h-10 items-center justify-center rounded-lg border border-emerald-600 bg-emerald-600 px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:border-emerald-500 hover:bg-emerald-500 dark:border-emerald-500 dark:bg-emerald-500 dark:hover:border-emerald-400 dark:hover:bg-emerald-400"
+            className="inline-flex min-h-10 items-center justify-center rounded-lg bg-brand-lime px-6 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-brand-lime-muted"
           >
             {isEdit ? 'Actualizar Cliente' : 'Crear Cliente'}
           </button>

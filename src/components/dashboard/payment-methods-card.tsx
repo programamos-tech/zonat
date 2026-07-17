@@ -115,8 +115,8 @@ export function PaymentMethodsCard({ paymentMethods }: PaymentMethodsCardProps) 
     <Card className="border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center">
-          <div className="p-2 rounded-xl bg-purple-50 dark:bg-purple-900/20 mr-3">
-            <CreditCard className="h-5 w-5 text-purple-600" />
+          <div className="p-2 rounded-xl bg-brand-coral-soft dark:bg-orange-900/20 mr-3">
+            <CreditCard className="h-5 w-5 text-brand-coral" />
           </div>
           <span className="text-lg font-medium text-gray-800 dark:text-gray-200">Métodos de Pago Más Utilizados</span>
         </CardTitle>

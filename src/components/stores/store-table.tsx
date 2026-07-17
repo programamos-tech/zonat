@@ -270,7 +270,7 @@ export function StoreTable({
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div className="min-w-0 flex-1 space-y-1.5">
             <CardTitle className="flex flex-wrap items-center gap-2 text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 md:text-xl">
-              <StoreIcon className="h-5 w-5 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} aria-hidden />
+              <StoreIcon className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} aria-hidden />
               Micro Tiendas
             </CardTitle>
             <p className="max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400">

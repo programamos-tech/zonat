@@ -147,7 +147,7 @@ export function IncomingTransferModal() {
       >
         <DialogHeader className="space-y-0 border-b border-orange-100 bg-orange-50/80 px-6 py-5 text-left dark:border-orange-900/40 dark:bg-orange-950/30">
           <div className="flex items-start gap-3">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-orange-500/15 text-orange-700 dark:bg-orange-500/20 dark:text-orange-300">
+            <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-brand-coral-soft text-brand-coral dark:bg-orange-500/20">
               <Truck className="h-5 w-5" strokeWidth={1.5} aria-hidden />
             </span>
             <div className="min-w-0 space-y-1 pt-0.5">

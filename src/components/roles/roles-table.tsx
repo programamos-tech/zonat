@@ -112,7 +112,7 @@ export function RolesTable({ roles, onView, onEdit, onDelete, onCreate }: RolesT
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
               <CardTitle className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                <Shield className="h-6 w-6 text-emerald-600" />
+                <Shield className="h-6 w-6 text-brand-gold" />
                 Gestión de Roles
               </CardTitle>
               <p className="text-gray-600 dark:text-gray-300 mt-1">

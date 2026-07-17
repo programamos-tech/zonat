@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils'
 import { toast } from 'sonner'
 
 const inputClass =
-  'w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
+  'w-full rounded-lg border border-zinc-200/90 bg-white px-3 py-2.5 text-sm text-zinc-900 transition-colors placeholder:text-zinc-400 focus:border-zinc-400 focus:outline-none focus:ring-1 focus:ring-zinc-400/30 dark:border-zinc-600 dark:bg-zinc-950/50 dark:text-zinc-100 dark:focus:border-zinc-500 dark:focus:ring-zinc-500/25'
 
 interface SupplierEditModalProps {
   isOpen: boolean
@@ -93,25 +93,33 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
   }
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4 pb-[max(1rem,env(safe-area-inset-bottom))] pt-[max(1rem,env(safe-area-inset-top))] backdrop-blur-sm xl:left-56">
+    <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60">
       <div
-        className="max-h-[min(90dvh,calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom)-2rem))] w-full max-w-lg overflow-y-auto rounded-2xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
+        className="zonat-preserve-surface flex max-h-[min(90dvh,calc(100dvh-2rem))] w-full max-w-[min(28rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
         role="dialog"
         aria-modal="true"
         aria-labelledby="supplier-edit-title"
       >
-        <div className="flex items-center justify-between border-b border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 px-4 py-3.5 dark:border-zinc-700">
           <div className="flex min-w-0 items-center gap-2.5">
-            <Building2 className="h-5 w-5 shrink-0 text-zinc-500" strokeWidth={1.5} />
-            <h2 id="supplier-edit-title" className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50">
-              Editar proveedor
-            </h2>
+            <Building2 className="h-5 w-5 shrink-0 text-brand-lime" strokeWidth={1.5} />
+            <div className="min-w-0">
+              <h2
+                id="supplier-edit-title"
+                className="truncate text-lg font-semibold text-zinc-900 dark:text-zinc-50"
+              >
+                Editar proveedor
+              </h2>
+              <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+                Actualiza los datos del proveedor
+              </p>
+            </div>
           </div>
           <Button
             type="button"
             variant="ghost"
             size="sm"
-            className="h-8 w-8 shrink-0 rounded-lg p-0"
+            className="h-8 w-8 shrink-0 rounded-lg p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             onClick={onClose}
             disabled={saving}
           >
@@ -121,7 +129,7 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
 
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16">
-            <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300" />
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-zinc-200 border-t-brand-lime dark:border-zinc-700 dark:border-t-brand-lime" />
             <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando…</p>
           </div>
         ) : loadError ? (
@@ -132,23 +140,23 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
             </Button>
           </div>
         ) : (
-          <form onSubmit={handleSubmit}>
-            <div className="space-y-4 p-4">
+          <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
+            <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
               <div className="space-y-2">
-                <Label htmlFor="supplier-name" className="text-zinc-700 dark:text-zinc-300">
-                  Nombre <span className="text-red-600 dark:text-red-400">*</span>
+                <Label htmlFor="supplier-name" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+                  Nombre <span className="text-brand-coral">*</span>
                 </Label>
                 <Input
                   id="supplier-name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   className={cn(inputClass, 'h-11')}
-                  placeholder="Razón social o nombre comercial"
+                  placeholder="Ej. Distribuidora ABC S.A.S."
                   autoComplete="organization"
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplier-contact" className="text-zinc-700 dark:text-zinc-300">
+                <Label htmlFor="supplier-contact" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   Contacto
                 </Label>
                 <Input
@@ -156,12 +164,12 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
                   value={contact}
                   onChange={(e) => setContact(e.target.value)}
                   className={cn(inputClass, 'h-11')}
-                  placeholder="Persona de contacto"
+                  placeholder="Ej. Juan Pérez"
                 />
               </div>
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="supplier-phone" className="text-zinc-700 dark:text-zinc-300">
+                  <Label htmlFor="supplier-phone" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     Teléfono
                   </Label>
                   <Input
@@ -169,12 +177,12 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     className={cn(inputClass, 'h-11')}
-                    placeholder="Teléfono"
+                    placeholder="Ej. 3001234567"
                     inputMode="tel"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="supplier-email" className="text-zinc-700 dark:text-zinc-300">
+                  <Label htmlFor="supplier-email" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                     Correo
                   </Label>
                   <Input
@@ -183,13 +191,13 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className={cn(inputClass, 'h-11')}
-                    placeholder="correo@ejemplo.com"
+                    placeholder="Ej. correo@ejemplo.com"
                     autoComplete="email"
                   />
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="supplier-document" className="text-zinc-700 dark:text-zinc-300">
+                <Label htmlFor="supplier-document" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
                   NIT / documento
                 </Label>
                 <Input
@@ -197,7 +205,7 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
                   value={document}
                   onChange={(e) => setDocument(e.target.value)}
                   className={cn(inputClass, 'h-11')}
-                  placeholder="NIT, cédula u otro documento"
+                  placeholder="Ej. 900123456-1"
                 />
               </div>
               <div className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 px-3 py-3 dark:border-zinc-700">
@@ -210,11 +218,24 @@ export function SupplierEditModal({ isOpen, onClose, supplierId, onSaved }: Supp
                 <Switch checked={isActive} onCheckedChange={setIsActive} />
               </div>
             </div>
-            <div className="flex flex-col-reverse gap-2 border-t border-zinc-200 p-4 dark:border-zinc-700 sm:flex-row sm:justify-end">
-              <Button type="button" variant="outline" onClick={onClose} disabled={saving} className="w-full sm:w-auto">
+            <div
+              className="flex shrink-0 flex-col-reverse gap-2 border-t border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-900 sm:flex-row sm:justify-end"
+              style={{ paddingBottom: 'max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem))' }}
+            >
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                disabled={saving}
+                className="w-full sm:w-auto"
+              >
                 Cancelar
               </Button>
-              <Button type="submit" disabled={saving} className="w-full sm:w-auto">
+              <Button
+                type="submit"
+                disabled={saving}
+                className="w-full border-0 bg-brand-lime text-white hover:bg-brand-lime-muted sm:w-auto"
+              >
                 {saving ? 'Guardando…' : 'Guardar cambios'}
               </Button>
             </div>

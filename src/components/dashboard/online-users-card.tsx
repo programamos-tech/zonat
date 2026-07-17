@@ -75,8 +75,8 @@ export function OnlineUsersCard({ onlineUsers, totalUsers }: OnlineUsersCardProp
     <Card className="border-0 bg-gradient-to-br from-white to-gray-50 dark:from-gray-800 dark:to-gray-900 shadow-sm">
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center">
-          <div className="p-2 rounded-xl bg-green-50 dark:bg-green-900/20 mr-3">
-            <Users className="h-5 w-5 text-green-600" />
+          <div className="p-2 rounded-xl bg-brand-lime-soft dark:bg-emerald-900/20 mr-3">
+            <Users className="h-5 w-5 text-brand-lime" />
           </div>
           <span className="text-lg font-medium text-gray-800 dark:text-gray-200">Usuarios en Línea</span>
           <Badge className="ml-3 bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 text-xs">

@@ -104,7 +104,7 @@ export function ProfitInvestmentCard({
       <CardHeader className="pb-4">
         <CardTitle className="flex items-center">
           <div className="p-2 rounded-xl bg-emerald-50 dark:bg-emerald-900/20 mr-3">
-            <PiggyBank className="h-5 w-5 text-emerald-600" />
+            <PiggyBank className="h-5 w-5 text-brand-gold" />
           </div>
           <span className="text-lg font-medium text-gray-800 dark:text-gray-200">Inversión y Ganancias</span>
         </CardTitle>

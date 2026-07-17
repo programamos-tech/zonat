@@ -7,7 +7,7 @@
  */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* Verde de marca: tono cálido y coherente (sidebar, botones y acentos mismo family) */
+/* Acentos de marca: lima (#2CEB26), coral (#C3341C) y oro (#EDE619) suavizados */
 /* Pie “powered by programamos” en sidebar (Google Fonts: Stack Sans Notch) */
 .font-programamos-brand {
   font-family: "Stack Sans Notch", ui-sans-serif, system-ui, sans-serif;
@@ -19,6 +19,32 @@
   --zonat-bottom-nav-height: calc(2.75rem + env(safe-area-inset-bottom, 0px));
   /* AppTopBar (min-h 3.25rem + borde); modales en portal no deben taparla. */
   --zonat-topbar-height: 3.25rem;
+
+  /*
+   * Acentos de marca (suavizados desde #C3341C / #EDE619 / #2CEB26).
+   * Misma familia, menos saturación y un poco más claros para UI.
+   */
+  --brand-coral: #c86b5c;
+  --brand-coral-soft: #f3e4e0;
+  --brand-coral-muted: #a85548;
+  --brand-gold: #c9bc4a;
+  --brand-gold-soft: #f5f1d6;
+  --brand-gold-muted: #a89a35;
+  --brand-lime: #4cbb48;
+  --brand-lime-soft: #e4f5e3;
+  --brand-lime-muted: #3a9a37;
+}
+
+html.dark {
+  --brand-coral: #d4897c;
+  --brand-coral-soft: #3a2420;
+  --brand-coral-muted: #e0a399;
+  --brand-gold: #d4c86a;
+  --brand-gold-soft: #2f2c18;
+  --brand-gold-muted: #e0d48a;
+  --brand-lime: #6bc868;
+  --brand-lime-soft: #1a2e1a;
+  --brand-lime-muted: #8ad687;
 }
 
 @media (min-width: 768px) {
@@ -28,17 +54,101 @@
 }
 
 @theme {
-  --color-emerald-50: #f2fce8;
-  --color-emerald-100: #e2f9d4;
-  --color-emerald-200: #c5f2a8;
-  --color-emerald-300: #9de872;
-  --color-emerald-400: #75dc45;
-  --color-emerald-500: #52c42a;
-  --color-emerald-600: #3dab1f;
-  --color-emerald-700: #2e8f1a;
-  --color-emerald-800: #24701a;
-  --color-emerald-900: #1a5516;
-  --color-emerald-950: #0d2f0a;
+  /* Primario = lima de marca suavizada (#2CEB26 → #4cbb48) */
+  --color-emerald-50: #f0faf0;
+  --color-emerald-100: #e4f5e3;
+  --color-emerald-200: #c5e9c3;
+  --color-emerald-300: #95d792;
+  --color-emerald-400: #6bc868;
+  --color-emerald-500: #4cbb48;
+  --color-emerald-600: #3a9a37;
+  --color-emerald-700: #2f7d2c;
+  --color-emerald-800: #286326;
+  --color-emerald-900: #225222;
+  --color-emerald-950: #0f2c0e;
+
+  /* Coral de marca (#C3341C suavizado) */
+  --color-brand-coral: #c86b5c;
+  --color-brand-coral-soft: #f3e4e0;
+  --color-brand-coral-muted: #a85548;
+
+  /* Oro de marca (#EDE619 suavizado) */
+  --color-brand-gold: #c9bc4a;
+  --color-brand-gold-soft: #f5f1d6;
+  --color-brand-gold-muted: #a89a35;
+
+  /* Lima explícita (alias del primario) */
+  --color-brand-lime: #4cbb48;
+  --color-brand-lime-soft: #e4f5e3;
+  --color-brand-lime-muted: #3a9a37;
+
+  /* Naranja → coral de marca (traslados, créditos, alertas) */
+  --color-orange-50: #faf4f2;
+  --color-orange-100: #f3e4e0;
+  --color-orange-200: #e8c9c2;
+  --color-orange-300: #d9a599;
+  --color-orange-400: #d4897c;
+  --color-orange-500: #c86b5c;
+  --color-orange-600: #a85548;
+  --color-orange-700: #8c463c;
+  --color-orange-800: #733a32;
+  --color-orange-900: #5f322b;
+  --color-orange-950: #321914;
+
+  /* Ámbar → oro de marca */
+  --color-amber-50: #faf8eb;
+  --color-amber-100: #f5f1d6;
+  --color-amber-200: #ebe4a8;
+  --color-amber-300: #ddd57a;
+  --color-amber-400: #d4c86a;
+  --color-amber-500: #c9bc4a;
+  --color-amber-600: #a89a35;
+  --color-amber-700: #877c2b;
+  --color-amber-800: #6c6325;
+  --color-amber-900: #5a5222;
+  --color-amber-950: #312d12;
+
+  /* Rosa → coral (alertas / vencidos), un tono más suave */
+  --color-rose-50: #faf3f1;
+  --color-rose-100: #f3e4e0;
+  --color-rose-200: #e8c4bc;
+  --color-rose-300: #d99a8e;
+  --color-rose-400: #d07a6c;
+  --color-rose-500: #c86b5c;
+  --color-rose-600: #a85548;
+  --color-rose-700: #8c463c;
+  --color-rose-800: #733a32;
+  --color-rose-900: #5f322b;
+  --color-rose-950: #321914;
+}
+
+/* Utilidades de acento para iconos de módulos (no sidebar) */
+.text-brand-coral {
+  color: var(--brand-coral);
+}
+.text-brand-gold {
+  color: var(--brand-gold);
+}
+.text-brand-lime {
+  color: var(--brand-lime);
+}
+.bg-brand-coral-soft {
+  background-color: var(--brand-coral-soft);
+}
+.bg-brand-gold-soft {
+  background-color: var(--brand-gold-soft);
+}
+.bg-brand-lime-soft {
+  background-color: var(--brand-lime-soft);
+}
+.bg-brand-coral {
+  background-color: var(--brand-coral);
+}
+.bg-brand-gold {
+  background-color: var(--brand-gold);
+}
+.bg-brand-lime {
+  background-color: var(--brand-lime);
 }
 
 /* Force light mode styles */
@@ -59,8 +169,27 @@ html.light
   body:not(:has(.tienda-storefront)):not(:has([data-auth-page]))
   *:not(button):not(input):not(select):not(textarea):not([role='button']):not(a):not(
     .zonat-card-surface
-  ):not(.zonat-preserve-surface):not(.zonat-preserve-surface *) {
+  ):not(.zonat-preserve-surface):not(.zonat-preserve-surface *):not(.zonat-modal-scrim):not(
+    .zonat-modal-scrim *
+  ) {
   background-color: inherit !important;
+}
+
+/* Overlay de modales: oscuro semitransparente (no heredar blanco del body) */
+.zonat-modal-scrim {
+  background-color: rgba(0, 0, 0, 0.5) !important;
+}
+html.dark .zonat-modal-scrim {
+  background-color: rgba(0, 0, 0, 0.65) !important;
+}
+/* Blur solo cuando el modal lo pide (p. ej. venta a crédito); no forzar en modales compactos */
+.zonat-modal-scrim.backdrop-blur-sm {
+  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px);
+}
+.zonat-modal-scrim.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
 }
 
 /*
