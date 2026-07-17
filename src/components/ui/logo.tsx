@@ -18,16 +18,14 @@ export function Logo({ className, showText = false, size = 'md' }: LogoProps) {
   }[size]
 
   return (
-    <div className={cn("flex items-center", className)}>
-      {/* Logo Image */}
-      <div className="relative">
+    <div className={cn('flex items-center', className)}>
+      <div className="relative shrink-0" style={{ width: logoSize, height: logoSize }}>
         <Image
           src="/zonat-logo.png"
           alt="ZONA T Logo"
           width={logoSize}
           height={logoSize}
-          className="object-contain"
-          style={{ width: logoSize, height: 'auto' }}
+          className="h-full w-full object-contain"
           priority
           unoptimized
         />

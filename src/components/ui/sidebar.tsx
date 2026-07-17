@@ -218,17 +218,15 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
               href="/reportes"
               className="relative flex flex-col items-center transition-opacity hover:opacity-90"
             >
-              <div className="relative">
+              <div className="mb-2 flex h-24 w-24 items-center justify-center overflow-hidden">
                 {currentStore?.logo ? (
                   <img
                     src={currentStore.logo}
                     alt={currentStore.name}
-                    className="mb-2 h-24 w-24 rounded-full object-cover ring-1 ring-zinc-700/80"
+                    className="h-full w-full object-contain"
                   />
                 ) : (
-                  <div className="mb-2">
-                    <Logo size="xl" />
-                  </div>
+                  <Logo size="xl" />
                 )}
               </div>
               {currentStore && (
@@ -432,31 +430,13 @@ export function Sidebar({ className, onMobileMenuToggle }: SidebarProps) {
             })}
           </nav>
 
-          <div className="border-t border-zinc-800/90 px-2.5 pb-3 pt-2.5">
-            <div className="rounded-lg border border-zinc-800/90 bg-zinc-900/50 px-2.5 py-2.5">
-              <div className="flex items-center gap-2.5">
-                <div
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-[color:var(--brand-lime)]/25 bg-[color:var(--brand-lime)]/10"
-                  aria-hidden
-                >
-                  <BarChart3 className="h-3.5 w-3.5 text-brand-lime" strokeWidth={1.75} />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-[11px] font-semibold tracking-[0.14em] text-zinc-200">
-                    ZONA T<span className="ml-1 font-medium tracking-normal text-zinc-500">ERP</span>
-                  </p>
-                  <div className="mt-0.5 flex items-center gap-1.5">
-                    <span className="relative flex h-1.5 w-1.5 shrink-0">
-                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-brand-lime opacity-40" />
-                      <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-brand-lime" />
-                    </span>
-                    <span className="truncate text-[10px] font-medium text-zinc-500">
-                      Operativo · v{APP_VERSION}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
+          <div className="border-t border-zinc-800/90 px-3 pb-3.5 pt-3">
+            <p className="text-center text-[10px] font-medium uppercase tracking-[0.22em] text-zinc-500">
+              Zona T
+            </p>
+            <p className="mt-1 text-center text-[11px] leading-none text-zinc-600">
+              Gestión comercial · <span className="tabular-nums text-zinc-500">v{APP_VERSION}</span>
+            </p>
           </div>
         </div>
       </div>
