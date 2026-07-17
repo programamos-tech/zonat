@@ -31,14 +31,8 @@ import { cardShell } from '@/lib/card-shell'
 
 const ITEMS_PER_PAGE = 15
 
-const actionEditBtnClass =
-  'h-9 w-9 p-0 text-brand-lime hover:bg-brand-lime-soft hover:text-brand-lime dark:hover:bg-emerald-950/40'
-const actionAdjustBtnClass =
-  'h-9 w-9 p-0 text-amber-600 hover:bg-amber-50 hover:text-amber-700 dark:text-amber-400 dark:hover:bg-amber-950/40 dark:hover:text-amber-300'
-const actionTransferBtnClass =
-  'h-9 w-9 p-0 text-sky-600 hover:bg-sky-50 hover:text-sky-700 dark:text-sky-400 dark:hover:bg-sky-950/40 dark:hover:text-sky-300'
-const actionDeleteBtnClass =
-  'h-9 w-9 p-0 text-brand-coral hover:bg-brand-coral-soft hover:text-brand-coral dark:hover:bg-orange-950/40'
+const actionBtnClass =
+  'h-9 w-9 p-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100'
 
 interface ProductTableProps {
   products: Product[]
@@ -155,28 +149,19 @@ export function ProductTable({
 
   const getStockStatusBadgeClass = (product: Product) => {
     const { warehouse, store, total } = product.stock
-    if (total === 0) {
-      return 'border-brand-coral/40 bg-brand-coral-soft text-brand-coral dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-300'
-    }
+    const base = 'zonat-status-pill rounded-md border-0 px-2.5 py-0.5 text-[11px] font-medium tracking-tight shadow-none'
+    if (total === 0) return `${base} zonat-status-muted`
     if (store > 0) {
-      if (store >= 10) {
-        return 'border-brand-lime/40 bg-brand-lime-soft text-brand-lime dark:border-emerald-700/40 dark:bg-emerald-950/40 dark:text-emerald-300'
-      }
-      if (store >= 5) {
-        return 'border-amber-300/80 bg-amber-50 text-amber-800 dark:border-amber-700/45 dark:bg-amber-950/40 dark:text-amber-200'
-      }
-      return 'border-orange-300/80 bg-orange-50 text-orange-800 dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-300'
+      if (store >= 10) return `${base} zonat-status-lime`
+      if (store >= 5) return `${base} zonat-status-gold`
+      return `${base} zonat-status-coral`
     }
     if (warehouse > 0) {
-      if (warehouse >= 20) {
-        return 'border-brand-coral/35 bg-brand-coral-soft/80 text-brand-coral dark:border-orange-800/40 dark:bg-orange-950/35 dark:text-orange-300'
-      }
-      if (warehouse >= 10) {
-        return 'border-orange-300/70 bg-orange-50/90 text-orange-800 dark:border-orange-800/40 dark:bg-orange-950/35 dark:text-orange-300'
-      }
-      return 'border-rose-300/80 bg-rose-50 text-rose-800 dark:border-rose-800/45 dark:bg-rose-950/40 dark:text-rose-300'
+      if (warehouse >= 20) return `${base} zonat-status-coral`
+      if (warehouse >= 10) return `${base} zonat-status-coral-deep`
+      return `${base} zonat-status-critical`
     }
-    return 'border-brand-coral/40 bg-brand-coral-soft text-brand-coral dark:border-orange-800/50 dark:bg-orange-950/40 dark:text-orange-300'
+    return `${base} zonat-status-muted`
   }
 
   const formatPrice = (value: number) =>
@@ -390,29 +375,28 @@ export function ProductTable({
                           )}
                           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200/80 pt-3 dark:border-zinc-800">
                             <Badge
-                              variant="outline"
-                              className={cn('w-fit border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}
+                              className={cn('w-fit', getStockStatusBadgeClass(product))}
                             >
                               {getStockStatusLabel(product)}
                             </Badge>
                             <div className="flex shrink-0 gap-0.5" role="none" onClick={(e) => e.stopPropagation()}>
                               {canEdit && (
-                                <Button type="button" size="sm" variant="ghost" className={actionEditBtnClass} onClick={() => onEdit(product)} title="Editar">
+                                <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onEdit(product)} title="Editar">
                                   <Edit className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
                               {canAdjust && onStockAdjustment && (
-                                <Button type="button" size="sm" variant="ghost" className={actionAdjustBtnClass} onClick={() => onStockAdjustment(product)} title="Ajustar stock">
+                                <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onStockAdjustment(product)} title="Ajustar stock">
                                   <Package className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
                               {canTransfer && onStockTransfer && (
-                                <Button type="button" size="sm" variant="ghost" className={actionTransferBtnClass} onClick={() => onStockTransfer(product)} title="Transferir">
+                                <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onStockTransfer(product)} title="Transferir">
                                   <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
                               {canDelete && (
-                                <Button type="button" size="sm" variant="ghost" className={actionDeleteBtnClass} onClick={() => onDelete(product)} title="Eliminar">
+                                <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onDelete(product)} title="Eliminar">
                                   <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                                 </Button>
                               )}
@@ -477,7 +461,7 @@ export function ProductTable({
                                 </td>
                               )}
                               <td className="px-3 py-3">
-                                <Badge variant="outline" className={cn('inline-flex border px-2 py-0.5 text-[11px] font-normal', getStockStatusBadgeClass(product))}>
+                                <Badge className={cn('inline-flex', getStockStatusBadgeClass(product))}>
                                   {getStockStatusLabel(product)}
                                 </Badge>
                               </td>
@@ -489,7 +473,7 @@ export function ProductTable({
                                   {canEdit && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionEditBtnClass} onClick={() => onEdit(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onEdit(product)}>
                                           <Edit className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>
@@ -501,7 +485,7 @@ export function ProductTable({
                                   {canAdjust && onStockAdjustment && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionAdjustBtnClass} onClick={() => onStockAdjustment(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onStockAdjustment(product)}>
                                           <Package className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>
@@ -513,7 +497,7 @@ export function ProductTable({
                                   {canTransfer && onStockTransfer && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionTransferBtnClass} onClick={() => onStockTransfer(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onStockTransfer(product)}>
                                           <ArrowRightLeft className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>
@@ -525,7 +509,7 @@ export function ProductTable({
                                   {canDelete && (
                                     <Tooltip>
                                       <TooltipTrigger asChild>
-                                        <Button type="button" size="sm" variant="ghost" className={actionDeleteBtnClass} onClick={() => onDelete(product)}>
+                                        <Button type="button" size="sm" variant="ghost" className={actionBtnClass} onClick={() => onDelete(product)}>
                                           <Trash2 className="h-4 w-4" strokeWidth={1.5} />
                                         </Button>
                                       </TooltipTrigger>

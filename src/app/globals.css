@@ -151,6 +151,65 @@ html.dark {
   background-color: var(--brand-lime);
 }
 
+/* Pills de estado (stock): fondo un poco más marcado, sin borde */
+.zonat-status-pill.zonat-status-lime {
+  background-color: color-mix(in srgb, var(--brand-lime-soft) 55%, var(--brand-lime) 45%) !important;
+  color: var(--brand-lime-muted) !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+.zonat-status-pill.zonat-status-gold {
+  background-color: color-mix(in srgb, var(--brand-gold-soft) 45%, var(--brand-gold) 55%) !important;
+  color: #5c5318 !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+.zonat-status-pill.zonat-status-coral {
+  background-color: color-mix(in srgb, var(--brand-coral-soft) 50%, var(--brand-coral) 50%) !important;
+  color: var(--brand-coral-muted) !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+.zonat-status-pill.zonat-status-coral-deep {
+  background-color: color-mix(in srgb, var(--brand-coral-soft) 35%, var(--brand-coral) 65%) !important;
+  color: #7a3d34 !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+.zonat-status-pill.zonat-status-critical {
+  background-color: #fecdd3 !important;
+  color: #9f1239 !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+.zonat-status-pill.zonat-status-muted {
+  background-color: #e4e4e7 !important;
+  color: #3f3f46 !important;
+  border-color: transparent !important;
+  border-width: 0 !important;
+}
+html.dark .zonat-status-pill.zonat-status-lime {
+  background-color: color-mix(in srgb, var(--brand-lime) 28%, transparent) !important;
+  color: var(--brand-lime) !important;
+}
+html.dark .zonat-status-pill.zonat-status-gold {
+  background-color: color-mix(in srgb, var(--brand-gold) 28%, transparent) !important;
+  color: var(--brand-gold) !important;
+}
+html.dark .zonat-status-pill.zonat-status-coral,
+html.dark .zonat-status-pill.zonat-status-coral-deep {
+  background-color: color-mix(in srgb, var(--brand-coral) 28%, transparent) !important;
+  color: var(--brand-coral) !important;
+}
+html.dark .zonat-status-pill.zonat-status-critical {
+  background-color: color-mix(in srgb, #be123c 28%, transparent) !important;
+  color: #fda4af !important;
+}
+html.dark .zonat-status-pill.zonat-status-muted {
+  background-color: rgba(63, 63, 70, 0.9) !important;
+  color: #d4d4d8 !important;
+}
+
 /* Force light mode styles */
 html.light {
   background-color: #ffffff !important;
@@ -171,7 +230,7 @@ html.light
     .zonat-card-surface
   ):not(.zonat-preserve-surface):not(.zonat-preserve-surface *):not(.zonat-modal-scrim):not(
     .zonat-modal-scrim *
-  ) {
+  ):not(.zonat-status-pill):not(.zonat-status-pill *) {
   background-color: inherit !important;
 }
 
