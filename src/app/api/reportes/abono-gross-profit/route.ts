@@ -246,7 +246,7 @@ export async function POST(request: NextRequest) {
     }
 
     return NextResponse.json({
-      grossProfit: Math.round(grossProfit * 100) / 100,
+      grossProfit: Math.round(grossProfit),
       paymentsCount: activePayments.length,
       resolvedSales: saleIds.length,
       resolvedPayments: resolved,
