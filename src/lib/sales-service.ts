@@ -625,6 +625,116 @@ export class SalesService {
     }
   }
 
+  /**
+   * Carga ventas por IDs (p. ej. ventas de créditos antiguos referenciadas por abonos del período).
+   * Respeta el filtro de tienda del usuario actual.
+   */
+  static async getSalesByIds(ids: string[]): Promise<Sale[]> {
+    const uniqueIds = Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)))
+    if (uniqueIds.length === 0) return []
+
+    try {
+      const user = getCurrentUser()
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+      const results: Sale[] = []
+      const BATCH_SIZE = 100
+
+      for (let i = 0; i < uniqueIds.length; i += BATCH_SIZE) {
+        const batch = uniqueIds.slice(i, i + BATCH_SIZE)
+        let query = supabase
+          .from('sales')
+          .select(`
+            *,
+            sale_items (
+              id,
+              product_id,
+              product_name,
+              product_reference_code,
+              quantity,
+              unit_price,
+              discount,
+              discount_type,
+              tax,
+              total
+            ),
+            sale_payments (
+              id,
+              sale_id,
+              payment_type,
+              amount,
+              created_at
+            )
+          `)
+          .in('id', batch)
+
+        if (storeId && !canAccessAllStores(user)) {
+          query = query.eq('store_id', storeId)
+        } else if (!storeId || storeId === MAIN_STORE_ID) {
+          // Misma regla que getDashboardSales para tienda principal
+          if (!canAccessAllStores(user)) {
+            query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+          }
+        }
+
+        const { data, error } = await query
+        if (error) throw error
+        if (!data?.length) continue
+
+        for (const sale of data) {
+          const itemsWithReferences = (sale.sale_items || []).map((item: any) => ({
+            id: item.id,
+            productId: item.product_id,
+            productName: item.product_name,
+            productReferenceCode: item.product_reference_code || 'N/A',
+            quantity: item.quantity,
+            unitPrice: item.unit_price,
+            discount: item.discount || 0,
+            discountType: item.discount_type || 'amount',
+            tax: item.tax || 0,
+            total: item.total,
+          }))
+
+          results.push({
+            id: sale.id,
+            clientId: sale.client_id,
+            clientName: sale.client_name,
+            total: sale.total,
+            subtotal: sale.subtotal,
+            tax: sale.tax,
+            discount: sale.discount,
+            discountType: sale.discount_type || 'amount',
+            cancellationReason: sale.cancellation_reason || undefined,
+            status: sale.status,
+            paymentMethod: sale.payment_method,
+            payments:
+              sale.sale_payments?.map((payment: any) => ({
+                id: payment.id,
+                saleId: payment.sale_id,
+                paymentType: payment.payment_type,
+                amount: payment.amount,
+                createdAt: payment.created_at,
+                updatedAt: payment.updated_at || payment.created_at,
+              })) || [],
+            invoiceNumber: sale.invoice_number,
+            sellerId: sale.seller_id,
+            sellerName: sale.seller_name,
+            sellerEmail: sale.seller_email,
+            storeId: sale.store_id || undefined,
+            createdAt: sale.created_at,
+            items: itemsWithReferences,
+            ...mapWebOrderFields(sale as Record<string, unknown>),
+          })
+        }
+      }
+
+      return results
+    } catch (error) {
+      console.error('[SalesService.getSalesByIds]', error)
+      return []
+    }
+  }
+
   static async createSale(saleData: Omit<Sale, 'id' | 'createdAt'>, currentUserId: string): Promise<Sale> {
     try {
       // Generar número de factura secuencial

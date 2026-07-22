@@ -118,6 +118,8 @@ export default function ReportesPage() {
   // Para usuarios no-Super Admin, forzar el filtro a 'today' y mostrar dashboard completo
   const effectiveDateFilter = isSuperAdmin ? dateFilter : 'today'
   const [allSales, setAllSales] = useState<Sale[]>([])
+  /** Ventas fuera de la ventana del dashboard, cargadas solo para margen de abonos. */
+  const [abonoSalesLookup, setAbonoSalesLookup] = useState<Sale[]>([])
   const [allWarranties, setAllWarranties] = useState<any[]>([])
   const [allCredits, setAllCredits] = useState<any[]>([])
   const [allClients, setAllClients] = useState<any[]>([])
@@ -310,6 +312,25 @@ export default function ReportesPage() {
       const fastInventory = inventoryResult.status === 'fulfilled' ? inventoryResult.value : null
       const fastCredits = creditsSummaryResult.status === 'fulfilled' ? creditsSummaryResult.value : null
 
+      // Abonos del período pueden referenciar ventas más antiguas que la ventana (~15 días).
+      // Sin esas ventas, ingresos suman el abono pero ganancia bruta queda en $0.
+      const knownSaleIds = new Set(sales.map((s: Sale) => s.id))
+      const missingSaleIds = Array.from(
+        new Set(
+          payments
+            .map((p: { saleId?: string }) => p.saleId)
+            .filter((id: string | undefined): id is string => Boolean(id && !knownSaleIds.has(id)))
+        )
+      )
+      let abonoSales: Sale[] = []
+      if (missingSaleIds.length > 0) {
+        try {
+          abonoSales = await withTimeout(SalesService.getSalesByIds(missingSaleIds), 15000)
+        } catch (error) {
+          console.error('⚠️ [DASHBOARD] No se pudieron cargar ventas de abonos antiguos:', error)
+        }
+      }
+
       // Resumen de ventas calculado desde la lista (evita getDashboardSummary y sus N requests)
       let cashRevenue = 0
       let transferRevenue = 0
@@ -339,6 +360,7 @@ export default function ReportesPage() {
       })
 
       setAllSales(sales)
+      setAbonoSalesLookup(abonoSales)
       setAllWarranties(warranties)
       setAllCredits(credits)
       setAllProducts([])
@@ -394,6 +416,7 @@ export default function ReportesPage() {
   const handleRefresh = () => {
     setSpecificProductsCache(new Map())
     setAllProducts([])
+    setAbonoSalesLookup([])
     loadDashboardData(true, dateFilter, specificDate, selectedYear)
   }
 
@@ -636,7 +659,7 @@ export default function ReportesPage() {
     const abonoSaleIds = new Set(
       allPaymentRecords.map((p) => p.saleId).filter((id): id is string => Boolean(id))
     )
-    const abonoProductIds = allSales
+    const abonoProductIds = [...allSales, ...abonoSalesLookup]
       .filter((sale) => abonoSaleIds.has(sale.id))
       .flatMap((sale) => sale.items?.map((item) => item.productId) || [])
       .filter(Boolean) as string[]
@@ -647,7 +670,7 @@ export default function ReportesPage() {
     if (allProductIds.length > 0) {
       loadSpecificProducts(allProductIds)
     }
-  }, [allSales, allWarranties, allPaymentRecords, loadSpecificProducts])
+  }, [allSales, abonoSalesLookup, allWarranties, allPaymentRecords, loadSpecificProducts])
 
   // Calcular métricas del dashboard
   const metrics = useMemo(() => {
@@ -873,7 +896,10 @@ export default function ReportesPage() {
     const productLookup = (productId: string) =>
       specificProductsCache.get(productId) || allProducts.find((p) => p.id === productId)
 
-    const salesById = new Map(allSales.map((sale) => [sale.id, sale]))
+    const salesById = new Map<string, Sale>([
+      ...allSales.map((sale) => [sale.id, sale] as const),
+      ...abonoSalesLookup.map((sale) => [sale.id, sale] as const),
+    ])
     const creditBySaleId = new Map(
       allCredits.filter((c) => c.saleId).map((c) => [c.saleId as string, c])
     )
@@ -884,7 +910,8 @@ export default function ReportesPage() {
       return totalProfit + computeSaleGrossMargin(sale, productLookup)
     }, 0)
 
-    // Ganancia bruta por abonos de crédito (proporcional al monto abonado en el período)
+    // Ganancia bruta por abonos de crédito (proporcional al monto abonado en el período).
+    // salesById incluye ventas antiguas cargadas vía abonoSalesLookup.
     const grossProfitFromCreditPayments = validPaymentRecords.reduce((sum, payment) => {
       const saleId = payment.saleId
       if (!saleId) return sum
@@ -1117,6 +1144,7 @@ export default function ReportesPage() {
   }, [
     filteredData,
     allSales,
+    abonoSalesLookup,
     allProducts,
     allClients,
     allWarranties,
@@ -1638,7 +1666,7 @@ export default function ReportesPage() {
                 <p className="mt-2.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50 md:text-xl">
                   {formatCurrency(metrics.grossProfit)}
                 </p>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Por ventas del período</p>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Ventas y abonos del período</p>
               </button>
             )}
 
