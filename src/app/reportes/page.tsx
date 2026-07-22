@@ -124,6 +124,9 @@ export default function ReportesPage() {
   const [allSales, setAllSales] = useState<Sale[]>([])
   /** Ventas fuera de la ventana del dashboard, cargadas solo para margen de abonos. */
   const [abonoSalesLookup, setAbonoSalesLookup] = useState<Sale[]>([])
+  /** Margen de abonos calculado en servidor (fuente de verdad; evita ventana de 15 días / RLS). */
+  const [abonoGrossProfit, setAbonoGrossProfit] = useState(0)
+  const [abonoGrossProfitFromApi, setAbonoGrossProfitFromApi] = useState(false)
   const [allWarranties, setAllWarranties] = useState<any[]>([])
   const [allCredits, setAllCredits] = useState<any[]>([])
   const [allClients, setAllClients] = useState<any[]>([])
@@ -335,6 +338,36 @@ export default function ReportesPage() {
         }
       }
 
+      // Ganancia bruta de abonos: cálculo en servidor (service role) para el período de métricas.
+      // El cliente solo tiene ventas de ~15 días; los abonos de créditos viejos quedaban en $0.
+      let apiAbonoProfit = 0
+      let apiAbonoOk = false
+      try {
+        const metricStart = startDate || chartStartDate
+        const storeIdForApi = getCurrentUserStoreId()
+        const res = await withTimeout(
+          fetch('/api/reportes/abono-gross-profit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              storeId: storeIdForApi,
+              startDate: metricStart.toISOString(),
+              endDate: finalEndDate.toISOString(),
+            }),
+          }),
+          20000
+        )
+        if (res.ok) {
+          const payload = await res.json()
+          apiAbonoProfit = Number(payload.grossProfit) || 0
+          apiAbonoOk = true
+        } else {
+          console.error('⚠️ [DASHBOARD] abono-gross-profit HTTP', res.status)
+        }
+      } catch (error) {
+        console.error('⚠️ [DASHBOARD] abono-gross-profit falló:', error)
+      }
+
       // Resumen de ventas calculado desde la lista (evita getDashboardSummary y sus N requests)
       let cashRevenue = 0
       let transferRevenue = 0
@@ -365,6 +398,8 @@ export default function ReportesPage() {
 
       setAllSales(sales)
       setAbonoSalesLookup(abonoSales)
+      setAbonoGrossProfit(apiAbonoProfit)
+      setAbonoGrossProfitFromApi(apiAbonoOk)
       setAllWarranties(warranties)
       setAllCredits(credits)
       setAllProducts([])
@@ -421,6 +456,8 @@ export default function ReportesPage() {
     setSpecificProductsCache(new Map())
     setAllProducts([])
     setAbonoSalesLookup([])
+    setAbonoGrossProfit(0)
+    setAbonoGrossProfitFromApi(false)
     loadDashboardData(true, dateFilter, specificDate, selectedYear)
   }
 
@@ -915,8 +952,8 @@ export default function ReportesPage() {
     }, 0)
 
     // Ganancia bruta por abonos de crédito (proporcional al monto abonado en el período).
-    // salesById incluye ventas antiguas cargadas vía abonoSalesLookup.
-    const grossProfitFromCreditPayments = validPaymentRecords.reduce((sum, payment) => {
+    // Preferir cálculo del API (service role). Fallback local si el API falló.
+    const grossProfitFromCreditPaymentsLocal = validPaymentRecords.reduce((sum, payment) => {
       const saleId = payment.saleId
       if (!saleId) return sum
 
@@ -924,15 +961,19 @@ export default function ReportesPage() {
       if (!sale || sale.status === 'cancelled' || sale.status === 'draft') return sum
 
       const credit = creditBySaleId.get(saleId)
-      if (!credit || credit.status === 'cancelled') return sum
-      if (credit.totalAmount === 0 && credit.pendingAmount === 0) return sum
+      if (credit?.status === 'cancelled') return sum
 
       const saleMargin = computeSaleGrossMargin(sale, productLookup)
-      const creditBase = credit.totalAmount || sale.total || 0
+      const creditBase =
+        credit && credit.totalAmount > 0 ? credit.totalAmount : sale.total || 0
       if (creditBase <= 0 || payment.amount <= 0) return sum
 
       return sum + saleMargin * (payment.amount / creditBase)
     }, 0)
+
+    const grossProfitFromCreditPayments = abonoGrossProfitFromApi
+      ? abonoGrossProfit
+      : grossProfitFromCreditPaymentsLocal
 
     const grossProfit = grossProfitFromSales + grossProfitFromCreditPayments
 
@@ -1149,6 +1190,8 @@ export default function ReportesPage() {
     filteredData,
     allSales,
     abonoSalesLookup,
+    abonoGrossProfit,
+    abonoGrossProfitFromApi,
     allProducts,
     allClients,
     allWarranties,

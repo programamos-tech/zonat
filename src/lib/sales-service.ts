@@ -668,10 +668,11 @@ export class SalesService {
           `)
           .in('id', batch)
 
-        if (storeId && !canAccessAllStores(user)) {
+        if (storeId && storeId !== MAIN_STORE_ID) {
+          // Microtienda (incl. admin/superadmin viendo esa tienda): solo esas ventas
           query = query.eq('store_id', storeId)
         } else if (!storeId || storeId === MAIN_STORE_ID) {
-          // Misma regla que getDashboardSales para tienda principal
+          // Tienda principal
           if (!canAccessAllStores(user)) {
             query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
           }
