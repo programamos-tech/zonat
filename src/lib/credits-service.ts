@@ -1099,8 +1099,39 @@ export class CreditsService {
       const { data, error } = await query.limit(10000)
 
       if (error) throw error
+      if (!data?.length) return []
 
-      return data.map((payment) => mapPaymentRecordFromRow(payment as PaymentRecordRow, null))
+      const rows = data as PaymentRecordRow[]
+      const needsSaleId = rows.filter((row) => {
+        const rel = row.payments
+        const saleId = Array.isArray(rel) ? rel[0]?.sale_id : rel?.sale_id
+        return !saleId && row.payment_id
+      })
+
+      const saleIdByPaymentId = new Map<string, string>()
+      if (needsSaleId.length > 0) {
+        const paymentIds = Array.from(new Set(needsSaleId.map((r) => r.payment_id)))
+        const CHUNK = 100
+        for (let i = 0; i < paymentIds.length; i += CHUNK) {
+          const chunk = paymentIds.slice(i, i + CHUNK)
+          const { data: paymentsData } = await supabaseAdmin
+            .from('payments')
+            .select('id, sale_id')
+            .in('id', chunk)
+          for (const p of paymentsData || []) {
+            if (p.sale_id) saleIdByPaymentId.set(p.id, p.sale_id)
+          }
+        }
+      }
+
+      return rows.map((payment) => {
+        const mapped = mapPaymentRecordFromRow(payment, null)
+        if (!mapped.saleId && payment.payment_id) {
+          const resolved = saleIdByPaymentId.get(payment.payment_id)
+          if (resolved) mapped.saleId = resolved
+        }
+        return mapped
+      })
     } catch (error) {
       // Error silencioso en producción
       return []

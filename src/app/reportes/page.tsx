@@ -75,7 +75,10 @@ const dashToolbarButtonClass =
 const INCOME_TREND_CHART_DAYS = 15
 const INCOME_TREND_FETCH_OFFSET = INCOME_TREND_CHART_DAYS - 1
 
-/** Margen bruto total de una venta (precio con descuento − costo) × cantidad. */
+/** Margen bruto total de una venta (precio con descuento − costo de adquisición) × cantidad.
+ * Si el producto no tiene costo cargado, cost=0 y el margen equivale al precio de venta
+ * (mejor que fingir cost=price, que dejaba la ganancia en $0 en microtiendas).
+ */
 function computeSaleGrossMargin(
   sale: Sale,
   productLookup: (productId: string) => { cost?: number | null } | undefined
@@ -83,7 +86,8 @@ function computeSaleGrossMargin(
   if (!sale.items?.length) return 0
 
   return sale.items.reduce((itemProfit, item) => {
-    const cost = productLookup(item.productId)?.cost || 0
+    const rawCost = productLookup(item.productId)?.cost
+    const cost = rawCost != null && Number(rawCost) > 0 ? Number(rawCost) : 0
     const baseTotal = item.quantity * item.unitPrice
     const discountAmount =
       item.discountType === 'percentage'

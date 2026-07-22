@@ -909,18 +909,16 @@ export class ProductsService {
     }
 
     const results = rawResults.map((product: { id: string; name: string; reference: string | null; cost: number | null; price: number | null }) => {
-      let productCost = product.cost != null ? Number(product.cost) : 0
+      let productCost = product.cost != null && Number(product.cost) > 0 ? Number(product.cost) : 0
       let productPrice = product.price != null ? Number(product.price) : 0
       if (!isMainStore && currentStoreId) {
         const storeStockCostPrice = costPriceMap.get(product.id)
         if (storeStockCostPrice) {
-          productCost = (storeStockCostPrice.cost !== null && storeStockCostPrice.cost !== 0)
-            ? storeStockCostPrice.cost
-            : (product.price != null ? Number(product.price) : 0)
-          productPrice = storeStockCostPrice.price !== null ? storeStockCostPrice.price : 0
-        } else {
-          productCost = product.price != null ? Number(product.price) : 0
-          productPrice = 0
+          // Solo costo real de adquisición. NUNCA usar price como cost:
+          // eso dejaba ganancia bruta en ~$0 en reportes de microtiendas.
+          const storeCost = storeStockCostPrice.cost != null ? Number(storeStockCostPrice.cost) : 0
+          productCost = storeCost > 0 ? storeCost : productCost
+          productPrice = storeStockCostPrice.price !== null ? Number(storeStockCostPrice.price) : productPrice
         }
       }
       return {
