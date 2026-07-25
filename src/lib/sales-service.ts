@@ -912,7 +912,9 @@ export class SalesService {
           // Si no, obtenerla del crédito recién creado
           try {
             const { CreditsService } = await import('./credits-service')
-            const credit = await CreditsService.getCreditByInvoiceNumber(invoiceNumber)
+            const credit =
+              (await CreditsService.getCreditBySaleId(sale.id)) ||
+              (await CreditsService.getCreditByInvoiceNumber(invoiceNumber))
             if (credit && credit.dueDate) {
               creditDueDate = credit.dueDate
             }

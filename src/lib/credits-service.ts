@@ -1138,10 +1138,12 @@ export class CreditsService {
     }
   }
 
-  // Obtener crédito por número de factura
+  // Obtener crédito por número de factura.
+  // Puede haber varios (anulados + activo); nunca usar .single().
   static async getCreditByInvoiceNumber(invoiceNumber: string): Promise<Credit | null> {
     try {
-      const user = getCurrentUser()
+      if (!invoiceNumber) return null
+
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -1149,26 +1151,28 @@ export class CreditsService {
         .from('credits')
         .select('*')
         .eq('invoice_number', invoiceNumber)
+        .order('created_at', { ascending: false })
+        .limit(50)
 
       // Filtrar por store_id:
       // - Si storeId es null o MAIN_STORE_ID, solo mostrar créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
       // - Si storeId es una microtienda, solo mostrar créditos de esa microtienda
       if (!storeId || storeId === MAIN_STORE_ID) {
-        // Tienda principal: solo créditos de la tienda principal (store_id = MAIN_STORE_ID o null)
         query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
       } else {
-        // Microtienda: solo créditos de esa microtienda
         query = query.eq('store_id', storeId)
       }
 
-      const { data, error } = await query.single()
+      const { data: rows, error } = await query
 
-      if (error) {
-        if (error.code === 'PGRST116') {
-          return null // No encontrado
-        }
-        throw error
-      }
+      if (error) throw error
+      if (!rows?.length) return null
+
+      // Preferir crédito activo (no anulado); si todos están anulados, el más reciente.
+      const active = rows.find(
+        (c) => c.status === 'pending' || c.status === 'partial' || c.status === 'completed'
+      )
+      const data = active || rows[0]
 
       return {
         id: data.id,

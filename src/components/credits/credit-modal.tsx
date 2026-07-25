@@ -517,12 +517,15 @@ export function CreditModal({ isOpen, onClose, onCreateCredit }: CreditModalProp
       
       // Si NO es borrador, obtener el crédito creado automáticamente por el SalesService
       if (!isDraft) {
-        const newCredit = await CreditsService.getCreditByInvoiceNumber(newSale.invoiceNumber)
-        
+        // Preferir saleId (1:1). invoice_number puede repetirse (créditos anulados).
+        let newCredit =
+          (await CreditsService.getCreditBySaleId(newSale.id)) ||
+          (await CreditsService.getCreditByInvoiceNumber(newSale.invoiceNumber))
+
         if (!newCredit) {
           throw new Error('No se pudo encontrar el crédito creado')
         }
-        
+
         onCreateCredit(newCredit)
         handleClose()
       } else {
