@@ -494,6 +494,7 @@ export class SalesService {
           sellerEmail: sale.seller_email,
           storeId: sale.store_id || undefined,
           createdAt: sale.created_at,
+          updatedAt: sale.updated_at || sale.created_at,
           items: itemsWithReferences,
           cancellationReason: sale.cancellation_reason || undefined
         }
@@ -503,6 +504,94 @@ export class SalesService {
     } catch (error) {
       // Error silencioso en producción
       throw error
+    }
+  }
+
+  /**
+   * Ventas anuladas cuya cancelación (updated_at) cae en el rango.
+   * Usado en Reportes para alinear KPI/modal con el filtro de período.
+   */
+  static async getCancelledSalesByDateRange(startDate: Date, endDate: Date): Promise<Sale[]> {
+    try {
+      const storeId = getCurrentUserStoreId()
+      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+
+      const startLocal = new Date(
+        startDate.getFullYear(),
+        startDate.getMonth(),
+        startDate.getDate(),
+        0, 0, 0, 0
+      )
+      const endLocal = new Date(
+        endDate.getFullYear(),
+        endDate.getMonth(),
+        endDate.getDate(),
+        23, 59, 59, 999
+      )
+
+      let query = supabase
+        .from('sales')
+        .select(
+          `
+            id,
+            client_id,
+            client_name,
+            total,
+            subtotal,
+            tax,
+            discount,
+            discount_type,
+            status,
+            payment_method,
+            invoice_number,
+            seller_id,
+            seller_name,
+            seller_email,
+            store_id,
+            created_at,
+            updated_at,
+            cancellation_reason
+          `
+        )
+        .eq('status', 'cancelled')
+        .gte('updated_at', startLocal.toISOString())
+        .lte('updated_at', endLocal.toISOString())
+        .order('updated_at', { ascending: false })
+        .limit(500)
+
+      if (!storeId || storeId === MAIN_STORE_ID) {
+        query = query.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+      } else {
+        query = query.eq('store_id', storeId)
+      }
+
+      const { data, error } = await query
+      if (error) throw error
+
+      return (data || []).map((sale: any) => ({
+        id: sale.id,
+        clientId: sale.client_id,
+        clientName: sale.client_name,
+        total: sale.total,
+        subtotal: sale.subtotal,
+        tax: sale.tax,
+        discount: sale.discount,
+        discountType: sale.discount_type || 'amount',
+        status: sale.status,
+        paymentMethod: sale.payment_method,
+        invoiceNumber: sale.invoice_number,
+        sellerId: sale.seller_id,
+        sellerName: sale.seller_name,
+        sellerEmail: sale.seller_email,
+        storeId: sale.store_id || undefined,
+        createdAt: sale.created_at,
+        updatedAt: sale.updated_at || sale.created_at,
+        items: [],
+        cancellationReason: sale.cancellation_reason || undefined,
+      }))
+    } catch (error) {
+      console.error('[SalesService.getCancelledSalesByDateRange]', error)
+      return []
     }
   }
 

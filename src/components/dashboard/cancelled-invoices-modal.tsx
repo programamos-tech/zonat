@@ -1,11 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent } from '@/components/ui/card'
-import { X, XCircle, DollarSign, User, FileText, Calendar } from 'lucide-react'
+import { X, XCircle, User, FileText, Calendar } from 'lucide-react'
 import { cn } from '@/lib/utils'
-import { cardShell } from '@/lib/card-shell'
 import { Sale } from '@/types'
 import { supabaseAdmin } from '@/lib/supabase'
 
@@ -19,34 +18,36 @@ interface CancelledInvoiceInfo extends Sale {
 interface CancelledInvoicesModalProps {
   isOpen: boolean
   onClose: () => void
+  /** Ventas ya filtradas al período de Reportes (anuladas en ese rango). */
   sales: Sale[]
-  allSales?: Sale[]
+  periodLabel?: string
 }
 
-const overlayClass =
-  'fixed inset-0 z-[60] flex items-stretch justify-center bg-black/45 p-0 backdrop-blur-sm sm:items-center sm:p-4 sm:pb-[max(1rem,env(safe-area-inset-bottom))] sm:pt-[max(1rem,env(safe-area-inset-top))] xl:left-60'
-
-const shellClass =
-  'flex h-full max-h-[100dvh] w-full flex-col overflow-hidden border-0 border-zinc-200 bg-white shadow-none dark:border-zinc-700 dark:bg-zinc-900 sm:h-auto sm:max-h-[min(90dvh,880px)] sm:max-w-[min(56rem,calc(100vw-2rem))] sm:rounded-2xl sm:border sm:shadow-2xl'
-
-const labelUpper = 'text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400'
-
-export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: CancelledInvoicesModalProps) {
+export function CancelledInvoicesModal({
+  isOpen,
+  onClose,
+  sales,
+  periodLabel,
+}: CancelledInvoicesModalProps) {
   const [isLoading, setIsLoading] = useState(false)
   const [cancelledInvoices, setCancelledInvoices] = useState<CancelledInvoiceInfo[]>([])
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
       loadCancellationInfo()
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, sales, allSales])
+  }, [isOpen, sales])
 
   const loadCancellationInfo = async () => {
     setIsLoading(true)
     try {
-      const salesSource = allSales?.length ? allSales : sales
-      const cancelledSales = salesSource.filter(sale => sale.status === 'cancelled')
+      const cancelledSales = sales.filter((sale) => sale.status === 'cancelled')
 
       let cancellationLogs: any[] = []
 
@@ -70,6 +71,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
           .eq('action', 'sale_cancel')
           .eq('module', 'sales')
           .order('created_at', { ascending: false })
+          .limit(500)
 
         if (error) {
           const { data: logsWithoutJoin, error: errorWithoutJoin } = await supabaseAdmin
@@ -78,13 +80,19 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
             .eq('action', 'sale_cancel')
             .eq('module', 'sales')
             .order('created_at', { ascending: false })
+            .limit(500)
 
           if (!errorWithoutJoin && logsWithoutJoin) {
-            const userIds = [...new Set(logsWithoutJoin.map((log: any) => log.user_id).filter(Boolean))]
+            const userIds = [
+              ...new Set(logsWithoutJoin.map((log: any) => log.user_id).filter(Boolean)),
+            ]
             const userNames: { [key: string]: string } = {}
 
             if (userIds.length > 0) {
-              const { data: users } = await supabaseAdmin.from('users').select('id, name').in('id', userIds)
+              const { data: users } = await supabaseAdmin
+                .from('users')
+                .select('id, name')
+                .in('id', userIds)
 
               if (users) {
                 users.forEach((user: any) => {
@@ -106,11 +114,11 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
               return {
                 id: log.id,
                 user_id: log.user_id,
-                action: log.action,
-                module: log.module,
                 details: parsedDetails,
                 created_at: log.created_at,
-                user_name: log.user_id ? userNames[log.user_id] || 'Usuario Desconocido' : 'Usuario Desconocido',
+                user_name: log.user_id
+                  ? userNames[log.user_id] || 'Usuario desconocido'
+                  : 'Usuario desconocido',
               }
             })
           }
@@ -128,14 +136,12 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
             return {
               id: log.id,
               user_id: log.user_id,
-              action: log.action,
-              module: log.module,
               details: parsedDetails,
               created_at: log.created_at,
               user_name:
                 log.users && typeof log.users === 'object' && log.users.name
                   ? String(log.users.name)
-                  : 'Usuario Desconocido',
+                  : 'Usuario desconocido',
             }
           })
         }
@@ -143,8 +149,8 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
         console.warn('[CancelledInvoicesModal] Error fetching cancellation logs:', err)
       }
 
-      const invoicesWithInfo: CancelledInvoiceInfo[] = cancelledSales.map(sale => {
-        const cancellationLog = cancellationLogs.find(log => {
+      const invoicesWithInfo: CancelledInvoiceInfo[] = cancelledSales.map((sale) => {
+        const cancellationLog = cancellationLogs.find((log) => {
           const details = log.details || {}
           if (details.saleId === sale.id) return true
           if (sale.invoiceNumber && details.invoiceNumber === sale.invoiceNumber) return true
@@ -155,7 +161,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
           return false
         })
 
-        let reason = 'No especificado'
+        let reason = sale.cancellationReason || 'No especificado'
         if (cancellationLog?.details) {
           const details = cancellationLog.details
           if (details.reason) {
@@ -163,7 +169,7 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
           } else if (details.description) {
             const desc = String(details.description)
             const motivoMatch = desc.match(/Motivo:\s*(.+?)(?:\s*-|$)/i)
-            if (motivoMatch && motivoMatch[1]) {
+            if (motivoMatch?.[1]) {
               reason = motivoMatch[1].trim()
             } else if (desc.includes('Motivo:')) {
               reason = desc.split('Motivo:')[1]?.split('-')[0]?.trim() || desc
@@ -175,77 +181,79 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
           ...sale,
           cancellationReason: reason,
           cancelledBy: cancellationLog?.user_id || sale.sellerId,
-          cancelledByName: cancellationLog?.user_name || sale.sellerName || 'Usuario desconocido',
+          cancelledByName:
+            cancellationLog?.user_name || sale.sellerName || 'Usuario desconocido',
           cancelledAt: cancellationLog?.created_at || sale.updatedAt || sale.createdAt,
         }
       })
 
       invoicesWithInfo.sort((a, b) => {
-        const dateA = new Date(a.cancelledAt || a.createdAt).getTime()
-        const dateB = new Date(b.cancelledAt || b.createdAt).getTime()
+        const dateA = new Date(a.cancelledAt || a.updatedAt || a.createdAt).getTime()
+        const dateB = new Date(b.cancelledAt || b.updatedAt || b.createdAt).getTime()
         return dateB - dateA
       })
 
       setCancelledInvoices(invoicesWithInfo)
     } catch {
-      const salesSource = allSales?.length ? allSales : sales
-      const cancelledSales = salesSource
-        .filter(sale => sale.status === 'cancelled')
-        .map(sale => ({
-          ...sale,
-          cancellationReason: 'No disponible',
-          cancelledByName: sale.sellerName || 'Usuario desconocido',
-          cancelledAt: sale.updatedAt || sale.createdAt,
-        }))
-        .sort((a, b) => {
-          const dateA = new Date(a.cancelledAt || a.createdAt).getTime()
-          const dateB = new Date(b.cancelledAt || b.createdAt).getTime()
-          return dateB - dateA
-        })
-      setCancelledInvoices(cancelledSales)
+      setCancelledInvoices(
+        sales
+          .filter((sale) => sale.status === 'cancelled')
+          .map((sale) => ({
+            ...sale,
+            cancellationReason: sale.cancellationReason || 'No disponible',
+            cancelledByName: sale.sellerName || 'Usuario desconocido',
+            cancelledAt: sale.updatedAt || sale.createdAt,
+          }))
+          .sort((a, b) => {
+            const dateA = new Date(a.cancelledAt || a.createdAt).getTime()
+            const dateB = new Date(b.cancelledAt || b.createdAt).getTime()
+            return dateB - dateA
+          })
+      )
     } finally {
       setIsLoading(false)
     }
   }
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-CO', {
+  const formatCurrency = (amount: number) =>
+    new Intl.NumberFormat('es-CO', {
       style: 'currency',
       currency: 'COP',
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount)
-  }
 
   const totalLostValue = cancelledInvoices.reduce((sum, invoice) => sum + invoice.total, 0)
 
-  if (!isOpen) return null
+  if (!isOpen || !mounted) return null
 
-  return (
-    <div className={overlayClass} role="presentation">
+  const modal = (
+    <div
+      className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center p-3 backdrop-blur-sm sm:p-4 xl:left-60"
+      role="presentation"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose()
+      }}
+    >
       <div
-        className={shellClass}
+        className="zonat-preserve-surface flex max-h-[min(90dvh,calc(100dvh-2rem))] w-full max-w-[min(36rem,calc(100vw-1.5rem))] flex-col overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-2xl dark:border-zinc-700 dark:bg-zinc-900"
         role="dialog"
         aria-modal="true"
         aria-labelledby="cancelled-invoices-title"
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex shrink-0 items-center justify-between border-b border-zinc-200 bg-zinc-50/95 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/90 sm:px-5 sm:py-4">
-          <div className="flex min-w-0 flex-1 items-center gap-3">
-            <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-rose-200/90 bg-rose-50 dark:border-rose-900/45 dark:bg-rose-950/40"
-              aria-hidden
-            >
-              <XCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" strokeWidth={1.5} />
-            </div>
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-zinc-200/90 px-4 py-3 dark:border-zinc-800">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <XCircle className="h-5 w-5 shrink-0 text-brand-coral" strokeWidth={1.5} aria-hidden />
             <div className="min-w-0">
               <h2
                 id="cancelled-invoices-title"
-                className="truncate text-lg font-semibold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-xl"
+                className="truncate text-base font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-50"
               >
                 Facturas anuladas
               </h2>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
-                Detalle de ventas canceladas en el periodo
+              <p className="mt-0.5 truncate text-[11px] text-zinc-500 dark:text-zinc-400">
+                {periodLabel ? `Período: ${periodLabel}` : 'Ventas canceladas del período'}
               </p>
             </div>
           </div>
@@ -254,164 +262,128 @@ export function CancelledInvoicesModal({ isOpen, onClose, sales, allSales }: Can
             onClick={onClose}
             variant="ghost"
             size="sm"
-            className="h-9 w-9 shrink-0 rounded-lg p-0 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-100"
+            className="h-8 min-h-0 w-8 shrink-0 rounded-lg p-0 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
             aria-label="Cerrar"
           >
             <X className="h-5 w-5" strokeWidth={1.5} />
           </Button>
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-          {/* Resumen */}
-          <aside className="shrink-0 border-b border-zinc-200 bg-zinc-50/60 px-4 py-4 dark:border-zinc-800 dark:bg-zinc-950/40 md:w-72 md:border-b-0 md:border-r lg:w-80">
-            <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
-              <Card className={cn(cardShell, 'shadow-none')}>
-                <CardContent className="p-4">
-                  <div className="mb-3 flex items-start justify-between gap-2">
-                    <div
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-rose-200/80 bg-rose-50/90 dark:border-rose-900/40 dark:bg-rose-950/35"
-                      aria-hidden
-                    >
-                      <XCircle className="h-4 w-4 text-rose-600 dark:text-rose-400" strokeWidth={1.5} />
-                    </div>
-                    <span className={cn(labelUpper, 'text-right leading-tight')}>Total anuladas</span>
-                  </div>
-                  <p className="text-2xl font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50">
-                    {cancelledInvoices.length}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Facturas con estado cancelado</p>
-                </CardContent>
-              </Card>
-
-              <Card className={cn(cardShell, 'shadow-none')}>
-                <CardContent className="p-4">
-                  <div className="mb-3 flex items-start justify-between gap-2">
-                    <div
-                      className="flex h-9 w-9 items-center justify-center rounded-lg border border-amber-200/80 bg-amber-50/90 dark:border-amber-900/35 dark:bg-amber-950/30"
-                      aria-hidden
-                    >
-                      <DollarSign className="h-4 w-4 text-amber-700 dark:text-amber-400" strokeWidth={1.5} />
-                    </div>
-                    <span className={cn(labelUpper, 'text-right leading-tight')}>Valor perdido</span>
-                  </div>
-                  <p className="text-xl font-semibold tabular-nums tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-2xl">
-                    {formatCurrency(totalLostValue)}
-                  </p>
-                  <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">Total en facturas anuladas</p>
-                </CardContent>
-              </Card>
-            </div>
-          </aside>
-
-          {/* Lista */}
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
-            <div className="mb-4 flex items-center gap-2 border-b border-zinc-200 pb-3 dark:border-zinc-800">
-              <FileText className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-              <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">Listado</h3>
-            </div>
-
-            {isLoading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <div
-                  className="mb-3 h-9 w-9 animate-spin rounded-full border-2 border-zinc-200 border-t-zinc-600 dark:border-zinc-700 dark:border-t-zinc-300"
-                  aria-hidden
-                />
-                <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando información…</p>
-              </div>
-            ) : cancelledInvoices.length > 0 ? (
-              <ul className="space-y-3">
-                {cancelledInvoices.map(invoice => (
-                  <li
-                    key={invoice.id}
-                    className={cn(
-                      cardShell,
-                      'overflow-hidden transition-shadow duration-150 hover:shadow-md dark:hover:border-zinc-700'
-                    )}
-                  >
-                    <div className="border-b border-zinc-100 bg-zinc-50/50 px-4 py-3 dark:border-zinc-800 dark:bg-zinc-900/30 sm:flex sm:items-start sm:justify-between sm:gap-4">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                          {invoice.invoiceNumber || 'Sin número'}
-                        </span>
-                        <span className="rounded-md border border-rose-200/90 bg-rose-50 px-2 py-0.5 text-[11px] font-medium text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/50 dark:text-rose-200">
-                          Anulada
-                        </span>
-                      </div>
-                      <div className="mt-2 text-left sm:mt-0 sm:text-right">
-                        <p className="text-base font-semibold tabular-nums text-rose-700 dark:text-rose-400 sm:text-lg">
-                          {formatCurrency(invoice.total)}
-                        </p>
-                        <p className={cn(labelUpper, 'mt-0.5 normal-case tracking-normal text-zinc-500')}>
-                          Valor perdido
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2.5 px-4 py-3 sm:py-4">
-                      <div className="grid gap-2 sm:grid-cols-2">
-                        <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                          <User className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-                          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Cliente</span>
-                          <span className="min-w-0 truncate font-medium text-zinc-900 dark:text-zinc-100">
-                            {invoice.clientName}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
-                          <User className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-                          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Anulada por</span>
-                          <span className="min-w-0 truncate font-medium text-zinc-900 dark:text-zinc-100">
-                            {invoice.cancelledByName || 'Usuario desconocido'}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300 sm:col-span-2">
-                          <Calendar className="h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" strokeWidth={1.5} />
-                          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">Anulada el</span>
-                          <span className="font-medium tabular-nums text-zinc-900 dark:text-zinc-100">
-                            {new Date(invoice.cancelledAt || invoice.updatedAt || invoice.createdAt).toLocaleString(
-                              'es-CO'
-                            )}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                        <div className="flex gap-2">
-                          <FileText
-                            className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500"
-                            strokeWidth={1.5}
-                          />
-                          <div className="min-w-0 flex-1">
-                            <p className={cn(labelUpper, 'mb-1.5 normal-case tracking-normal')}>Motivo</p>
-                            <p className="rounded-lg border border-zinc-200/90 bg-zinc-50/90 px-3 py-2.5 text-sm leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-950/50 dark:text-zinc-200">
-                              {invoice.cancellationReason || 'No especificado'}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="flex flex-col items-center justify-center py-16 text-center">
-                <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl border border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-900/50">
-                  <XCircle className="h-7 w-7 text-zinc-300 dark:text-zinc-600" strokeWidth={1.5} />
-                </div>
-                <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">No hay facturas anuladas</p>
-                <p className="mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
-                  En este periodo todas las ventas siguen activas.
-                </p>
-              </div>
-            )}
+        <div className="grid shrink-0 grid-cols-2 gap-2 border-b border-zinc-100 px-4 py-3 dark:border-zinc-800">
+          <div className="rounded-lg bg-brand-coral-soft/60 px-3 py-2.5 dark:bg-brand-coral/10">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Anuladas
+            </p>
+            <p className="mt-0.5 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
+              {cancelledInvoices.length}
+            </p>
+          </div>
+          <div className="rounded-lg bg-zinc-50 px-3 py-2.5 dark:bg-zinc-800/50">
+            <p className="text-[10px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Valor perdido
+            </p>
+            <p className="mt-0.5 truncate text-lg font-semibold tabular-nums text-brand-coral">
+              {formatCurrency(totalLostValue)}
+            </p>
           </div>
         </div>
 
-        <div className="flex shrink-0 justify-end gap-2 border-t border-zinc-200 bg-zinc-50/90 px-4 py-3 dark:border-zinc-700 dark:bg-zinc-950/80 sm:px-5 sm:py-4 max-xl:pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-          <Button type="button" variant="outline" size="sm" onClick={onClose} className="min-w-[7rem]">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-3">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-12">
+              <div
+                className="mb-3 h-8 w-8 animate-spin rounded-full border-2 border-zinc-200 border-t-brand-lime dark:border-zinc-700"
+                aria-hidden
+              />
+              <p className="text-sm text-zinc-500 dark:text-zinc-400">Cargando…</p>
+            </div>
+          ) : cancelledInvoices.length > 0 ? (
+            <ul className="space-y-2">
+              {cancelledInvoices.map((invoice) => (
+                <li
+                  key={invoice.id}
+                  className="rounded-lg border border-zinc-200/90 px-3 py-2.5 dark:border-zinc-700/80"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <span className="font-mono text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                          {invoice.invoiceNumber || 'Sin número'}
+                        </span>
+                        <span className="rounded px-1.5 py-0.5 text-[10px] font-medium text-brand-coral bg-brand-coral-soft dark:bg-brand-coral/15">
+                          Anulada
+                        </span>
+                      </div>
+                      <p className="mt-1 flex items-center gap-1.5 truncate text-xs text-zinc-600 dark:text-zinc-400">
+                        <User className="h-3.5 w-3.5 shrink-0" strokeWidth={1.5} />
+                        {invoice.clientName}
+                      </p>
+                    </div>
+                    <p className="shrink-0 text-sm font-semibold tabular-nums text-brand-coral">
+                      {formatCurrency(invoice.total)}
+                    </p>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                    <span className="inline-flex items-center gap-1">
+                      <User className="h-3 w-3" strokeWidth={1.5} />
+                      {invoice.cancelledByName || 'Usuario desconocido'}
+                    </span>
+                    <span className="inline-flex items-center gap-1 tabular-nums">
+                      <Calendar className="h-3 w-3" strokeWidth={1.5} />
+                      {new Date(
+                        invoice.cancelledAt || invoice.updatedAt || invoice.createdAt
+                      ).toLocaleString('es-CO', {
+                        day: '2-digit',
+                        month: '2-digit',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex gap-1.5 border-t border-zinc-100 pt-2 dark:border-zinc-800">
+                    <FileText
+                      className="mt-0.5 h-3.5 w-3.5 shrink-0 text-zinc-400"
+                      strokeWidth={1.5}
+                    />
+                    <p className="min-w-0 flex-1 text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
+                      {invoice.cancellationReason || 'No especificado'}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <XCircle className="mb-3 h-10 w-10 text-zinc-300 dark:text-zinc-600" strokeWidth={1.5} />
+              <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
+                No hay facturas anuladas
+              </p>
+              <p className="mt-1 max-w-xs text-xs text-zinc-500 dark:text-zinc-400">
+                {periodLabel
+                  ? `Ninguna anulación en ${periodLabel.toLowerCase()}.`
+                  : 'En este período todas las ventas siguen activas.'}
+              </p>
+            </div>
+          )}
+        </div>
+
+        <div className="flex shrink-0 justify-end border-t border-zinc-200/90 px-4 py-3 dark:border-zinc-800">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={onClose}
+            className="min-w-[6.5rem] border-zinc-300 dark:border-zinc-600"
+          >
             Cerrar
           </Button>
         </div>
       </div>
     </div>
   )
+
+  return createPortal(modal, document.body)
 }

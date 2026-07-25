@@ -252,6 +252,7 @@ export interface Sale {
   paymentProofDeadline?: string | null
   paymentProofUploadedAt?: string | null
   createdAt: string
+  updatedAt?: string
   items: SaleItem[]
   creditStatus?: 'pending' | 'partial' | 'completed' | 'overdue' | 'cancelled' // Estado del crédito asociado (solo para ventas a crédito)
   cancellationReason?: string // Motivo de cancelación si la venta fue anulada

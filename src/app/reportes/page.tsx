@@ -127,6 +127,8 @@ export default function ReportesPage() {
   /** Margen de abonos calculado en servidor (fuente de verdad; evita ventana de 15 días / RLS). */
   const [abonoGrossProfit, setAbonoGrossProfit] = useState(0)
   const [abonoGrossProfitFromApi, setAbonoGrossProfitFromApi] = useState(false)
+  /** Facturas anuladas en el período del filtro (por fecha de anulación). */
+  const [cancelledSalesInPeriod, setCancelledSalesInPeriod] = useState<Sale[]>([])
   const [allWarranties, setAllWarranties] = useState<any[]>([])
   const [allCredits, setAllCredits] = useState<any[]>([])
   const [allClients, setAllClients] = useState<any[]>([])
@@ -368,6 +370,18 @@ export default function ReportesPage() {
         console.error('⚠️ [DASHBOARD] abono-gross-profit falló:', error)
       }
 
+      // Facturas anuladas del período del filtro (por updated_at = fecha de anulación)
+      let cancelledInPeriod: Sale[] = []
+      try {
+        const metricStart = startDate || chartStartDate
+        cancelledInPeriod = await withTimeout(
+          SalesService.getCancelledSalesByDateRange(metricStart, finalEndDate),
+          15000
+        )
+      } catch (error) {
+        console.error('⚠️ [DASHBOARD] No se pudieron cargar facturas anuladas del período:', error)
+      }
+
       // Resumen de ventas calculado desde la lista (evita getDashboardSummary y sus N requests)
       let cashRevenue = 0
       let transferRevenue = 0
@@ -400,6 +414,7 @@ export default function ReportesPage() {
       setAbonoSalesLookup(abonoSales)
       setAbonoGrossProfit(apiAbonoProfit)
       setAbonoGrossProfitFromApi(apiAbonoOk)
+      setCancelledSalesInPeriod(cancelledInPeriod)
       setAllWarranties(warranties)
       setAllCredits(credits)
       setAllProducts([])
@@ -458,6 +473,7 @@ export default function ReportesPage() {
     setAbonoSalesLookup([])
     setAbonoGrossProfit(0)
     setAbonoGrossProfitFromApi(false)
+    setCancelledSalesInPeriod([])
     loadDashboardData(true, dateFilter, specificDate, selectedYear)
   }
 
@@ -977,12 +993,9 @@ export default function ReportesPage() {
 
     const grossProfit = grossProfitFromSales + grossProfitFromCreditPayments
 
-    // Facturas anuladas: usar allSales (misma ventana que getDashboardSales), no filteredData.sales.
-    // filteredData para "hoy" solo incluye ventas creadas ese día; una factura anulada suele crearse antes.
-    const cancelledSales = allSales.filter(sale => sale.status === 'cancelled').length
-    const lostValue = allSales
-      .filter(sale => sale.status === 'cancelled')
-      .reduce((sum, sale) => sum + sale.total, 0)
+    // Facturas anuladas: solo las anuladas en el período del filtro (no toda la ventana de 15 días).
+    const cancelledSales = cancelledSalesInPeriod.length
+    const lostValue = cancelledSalesInPeriod.reduce((sum, sale) => sum + (sale.total || 0), 0)
 
     // OPTIMIZADO: Usar métricas optimizadas de inventario en lugar de calcular desde allProducts
     // Estas métricas ya vienen de getInventoryMetrics() que es mucho más rápido
@@ -1192,6 +1205,7 @@ export default function ReportesPage() {
     abonoSalesLookup,
     abonoGrossProfit,
     abonoGrossProfitFromApi,
+    cancelledSalesInPeriod,
     allProducts,
     allClients,
     allWarranties,
@@ -2174,8 +2188,8 @@ export default function ReportesPage() {
         <CancelledInvoicesModal
           isOpen={showCancelledModal}
           onClose={() => setShowCancelledModal(false)}
-          sales={filteredData.sales}
-          allSales={allSales}
+          sales={cancelledSalesInPeriod}
+          periodLabel={periodLabelShort}
         />
       </div>
     </RoleProtectedRoute>
