@@ -35,13 +35,17 @@ function SectionCard({
   )
 }
 
+export type StockAdjustmentEntry = {
+  location: 'warehouse' | 'store'
+  newQuantity: number
+}
+
 interface StockAdjustmentModalProps {
   isOpen: boolean
   onClose: () => void
   onAdjust: (
     productId: string,
-    location: 'warehouse' | 'store',
-    newQuantity: number,
+    adjustments: StockAdjustmentEntry[],
     reason: string
   ) => Promise<void>
   product?: Product | null
@@ -50,6 +54,7 @@ interface StockAdjustmentModalProps {
 export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: StockAdjustmentModalProps) {
   const { user } = useAuth()
   const [portalReady, setPortalReady] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
 
   useEffect(() => {
     setPortalReady(true)
@@ -71,8 +76,8 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
 
   const isMainStore = !user?.storeId || user.storeId === MAIN_STORE_ID
   const [formData, setFormData] = useState({
-    location: 'store' as 'warehouse' | 'store',
-    newQuantity: 0,
+    storeQuantity: 0,
+    warehouseQuantity: 0,
     reason: '',
   })
 
@@ -100,34 +105,47 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
   }
 
   useEffect(() => {
-    if (product) {
+    if (product && isOpen) {
       setFormData({
-        location: 'store',
-        newQuantity: 0,
+        storeQuantity: product.stock.store,
+        warehouseQuantity: product.stock.warehouse,
         reason: '',
       })
       setErrors({})
+      setSubmitting(false)
     }
-  }, [product])
+  }, [product, isOpen])
 
-  const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }))
+  const handleQuantityChange = (field: 'storeQuantity' | 'warehouseQuantity', rawValue: string) => {
+    const numericValue = rawValue.trim() === '' ? 0 : parseFormattedNumber(rawValue)
+    setFormData(prev => ({ ...prev, [field]: numericValue }))
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }))
     }
   }
 
+  const storeDiff = product ? formData.storeQuantity - product.stock.store : 0
+  const warehouseDiff = product ? formData.warehouseQuantity - product.stock.warehouse : 0
+  const storeChanged = product ? formData.storeQuantity !== product.stock.store : false
+  const warehouseChanged = product && isMainStore ? formData.warehouseQuantity !== product.stock.warehouse : false
+  const hasAnyChange = storeChanged || warehouseChanged
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!product) return
+    if (!product || submitting) return
 
     const newErrors: Record<string, string> = {}
 
-    if (formData.newQuantity < 0) {
-      newErrors.newQuantity = 'La cantidad no puede ser negativa'
+    if (formData.storeQuantity < 0) {
+      newErrors.storeQuantity = 'La cantidad no puede ser negativa'
     }
-
+    if (isMainStore && formData.warehouseQuantity < 0) {
+      newErrors.warehouseQuantity = 'La cantidad no puede ser negativa'
+    }
+    if (!hasAnyChange) {
+      newErrors.general = 'No hay cambios que guardar. Modifica Local y/o Bodega.'
+    }
     if (formData.reason.trim() && formData.reason.trim().length < 10) {
       newErrors.reason = 'Si proporcionas una razón, debe tener al menos 10 caracteres'
     }
@@ -137,36 +155,31 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
       return
     }
 
+    const adjustments: StockAdjustmentEntry[] = []
+    if (storeChanged) {
+      adjustments.push({ location: 'store', newQuantity: formData.storeQuantity })
+    }
+    if (warehouseChanged) {
+      adjustments.push({ location: 'warehouse', newQuantity: formData.warehouseQuantity })
+    }
+
+    setSubmitting(true)
     try {
-      await onAdjust(product.id, formData.location, formData.newQuantity, formData.reason)
+      await onAdjust(product.id, adjustments, formData.reason)
     } catch (error) {
       console.error('Error in stock adjustment:', error)
+    } finally {
+      setSubmitting(false)
     }
-  }
-
-  const getCurrentStock = () => {
-    if (!product) return 0
-    return formData.location === 'warehouse' ? product.stock.warehouse : product.stock.store
-  }
-
-  const getStockDifference = () => {
-    return formData.newQuantity - getCurrentStock()
-  }
-
-  const getLocationLabel = (location: 'warehouse' | 'store') => {
-    return location === 'warehouse' ? 'Bodega' : 'Local'
   }
 
   if (!isOpen || !product) return null
   if (!portalReady || typeof document === 'undefined') return null
 
-  const difference = getStockDifference()
-  const hasDifference = formData.newQuantity !== getCurrentStock()
-
   return createPortal(
     <div className="zonat-modal-scrim fixed inset-0 z-[100] flex items-center justify-center overflow-hidden overscroll-none px-3 py-3 sm:py-5 xl:left-60">
       <div
-        className="zonat-preserve-surface flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(68rem,calc(100vw-1.5rem))] touch-auto flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/95 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-950/95 sm:max-h-[calc(100dvh-2.5rem)]"
+        className="zonat-preserve-surface flex max-h-[calc(100dvh-1.5rem)] w-full max-w-[min(40rem,calc(100vw-1.5rem))] touch-auto flex-col overflow-hidden rounded-2xl border border-zinc-200/80 bg-white/95 shadow-2xl dark:border-zinc-700/80 dark:bg-zinc-950/95 sm:max-h-[calc(100dvh-2.5rem)]"
         role="dialog"
         aria-modal="true"
         aria-labelledby="stock-adjust-title"
@@ -182,7 +195,9 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
                 Ajustar stock
               </h2>
               <p className="truncate text-xs text-zinc-500 dark:text-zinc-400">
-                Modificar inventario del producto
+                {isMainStore
+                  ? 'Puedes actualizar Local y Bodega a la vez'
+                  : 'Actualiza el stock del Local'}
               </p>
             </div>
           </div>
@@ -197,191 +212,189 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
         </header>
 
         <form className="flex min-h-0 flex-1 flex-col" onSubmit={handleSubmit}>
-          <div className="min-h-0 flex-1 touch-pan-y overflow-y-auto overscroll-contain px-4 py-3 md:px-5 md:py-4">
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              <SectionCard title="Información del producto">
-                <div className="space-y-3">
-                  <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                    <div>
-                      <span className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                        Producto
-                      </span>
-                      <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{product.name}</p>
-                    </div>
-                    <div>
-                      <span className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
-                        Referencia
-                      </span>
-                      <p className="font-mono text-sm text-zinc-900 dark:text-zinc-50">{product.reference}</p>
-                    </div>
-                  </div>
-
-                  <div
-                    className={cn('grid gap-2.5', isMainStore ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1')}
-                  >
-                    <div className="rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900/50">
-                      <div className="mb-1 flex items-center gap-1.5">
-                        <Store className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.75} />
-                        <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Local</span>
-                      </div>
-                      <p className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-                        {formatNumber(product.stock.store)}{' '}
-                        <span className="font-normal text-zinc-500">u.</span>
-                      </p>
-                    </div>
-                    {isMainStore && (
-                      <div className="rounded-lg border border-zinc-200 bg-zinc-50/80 px-3 py-2.5 dark:border-zinc-700 dark:bg-zinc-900/50">
-                        <div className="mb-1 flex items-center gap-1.5">
-                          <Package className="h-3.5 w-3.5 text-zinc-400" strokeWidth={1.75} />
-                          <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400">Bodega</span>
-                        </div>
-                        <p className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
-                          {formatNumber(product.stock.warehouse)}{' '}
-                          <span className="font-normal text-zinc-500">u.</span>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </SectionCard>
-
-              <SectionCard title="Configuración del ajuste">
-                <div className="space-y-3">
-                  <div>
-                    <span className="mb-1.5 block text-xs font-medium text-zinc-600 dark:text-zinc-400">
-                      Ubicación a ajustar
-                    </span>
-                    <div
-                      className={cn(
-                        'flex rounded-lg border border-zinc-200 bg-zinc-50 p-0.5 dark:border-zinc-700 dark:bg-zinc-900/50',
-                        !isMainStore && 'max-w-xs'
-                      )}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleInputChange('location', 'store')}
-                        className={cn(
-                          'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors',
-                          formData.location === 'store'
-                            ? 'bg-brand-lime text-white shadow-sm'
-                            : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-                        )}
-                      >
-                        <Store className="h-3.5 w-3.5" strokeWidth={1.75} />
-                        Local
-                      </button>
-                      {isMainStore && (
-                        <button
-                          type="button"
-                          onClick={() => handleInputChange('location', 'warehouse')}
-                          className={cn(
-                            'flex min-h-9 flex-1 items-center justify-center gap-1.5 rounded-md text-sm font-medium transition-colors',
-                            formData.location === 'warehouse'
-                              ? 'bg-brand-coral text-white shadow-sm'
-                              : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-zinc-200'
-                          )}
-                        >
-                          <Package className="h-3.5 w-3.5" strokeWidth={1.75} />
-                          Bodega
-                        </button>
-                      )}
-                    </div>
-                    <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-                      Stock actual en {getLocationLabel(formData.location)}:{' '}
-                      <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
-                        {formatNumber(getCurrentStock())} u.
-                      </span>
-                    </p>
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="stock-adjust-qty"
-                      className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
-                    >
-                      Nueva cantidad <span className="text-zinc-400">*</span>
-                    </label>
-                    <input
-                      id="stock-adjust-qty"
-                      type="text"
-                      value={formData.newQuantity === 0 ? '' : formatNumber(formData.newQuantity)}
-                      onChange={e => {
-                        const rawValue = e.target.value.trim()
-                        const numericValue = rawValue === '' ? 0 : parseFormattedNumber(rawValue)
-                        handleInputChange('newQuantity', numericValue)
-                      }}
-                      className={cn(inputBase, errors.newQuantity && 'border-red-400')}
-                      placeholder="0"
-                    />
-                    {errors.newQuantity && (
-                      <p className="mt-1 text-xs text-red-500">{errors.newQuantity}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="stock-adjust-reason"
-                      className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
-                    >
-                      Razón del ajuste
-                    </label>
-                    <textarea
-                      id="stock-adjust-reason"
-                      value={formData.reason}
-                      onChange={e => handleInputChange('reason', e.target.value)}
-                      className={cn(inputBase, 'min-h-[4rem] resize-y', errors.reason && 'border-red-400')}
-                      placeholder="Ej: Inventario físico, producto dañado… (opcional)"
-                      rows={3}
-                    />
-                    <div className="mt-1 flex items-center justify-between gap-2">
-                      {errors.reason ? (
-                        <p className="text-xs text-red-500">{errors.reason}</p>
-                      ) : (
-                        <span />
-                      )}
-                      <span
-                        className={cn(
-                          'ml-auto text-[11px]',
-                          formData.reason.length > 0 && formData.reason.length < 10
-                            ? 'text-red-500'
-                            : 'text-zinc-500 dark:text-zinc-400'
-                        )}
-                      >
-                        {formData.reason.length > 0
-                          ? `${formData.reason.length}/10 mín.`
-                          : 'Opcional'}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </SectionCard>
-            </div>
-
-            {hasDifference && (
-              <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-zinc-200 bg-zinc-50/80 px-3.5 py-3 dark:border-zinc-700 dark:bg-zinc-900/50">
+          <div className="min-h-0 flex-1 touch-pan-y space-y-3 overflow-y-auto overscroll-contain px-4 py-3 md:px-5 md:py-4">
+            <SectionCard title="Producto">
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Diferencia</p>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {difference > 0 ? 'Incremento' : 'Reducción'} en {getLocationLabel(formData.location)}
-                  </p>
-                </div>
-                <div className="flex items-center gap-1.5">
-                  {difference > 0 ? (
-                    <TrendingUp className="h-4 w-4 text-brand-lime" strokeWidth={1.75} />
-                  ) : (
-                    <TrendingDown className="h-4 w-4 text-brand-coral" strokeWidth={1.75} />
-                  )}
-                  <span
-                    className={cn(
-                      'text-base font-semibold tabular-nums',
-                      difference > 0 ? 'text-brand-lime' : 'text-brand-coral'
-                    )}
-                  >
-                    {difference > 0 ? '+' : ''}
-                    {formatNumber(difference)} u.
+                  <span className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    Nombre
                   </span>
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">{product.name}</p>
+                </div>
+                <div>
+                  <span className="mb-1 block text-xs font-medium text-zinc-500 dark:text-zinc-400">
+                    Referencia
+                  </span>
+                  <p className="font-mono text-sm text-zinc-900 dark:text-zinc-50">{product.reference}</p>
                 </div>
               </div>
+            </SectionCard>
+
+            <SectionCard title="Cantidades">
+              <div className={cn('grid gap-3', isMainStore ? 'sm:grid-cols-2' : 'grid-cols-1')}>
+                <div>
+                  <label
+                    htmlFor="stock-adjust-store"
+                    className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                  >
+                    <Store className="h-3.5 w-3.5 text-brand-lime" strokeWidth={1.75} />
+                    Local
+                  </label>
+                  <input
+                    id="stock-adjust-store"
+                    type="text"
+                    inputMode="numeric"
+                    value={formData.storeQuantity === 0 ? '' : formatNumber(formData.storeQuantity)}
+                    onChange={e => handleQuantityChange('storeQuantity', e.target.value)}
+                    className={cn(inputBase, errors.storeQuantity && 'border-red-400')}
+                    placeholder="0"
+                  />
+                  <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                    Actual:{' '}
+                    <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+                      {formatNumber(product.stock.store)} u.
+                    </span>
+                    {storeChanged && (
+                      <span
+                        className={cn(
+                          'ml-1.5 font-medium tabular-nums',
+                          storeDiff > 0 ? 'text-brand-lime' : 'text-brand-coral'
+                        )}
+                      >
+                        ({storeDiff > 0 ? '+' : ''}
+                        {formatNumber(storeDiff)})
+                      </span>
+                    )}
+                  </p>
+                  {errors.storeQuantity && (
+                    <p className="mt-1 text-xs text-red-500">{errors.storeQuantity}</p>
+                  )}
+                </div>
+
+                {isMainStore && (
+                  <div>
+                    <label
+                      htmlFor="stock-adjust-warehouse"
+                      className="mb-1.5 flex items-center gap-1.5 text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                    >
+                      <Package className="h-3.5 w-3.5 text-brand-coral" strokeWidth={1.75} />
+                      Bodega
+                    </label>
+                    <input
+                      id="stock-adjust-warehouse"
+                      type="text"
+                      inputMode="numeric"
+                      value={
+                        formData.warehouseQuantity === 0
+                          ? ''
+                          : formatNumber(formData.warehouseQuantity)
+                      }
+                      onChange={e => handleQuantityChange('warehouseQuantity', e.target.value)}
+                      className={cn(inputBase, errors.warehouseQuantity && 'border-red-400')}
+                      placeholder="0"
+                    />
+                    <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
+                      Actual:{' '}
+                      <span className="font-medium tabular-nums text-zinc-700 dark:text-zinc-300">
+                        {formatNumber(product.stock.warehouse)} u.
+                      </span>
+                      {warehouseChanged && (
+                        <span
+                          className={cn(
+                            'ml-1.5 font-medium tabular-nums',
+                            warehouseDiff > 0 ? 'text-brand-lime' : 'text-brand-coral'
+                          )}
+                        >
+                          ({warehouseDiff > 0 ? '+' : ''}
+                          {formatNumber(warehouseDiff)})
+                        </span>
+                      )}
+                    </p>
+                    {errors.warehouseQuantity && (
+                      <p className="mt-1 text-xs text-red-500">{errors.warehouseQuantity}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </SectionCard>
+
+            <SectionCard title="Razón del ajuste">
+              <textarea
+                id="stock-adjust-reason"
+                value={formData.reason}
+                onChange={e => {
+                  setFormData(prev => ({ ...prev, reason: e.target.value }))
+                  if (errors.reason) setErrors(prev => ({ ...prev, reason: '' }))
+                }}
+                className={cn(inputBase, 'min-h-[4rem] resize-y', errors.reason && 'border-red-400')}
+                placeholder="Ej: Inventario físico, producto dañado… (opcional)"
+                rows={3}
+              />
+              <div className="mt-1 flex items-center justify-between gap-2">
+                {errors.reason ? (
+                  <p className="text-xs text-red-500">{errors.reason}</p>
+                ) : (
+                  <span />
+                )}
+                <span
+                  className={cn(
+                    'ml-auto text-[11px]',
+                    formData.reason.length > 0 && formData.reason.length < 10
+                      ? 'text-red-500'
+                      : 'text-zinc-500 dark:text-zinc-400'
+                  )}
+                >
+                  {formData.reason.length > 0 ? `${formData.reason.length}/10 mín.` : 'Opcional'}
+                </span>
+              </div>
+            </SectionCard>
+
+            {hasAnyChange && (
+              <div className="space-y-2 rounded-xl border border-zinc-200 bg-zinc-50/80 px-3.5 py-3 dark:border-zinc-700 dark:bg-zinc-900/50">
+                <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">Resumen de cambios</p>
+                {storeChanged && (
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">Local</span>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 font-semibold tabular-nums',
+                        storeDiff > 0 ? 'text-brand-lime' : 'text-brand-coral'
+                      )}
+                    >
+                      {storeDiff > 0 ? (
+                        <TrendingUp className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      )}
+                      {storeDiff > 0 ? '+' : ''}
+                      {formatNumber(storeDiff)} u. → {formatNumber(formData.storeQuantity)}
+                    </span>
+                  </div>
+                )}
+                {warehouseChanged && (
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="text-zinc-600 dark:text-zinc-400">Bodega</span>
+                    <span
+                      className={cn(
+                        'inline-flex items-center gap-1 font-semibold tabular-nums',
+                        warehouseDiff > 0 ? 'text-brand-lime' : 'text-brand-coral'
+                      )}
+                    >
+                      {warehouseDiff > 0 ? (
+                        <TrendingUp className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      ) : (
+                        <TrendingDown className="h-3.5 w-3.5" strokeWidth={1.75} />
+                      )}
+                      {warehouseDiff > 0 ? '+' : ''}
+                      {formatNumber(warehouseDiff)} u. → {formatNumber(formData.warehouseQuantity)}
+                    </span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {errors.general && (
+              <p className="text-center text-xs text-red-500">{errors.general}</p>
             )}
           </div>
 
@@ -389,11 +402,18 @@ export function StockAdjustmentModal({ isOpen, onClose, onAdjust, product }: Sto
             className="flex shrink-0 flex-wrap items-center justify-end gap-2 border-t border-zinc-100 bg-white/90 px-4 py-3 md:px-5 dark:border-zinc-800 dark:bg-zinc-950/90"
             style={{ paddingBottom: `max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))` }}
           >
-            <Button type="button" variant="outline" size="sm" onClick={onClose} className="min-h-9">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              disabled={submitting}
+              className="min-h-9"
+            >
               Cancelar
             </Button>
-            <Button type="submit" size="sm" className="min-h-9">
-              Ajustar stock
+            <Button type="submit" size="sm" disabled={submitting || !hasAnyChange} className="min-h-9">
+              {submitting ? 'Actualizando…' : 'Actualizar stock'}
             </Button>
           </footer>
         </form>

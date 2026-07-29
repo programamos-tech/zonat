@@ -116,17 +116,34 @@ export default function ProductsPage() {
     setIsAdjustmentModalOpen(true)
   }
 
-  const handleAdjustStock = async (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => {
-    const success = await adjustStock(productId, location, newQuantity, reason)
-    
-    if (success) {
-      toast.success('Stock ajustado exitosamente')
+  const handleAdjustStock = async (
+    productId: string,
+    adjustments: Array<{ location: 'warehouse' | 'store'; newQuantity: number }>,
+    reason: string
+  ) => {
+    if (adjustments.length === 0) return
+
+    let allOk = true
+    for (const adj of adjustments) {
+      const success = await adjustStock(productId, adj.location, adj.newQuantity, reason)
+      if (!success) allOk = false
+    }
+
+    if (allOk) {
+      const locations = adjustments
+        .map(a => (a.location === 'warehouse' ? 'Bodega' : 'Local'))
+        .join(' y ')
+      toast.success(
+        adjustments.length > 1
+          ? `Stock de ${locations} actualizado`
+          : `Stock de ${locations} actualizado`
+      )
       setIsAdjustmentModalOpen(false)
       setProductToAdjust(null)
     } else {
-      toast.error('No se guardaron los cambios', {
+      toast.error('No se guardaron todos los cambios', {
         description:
-          'No pudimos confirmar el ajuste en el servidor. Revisa tu conexión o permisos e inténtalo de nuevo.',
+          'Revisa tu conexión o permisos e inténtalo de nuevo. Puede que solo una ubicación se haya actualizado.',
       })
     }
   }
