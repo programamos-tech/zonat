@@ -27,6 +27,9 @@ export class SalesService {
    * Serial por tienda: PREFIX-##### (ej. ZT-00001).
    * Sin argumento usa la tienda del usuario; con `forStoreId` la tienda indicada (traslados/admin).
    * Las facturas legacy (#661) no se mezclan en la secuencia nueva.
+   *
+   * Importante: PostgREST/Supabase limitan ~1000 filas por request. Un .limit(5000)
+   * sin paginar solo ve un lote viejo y el máximo queda congelado (p. ej. siempre ZT-00996).
    */
   static async getNextInvoiceNumber(forStoreId?: string): Promise<string> {
     const { formatStoreInvoiceNumber, deriveInvoicePrefix, normalizeInvoicePrefix } = await import(
@@ -48,35 +51,48 @@ export class SalesService {
         storeRow?.invoice_prefix || deriveInvoicePrefix(storeRow?.name || 'ZT')
       )
 
-      // Secuencia solo entre facturas nuevas del mismo prefijo en esa tienda.
-      let salesQuery = supabaseAdmin
-        .from('sales')
-        .select('invoice_number')
-        .ilike('invoice_number', `${prefix}-%`)
-
-      if (resolvedStoreId === MAIN_STORE_ID) {
-        salesQuery = salesQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
-      } else {
-        salesQuery = salesQuery.eq('store_id', resolvedStoreId)
-      }
-
-      const { data: rows, error } = await salesQuery.limit(5000)
-      if (error) {
-        return formatStoreInvoiceNumber(prefix, 1)
-      }
-
+      const seqRe = new RegExp(`^${prefix}-(\\d+)$`, 'i')
+      const PAGE = 1000
       let maxSeq = 0
-      for (const row of rows || []) {
-        const inv = String(row.invoice_number || '')
-        const m = inv.match(new RegExp(`^${prefix}-(\\d+)$`, 'i'))
-        if (m) {
-          const n = Number(m[1])
-          if (Number.isFinite(n) && n > maxSeq) maxSeq = n
+      let offset = 0
+
+      // Paginar todas las facturas del prefijo en esta tienda para obtener el máximo real.
+      while (offset <= 200000) {
+        let pageQuery = supabaseAdmin
+          .from('sales')
+          .select('invoice_number')
+          .ilike('invoice_number', `${prefix}-%`)
+          .order('invoice_number', { ascending: false })
+          .range(offset, offset + PAGE - 1)
+
+        if (resolvedStoreId === MAIN_STORE_ID) {
+          pageQuery = pageQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
+        } else {
+          pageQuery = pageQuery.eq('store_id', resolvedStoreId)
         }
+
+        const { data: rows, error } = await pageQuery
+        if (error) {
+          console.error('[SalesService.getNextInvoiceNumber]', error)
+          return formatStoreInvoiceNumber(prefix, Math.max(1, maxSeq + 1))
+        }
+        if (!rows?.length) break
+
+        for (const row of rows) {
+          const m = String(row.invoice_number || '').match(seqRe)
+          if (m) {
+            const n = Number(m[1])
+            if (Number.isFinite(n) && n > maxSeq) maxSeq = n
+          }
+        }
+
+        if (rows.length < PAGE) break
+        offset += PAGE
       }
 
       return formatStoreInvoiceNumber(prefix, maxSeq + 1)
-    } catch {
+    } catch (error) {
+      console.error('[SalesService.getNextInvoiceNumber] exception', error)
       return formatStoreInvoiceNumber('XX', 1)
     }
   }
@@ -171,21 +187,21 @@ export class SalesService {
         }
       }
 
-      // 3. Recolectar invoice_numbers de ventas a crédito
-      const creditInvoiceNumbers: string[] = []
+      // 3. Recolectar sale_ids de ventas a crédito (no invoice_number: se reutiliza)
+      const creditSaleIds: string[] = []
       for (const sale of data || []) {
-        if (sale.payment_method === 'credit' && sale.invoice_number) {
-          creditInvoiceNumbers.push(sale.invoice_number)
+        if (sale.payment_method === 'credit' && sale.id) {
+          creditSaleIds.push(sale.id)
         }
       }
 
-      // 4. Una sola query para obtener todos los créditos
+      // 4. Una sola query para obtener todos los créditos por sale_id
       const creditStatusMap = new Map<string, string>()
-      if (creditInvoiceNumbers.length > 0) {
+      if (creditSaleIds.length > 0) {
         let creditQuery = supabase
           .from('credits')
-          .select('invoice_number, status')
-          .in('invoice_number', creditInvoiceNumbers)
+          .select('sale_id, status')
+          .in('sale_id', creditSaleIds)
         if (!storeId || storeId === MAIN_STORE_ID) {
           creditQuery = creditQuery.or(`store_id.is.null,store_id.eq.${MAIN_STORE_ID}`)
         } else {
@@ -194,7 +210,7 @@ export class SalesService {
         const { data: creditsData } = await creditQuery
         if (creditsData) {
           for (const c of creditsData) {
-            creditStatusMap.set(c.invoice_number, c.status)
+            if (c.sale_id) creditStatusMap.set(c.sale_id, c.status)
           }
         }
       }
@@ -220,8 +236,8 @@ export class SalesService {
           }
         })
 
-        const creditStatus = sale.payment_method === 'credit' && sale.invoice_number
-          ? creditStatusMap.get(sale.invoice_number) || null
+        const creditStatus = sale.payment_method === 'credit'
+          ? creditStatusMap.get(sale.id) || null
           : null
 
         return {
@@ -1906,12 +1922,15 @@ export class SalesService {
           }))
         }
 
-        // Obtener información del crédito si es una venta a crédito
+        // Obtener información del crédito si es una venta a crédito (por sale_id)
         let creditStatus = null
-        if (sale.payment_method === 'credit' && sale.invoice_number) {
+        if (sale.payment_method === 'credit') {
           try {
             const { CreditsService } = await import('./credits-service')
-            const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoice_number)
+            const credit = await CreditsService.resolveCreditForSale({
+              id: sale.id,
+              invoiceNumber: sale.invoice_number,
+            })
             if (credit) {
               creditStatus = credit.status
             }

@@ -57,12 +57,12 @@ export default function SaleDetailModal({
   const [credit, setCredit] = useState<Credit | null>(null)
   const [transfer, setTransfer] = useState<StoreStockTransfer | null>(null)
 
-  // Cargar crédito si la venta es de tipo crédito
+  // Cargar crédito si la venta es de tipo crédito (por sale_id, no por factura reutilizada)
   useEffect(() => {
     const loadCredit = async () => {
-      if (sale && sale.paymentMethod === 'credit' && sale.invoiceNumber) {
+      if (sale && sale.paymentMethod === 'credit') {
         try {
-          const creditData = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+          const creditData = await CreditsService.resolveCreditForSale(sale)
           setCredit(creditData)
         } catch (error) {
           setCredit(null)

@@ -95,9 +95,9 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
 
   useEffect(() => {
     const loadCredit = async () => {
-      if (sale.paymentMethod === 'credit' && sale.invoiceNumber) {
+      if (sale.paymentMethod === 'credit') {
         try {
-          const creditData = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+          const creditData = await CreditsService.resolveCreditForSale(sale)
           setCredit(creditData)
         } catch {
           setCredit(null)

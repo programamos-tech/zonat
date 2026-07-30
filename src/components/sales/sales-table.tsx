@@ -57,17 +57,17 @@ export function SalesTable({
   const [credits, setCredits] = useState<Record<string, Credit>>({})
   const [transfers, setTransfers] = useState<Record<string, StoreStockTransfer>>({})
 
-  // Cargar créditos para ventas de tipo crédito
+  // Cargar créditos para ventas de tipo crédito (por sale_id)
   useEffect(() => {
     const loadCredits = async () => {
-      const creditSales = sales.filter(sale => sale.paymentMethod === 'credit' && sale.invoiceNumber)
+      const creditSales = sales.filter(sale => sale.paymentMethod === 'credit')
       const creditsToLoad: Record<string, Credit> = {}
       
       await Promise.all(
         creditSales.map(async (sale) => {
-          if (!credits[sale.id] && sale.invoiceNumber) {
+          if (!credits[sale.id]) {
             try {
-              const credit = await CreditsService.getCreditByInvoiceNumber(sale.invoiceNumber)
+              const credit = await CreditsService.resolveCreditForSale(sale)
               if (credit) {
                 creditsToLoad[sale.id] = credit
               }
