@@ -1607,8 +1607,8 @@ export class ProductsService {
 
   /**
    * Descontar stock para varios ítems de una venta en batch.
-   * Una sola lectura de stock para todos los productos, luego actualizaciones (en paralelo cuando es seguro).
-   * Reduce drásticamente el tiempo al crear una venta con muchos ítems.
+   * Una sola lectura de stock; escrituras en lotes limitados (evita fallos con 30+ productos
+   * por saturación de conexiones del navegador / PostgREST).
    */
   static async deductStockForSaleBatch(
     items: Array<{ productId: string; quantity: number; productName: string; productReferenceCode?: string; unitPrice: number; totalPrice: number }>,
@@ -1618,32 +1618,74 @@ export class ProductsService {
     success: boolean
     itemsWithStockInfo?: Array<{ productName: string; productReference?: string; quantity: number; unitPrice: number; totalPrice: number; stockInfo: { storeDeduction: number; warehouseDeduction: number; previousStoreStock: number; previousWarehouseStock: number; newStoreStock: number; newWarehouseStock: number } }>
     failedProductName?: string
+    errorMessage?: string
   }> {
     if (items.length === 0) {
       return { success: true, itemsWithStockInfo: [] }
     }
-    try {
-      const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
-      const storeId =
-        storeIdOverride !== undefined ? storeIdOverride : getCurrentUserStoreId()
-      const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
-      // Agregar cantidades por producto (mismo producto puede estar en varias líneas)
-      const byProduct = new Map<string, { totalQty: number; productName: string }>()
-      for (const item of items) {
-        const existing = byProduct.get(item.productId)
-        if (existing) {
-          existing.totalQty += item.quantity
-        } else {
-          byProduct.set(item.productId, { totalQty: item.quantity, productName: item.productName })
-        }
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const storeId =
+      storeIdOverride !== undefined ? storeIdOverride : getCurrentUserStoreId()
+    const isMainStore = !storeId || storeId === MAIN_STORE_ID
+    // Límite de conexiones concurrentes del navegador ~6 por host; 8 es seguro y rápido.
+    const WRITE_CONCURRENCY = 8
+
+    const byProduct = new Map<string, { totalQty: number; productName: string }>()
+    for (const item of items) {
+      const existing = byProduct.get(item.productId)
+      if (existing) {
+        existing.totalQty += item.quantity
+      } else {
+        byProduct.set(item.productId, { totalQty: item.quantity, productName: item.productName })
       }
-      const productIds = Array.from(byProduct.keys())
+    }
+    const productIds = Array.from(byProduct.keys())
+    const deductions = new Map<string, {
+      storeDeduction: number
+      warehouseDeduction: number
+      previousStoreStock: number
+      previousWarehouseStock: number
+      newStoreStock: number
+      newWarehouseStock: number
+    }>()
+    const appliedProductIds: string[] = []
 
-      // Una sola lectura de stock para todos los productos
+    const revertApplied = async () => {
+      for (let i = 0; i < appliedProductIds.length; i += WRITE_CONCURRENCY) {
+        const chunk = appliedProductIds.slice(i, i + WRITE_CONCURRENCY)
+        await Promise.all(chunk.map(async (productId) => {
+          const d = deductions.get(productId)
+          if (!d) return
+          try {
+            if (isMainStore) {
+              await supabase
+                .from('products')
+                .update({
+                  stock_warehouse: d.previousWarehouseStock,
+                  stock_store: d.previousStoreStock
+                })
+                .eq('id', productId)
+            } else {
+              await supabaseAdmin
+                .from('store_stock')
+                .upsert({
+                  store_id: storeId!,
+                  product_id: productId,
+                  quantity: d.previousStoreStock,
+                  location: 'local'
+                }, { onConflict: 'store_id,product_id' })
+            }
+          } catch (revertError) {
+            console.error('[deductStockForSaleBatch] rollback falló para', productId, revertError)
+          }
+        }))
+      }
+    }
+
+    try {
       const stockMap = await this.getProductsStockForStore(productIds, storeId)
 
-      const deductions = new Map<string, { storeDeduction: number; warehouseDeduction: number; previousStoreStock: number; previousWarehouseStock: number; newStoreStock: number; newWarehouseStock: number }>()
       for (const [productId, { totalQty, productName }] of byProduct) {
         const stock = stockMap.get(productId) || { warehouse: 0, store: 0, total: 0 }
         const { warehouse, store } = stock
@@ -1670,8 +1712,7 @@ export class ProductsService {
         })
       }
 
-      // Aplicar actualizaciones en paralelo (todas son por producto distinto)
-      const updatePromises = productIds.map(async (productId) => {
+      const applyOne = async (productId: string): Promise<{ productId: string; error?: unknown }> => {
         const d = deductions.get(productId)!
         if (isMainStore) {
           const { error } = await supabase
@@ -1681,7 +1722,7 @@ export class ProductsService {
               stock_store: d.newStoreStock
             })
             .eq('id', productId)
-          if (error) throw error
+          if (error) return { productId, error }
         } else {
           const { error } = await supabaseAdmin
             .from('store_stock')
@@ -1691,10 +1732,33 @@ export class ProductsService {
               quantity: d.newStoreStock,
               location: 'local'
             }, { onConflict: 'store_id,product_id' })
-          if (error) throw error
+          if (error) return { productId, error }
         }
-      })
-      await Promise.all(updatePromises)
+        return { productId }
+      }
+
+      // Escrituras en lotes: evita Promise.all de 30–100 requests a la vez
+      for (let i = 0; i < productIds.length; i += WRITE_CONCURRENCY) {
+        const chunk = productIds.slice(i, i + WRITE_CONCURRENCY)
+        const chunkResults = await Promise.all(chunk.map((productId) => applyOne(productId)))
+        for (const result of chunkResults) {
+          if (!result.error) appliedProductIds.push(result.productId)
+        }
+        const failed = chunkResults.find((result) => result.error)
+        if (failed) {
+          await revertApplied()
+          const productName = byProduct.get(failed.productId)?.productName
+          const message =
+            typeof failed.error === 'object' && failed.error && 'message' in failed.error
+              ? String((failed.error as { message: unknown }).message)
+              : 'Error al descontar stock'
+          return {
+            success: false,
+            failedProductName: productName,
+            errorMessage: message
+          }
+        }
+      }
 
       const itemsWithStockInfo = items.map((item) => {
         const d = deductions.get(item.productId)!
@@ -1709,7 +1773,24 @@ export class ProductsService {
       })
       return { success: true, itemsWithStockInfo }
     } catch (error) {
-      return { success: false, failedProductName: items[0]?.productName }
+      if (appliedProductIds.length > 0) {
+        await revertApplied()
+      }
+
+      const message =
+        error instanceof Error
+          ? error.message
+          : typeof error === 'object' && error && 'message' in error
+            ? String((error as { message: unknown }).message)
+            : 'Error al descontar stock'
+
+      console.error('[deductStockForSaleBatch] fallo:', message, error)
+
+      return {
+        success: false,
+        failedProductName: byProduct.get(productIds[0])?.productName || items[0]?.productName,
+        errorMessage: message
+      }
     }
   }
 
@@ -1822,28 +1903,35 @@ export class ProductsService {
           return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error: 'Producto no encontrado' })) }
         }
 
-        const updatePromises = updates.map(async (update) => {
-          try {
-            const { error } = await supabase
-              .from('products')
-              .update({ stock_store: update.stock_store })
-              .eq('id', update.id)
-            if (error) return { productId: update.id, success: false, error }
-            return {
-              productId: update.id,
-              success: true,
-              productName: update.productName,
-              productReference: update.productReference,
-              quantity: update.quantity,
-              previousStock: update.previousStock,
-              newStock: update.stock_store
-            }
-          } catch (error) {
-            return { productId: update.id, success: false, error }
-          }
-        })
+        const results: Array<{ productId: string, success: boolean, productName?: string, productReference?: string | null, quantity?: number, previousStock?: number, newStock?: number, error?: any }> = []
+        const WRITE_CONCURRENCY = 8
+        for (let i = 0; i < updates.length; i += WRITE_CONCURRENCY) {
+          const chunk = updates.slice(i, i + WRITE_CONCURRENCY)
+          const chunkResults = await Promise.all(
+            chunk.map(async (update) => {
+              try {
+                const { error } = await supabase
+                  .from('products')
+                  .update({ stock_store: update.stock_store })
+                  .eq('id', update.id)
+                if (error) return { productId: update.id, success: false, error }
+                return {
+                  productId: update.id,
+                  success: true,
+                  productName: update.productName,
+                  productReference: update.productReference,
+                  quantity: update.quantity,
+                  previousStock: update.previousStock,
+                  newStock: update.stock_store
+                }
+              } catch (error) {
+                return { productId: update.id, success: false, error }
+              }
+            })
+          )
+          results.push(...chunkResults)
+        }
 
-        const results = await Promise.all(updatePromises)
         return { success: results.every(r => r.success), results }
       }
 
@@ -1860,36 +1948,42 @@ export class ProductsService {
         .in('id', productIds)
 
       const stockByProduct = new Map((storeStocks || []).map(s => [s.product_id, Number(s.quantity) || 0]))
-      const results = await Promise.all(
-        items.map(async (item) => {
-          const previousStock = stockByProduct.get(item.productId) ?? 0
-          const newQuantity = previousStock + item.quantity
-          const product = products?.find(p => p.id === item.productId)
-          try {
-            const { error } = await supabaseAdmin
-              .from('store_stock')
-              .upsert({
-                store_id: storeId!,
-                product_id: item.productId,
-                quantity: newQuantity,
-                location: 'local'
-              }, { onConflict: 'store_id,product_id' })
-            if (error) return { productId: item.productId, success: false, error }
-            stockByProduct.set(item.productId, newQuantity)
-            return {
-              productId: item.productId,
-              success: true,
-              productName: product?.name,
-              productReference: product?.reference ?? undefined,
-              quantity: item.quantity,
-              previousStock,
-              newStock: newQuantity
+      const results: Array<{ productId: string, success: boolean, productName?: string, productReference?: string, quantity?: number, previousStock?: number, newStock?: number, error?: any }> = []
+      const WRITE_CONCURRENCY = 8
+      for (let i = 0; i < items.length; i += WRITE_CONCURRENCY) {
+        const chunk = items.slice(i, i + WRITE_CONCURRENCY)
+        const chunkResults = await Promise.all(
+          chunk.map(async (item) => {
+            const previousStock = stockByProduct.get(item.productId) ?? 0
+            const newQuantity = previousStock + item.quantity
+            const product = products?.find(p => p.id === item.productId)
+            try {
+              const { error } = await supabaseAdmin
+                .from('store_stock')
+                .upsert({
+                  store_id: storeId!,
+                  product_id: item.productId,
+                  quantity: newQuantity,
+                  location: 'local'
+                }, { onConflict: 'store_id,product_id' })
+              if (error) return { productId: item.productId, success: false, error }
+              stockByProduct.set(item.productId, newQuantity)
+              return {
+                productId: item.productId,
+                success: true,
+                productName: product?.name,
+                productReference: product?.reference ?? undefined,
+                quantity: item.quantity,
+                previousStock,
+                newStock: newQuantity
+              }
+            } catch (error) {
+              return { productId: item.productId, success: false, error }
             }
-          } catch (error) {
-            return { productId: item.productId, success: false, error }
-          }
-        })
-      )
+          })
+        )
+        results.push(...chunkResults)
+      }
       return { success: results.every(r => r.success), results }
     } catch (error) {
       return { success: false, results: items.map(item => ({ productId: item.productId, success: false, error })) }

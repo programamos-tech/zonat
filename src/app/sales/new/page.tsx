@@ -706,7 +706,11 @@ export default function NewSalePage() {
       console.error('Error creating sale:', error)
       setInvoiceNumber('Pendiente')
       setIsCreating(false)
-      alert('Error al crear la venta. Por favor intenta de nuevo.')
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Error al crear la venta. Por favor intenta de nuevo.'
+      alert(message)
     }
   }
 

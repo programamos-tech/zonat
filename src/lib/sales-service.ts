@@ -896,6 +896,11 @@ export class SalesService {
           )
           if (!batchResult.success || !batchResult.itemsWithStockInfo) {
             await supabase.from('sales').delete().eq('id', sale.id)
+            if (batchResult.errorMessage) {
+              throw new Error(
+                `No se pudo descontar el stock${batchResult.failedProductName ? ` (${batchResult.failedProductName})` : ''}: ${batchResult.errorMessage}`
+              )
+            }
             throw new Error(`No hay suficiente stock para el producto: ${batchResult.failedProductName ?? 'desconocido'}`)
           }
           itemsWithStockInfo = batchResult.itemsWithStockInfo
@@ -920,13 +925,19 @@ export class SalesService {
           total: item.total
         }))
 
-        const { data: insertedItemsData, error: itemsError } = await supabase
-          .from('sale_items')
-          .insert(saleItems)
-          .select('id, product_id, product_name, product_reference_code, quantity, unit_price, discount, total')
+        // Insertar en lotes: facturas con 50+ líneas no deben ir en un solo request
+        const ITEMS_CHUNK = 50
+        insertedItems = []
+        for (let i = 0; i < saleItems.length; i += ITEMS_CHUNK) {
+          const chunk = saleItems.slice(i, i + ITEMS_CHUNK)
+          const { data: insertedItemsData, error: itemsError } = await supabase
+            .from('sale_items')
+            .insert(chunk)
+            .select('id, product_id, product_name, product_reference_code, quantity, unit_price, discount, total')
 
-        if (itemsError) throw itemsError
-        insertedItems = insertedItemsData ?? []
+          if (itemsError) throw itemsError
+          insertedItems.push(...(insertedItemsData ?? []))
+        }
       }
 
       // Crear registros de pago según el método (solo si NO es borrador)
@@ -1042,7 +1053,15 @@ export class SalesService {
           paymentMethod: saleData.paymentMethod,
           status: saleData.status,
           itemsCount: itemsWithStockInfo.length,
-          items: itemsWithStockInfo,
+          // Evitar payloads enormes en facturas grandes (50+ ítems)
+          items: itemsWithStockInfo.length > 40
+            ? itemsWithStockInfo.slice(0, 10).map((item: any) => ({
+                productName: item.productName,
+                quantity: item.quantity,
+                totalPrice: item.totalPrice
+              }))
+            : itemsWithStockInfo,
+          itemsTruncated: itemsWithStockInfo.length > 40,
           dueDate: creditDueDate
         }
       )

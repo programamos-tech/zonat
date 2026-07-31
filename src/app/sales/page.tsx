@@ -100,8 +100,11 @@ export default function SalesPage() {
       await createSale(saleData)
       setIsModalOpen(false)
     } catch (error) {
-      // Error silencioso en producción
-      alert('Error al crear la venta')
+      const message =
+        error instanceof Error && error.message
+          ? error.message
+          : 'Error al crear la venta'
+      alert(message)
     }
   }
 
