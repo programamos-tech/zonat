@@ -2304,12 +2304,16 @@ export class SalesService {
   }
 
   /**
-   * Ingresos del día (ventas completadas) por tienda, usando inicio/fin del día en hora local del cliente.
-   * Misma convención de tienda principal (null + MAIN_STORE_ID) que getCompletedSalesSummaryByStore.
+   * Ingresos del día por tienda (misma lógica que "Total ingresos" en Reportes con filtro Hoy):
+   * efectivo + transferencia de ventas activas (no canceladas/borrador) + abonos de crédito del día.
+   * Tienda principal: agrupa store_id NULL y MAIN_STORE_ID.
    */
   static async getTodayCompletedRevenueByStore(): Promise<Record<string, number>> {
     const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
     const map: Record<string, number> = {}
+    const storeKey = (storeId: string | null | undefined) =>
+      !storeId || storeId === MAIN_STORE_ID ? MAIN_STORE_ID : storeId
+
     const now = new Date()
     const startLocal = new Date(
       now.getFullYear(),
@@ -2329,32 +2333,100 @@ export class SalesService {
       59,
       999
     )
+    const startIso = startLocal.toISOString()
+    const endIso = endLocal.toISOString()
     const pageSize = 1000
-    let from = 0
+
+    const add = (key: string, amount: number) => {
+      if (!amount) return
+      map[key] = (map[key] ?? 0) + amount
+    }
 
     try {
+      let from = 0
       for (;;) {
         const { data, error } = await supabase
           .from('sales')
-          .select('store_id, total')
-          .eq('status', 'completed')
-          .gte('created_at', startLocal.toISOString())
-          .lte('created_at', endLocal.toISOString())
+          .select(
+            `
+            store_id,
+            total,
+            payment_method,
+            sale_payments (
+              payment_type,
+              amount
+            )
+          `
+          )
+          .not('status', 'eq', 'cancelled')
+          .not('status', 'eq', 'draft')
+          .gte('created_at', startIso)
+          .lte('created_at', endIso)
           .order('created_at', { ascending: true })
           .range(from, from + pageSize - 1)
 
         if (error) {
           console.error('getTodayCompletedRevenueByStore:', error)
-          return map
+          break
         }
         if (!data?.length) break
 
         for (const row of data) {
-          const key =
-            !row.store_id || row.store_id === MAIN_STORE_ID
-              ? MAIN_STORE_ID
-              : row.store_id
-          map[key] = (map[key] ?? 0) + (Number(row.total) || 0)
+          const key = storeKey(row.store_id)
+          const payments = row.sale_payments as
+            | Array<{ payment_type?: string; amount?: number }>
+            | null
+            | undefined
+
+          if (payments && payments.length > 0) {
+            for (const payment of payments) {
+              if (
+                payment.payment_type === 'cash' ||
+                payment.payment_type === 'transfer'
+              ) {
+                add(key, Number(payment.amount) || 0)
+              }
+            }
+          } else if (
+            row.payment_method === 'cash' ||
+            row.payment_method === 'transfer'
+          ) {
+            add(key, Number(row.total) || 0)
+          }
+        }
+
+        if (data.length < pageSize) break
+        from += pageSize
+      }
+
+      // Abonos de crédito del día (efectivo / transferencia), igual que Reportes.
+      from = 0
+      for (;;) {
+        const { data, error } = await supabase
+          .from('payment_records')
+          .select('store_id, amount, payment_method, status')
+          .gte('payment_date', startIso)
+          .lte('payment_date', endIso)
+          .order('payment_date', { ascending: true })
+          .range(from, from + pageSize - 1)
+
+        if (error) {
+          console.error('getTodayCompletedRevenueByStore (abonos):', error)
+          break
+        }
+        if (!data?.length) break
+
+        for (const row of data) {
+          if (row.status === 'cancelled') continue
+          const method = String(row.payment_method || '').toLowerCase()
+          if (
+            method !== 'cash' &&
+            method !== 'efectivo' &&
+            method !== 'transfer'
+          ) {
+            continue
+          }
+          add(storeKey(row.store_id), Number(row.amount) || 0)
         }
 
         if (data.length < pageSize) break

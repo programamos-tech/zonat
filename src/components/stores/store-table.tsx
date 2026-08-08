@@ -20,7 +20,7 @@ const storeMetricLabel =
 
 interface StoreTableProps {
   stores: Store[]
-  /** Ingresos del día (completadas, efectivo + transferencia) por store id. */
+  /** Ingresos del día (efectivo + transferencia + abonos), misma lógica que Reportes. */
   salesByStore: Record<string, { revenueToday: number }>
   onEdit: (store: Store) => void
   onDelete: (store: Store) => void

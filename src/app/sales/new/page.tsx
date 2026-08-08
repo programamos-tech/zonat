@@ -30,7 +30,7 @@ import { useSales } from '@/contexts/sales-context'
 import { useAuth } from '@/contexts/auth-context'
 import { StoreBadge } from '@/components/ui/store-badge'
 import { cardShell } from '@/lib/card-shell'
-import { isStoreClient } from '@/lib/client-helpers'
+import { findDefaultWalkInClient, isStoreClient } from '@/lib/client-helpers'
 import { useSalesPosPreference } from '@/hooks/use-sales-pos-preference'
 import { useTopSoldProducts } from '@/hooks/use-top-sold-products'
 import { PosSaleView } from '@/components/sales/pos-sale-view'
@@ -71,6 +71,7 @@ export default function NewSalePage() {
   const [isCreating, setIsCreating] = useState(false)
   const productRefs = useRef<(HTMLDivElement | null)[]>([])
   const lastSearchTermRef = useRef<string>('')
+  const hasAppliedDefaultClient = useRef(false)
   // Cache de productos agregados a la venta para mantener su información de stock
   const [productsInSaleCache, setProductsInSaleCache] = useState<Map<string, Product>>(new Map())
   
@@ -83,6 +84,16 @@ export default function NewSalePage() {
     getAllClients()
     refreshProducts()
   }, [getAllClients, refreshProducts])
+
+  // Factura normal: preseleccionar "Cliente Final" si existe; el usuario puede quitarlo y buscar otro.
+  useEffect(() => {
+    if (hasAppliedDefaultClient.current || clients.length === 0) return
+    const walkIn = findDefaultWalkInClient(clients)
+    if (!walkIn) return
+    setSelectedClient(walkIn)
+    setClientSearch(walkIn.name)
+    hasAppliedDefaultClient.current = true
+  }, [clients])
 
   useEffect(() => {
     if (paymentMethod === 'mixed') {
@@ -1087,7 +1098,12 @@ export default function NewSalePage() {
                         placeholder="Nombre, email o teléfono…"
                         value={clientSearch}
                         onChange={(e) => {
-                          setClientSearch(e.target.value)
+                          const value = e.target.value
+                          setClientSearch(value)
+                          // Al escribir, liberar el cliente por defecto para poder buscar otro
+                          if (selectedClient) {
+                            setSelectedClient(null)
+                          }
                           setShowClientDropdown(true)
                         }}
                         onFocus={() => {
