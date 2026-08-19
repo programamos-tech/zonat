@@ -271,7 +271,7 @@ export default function CreditDetailPage() {
                         </div>
                         {credit.saleId ? (
                           <Link
-                            href={`/sales/${credit.saleId}`}
+                            href={`/sales/${credit.saleId}?from=${encodeURIComponent(`/payments/${clientId}/credit/${creditId}`)}`}
                             className="inline-flex items-center gap-1 font-mono text-sm font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300 sm:text-base"
                             title="Ver detalle de la factura"
                           >

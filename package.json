@@ -10,7 +10,9 @@
     "start": "next start",
     "lint": "eslint",
     "init-db": "node scripts/init-supabase.js",
-    "seed:clients": "node scripts/seed-fake-clients.mjs"
+    "seed:clients": "node scripts/seed-fake-clients.mjs",
+    "report:weekly-preview": "node scripts/send-weekly-report-preview.mjs",
+    "report:weekly-send": "node scripts/send-weekly-report-preview.mjs --send"
   },
   "dependencies": {
     "@dicebear/core": "^9.4.2",
@@ -41,6 +43,7 @@
     "react-dom": "19.1.0",
     "react-hook-form": "^7.65.0",
     "recharts": "^3.3.0",
+    "resend": "^6.18.1",
     "sonner": "^2.0.7",
     "tailwind-merge": "^3.3.1",
     "uuid": "^13.0.0",

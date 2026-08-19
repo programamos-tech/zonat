@@ -1,0 +1,917 @@
+{
+  "id": "zonat-weekly-report",
+  "name": "Zona T · Ventas y créditos",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": {
+        "content": "## Reporte semanal Zona T\n\n1. Pide ventas y créditos a Zonat\n2. Crea un Google Sheet (Resumen, Ventas, Productos, Créditos, Morosos, Al día)\n3. Descarga el Excel\n4. Lo envía por Gmail a andrewjruss7@gmail.com (Excel). Diego recibe otro correo HTML, sin Excel, por Vercel.\n\nUsa **Probar ahora** para mandar un reporte de prueba.\nEl cron corre **domingo 17:05** (Colombia).\n\nActiva el workflow cuando el test salga bien.",
+        "height": 300,
+        "width": 380,
+        "color": 7
+      },
+      "id": "note-setup",
+      "name": "Cómo funciona",
+      "type": "n8n-nodes-base.stickyNote",
+      "typeVersion": 1,
+      "position": [
+        40,
+        40
+      ]
+    },
+    {
+      "parameters": {},
+      "id": "manual-test",
+      "name": "Probar ahora",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        480,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "5 17 * * 0"
+            }
+          ]
+        }
+      },
+      "id": "schedule-sunday",
+      "name": "Domingo 17:05 Bogotá",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [
+        480,
+        280
+      ]
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.zonat.com.co/api/n8n/main-store/weekly",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_CRON_SECRET"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000
+        }
+      },
+      "id": "http-summary",
+      "name": "Pedir datos a Zonat",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        760,
+        180
+      ],
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 5000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose"
+          },
+          "conditions": [
+            {
+              "id": "json-ok",
+              "leftValue": "={{ $json.ok }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-summary",
+      "name": "¿Datos OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1020,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "Zonat no devolvió el resumen de ventas/créditos"
+      },
+      "id": "fail-summary",
+      "name": "Fallo datos",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        1020,
+        420
+      ]
+    },
+    {
+      "parameters": {
+        "resource": "spreadsheet",
+        "operation": "create",
+        "title": "={{ 'Zona T · ' + ($json.periodLabel || 'reporte semanal') }}",
+        "sheetsUi": {
+          "sheetValues": [
+            {
+              "title": "Resumen"
+            },
+            {
+              "title": "Ventas"
+            },
+            {
+              "title": "Productos vendidos"
+            },
+            {
+              "title": "Créditos de la semana"
+            },
+            {
+              "title": "Clientes morosos"
+            },
+            {
+              "title": "Clientes al día"
+            }
+          ]
+        },
+        "options": {
+          "locale": "es_CO"
+        }
+      },
+      "id": "sheets-create",
+      "name": "Crear spreadsheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1280,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $('Pedir datos a Zonat').first().json;\nconst sales = src.sales || {};\nconst credits = src.credits || {};\nconst rows = [\n  { Campo: 'Tienda', Valor: src.storeName || '' },\n  { Campo: 'Periodo', Valor: src.periodLabel || '' },\n  { Campo: 'Corte', Valor: 'Domingo 6:00 p.m. Colombia' },\n  { Campo: 'Generado', Valor: src.generatedAt || '' },\n  { Campo: 'Ventas (facturas)', Valor: sales.count || 0 },\n  { Campo: 'Unidades vendidas', Valor: sales.units || 0 },\n  { Campo: 'Ingresos (efectivo + transferencia + abonos)', Valor: sales.total || 0 },\n  { Campo: 'Efectivo', Valor: sales.cash || 0 },\n  { Campo: 'Transferencia', Valor: sales.transfer || 0 },\n  { Campo: 'Abonos a créditos', Valor: sales.abonos || 0 },\n  { Campo: 'Ventas a crédito (esta semana)', Valor: sales.credit || 0 },\n  { Campo: 'Créditos nuevos', Valor: credits.issuedCount || 0 },\n  { Campo: 'Monto créditos nuevos', Valor: credits.issuedAmount || 0 },\n  { Campo: 'Clientes en mora', Valor: credits.overdueCount || 0 },\n  { Campo: 'Saldo en mora', Valor: credits.overdueTotal || 0 },\n  { Campo: 'Clientes al día (con saldo)', Valor: credits.currentCount || 0 },\n  { Campo: 'Saldo al día', Valor: credits.currentTotal || 0 },\n];\nreturn rows.map((json) => ({ json }));"
+      },
+      "id": "rows-resumen",
+      "name": "Filas Resumen",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Crear spreadsheet').first().json.spreadsheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Resumen"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn",
+          "useAppend": true
+        }
+      },
+      "id": "sheet-resumen",
+      "name": "Hoja Resumen",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1800,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Pedir datos a Zonat').first().json.salesRows || [];\nif (!rows.length) return [{ json: { Factura: 'Sin ventas en el periodo' } }];\nreturn rows.map((row) => ({\n  json: {\n    Factura: row.invoiceNumber,\n    Fecha: row.date,\n    Cliente: row.clientName,\n    Vendedor: row.sellerName,\n    Pago: row.paymentMethod,\n    Productos: row.itemsCount,\n    Unidades: row.units,\n    Total: row.total,\n    Efectivo: row.cash,\n    Transferencia: row.transfer,\n  },\n}));"
+      },
+      "id": "rows-ventas",
+      "name": "Filas Ventas",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2060,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Crear spreadsheet').first().json.spreadsheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Ventas"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn",
+          "useAppend": true
+        }
+      },
+      "id": "sheet-ventas",
+      "name": "Hoja Ventas",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2320,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Pedir datos a Zonat').first().json.productRows || [];\nif (!rows.length) return [{ json: { Producto: 'Sin productos vendidos en el periodo' } }];\nreturn rows.map((row) => ({\n  json: {\n    Factura: row.invoiceNumber,\n    Fecha: row.date,\n    Producto: row.productName,\n    Cantidad: row.quantity,\n    'Precio unitario': row.unitPrice,\n    Total: row.total,\n    Vendedor: row.sellerName,\n  },\n}));"
+      },
+      "id": "rows-productos",
+      "name": "Filas Productos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2580,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Crear spreadsheet').first().json.spreadsheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Productos vendidos"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn",
+          "useAppend": true
+        }
+      },
+      "id": "sheet-productos",
+      "name": "Hoja Productos",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2840,
+        80
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Pedir datos a Zonat').first().json.creditRows || [];\nif (!rows.length) return [{ json: { Factura: 'Sin créditos nuevos esta semana' } }];\nreturn rows.map((row) => ({\n  json: {\n    Factura: row.invoiceNumber,\n    Fecha: row.date,\n    Cliente: row.clientName,\n    Total: row.totalAmount,\n    Pagado: row.paidAmount,\n    Pendiente: row.pendingAmount,\n    Estado: row.status,\n    Vence: row.dueDate,\n    'Días mora': row.daysOverdue,\n  },\n}));"
+      },
+      "id": "rows-creditos",
+      "name": "Filas Créditos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1540,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Crear spreadsheet').first().json.spreadsheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Créditos de la semana"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn",
+          "useAppend": true
+        }
+      },
+      "id": "sheet-creditos",
+      "name": "Hoja Créditos",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1800,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Pedir datos a Zonat').first().json.overdueRows || [];\nif (!rows.length) return [{ json: { Cliente: 'No hay clientes en mora' } }];\nreturn rows.map((row) => ({\n  json: {\n    Factura: row.invoiceNumber,\n    Cliente: row.clientName,\n    Total: row.totalAmount,\n    Pagado: row.paidAmount,\n    Pendiente: row.pendingAmount,\n    Estado: row.status,\n    Vence: row.dueDate,\n    'Días mora': row.daysOverdue,\n  },\n}));"
+      },
+      "id": "rows-morosos",
+      "name": "Filas Morosos",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2060,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Crear spreadsheet').first().json.spreadsheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Clientes morosos"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn",
+          "useAppend": true
+        }
+      },
+      "id": "sheet-morosos",
+      "name": "Hoja Morosos",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2320,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "jsCode": "const rows = $('Pedir datos a Zonat').first().json.currentRows || [];\nif (!rows.length) return [{ json: { Cliente: 'No hay créditos al día con saldo' } }];\nreturn rows.map((row) => ({\n  json: {\n    Factura: row.invoiceNumber,\n    Cliente: row.clientName,\n    Total: row.totalAmount,\n    Pagado: row.paidAmount,\n    Pendiente: row.pendingAmount,\n    Estado: row.status,\n    Vence: row.dueDate,\n  },\n}));"
+      },
+      "id": "rows-aldia",
+      "name": "Filas Al día",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2580,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "={{ $('Crear spreadsheet').first().json.spreadsheetId }}"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "name",
+          "value": "Clientes al día"
+        },
+        "columns": {
+          "mappingMode": "autoMapInputData",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "handlingExtraData": "insertInNewColumn",
+          "useAppend": true
+        }
+      },
+      "id": "sheet-aldia",
+      "name": "Hoja Al día",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2840,
+        300
+      ],
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "99mAfhYclFMJBbRj",
+          "name": "Google Sheets account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "waitBetweenTries": 4000
+    },
+    {
+      "parameters": {
+        "method": "GET",
+        "url": "https://www.zonat.com.co/api/n8n/main-store/weekly?format=xlsx",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_CRON_SECRET"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 300000,
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "id": "http-excel",
+      "name": "Descargar Excel",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        3100,
+        180
+      ],
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 8000
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "excel-bin",
+              "leftValue": "={{ $binary.data.mimeType }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        }
+      },
+      "id": "if-excel",
+      "name": "¿Excel OK?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        3360,
+        180
+      ]
+    },
+    {
+      "parameters": {
+        "errorMessage": "El Excel está vacío o no se pudo crear"
+      },
+      "id": "fail-excel",
+      "name": "Fallo Excel",
+      "type": "n8n-nodes-base.stopAndError",
+      "typeVersion": 1,
+      "position": [
+        3360,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const src = $('Pedir datos a Zonat').first().json;\nconst sheet = $('Crear spreadsheet').first().json;\nconst input = $input.first();\nconst to = 'andrewjruss7@gmail.com';\nconst url = sheet.spreadsheetUrl || '';\nconst logoUrl = 'https://www.zonat.com.co/logo-zonat-gold.jpeg';\nconst logoBlock = `<table cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border-collapse:collapse;\"><tr><td width=\"72\" height=\"72\" style=\"width:72px;height:72px;border-radius:50%;overflow:hidden;background:#18181b;\"><img src=\"${logoUrl}\" alt=\"Zona T\" width=\"72\" height=\"72\" style=\"display:block;width:72px;height:72px;border:0;border-radius:50%;object-fit:cover;-ms-interpolation-mode:bicubic;\" /></td></tr></table>`;\nconst extra = url\n  ? `<p style=\"margin:14px 0 0;font-size:13px;\"><a href=\"${url}\">Abrir reporte en Google Sheets</a></p>`\n  : '';\nlet html = String(src.html || 'Reporte semanal Zona T');\n// Always force round avatar logo in the outgoing Gmail body.\nhtml = html.replace(\n  /<img[^>]*logo-zonat-gold\\.jpeg[^>]*>/i,\n  `<img src=\"${logoUrl}\" alt=\"Zona T\" width=\"72\" height=\"72\" style=\"display:block;width:72px;height:72px;border:0;border-radius:50%;object-fit:cover;-ms-interpolation-mode:bicubic;\" />`\n);\nif (!html.includes('logo-zonat-gold.jpeg') && !html.includes('zonat-logo.png')) {\n  if (html.includes('color:#65a30d;\">Zona T</div>')) {\n    html = html.replace(\n      /<div style=\"font-size:11px;font-weight:700;letter-spacing:0\\.08em;text-transform:uppercase;color:#65a30d;\">Zona T<\\/div>\\s*<h1/,\n      `${logoBlock}<h1`\n    );\n  } else if (html.includes('<h1 style=\"margin:14px 0 0;font-size:22px;') || html.includes('<h1 style=\"margin:6px 0 0;font-size:22px;')) {\n    html = html.replace(\n      /<h1 style=\"margin:(?:14|6)px 0 0;font-size:22px;/,\n      `${logoBlock}<h1 style=\"margin:14px 0 0;font-size:22px;`\n    );\n  } else if (html.includes('<body')) {\n    html = html.replace(/<body[^>]*>/, (m) => `${m}${logoBlock}`);\n  }\n} else if (!html.includes('border-radius:50%')) {\n  // If production HTML already has the logo but not round, wrap the first logo img.\n  html = html.replace(\n    /(<img[^>]*logo-zonat-gold\\.jpeg[^>]*>)/i,\n    `<table cellpadding=\"0\" cellspacing=\"0\" role=\"presentation\" style=\"border-collapse:collapse;\"><tr><td width=\"72\" height=\"72\" style=\"width:72px;height:72px;border-radius:50%;overflow:hidden;background:#18181b;\">$1</td></tr></table>`\n  );\n}\nhtml = html.includes('</td>')\n  ? html.replace(\n      'Adjunto: Excel con ventas, productos, créditos de la semana, morosos y al día.',\n      'Adjunto: Excel con ventas, productos, créditos de la semana, morosos y al día. También quedó una copia en Google Sheets.'\n    )\n  : html;\nif (extra) {\n  html = html.includes('</body>') ? html.replace('</body>', `${extra}</body>`) : html + extra;\n}\nconst binary = input.binary ? { ...input.binary } : {};\nif (binary.data) {\n  binary.data = {\n    ...binary.data,\n    fileName: (src.excel && src.excel.filename) || binary.data.fileName || 'zonat-reporte.xlsx',\n    mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',\n  };\n}\nreturn [{\n  json: {\n    to,\n    subject: src.subject || `Zona T · Ventas y créditos ${src.periodLabel || ''}`.trim(),\n    html,\n    spreadsheetUrl: url,\n    spreadsheetId: sheet.spreadsheetId,\n    periodLabel: src.periodLabel,\n    excel: src.excel,\n  },\n  binary,\n}];"
+      },
+      "id": "armar-correo",
+      "name": "Armar correo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3620,
+        80
+      ]
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.to }}",
+        "subject": "={{ $json.subject }}",
+        "emailType": "html",
+        "message": "={{ $json.html }}",
+        "options": {
+          "appendAttribution": false,
+          "senderName": "Zona T",
+          "attachmentsUi": {
+            "attachmentsBinary": [
+              {
+                "property": "data"
+              }
+            ]
+          }
+        }
+      },
+      "id": "gmail-send",
+      "name": "Enviar por Gmail",
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        3880,
+        80
+      ],
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "bTQf0C8LaFF3bL8t",
+          "name": "Gmail account 2"
+        }
+      },
+      "retryOnFail": true,
+      "maxTries": 2,
+      "waitBetweenTries": 8000
+    },
+    {
+      "parameters": {
+        "jsCode": "const mail = $input.first().json;\nconst sheet = $('Crear spreadsheet').first().json;\nconst src = $('Pedir datos a Zonat').first().json;\nreturn [{\n  json: {\n    ok: true,\n    gmailId: mail.id || mail.messageId || '',\n    to: $('Armar correo').first().json.to,\n    spreadsheetUrl: sheet.spreadsheetUrl,\n    periodLabel: src.periodLabel,\n    sales: src.sales,\n    credits: src.credits,\n  },\n}];"
+      },
+      "id": "done",
+      "name": "Listo",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        4140,
+        80
+      ]
+    }
+  ],
+  "connections": {
+    "Probar ahora": {
+      "main": [
+        [
+          {
+            "node": "Pedir datos a Zonat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Domingo 17:05 Bogotá": {
+      "main": [
+        [
+          {
+            "node": "Pedir datos a Zonat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pedir datos a Zonat": {
+      "main": [
+        [
+          {
+            "node": "¿Datos OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Datos OK?": {
+      "main": [
+        [
+          {
+            "node": "Crear spreadsheet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallo datos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crear spreadsheet": {
+      "main": [
+        [
+          {
+            "node": "Filas Resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas Resumen": {
+      "main": [
+        [
+          {
+            "node": "Hoja Resumen",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hoja Resumen": {
+      "main": [
+        [
+          {
+            "node": "Filas Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas Ventas": {
+      "main": [
+        [
+          {
+            "node": "Hoja Ventas",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hoja Ventas": {
+      "main": [
+        [
+          {
+            "node": "Filas Productos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas Productos": {
+      "main": [
+        [
+          {
+            "node": "Hoja Productos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hoja Productos": {
+      "main": [
+        [
+          {
+            "node": "Filas Créditos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas Créditos": {
+      "main": [
+        [
+          {
+            "node": "Hoja Créditos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hoja Créditos": {
+      "main": [
+        [
+          {
+            "node": "Filas Morosos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas Morosos": {
+      "main": [
+        [
+          {
+            "node": "Hoja Morosos",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hoja Morosos": {
+      "main": [
+        [
+          {
+            "node": "Filas Al día",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filas Al día": {
+      "main": [
+        [
+          {
+            "node": "Hoja Al día",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hoja Al día": {
+      "main": [
+        [
+          {
+            "node": "Descargar Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Descargar Excel": {
+      "main": [
+        [
+          {
+            "node": "¿Excel OK?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "¿Excel OK?": {
+      "main": [
+        [
+          {
+            "node": "Armar correo",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Fallo Excel",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Armar correo": {
+      "main": [
+        [
+          {
+            "node": "Enviar por Gmail",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Enviar por Gmail": {
+      "main": [
+        [
+          {
+            "node": "Listo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "America/Bogota"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "tags": []
+}

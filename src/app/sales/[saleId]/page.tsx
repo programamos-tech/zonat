@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { useParams, useRouter } from 'next/navigation'
+import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { SaleDetailPageView } from '@/components/sales/sale-detail-page-view'
 import { useSales } from '@/contexts/sales-context'
@@ -9,10 +9,18 @@ import { Sale } from '@/types'
 import { SalesService } from '@/lib/sales-service'
 import { printSaleTicket } from '@/lib/sales-print-ticket'
 
+function safeReturnPath(from: string | null | undefined, fallback = '/sales'): string {
+  if (!from) return fallback
+  if (!from.startsWith('/') || from.startsWith('//') || from.includes('://')) return fallback
+  return from
+}
+
 export default function SaleDetailPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const saleId = params.saleId as string
+  const returnTo = safeReturnPath(searchParams.get('from'))
 
   const { cancelSale, refreshSales } = useSales()
 
@@ -76,7 +84,7 @@ export default function SaleDetailPage() {
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">No existe o no tienes acceso.</p>
             <button
               type="button"
-              onClick={() => router.push('/sales')}
+              onClick={() => router.push(returnTo)}
               className="mt-6 inline-flex h-12 items-center justify-center rounded-xl bg-zinc-900 px-6 text-base font-semibold text-white transition-colors hover:bg-zinc-800 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white"
             >
               Volver al listado
@@ -91,7 +99,7 @@ export default function SaleDetailPage() {
     <RoleProtectedRoute module="sales" requiredAction="view">
       <SaleDetailPageView
         sale={sale}
-        onBack={() => router.push('/sales')}
+        onBack={() => router.push(returnTo)}
         onPrint={handlePrint}
         onCancel={handleCancelSale}
       />

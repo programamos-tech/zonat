@@ -48,3 +48,7 @@ database/migrations/
 *.sql
 !supabase/migrations/*.sql
 !supabase/seed.sql
+
+# local previews
+tmp-weekly-report*.html
+.env.vercel.production

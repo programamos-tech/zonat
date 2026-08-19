@@ -633,7 +633,7 @@ export default function ClientCreditsPage() {
                         <div className="mt-0.5 font-mono text-xs">
                           {credit.saleId ? (
                             <Link
-                              href={`/sales/${credit.saleId}`}
+                              href={`/sales/${credit.saleId}?from=${encodeURIComponent(`/payments/${clientId}`)}`}
                               onClick={(e) => e.stopPropagation()}
                               className="text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                               title="Ver detalle de la factura"
@@ -772,7 +772,7 @@ export default function ClientCreditsPage() {
                           <td className="whitespace-nowrap px-4 py-3 font-mono text-xs">
                             {credit.saleId ? (
                               <Link
-                                href={`/sales/${credit.saleId}`}
+                                href={`/sales/${credit.saleId}?from=${encodeURIComponent(`/payments/${clientId}`)}`}
                                 onClick={(e) => e.stopPropagation()}
                                 className="font-medium text-blue-600 transition-colors hover:text-blue-700 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                                 title="Ver detalle de la factura"
