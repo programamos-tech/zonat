@@ -24,6 +24,11 @@ interface ProductsContextType {
   goToPage: (page: number) => Promise<void>
   transferStock: (productId: string, from: 'warehouse' | 'store', to: 'warehouse' | 'store', quantity: number) => Promise<boolean>
   adjustStock: (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string) => Promise<boolean>
+  adjustStockBatch: (
+    productId: string,
+    adjustments: Array<{ location: 'warehouse' | 'store'; newQuantity: number }>,
+    reason: string
+  ) => Promise<boolean>
   deductStockForSale: (productId: string, quantity: number) => Promise<boolean>
   returnStockFromSale: (productId: string, quantity: number) => Promise<boolean>
   importProductsFromCSV: (products: any[]) => Promise<boolean>
@@ -186,12 +191,38 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     return success
   }
 
+  const applyStockToList = (
+    productId: string,
+    stock: { warehouse: number; store: number; total: number }
+  ) => {
+    setProducts(prev => {
+      if (!prev.some(p => p.id === productId)) return prev
+      return prev.map(p => (p.id === productId ? { ...p, stock } : p))
+    })
+    setProductsLastUpdated(Date.now())
+  }
+
   const adjustStock = async (productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string): Promise<boolean> => {
-    const success = await ProductsService.adjustStock(productId, location, newQuantity, reason, currentUser?.id)
-    if (success) {
+    return adjustStockBatch(productId, [{ location, newQuantity }], reason)
+  }
+
+  const adjustStockBatch = async (
+    productId: string,
+    adjustments: Array<{ location: 'warehouse' | 'store'; newQuantity: number }>,
+    reason: string
+  ): Promise<boolean> => {
+    const result = await ProductsService.adjustStockBatch(
+      productId,
+      adjustments,
+      reason,
+      currentUser?.id
+    )
+    if (result.success && result.stock) {
+      applyStockToList(productId, result.stock)
+    } else if (result.success) {
       await mergeProductFromServer(productId)
     }
-    return success
+    return result.success
   }
 
   const deductStockForSale = async (productId: string, quantity: number): Promise<boolean> => {
@@ -239,6 +270,7 @@ export const ProductsProvider = ({ children }: { children: ReactNode }) => {
     goToPage,
     transferStock,
     adjustStock,
+    adjustStockBatch,
     deductStockForSale,
     returnStockFromSale,
     importProductsFromCSV

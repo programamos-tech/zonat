@@ -29,7 +29,7 @@ const STOCK_FILTERS: StockFilter[] = [
 export default function ProductsPage() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const { products, loading, currentPage, totalProducts, hasMore, isSearching, stockFilter, setStockFilter, createProduct, updateProduct, deleteProduct, transferStock, adjustStock, refreshProducts, goToPage, searchProducts, productsLastUpdated } = useProducts()
+  const { products, loading, currentPage, totalProducts, hasMore, isSearching, stockFilter, setStockFilter, createProduct, updateProduct, deleteProduct, transferStock, adjustStockBatch, refreshProducts, goToPage, searchProducts, productsLastUpdated } = useProducts()
   const { categories, createCategory, toggleCategoryStatus, deleteCategory } = useCategories()
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
@@ -123,27 +123,18 @@ export default function ProductsPage() {
   ) => {
     if (adjustments.length === 0) return
 
-    let allOk = true
-    for (const adj of adjustments) {
-      const success = await adjustStock(productId, adj.location, adj.newQuantity, reason)
-      if (!success) allOk = false
-    }
+    const success = await adjustStockBatch(productId, adjustments, reason)
 
-    if (allOk) {
+    if (success) {
       const locations = adjustments
         .map(a => (a.location === 'warehouse' ? 'Bodega' : 'Local'))
         .join(' y ')
-      toast.success(
-        adjustments.length > 1
-          ? `Stock de ${locations} actualizado`
-          : `Stock de ${locations} actualizado`
-      )
+      toast.success(`Stock de ${locations} actualizado`)
       setIsAdjustmentModalOpen(false)
       setProductToAdjust(null)
     } else {
-      toast.error('No se guardaron todos los cambios', {
-        description:
-          'Revisa tu conexión o permisos e inténtalo de nuevo. Puede que solo una ubicación se haya actualizado.',
+      toast.error('No se pudo actualizar el stock', {
+        description: 'Revisa tu conexión o permisos e inténtalo de nuevo.',
       })
     }
   }

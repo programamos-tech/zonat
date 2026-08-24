@@ -1990,140 +1990,200 @@ export class ProductsService {
     }
   }
 
-  // Ajustar stock
-  static async adjustStock(productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string, currentUserId?: string): Promise<boolean> {
+  /**
+   * Ajusta una o más ubicaciones de stock en una sola operación (1 lectura + 1 escritura).
+   * Evita el waterfall de getProductById + update + log + refetch por cada ubicación.
+   */
+  static async adjustStockBatch(
+    productId: string,
+    adjustments: Array<{ location: 'warehouse' | 'store'; newQuantity: number }>,
+    reason: string,
+    currentUserId?: string
+  ): Promise<{ success: boolean; stock?: { warehouse: number; store: number; total: number } }> {
     try {
-      const product = await this.getProductById(productId)
-      if (!product) return false
+      if (!adjustments.length) return { success: false }
 
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
       const isMainStore = !storeId || storeId === MAIN_STORE_ID
 
-      let currentQuantity: number
-      let difference: number
+      const storeAdj = adjustments.find(a => a.location === 'store')
+      const warehouseAdj = adjustments.find(a => a.location === 'warehouse')
+
+      type StockChange = {
+        location: 'warehouse' | 'store'
+        previousQuantity: number
+        newQuantity: number
+        difference: number
+      }
+      const changes: StockChange[] = []
+      let nextStock = { warehouse: 0, store: 0, total: 0 }
+      let productName = ''
+      let productReference: string | null = null
 
       if (isMainStore) {
-        // Tienda principal: actualizar en tabla products
-        const field = location === 'warehouse' ? 'stock_warehouse' : 'stock_store'
-        currentQuantity = location === 'warehouse' ? product.stock.warehouse : product.stock.store
-        difference = newQuantity - currentQuantity
+        const { data: row, error: fetchError } = await supabaseAdmin
+          .from('products')
+          .select('id, name, reference, stock_store, stock_warehouse')
+          .eq('id', productId)
+          .single()
+
+        if (fetchError || !row) return { success: false }
+
+        productName = row.name
+        productReference = row.reference
+        const prevStore = Number(row.stock_store) || 0
+        const prevWarehouse = Number(row.stock_warehouse) || 0
+        const nextStore = storeAdj ? storeAdj.newQuantity : prevStore
+        const nextWarehouse = warehouseAdj ? warehouseAdj.newQuantity : prevWarehouse
+
+        if (storeAdj && storeAdj.newQuantity !== prevStore) {
+          changes.push({
+            location: 'store',
+            previousQuantity: prevStore,
+            newQuantity: storeAdj.newQuantity,
+            difference: storeAdj.newQuantity - prevStore,
+          })
+        }
+        if (warehouseAdj && warehouseAdj.newQuantity !== prevWarehouse) {
+          changes.push({
+            location: 'warehouse',
+            previousQuantity: prevWarehouse,
+            newQuantity: warehouseAdj.newQuantity,
+            difference: warehouseAdj.newQuantity - prevWarehouse,
+          })
+        }
+        if (changes.length === 0) {
+          return {
+            success: true,
+            stock: { warehouse: prevWarehouse, store: prevStore, total: prevWarehouse + prevStore },
+          }
+        }
 
         const { data: updatedRows, error } = await supabase
           .from('products')
           .update({
-            [field]: newQuantity
+            stock_store: nextStore,
+            stock_warehouse: nextWarehouse,
           })
           .eq('id', productId)
           .select('stock_store, stock_warehouse')
 
-        if (error || !updatedRows?.length) {
-          return false
+        if (error || !updatedRows?.length) return { success: false }
+
+        const written = updatedRows[0] as { stock_store: number | string; stock_warehouse: number | string }
+        const writtenStore = Number(written.stock_store)
+        const writtenWarehouse = Number(written.stock_warehouse)
+        if (writtenStore !== nextStore || writtenWarehouse !== nextWarehouse) {
+          return { success: false }
         }
 
-        const row = updatedRows[0] as { stock_store: number | string; stock_warehouse: number | string }
-        const written =
-          field === 'stock_warehouse'
-            ? Number(row.stock_warehouse)
-            : Number(row.stock_store)
-        if (written !== newQuantity) {
-          return false
+        nextStock = {
+          warehouse: writtenWarehouse,
+          store: writtenStore,
+          total: writtenWarehouse + writtenStore,
         }
       } else {
-        // Microtienda: actualizar en tabla store_stock
-        // En microtiendas solo hay stock "local" (store), no warehouse
-        if (location === 'warehouse') {
-          // console.error('[PRODUCTS SERVICE] Cannot adjust warehouse stock in micro store')
-          return false
+        if (warehouseAdj) return { success: false }
+
+        const qty = storeAdj?.newQuantity
+        if (qty === undefined) return { success: false }
+
+        const [{ data: productRow }, { data: storeStock, error: fetchError }] = await Promise.all([
+          supabaseAdmin
+            .from('products')
+            .select('id, name, reference')
+            .eq('id', productId)
+            .single(),
+          supabaseAdmin
+            .from('store_stock')
+            .select('quantity')
+            .eq('store_id', storeId)
+            .eq('product_id', productId)
+            .maybeSingle(),
+        ])
+
+        if (fetchError || !productRow) return { success: false }
+
+        productName = productRow.name
+        productReference = productRow.reference
+        const currentQuantity = storeStock?.quantity || 0
+
+        if (qty !== currentQuantity) {
+          changes.push({
+            location: 'store',
+            previousQuantity: currentQuantity,
+            newQuantity: qty,
+            difference: qty - currentQuantity,
+          })
         }
 
-        /* DEBUG: descomentar en local para probar
-        // console.log('[PRODUCTS SERVICE] Adjusting stock for micro store:', {
-          storeId,
-          productId,
-          newQuantity,
-          location
-        })
-        */
-
-        // Obtener stock actual de la microtienda
-        const { data: storeStock, error: fetchError } = await supabaseAdmin
-          .from('store_stock')
-          .select('quantity')
-          .eq('store_id', storeId)
-          .eq('product_id', productId)
-          .maybeSingle()
-
-        if (fetchError) {
-          // console.error('[PRODUCTS SERVICE] Error fetching stock for micro store:', fetchError)
-          return false
+        if (changes.length === 0) {
+          return {
+            success: true,
+            stock: { warehouse: 0, store: currentQuantity, total: currentQuantity },
+          }
         }
 
-        currentQuantity = storeStock?.quantity || 0
-        difference = newQuantity - currentQuantity
-
-        /* DEBUG: descomentar en local para probar
-        // console.log('[PRODUCTS SERVICE] Stock calculation for micro store:', {
-          currentQuantity,
-          newQuantity,
-          difference
-        })
-        */
-
-        // Upsert en store_stock
         const { data: updatedStock, error: updateError } = await supabaseAdmin
           .from('store_stock')
-          .upsert({
-            store_id: storeId,
-            product_id: productId,
-            quantity: newQuantity,
-            location: 'local'
-          }, {
-            onConflict: 'store_id,product_id'
-          })
-          .select()
+          .upsert(
+            {
+              store_id: storeId,
+              product_id: productId,
+              quantity: qty,
+              location: 'local',
+            },
+            { onConflict: 'store_id,product_id' }
+          )
+          .select('quantity')
 
-        if (updateError || !updatedStock?.length) {
-          return false
-        }
+        if (updateError || !updatedStock?.length) return { success: false }
 
         const writtenQty = Number((updatedStock[0] as { quantity: number | string }).quantity)
-        if (writtenQty !== newQuantity) {
-          return false
-        }
+        if (writtenQty !== qty) return { success: false }
+
+        nextStock = { warehouse: 0, store: writtenQty, total: writtenQty }
       }
 
-      // Registrar la actividad
-      if (currentUserId) {
-        const locationLabel = location === 'warehouse' ? 'Bodega' : 'Local'
-        const actionType = difference > 0 ? 'incremento' : 'reducción'
-
-        await AuthService.logActivity(
-          currentUserId,
-          'stock_adjustment',
-          'products',
-          {
-            description: `Se ajustó el stock del producto "${product.name}" en ${locationLabel}. ${actionType} de ${Math.abs(difference)} unidades. Razón: ${reason}`,
-            productId: productId,
-            productName: product.name,
-            productReference: product.reference,
-            location: location,
-            locationLabel: locationLabel,
-            previousQuantity: currentQuantity,
-            newQuantity: newQuantity,
-            difference: difference,
-            reason: reason,
-            actionType: actionType,
-            storeId: storeId || MAIN_STORE_ID
-          }
+      if (currentUserId && changes.length > 0) {
+        await Promise.all(
+          changes.map(change => {
+            const locationLabel = change.location === 'warehouse' ? 'Bodega' : 'Local'
+            const actionType = change.difference > 0 ? 'incremento' : 'reducción'
+            return AuthService.logActivity(currentUserId, 'stock_adjustment', 'products', {
+              description: `Se ajustó el stock del producto "${productName}" en ${locationLabel}. ${actionType} de ${Math.abs(change.difference)} unidades. Razón: ${reason}`,
+              productId,
+              productName,
+              productReference,
+              location: change.location,
+              locationLabel,
+              previousQuantity: change.previousQuantity,
+              newQuantity: change.newQuantity,
+              difference: change.difference,
+              reason,
+              actionType,
+              storeId: storeId || MAIN_STORE_ID,
+            })
+          })
         )
       }
 
-      return true
-    } catch (error) {
-      // console.error('[PRODUCTS SERVICE] Exception in adjustStock:', error)
-      return false
+      return { success: true, stock: nextStock }
+    } catch {
+      return { success: false }
     }
+  }
+
+  // Ajustar stock (una ubicación); delega al batch para no duplicar lógica
+  static async adjustStock(productId: string, location: 'warehouse' | 'store', newQuantity: number, reason: string, currentUserId?: string): Promise<boolean> {
+    const result = await this.adjustStockBatch(
+      productId,
+      [{ location, newQuantity }],
+      reason,
+      currentUserId
+    )
+    return result.success
   }
 
   // Actualizar stock (método simplificado para garantías)
