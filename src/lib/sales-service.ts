@@ -556,7 +556,6 @@ export class SalesService {
             subtotal,
             tax,
             discount,
-            discount_type,
             status,
             payment_method,
             invoice_number,
@@ -760,7 +759,6 @@ export class SalesService {
               unit_price,
               discount,
               discount_type,
-              tax,
               total
             ),
             sale_payments (
