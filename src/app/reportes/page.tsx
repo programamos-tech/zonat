@@ -894,7 +894,7 @@ export default function ReportesPage() {
       (c.status === 'pending' || c.status === 'partial') &&
       !(c.totalAmount === 0 && c.pendingAmount === 0)
     )
-    const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
+    const totalDebt = pendingCredits.reduce((sum, credit) => sum + (credit.pendingAmount || 0), 0)
     const recentPendingCredits = pendingCredits
       .slice()
       .sort((a, b) => {
@@ -918,7 +918,7 @@ export default function ReportesPage() {
           clientName: credit.clientName || 'Cliente',
           reference: credit.invoiceNumber,
           status: credit.status,
-          pendingAmount: credit.pendingAmount || credit.totalAmount || 0,
+          pendingAmount: credit.pendingAmount || 0,
           dateLabel,
           timeLabel
         }
@@ -929,7 +929,7 @@ export default function ReportesPage() {
       (c.status === 'pending' || c.status === 'partial') &&
       !(c.totalAmount === 0 && c.pendingAmount === 0)
     )
-    const dailyCreditsDebt = dailyCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
+    const dailyCreditsDebt = dailyCredits.reduce((sum, credit) => sum + (credit.pendingAmount || 0), 0)
     const dailyCreditsCount = dailyCredits.length
 
     // Créditos vencidos (para información adicional de vendedores)
@@ -945,7 +945,7 @@ export default function ReportesPage() {
       return dueDate < today
     })
     const overdueCreditsCount = overdueCredits.length
-    const overdueCreditsDebt = overdueCredits.reduce((sum, credit) => sum + (credit.pendingAmount || credit.totalAmount || 0), 0)
+    const overdueCreditsDebt = overdueCredits.reduce((sum, credit) => sum + (credit.pendingAmount || 0), 0)
 
     // Clientes únicos que han comprado en el período seleccionado - Excluir ventas canceladas
     const uniqueClients = new Set(activeSales.map(sale => sale.clientId)).size

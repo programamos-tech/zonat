@@ -250,7 +250,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                                 </div>
                                 
                                 <div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Valor factura</div>
                                   <div className="text-base font-semibold text-gray-900 dark:text-white">
                                     {formatCurrency(c.totalAmount)}
                                   </div>
@@ -264,7 +264,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                                 </div>
                                 
                                 <div>
-                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Pendiente</div>
+                                  <div className="text-xs text-gray-500 dark:text-gray-400 mb-1">Total adeudado</div>
                                   <div className={`text-base font-semibold ${
                                     c.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                                   }`}>
@@ -313,7 +313,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                       
                       <div className="pt-3 border-t border-gray-200 dark:border-neutral-600 space-y-3">
                         <div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Valor factura</div>
                           <div className="text-lg font-semibold text-gray-900 dark:text-white">
                             {formatCurrency(currentCredit?.totalAmount || 0)}
                           </div>
@@ -325,7 +325,7 @@ export function CreditDetailModal({ isOpen, onClose, credit, clientCredits = [],
                           </div>
                         </div>
                         <div>
-                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Pendiente</div>
+                          <div className="text-sm text-gray-500 dark:text-gray-400 mb-1">Total adeudado</div>
                           <div className={`text-lg font-semibold ${
                             currentCredit?.pendingAmount === 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'
                           }`}>

@@ -606,12 +606,12 @@ export function SaleDetailPageView({ sale, onBack, onPrint, onCancel }: SaleDeta
                 </div>
                 <div className="px-4 py-5 md:px-6">
                   <dl className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                    <Field label="Saldo pendiente">
+                    <Field label="Total adeudado">
                       <span className="text-lg font-semibold tabular-nums">
                         {formatCurrency(pendingCredit)}
                       </span>
                     </Field>
-                    <Field label="Total crédito">
+                    <Field label="Valor del crédito">
                       {formatCurrency(saleCancelled || creditClosed ? 0 : credit.totalAmount)}
                     </Field>
                     <Field label="Estado">

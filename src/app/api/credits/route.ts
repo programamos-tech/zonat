@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { supabaseAdmin } from '@/lib/supabase'
+import { creditMoney, remainingCreditDebt } from '@/lib/credit-amounts'
 
 /**
  * POST /api/credits - Crear crédito (usa service role para evitar fallos por RLS con vendedores)
@@ -35,6 +36,15 @@ export async function POST(request: NextRequest) {
     const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
     const resolvedStoreId = storeId || MAIN_STORE_ID
 
+    const total = creditMoney(totalAmount)
+    const paid = creditMoney(paidAmount)
+    const pending = remainingCreditDebt({
+      totalAmount: total,
+      paidAmount: paid,
+      pendingAmount,
+      status: status || 'pending',
+    })
+
     const { data, error } = await supabaseAdmin
       .from('credits')
       .insert([{
@@ -42,9 +52,9 @@ export async function POST(request: NextRequest) {
         client_id: clientId,
         client_name: clientName,
         invoice_number: String(invoiceNumber),
-        total_amount: Number(totalAmount),
-        paid_amount: Number(paidAmount),
-        pending_amount: Number(pendingAmount),
+        total_amount: total,
+        paid_amount: paid,
+        pending_amount: pending,
         status: status || 'pending',
         due_date: dueDate ?? null,
         last_payment_amount: lastPaymentAmount ?? null,
@@ -68,9 +78,14 @@ export async function POST(request: NextRequest) {
       clientId: data.client_id,
       clientName: data.client_name,
       invoiceNumber: data.invoice_number,
-      totalAmount: data.total_amount,
-      paidAmount: data.paid_amount,
-      pendingAmount: data.pending_amount,
+      totalAmount: creditMoney(data.total_amount),
+      paidAmount: creditMoney(data.paid_amount),
+      pendingAmount: remainingCreditDebt({
+        totalAmount: data.total_amount,
+        paidAmount: data.paid_amount,
+        pendingAmount: data.pending_amount,
+        status: data.status,
+      }),
       status: data.status,
       dueDate: data.due_date,
       lastPaymentAmount: data.last_payment_amount,

@@ -164,7 +164,7 @@ export function CreditTable({
               </p>
               <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 pt-1 text-sm">
                 <span className="text-zinc-500 dark:text-zinc-400">
-                  Deuda total:{' '}
+                  Deuda pendiente:{' '}
                   <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
                     {formatCurrency(totalDebt)}
                   </span>
@@ -320,7 +320,7 @@ export function CreditTable({
                         </div>
                         <div className="text-right">
                           <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                            Pendiente
+                            Total adeudado
                           </dt>
                           <dd
                             className={cn(
@@ -375,7 +375,7 @@ export function CreditTable({
                           Total
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
-                          Pendiente
+                          Total adeudado
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-center text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Estado

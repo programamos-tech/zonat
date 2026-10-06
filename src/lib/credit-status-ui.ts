@@ -1,4 +1,5 @@
 import type { Credit } from '@/types'
+import { creditMoney } from './credit-amounts'
 
 /** Fecha de vencimiento en calendario local (evita correr un día por UTC en `YYYY-MM-DD`). */
 export function parseCreditDueDateLocal(iso: string | undefined | null): Date | null {
@@ -32,17 +33,17 @@ export function isCreditPastDue(credit: Credit): boolean {
  */
 export function getEffectiveCreditStatus(credit: Credit): Credit['status'] {
   if (isCreditCancelled(credit) || credit.status === 'cancelled') return 'cancelled'
-  if (credit.pendingAmount <= 0) return 'completed'
+  if (creditMoney(credit.pendingAmount) <= 0) return 'completed'
   if (credit.status === 'completed') return 'completed'
   if (credit.status === 'overdue' || isCreditPastDue(credit)) return 'overdue'
-  if (credit.paidAmount > 0 || credit.status === 'partial') return 'partial'
+  if (creditMoney(credit.paidAmount) > 0 || credit.status === 'partial') return 'partial'
   return 'pending'
 }
 
 /** Fila agrupada por cliente en `/payments`: prioridad overdue > partial > pending > completed. */
 export function aggregateCreditsDisplayStatus(credits: Credit[]): Credit['status'] {
   const open = credits.filter(
-    c => !isCreditCancelled(c) && c.status !== 'cancelled' && c.pendingAmount > 0
+    c => !isCreditCancelled(c) && c.status !== 'cancelled' && creditMoney(c.pendingAmount) > 0
   )
   if (open.length === 0) return 'completed'
   if (open.some(c => getEffectiveCreditStatus(c) === 'overdue')) return 'overdue'
@@ -60,7 +61,7 @@ export function getConsolidatedCreditDisplayStatus(credit: Credit): Credit['stat
 export function isCreditCancelled(credit: Credit | undefined | null): boolean {
   if (!credit) return false
   if (credit.status === 'cancelled') return true
-  return credit.totalAmount === 0 && credit.pendingAmount === 0
+  return creditMoney(credit.totalAmount) === 0 && creditMoney(credit.pendingAmount) === 0
 }
 
 const iconSize = {

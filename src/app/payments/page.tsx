@@ -78,9 +78,10 @@ export default function CreditsPage() {
           }
         }
         acc[key].credits.push(credit)
-        acc[key].totalAmount += credit.totalAmount
-        acc[key].paidAmount += credit.paidAmount
-        acc[key].pendingAmount += credit.pendingAmount
+        acc[key].totalAmount += Number(credit.totalAmount) || 0
+        acc[key].paidAmount += Number(credit.paidAmount) || 0
+        acc[key].pendingAmount +=
+          credit.status === 'cancelled' ? 0 : Number(credit.pendingAmount) || 0
 
         return acc
       }, {} as Record<string, any>)
@@ -159,7 +160,7 @@ export default function CreditsPage() {
       // Actualizar el crédito
       const paymentAmount = paymentData.amount!
       const newPaidAmount = selectedCredit.paidAmount + paymentAmount
-      const newPendingAmount = selectedCredit.pendingAmount - paymentAmount
+      const newPendingAmount = Math.max(0, selectedCredit.totalAmount - newPaidAmount)
       const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
 
       const updatedCredit = await CreditsService.updateCredit(selectedCredit.id, {

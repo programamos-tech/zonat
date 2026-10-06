@@ -165,7 +165,7 @@ export default function CreditDetailPage() {
 
       const paymentAmount = paymentData.amount!
       const newPaidAmount = credit.paidAmount + paymentAmount
-      const newPendingAmount = credit.pendingAmount - paymentAmount
+      const newPendingAmount = Math.max(0, credit.totalAmount - newPaidAmount)
       const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
 
       await CreditsService.updateCredit(credit.id, {
@@ -288,7 +288,7 @@ export default function CreditDetailPage() {
                     <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4">
                       <div>
                         <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                          Total
+                          Valor factura
                         </div>
                         <div className="text-sm font-semibold tabular-nums text-zinc-900 dark:text-zinc-50">
                           {formatCurrency(credit.totalAmount)}
@@ -304,7 +304,7 @@ export default function CreditDetailPage() {
                       </div>
                       <div>
                         <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500">
-                          Pendiente
+                          Total adeudado
                         </div>
                         <div
                           className={cn(

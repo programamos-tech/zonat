@@ -190,7 +190,7 @@ export default function ClientCreditsPage() {
 
       const paymentAmount = paymentData.amount!
       const newPaidAmount = selectedCredit.paidAmount + paymentAmount
-      const newPendingAmount = selectedCredit.pendingAmount - paymentAmount
+      const newPendingAmount = Math.max(0, selectedCredit.totalAmount - newPaidAmount)
       const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
 
       await CreditsService.updateCredit(selectedCredit.id, {
@@ -329,9 +329,18 @@ export default function ClientCreditsPage() {
     return `${clientInitials}${creditSuffix}`
   }
 
-  const totalDebt = credits.reduce((sum, credit) => sum + credit.pendingAmount, 0)
-  const totalPaid = credits.reduce((sum, credit) => sum + credit.paidAmount, 0)
-  const totalAmount = credits.reduce((sum, credit) => sum + credit.totalAmount, 0)
+  const totalDebt = credits.reduce(
+    (sum, credit) => (credit.status === 'cancelled' ? sum : sum + credit.pendingAmount),
+    0
+  )
+  const totalPaid = credits.reduce(
+    (sum, credit) => (credit.status === 'cancelled' ? sum : sum + credit.paidAmount),
+    0
+  )
+  const totalAmount = credits.reduce(
+    (sum, credit) => (credit.status === 'cancelled' ? sum : sum + credit.totalAmount),
+    0
+  )
 
   // Calcular score del cliente (1-5 estrellas)
   const calculateClientScore = (): { stars: number; label: string; color: string; description: string } => {
@@ -529,7 +538,7 @@ export default function ClientCreditsPage() {
               </div>
               <div>
                 <div className="mb-0.5 text-[11px] font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-500">
-                  Total pendiente
+                  Total adeudado
                 </div>
                 <div
                   className={cn(
@@ -658,7 +667,7 @@ export default function ClientCreditsPage() {
                     </div>
                     <dl className="mt-3 grid grid-cols-2 gap-2 border-t border-zinc-200/80 pt-3 text-left dark:border-zinc-800">
                       <div>
-                        <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Pendiente</dt>
+                        <dt className="text-[11px] font-medium uppercase tracking-wide text-zinc-500">Total adeudado</dt>
                         <dd
                           className={cn(
                             'mt-0.5 text-sm font-medium tabular-nums text-zinc-900 dark:text-zinc-100',
@@ -725,7 +734,7 @@ export default function ClientCreditsPage() {
                           Pagado
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-right text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
-                          Pendiente
+                          Total adeudado
                         </th>
                         <th className="whitespace-nowrap bg-zinc-50/80 px-4 py-3 text-center text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50 dark:text-zinc-500">
                           Estado

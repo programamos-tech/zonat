@@ -2,6 +2,7 @@ import { supabase, supabaseAdmin } from './supabase'
 import { Credit, PaymentRecord } from '@/types'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
+import { creditMoney, remainingCreditDebt } from './credit-amounts'
 
 type PaymentRecordRow = {
   id: string
@@ -48,6 +49,44 @@ function mapPaymentRecordFromRow(row: PaymentRecordRow, creditId: string | null 
 }
 
 const PAYMENT_RECORDS_SELECT = '*, payments(sale_id)'
+
+function mapCreditFromRow(
+  credit: Record<string, any>,
+  lastPaymentUserDisplay?: string | null
+): Credit {
+  const totalAmount = creditMoney(credit.total_amount)
+  const paidAmount = creditMoney(credit.paid_amount)
+  const lastRaw = credit.last_payment_amount
+  const lastPaymentAmount =
+    lastRaw == null || lastRaw === '' ? undefined : creditMoney(lastRaw)
+
+  return {
+    id: credit.id,
+    saleId: credit.sale_id,
+    clientId: credit.client_id,
+    clientName: credit.client_name,
+    invoiceNumber: credit.invoice_number,
+    totalAmount,
+    paidAmount,
+    pendingAmount: remainingCreditDebt({
+      totalAmount,
+      paidAmount,
+      pendingAmount: credit.pending_amount,
+      status: credit.status,
+    }),
+    status: credit.status,
+    dueDate: credit.due_date,
+    lastPaymentAmount,
+    lastPaymentDate: credit.last_payment_date,
+    lastPaymentUser:
+      lastPaymentUserDisplay !== undefined ? lastPaymentUserDisplay : credit.last_payment_user,
+    createdBy: credit.created_by,
+    createdByName: credit.created_by_name,
+    storeId: credit.store_id || undefined,
+    createdAt: credit.created_at,
+    updatedAt: credit.updated_at,
+  }
+}
 
 export class CreditsService {
   // Crear un nuevo crédito (en navegador usa API para evitar fallos por RLS con vendedores)
@@ -112,9 +151,14 @@ export class CreditsService {
         client_id: creditData.clientId,
         client_name: creditData.clientName,
         invoice_number: creditData.invoiceNumber,
-        total_amount: creditData.totalAmount,
-        paid_amount: creditData.paidAmount,
-        pending_amount: creditData.pendingAmount,
+        total_amount: creditMoney(creditData.totalAmount),
+        paid_amount: creditMoney(creditData.paidAmount),
+        pending_amount: remainingCreditDebt({
+          totalAmount: creditData.totalAmount,
+          paidAmount: creditData.paidAmount,
+          pendingAmount: creditData.pendingAmount,
+          status: creditData.status,
+        }),
         status: creditData.status,
         due_date: creditData.dueDate,
         last_payment_amount: creditData.lastPaymentAmount,
@@ -129,26 +173,7 @@ export class CreditsService {
 
     if (error) throw error
 
-    const newCredit = {
-      id: data.id,
-      saleId: data.sale_id,
-      clientId: data.client_id,
-      clientName: data.client_name,
-      invoiceNumber: data.invoice_number,
-      totalAmount: data.total_amount,
-      paidAmount: data.paid_amount,
-      pendingAmount: data.pending_amount,
-      status: data.status,
-      dueDate: data.due_date,
-      lastPaymentAmount: data.last_payment_amount,
-      lastPaymentDate: data.last_payment_date,
-      lastPaymentUser: data.last_payment_user,
-      createdBy: data.created_by,
-      createdByName: data.created_by_name,
-      storeId: data.store_id || undefined,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
-    }
+    const newCredit = mapCreditFromRow(data)
 
     if (creditData.createdBy && (!creditData.saleId || creditData.saleId === null)) {
       await AuthService.logActivity(
@@ -288,26 +313,14 @@ export class CreditsService {
       }
     }
 
-    return creditsData.map(credit => ({
-      id: credit.id,
-      saleId: credit.sale_id,
-      clientId: credit.client_id,
-      clientName: credit.client_name,
-      invoiceNumber: credit.invoice_number,
-      totalAmount: credit.total_amount,
-      paidAmount: credit.paid_amount,
-      pendingAmount: credit.pending_amount,
-      status: credit.status,
-      dueDate: credit.due_date,
-      lastPaymentAmount: credit.last_payment_amount,
-      lastPaymentDate: credit.last_payment_date,
-      lastPaymentUser: credit.last_payment_user ? (userEmails[credit.last_payment_user] || credit.last_payment_user) : null,
-      createdBy: credit.created_by,
-      createdByName: credit.created_by_name,
-      storeId: credit.store_id || undefined,
-      createdAt: credit.created_at,
-      updatedAt: credit.updated_at
-    }))
+    return creditsData.map(credit =>
+      mapCreditFromRow(
+        credit,
+        credit.last_payment_user
+          ? userEmails[credit.last_payment_user] || credit.last_payment_user
+          : null
+      )
+    )
   }
 
   // Obtener crédito por ID
@@ -348,24 +361,7 @@ export class CreditsService {
       }
     }
 
-    return {
-      id: data.id,
-      saleId: data.sale_id,
-      clientId: data.client_id,
-      clientName: data.client_name,
-      invoiceNumber: data.invoice_number,
-      totalAmount: data.total_amount,
-      paidAmount: data.paid_amount,
-      pendingAmount: data.pending_amount,
-      status: data.status,
-      dueDate: data.due_date,
-      lastPaymentAmount: data.last_payment_amount,
-      lastPaymentDate: data.last_payment_date,
-      lastPaymentUser: userEmail,
-      storeId: data.store_id || undefined,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
-    }
+    return mapCreditFromRow(data, userEmail)
   }
 
   /** Crédito vinculado a una venta (típicamente uno por venta). */
@@ -405,24 +401,7 @@ export class CreditsService {
       }
     }
 
-    return {
-      id: data.id,
-      saleId: data.sale_id,
-      clientId: data.client_id,
-      clientName: data.client_name,
-      invoiceNumber: data.invoice_number,
-      totalAmount: data.total_amount,
-      paidAmount: data.paid_amount,
-      pendingAmount: data.pending_amount,
-      status: data.status,
-      dueDate: data.due_date,
-      lastPaymentAmount: data.last_payment_amount,
-      lastPaymentDate: data.last_payment_date,
-      lastPaymentUser: userEmail,
-      storeId: data.store_id || undefined,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at,
-    }
+    return mapCreditFromRow(data, userEmail)
   }
 
   // Obtener todos los créditos de un cliente
@@ -468,26 +447,14 @@ export class CreditsService {
       }
     }
 
-    return data.map(credit => ({
-      id: credit.id,
-      saleId: credit.sale_id,
-      clientId: credit.client_id,
-      clientName: credit.client_name,
-      invoiceNumber: credit.invoice_number,
-      totalAmount: credit.total_amount,
-      paidAmount: credit.paid_amount,
-      pendingAmount: credit.pending_amount,
-      status: credit.status,
-      dueDate: credit.due_date,
-      lastPaymentAmount: credit.last_payment_amount,
-      lastPaymentDate: credit.last_payment_date,
-      lastPaymentUser: credit.last_payment_user ? (userEmails[credit.last_payment_user] || credit.last_payment_user) : null,
-      createdBy: credit.created_by,
-      createdByName: credit.created_by_name,
-      storeId: credit.store_id || undefined,
-      createdAt: credit.created_at,
-      updatedAt: credit.updated_at
-    }))
+    return data.map(credit =>
+      mapCreditFromRow(
+        credit,
+        credit.last_payment_user
+          ? userEmails[credit.last_payment_user] || credit.last_payment_user
+          : null
+      )
+    )
   }
 
   // Actualizar crédito
@@ -542,24 +509,7 @@ export class CreditsService {
       }
     }
 
-    return {
-      id: data.id,
-      saleId: data.sale_id,
-      clientId: data.client_id,
-      clientName: data.client_name,
-      invoiceNumber: data.invoice_number,
-      totalAmount: data.total_amount,
-      paidAmount: data.paid_amount,
-      pendingAmount: data.pending_amount,
-      status: data.status,
-      dueDate: data.due_date,
-      lastPaymentAmount: data.last_payment_amount,
-      lastPaymentDate: data.last_payment_date,
-      lastPaymentUser: userEmail,
-      storeId: data.store_id || undefined,
-      createdAt: data.created_at,
-      updatedAt: data.updated_at
-    }
+    return mapCreditFromRow(data, userEmail)
   }
 
   // Crear registro de pago
@@ -593,6 +543,13 @@ export class CreditsService {
       throw new Error('Crédito no encontrado')
     }
 
+    const newPaidAmountPreview = credit.paidAmount + paymentData.amount!
+    const newPendingAmountPreview = remainingCreditDebt({
+      totalAmount: credit.totalAmount,
+      paidAmount: newPaidAmountPreview,
+      status: credit.status,
+    })
+
     // Crear un registro en la tabla payments (sistema antiguo)
     const paymentInsertData = {
       sale_id: credit.saleId,
@@ -600,12 +557,12 @@ export class CreditsService {
       client_name: credit.clientName,
       invoice_number: credit.invoiceNumber,
       total_amount: credit.totalAmount,
-      paid_amount: credit.paidAmount + paymentData.amount!,
-      pending_amount: credit.pendingAmount - paymentData.amount!,
+      paid_amount: newPaidAmountPreview,
+      pending_amount: newPendingAmountPreview,
       last_payment_amount: paymentData.amount,
       last_payment_date: paymentData.paymentDate,
       last_payment_user: userId,
-      status: (credit.pendingAmount - paymentData.amount! <= 0) ? 'completed' : 'partial'
+      status: newPendingAmountPreview <= 0 ? 'completed' : 'partial'
     }
 
     const { data: paymentDataResult, error: paymentError } = await supabaseAdmin
@@ -702,8 +659,8 @@ export class CreditsService {
     // Actualizar el crédito con el nuevo monto pendiente
     const previousPendingAmount = credit.pendingAmount
     const previousPaidAmount = credit.paidAmount
-    const newPendingAmount = credit.pendingAmount - paymentData.amount!
-    const newPaidAmount = credit.paidAmount + paymentData.amount!
+    const newPaidAmount = newPaidAmountPreview
+    const newPendingAmount = newPendingAmountPreview
     const newStatus = newPendingAmount <= 0 ? 'completed' : 'partial'
 
     // Actualizar el crédito en la tabla credits
@@ -1174,26 +1131,7 @@ export class CreditsService {
       )
       const data = active || rows[0]
 
-      return {
-        id: data.id,
-        saleId: data.sale_id,
-        clientId: data.client_id,
-        clientName: data.client_name,
-        invoiceNumber: data.invoice_number,
-        totalAmount: data.total_amount,
-        paidAmount: data.paid_amount,
-        pendingAmount: data.pending_amount,
-        status: data.status,
-        dueDate: data.due_date,
-        lastPaymentAmount: data.last_payment_amount,
-        lastPaymentDate: data.last_payment_date,
-        lastPaymentUser: data.last_payment_user,
-        createdBy: data.created_by,
-        createdByName: data.created_by_name,
-        storeId: data.store_id || undefined,
-        createdAt: data.created_at,
-        updatedAt: data.updated_at
-      }
+      return mapCreditFromRow(data)
     } catch (error) {
       // Error silencioso en producción
       return null
@@ -1218,7 +1156,7 @@ export class CreditsService {
       while (hasMore) {
         let query = supabase
           .from('credits')
-          .select('pending_amount, total_amount')
+          .select('pending_amount, total_amount, paid_amount, status')
           .or('status.eq.pending,status.eq.partial')
           .range(offset, offset + limit - 1)
 
@@ -1238,7 +1176,12 @@ export class CreditsService {
         }
 
         data.forEach(c => {
-          const pending = c.pending_amount || c.total_amount || 0
+          const pending = remainingCreditDebt({
+            totalAmount: c.total_amount,
+            paidAmount: c.paid_amount,
+            pendingAmount: c.pending_amount,
+            status: c.status,
+          })
           if (pending > 0) {
             totalDebt += pending
             pendingCreditsCount++

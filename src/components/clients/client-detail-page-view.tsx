@@ -203,12 +203,15 @@ export function ClientDetailPageView({
   const TypeIcon = displayType === 'consumidor_final' ? User : Building2
   const displayName = editing && draft ? draft.name : client.name
 
-  const availableCredit = Math.max(0, client.creditLimit - client.currentDebt)
-  const usagePct =
-    client.creditLimit > 0 ? Math.min(100, Math.round((client.currentDebt / client.creditLimit) * 100)) : 0
-
-  const totalPendingCredits = credits.reduce((sum, c) => sum + (c.pendingAmount > 0 ? c.pendingAmount : 0), 0)
+  const totalPendingCredits = credits.reduce((sum, c) => {
+    if (c.status === 'cancelled') return sum
+    return sum + (c.pendingAmount > 0 ? c.pendingAmount : 0)
+  }, 0)
   const activeCreditsCount = credits.filter((c) => c.pendingAmount > 0 && c.status !== 'cancelled').length
+  const displayedDebt = totalPendingCredits
+  const availableCredit = Math.max(0, client.creditLimit - displayedDebt)
+  const usagePct =
+    client.creditLimit > 0 ? Math.min(100, Math.round((displayedDebt / client.creditLimit) * 100)) : 0
 
   const copyId = async () => {
     try {
@@ -367,7 +370,7 @@ export function ClientDetailPageView({
       <div className="w-full min-w-0 space-y-4 px-4 py-6 md:space-y-5 md:px-6">
         <section className="grid gap-3 sm:grid-cols-3">
           <StatCard icon={Wallet} label="Cupo de crédito" value={formatCurrency(client.creditLimit)} />
-          <StatCard icon={TrendingDown} label="Saldo adeudado" value={formatCurrency(client.currentDebt)} />
+          <StatCard icon={TrendingDown} label="Saldo adeudado" value={formatCurrency(displayedDebt)} />
           <StatCard icon={Receipt} label="Cupo disponible" value={formatCurrency(availableCredit)} />
         </section>
 
@@ -555,7 +558,7 @@ export function ClientDetailPageView({
             </h2>
             {!creditsLoading && credits.length > 0 && (
               <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                {activeCreditsCount} con saldo pendiente · Total pendiente{' '}
+                {activeCreditsCount} con saldo pendiente · Total adeudado{' '}
                 <span className="font-semibold tabular-nums text-zinc-700 dark:text-zinc-200">
                   {formatCurrency(totalPendingCredits)}
                 </span>
@@ -585,7 +588,7 @@ export function ClientDetailPageView({
                           Total
                         </th>
                         <th className="bg-zinc-50/80 px-3 py-2.5 text-right text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50">
-                          Pendiente
+                          Total adeudado
                         </th>
                         <th className="bg-zinc-50/80 px-3 py-2.5 text-center text-[11px] font-medium uppercase tracking-wider text-zinc-500 dark:bg-zinc-900/50">
                           Estado
@@ -639,7 +642,7 @@ export function ClientDetailPageView({
                           <div className="min-w-0">
                             <p className="font-mono text-xs text-zinc-500">{credit.invoiceNumber}</p>
                             <p className="mt-1 text-sm font-medium tabular-nums text-zinc-900 dark:text-zinc-50">
-                              Pendiente {formatCurrency(credit.pendingAmount)}
+                              Total adeudado {formatCurrency(credit.pendingAmount)}
                             </p>
                           </div>
                           <Badge

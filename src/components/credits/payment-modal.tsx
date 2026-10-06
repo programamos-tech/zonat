@@ -272,9 +272,9 @@ export function PaymentModal({ isOpen, onClose, onAddPayment, credit }: PaymentM
         <form onSubmit={handleSubmit} className="flex min-h-0 flex-1 flex-col overflow-hidden">
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain p-4">
             <p className="text-xs text-zinc-500 dark:text-zinc-500">
-              Total {formatCurrency(credit.totalAmount)}
+              Valor factura {formatCurrency(credit.totalAmount)}
               {' · '}
-              Pendiente{' '}
+              Total adeudado{' '}
               <span className="font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
                 {formatCurrency(credit.pendingAmount)}
               </span>
