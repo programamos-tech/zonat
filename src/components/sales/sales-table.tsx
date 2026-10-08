@@ -190,6 +190,7 @@ export function SalesTable({
 
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('es-CO', {
+      timeZone: 'America/Bogota',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
@@ -199,11 +200,13 @@ export function SalesTable({
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
     const dateStr = date.toLocaleDateString('es-CO', {
+      timeZone: 'America/Bogota',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit'
     })
     const timeStr = date.toLocaleTimeString('es-CO', {
+      timeZone: 'America/Bogota',
       hour: '2-digit',
       minute: '2-digit',
       hour12: false

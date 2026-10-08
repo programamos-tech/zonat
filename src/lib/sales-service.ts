@@ -3,6 +3,7 @@ import { Sale, SaleItem, SalePayment } from '@/types'
 import { AuthService } from './auth-service'
 import { ProductsService } from './products-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
+import { bogotaDayQueryBounds, bogotaDayRangeForInstant } from './bogota-day'
 
 /** Tamaño de página de la lista de ventas (contexto + servicio + tabla). */
 export const SALES_PAGE_SIZE = 20
@@ -327,26 +328,15 @@ export class SalesService {
 
       query = query.order('created_at', { ascending: false })
 
-      // Aplicar filtros de fecha si existen
+      // Día calendario America/Bogota (no la medianoche del computador).
       if (startDate) {
-        // Usar inicio del día en hora local (sin conversión UTC)
-        const startLocal = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-          0, 0, 0, 0
-        )
-        query = query.gte('created_at', startLocal.toISOString())
+        query = query.gte('created_at', bogotaDayRangeForInstant(startDate).start.toISOString())
       }
       if (endDate) {
-        // Usar final del día en hora local (sin conversión UTC)
-        const endLocal = new Date(
-          endDate.getFullYear(),
-          endDate.getMonth(),
-          endDate.getDate(),
-          23, 59, 59, 999
+        query = query.lt(
+          'created_at',
+          bogotaDayRangeForInstant(endDate).endExclusive.toISOString()
         )
-        query = query.lte('created_at', endLocal.toISOString())
       }
 
       // Ejecutar query - Supabase tiene límite de 1,000 registros por query
@@ -397,26 +387,17 @@ export class SalesService {
         paginatedQuery = paginatedQuery.order('created_at', { ascending: false })
           .range(offset, offset + limit - 1) // Lotes de 1,000
 
-        // Aplicar filtros de fecha si existen
         if (startDate) {
-          // Usar inicio del día en hora local (sin conversión UTC)
-          const startLocal = new Date(
-            startDate.getFullYear(),
-            startDate.getMonth(),
-            startDate.getDate(),
-            0, 0, 0, 0
+          paginatedQuery = paginatedQuery.gte(
+            'created_at',
+            bogotaDayRangeForInstant(startDate).start.toISOString()
           )
-          paginatedQuery = paginatedQuery.gte('created_at', startLocal.toISOString())
         }
         if (endDate) {
-          // Usar final del día en hora local (sin conversión UTC)
-          const endLocal = new Date(
-            endDate.getFullYear(),
-            endDate.getMonth(),
-            endDate.getDate(),
-            23, 59, 59, 999
+          paginatedQuery = paginatedQuery.lt(
+            'created_at',
+            bogotaDayRangeForInstant(endDate).endExclusive.toISOString()
           )
-          paginatedQuery = paginatedQuery.lte('created_at', endLocal.toISOString())
         }
 
         const { data, error } = await paginatedQuery
@@ -532,18 +513,8 @@ export class SalesService {
       const storeId = getCurrentUserStoreId()
       const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
 
-      const startLocal = new Date(
-        startDate.getFullYear(),
-        startDate.getMonth(),
-        startDate.getDate(),
-        0, 0, 0, 0
-      )
-      const endLocal = new Date(
-        endDate.getFullYear(),
-        endDate.getMonth(),
-        endDate.getDate(),
-        23, 59, 59, 999
-      )
+      const startLocal = bogotaDayRangeForInstant(startDate).start
+      const endExclusive = bogotaDayRangeForInstant(endDate).endExclusive
 
       let query = supabase
         .from('sales')
@@ -570,7 +541,7 @@ export class SalesService {
         )
         .eq('status', 'cancelled')
         .gte('updated_at', startLocal.toISOString())
-        .lte('updated_at', endLocal.toISOString())
+        .lt('updated_at', endExclusive.toISOString())
         .order('updated_at', { ascending: false })
         .limit(500)
 
@@ -2312,27 +2283,7 @@ export class SalesService {
     const storeKey = (storeId: string | null | undefined) =>
       !storeId || storeId === MAIN_STORE_ID ? MAIN_STORE_ID : storeId
 
-    const now = new Date()
-    const startLocal = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
-      0
-    )
-    const endLocal = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      23,
-      59,
-      59,
-      999
-    )
-    const startIso = startLocal.toISOString()
-    const endIso = endLocal.toISOString()
+    const { startIso, endIsoExclusive } = bogotaDayQueryBounds()
     const pageSize = 1000
 
     const add = (key: string, amount: number) => {
@@ -2359,7 +2310,7 @@ export class SalesService {
           .not('status', 'eq', 'cancelled')
           .not('status', 'eq', 'draft')
           .gte('created_at', startIso)
-          .lte('created_at', endIso)
+          .lt('created_at', endIsoExclusive)
           .order('created_at', { ascending: true })
           .range(from, from + pageSize - 1)
 
@@ -2404,7 +2355,7 @@ export class SalesService {
           .from('payment_records')
           .select('store_id, amount, payment_method, status')
           .gte('payment_date', startIso)
-          .lte('payment_date', endIso)
+          .lt('payment_date', endIsoExclusive)
           .order('payment_date', { ascending: true })
           .range(from, from + pageSize - 1)
 

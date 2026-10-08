@@ -39,6 +39,7 @@ import { useProducts } from '@/contexts/products-context'
 import { useClients } from '@/contexts/clients-context'
 import { useAuth } from '@/contexts/auth-context'
 import { getCurrentUserStoreId, isMainStoreUser } from '@/lib/store-helper'
+import { bogotaDateLabel, bogotaDayRangeForInstant, isSameBogotaDay } from '@/lib/bogota-day'
 import { StoresService } from '@/lib/stores-service'
 import { RoleProtectedRoute } from '@/components/auth/role-protected-route'
 import { StoreBadge } from '@/components/ui/store-badge'
@@ -289,17 +290,17 @@ export default function ReportesPage() {
       // (evitamos getDashboardSummary y getAllClients duplicados; el resumen de ventas se calcula desde las ventas)
       let chartStartDate = startDate || new Date()
       if (currentFilter === 'specific' && dateToUse) {
-        const extendedStart = new Date(dateToUse)
-        extendedStart.setDate(extendedStart.getDate() - INCOME_TREND_FETCH_OFFSET)
-        extendedStart.setHours(0, 0, 0, 0)
-        chartStartDate = extendedStart
+        chartStartDate = new Date(
+          bogotaDayRangeForInstant(dateToUse).start.getTime() -
+            INCOME_TREND_FETCH_OFFSET * 24 * 60 * 60 * 1000
+        )
       } else if (currentFilter === 'range' && rangeStart) {
-        chartStartDate = new Date(rangeStart.getFullYear(), rangeStart.getMonth(), rangeStart.getDate(), 0, 0, 0, 0)
+        chartStartDate = bogotaDayRangeForInstant(rangeStart).start
       } else if (currentFilter === 'today' || !startDate) {
-        const extendedStart = new Date()
-        extendedStart.setDate(extendedStart.getDate() - INCOME_TREND_FETCH_OFFSET)
-        extendedStart.setHours(0, 0, 0, 0)
-        chartStartDate = extendedStart
+        chartStartDate = new Date(
+          bogotaDayRangeForInstant().start.getTime() -
+            INCOME_TREND_FETCH_OFFSET * 24 * 60 * 60 * 1000
+        )
       }
 
       // Si es "Todo el Tiempo", cargar solo el año seleccionado
@@ -516,33 +517,24 @@ export default function ReportesPage() {
     loadAvailableYears()
   }, [])
 
-  // Cargar datos solo una vez al montar el componente
-  useEffect(() => {
-    // Solo cargar si no hay datos aún (evitar doble carga)
-    // El filtro inicial es 'today', así que cargará datos de hoy
-    if (allSales.length === 0) {
-      loadDashboardData()
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []) // Solo ejecutar una vez al montar
+  const loadedForStoreId = useRef<string | null | undefined>(undefined)
 
-  // Escuchar cambios en el storeId del usuario y recargar datos
+  // Cargar al montar y cada vez que cambia la tienda activa (el storeId anterior
+  // se comparaba consigo mismo y nunca recargaba al entrar a otra microtienda).
   useEffect(() => {
     if (!user) return
-
-    const currentStoreId = getCurrentUserStoreId()
-
-    if (currentStoreId !== user.storeId) {
-      setAllSales([])
-      setAllWarranties([])
-      setAllCredits([])
-      setAllClients([])
-      setAllProducts([])
-      setAllPaymentRecords([])
-      setSpecificProductsCache(new Map())
-      // Recargar datos
-      loadDashboardData()
-    }
+    const storeKey = user.storeId ?? null
+    if (loadedForStoreId.current === storeKey) return
+    loadedForStoreId.current = storeKey
+    setAllSales([])
+    setAllWarranties([])
+    setAllCredits([])
+    setAllClients([])
+    setAllProducts([])
+    setAllPaymentRecords([])
+    setSpecificProductsCache(new Map())
+    loadDashboardData()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.storeId])
 
   // Escuchar cambios en las ventas del contexto para actualizar el dashboard
@@ -550,12 +542,7 @@ export default function ReportesPage() {
     if (sales.length === 0) return
 
     const newSales = sales.filter(sale => {
-      const saleDate = new Date(sale.createdAt)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      const saleDay = new Date(saleDate)
-      saleDay.setHours(0, 0, 0, 0)
-      const isToday = saleDay.getTime() === today.getTime()
+      const isToday = isSameBogotaDay(sale.createdAt)
       const notInDashboard = !allSales.find(existingSale => existingSale.id === sale.id)
       return isToday && notInDashboard
     })
@@ -588,24 +575,33 @@ export default function ReportesPage() {
     let endDate: Date | null
 
     switch (filter) {
-      case 'today':
-        startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0)
-        endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999)
+      case 'today': {
+        const { start, endExclusive } = bogotaDayRangeForInstant(now)
+        startDate = start
+        endDate = new Date(endExclusive.getTime() - 1)
         break
+      }
       case 'specific':
         if (!dateToUse) {
           console.warn('⚠️ [DASHBOARD] Filtro "specific" pero no hay fecha seleccionada')
           return { startDate: null, endDate: null }
         }
-        startDate = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), 0, 0, 0, 0)
-        endDate = new Date(dateToUse.getFullYear(), dateToUse.getMonth(), dateToUse.getDate(), 23, 59, 59, 999)
+        {
+          const { start, endExclusive } = bogotaDayRangeForInstant(dateToUse)
+          startDate = start
+          endDate = new Date(endExclusive.getTime() - 1)
+        }
         break
       case 'range':
         if (!rangeStart || !rangeEnd) return { startDate: null, endDate: null }
         const start = rangeStart <= rangeEnd ? rangeStart : rangeEnd
         const end = rangeEnd >= rangeStart ? rangeEnd : rangeStart
-        startDate = new Date(start.getFullYear(), start.getMonth(), start.getDate(), 0, 0, 0, 0)
-        endDate = new Date(end.getFullYear(), end.getMonth(), end.getDate(), 23, 59, 59, 999)
+        {
+          const startBound = bogotaDayRangeForInstant(start).start
+          const endBound = bogotaDayRangeForInstant(end).endExclusive
+          startDate = startBound
+          endDate = new Date(endBound.getTime() - 1)
+        }
         break
       case 'all':
         startDate = new Date(targetYear, 0, 1, 0, 0, 0, 0)
@@ -664,21 +660,12 @@ export default function ReportesPage() {
 
       // Filtrar ventas solo del día seleccionado
       // Usar comparación más flexible para evitar problemas de zona horaria
-      const filteredSales = allSales.filter(sale => {
-        const saleDate = new Date(sale.createdAt)
-        // Normalizar ambas fechas a medianoche en hora local
-        const saleDateNormalized = new Date(saleDate.getFullYear(), saleDate.getMonth(), saleDate.getDate())
-        const targetDateNormalized = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
-        return saleDateNormalized.getTime() === targetDateNormalized.getTime()
-      })
+      const filteredSales = allSales.filter(sale => isSameBogotaDay(sale.createdAt, targetDate))
 
       // Filtrar abonos solo del día seleccionado (misma normalización que ventas para zona horaria)
-      const targetDateNormalized = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
-      const filteredPayments = allPaymentRecords.filter(payment => {
-        const paymentDate = new Date(payment.paymentDate)
-        const paymentDateNormalized = new Date(paymentDate.getFullYear(), paymentDate.getMonth(), paymentDate.getDate())
-        return paymentDateNormalized.getTime() === targetDateNormalized.getTime()
-      })
+      const filteredPayments = allPaymentRecords.filter(payment =>
+        isSameBogotaDay(payment.paymentDate, targetDate)
+      )
 
       // Warranties y credits ya vienen filtrados del backend (solo del día)
       return {
@@ -1016,13 +1003,10 @@ export default function ReportesPage() {
 
     // Función helper para normalizar fecha y obtener formato consistente
     const getDateKey = (dateInput: Date | string): string => {
-      const date = new Date(dateInput)
-      // Normalizar a medianoche en hora local para evitar problemas de zona horaria
-      const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-      return normalizedDate.toLocaleDateString('es-CO', {
+      return bogotaDateLabel(dateInput, {
         weekday: 'short',
         day: '2-digit',
-        month: '2-digit'
+        month: '2-digit',
       })
     }
 
@@ -1964,12 +1948,10 @@ export default function ReportesPage() {
 
                   // Rango completo, hoy o fecha específica: serie diaria
                   const getDateKey = (dateInput: Date | string): string => {
-                    const date = new Date(dateInput)
-                    const normalizedDate = new Date(date.getFullYear(), date.getMonth(), date.getDate())
-                    return normalizedDate.toLocaleDateString('es-CO', {
+                    return bogotaDateLabel(dateInput, {
                       weekday: 'short',
                       day: '2-digit',
-                      month: '2-digit'
+                      month: '2-digit',
                     })
                   }
 

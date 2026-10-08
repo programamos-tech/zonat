@@ -3,6 +3,7 @@ import { Credit, PaymentRecord } from '@/types'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
 import { creditMoney, remainingCreditDebt } from './credit-amounts'
+import { bogotaDayRangeForInstant } from './bogota-day'
 
 type PaymentRecordRow = {
   id: string
@@ -1047,10 +1048,10 @@ export class CreditsService {
       // Usar las fechas tal cual vienen del frontend (ya en hora local del usuario) para que
       // los abonos del día sumen correctamente en efectivo y total de ingresos.
       if (startDate) {
-        query = query.gte('payment_date', startDate.toISOString())
+        query = query.gte('payment_date', bogotaDayRangeForInstant(startDate).start.toISOString())
       }
       if (endDate) {
-        query = query.lte('payment_date', endDate.toISOString())
+        query = query.lt('payment_date', bogotaDayRangeForInstant(endDate).endExclusive.toISOString())
       }
 
       const { data, error } = await query.limit(10000)

@@ -216,6 +216,7 @@ export function StoreTable({
   const todayLabel = useMemo(
     () =>
       new Intl.DateTimeFormat('es-CO', {
+        timeZone: 'America/Bogota',
         day: 'numeric',
         month: 'long',
         year: 'numeric',

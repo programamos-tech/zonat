@@ -2,6 +2,7 @@ import { supabase } from './supabase'
 import { Warranty, WarrantyProduct, WarrantyStatusHistory } from '@/types'
 import { AuthService } from './auth-service'
 import { getCurrentUserStoreId, canAccessAllStores, getCurrentUser } from './store-helper'
+import { bogotaDayRangeForInstant } from './bogota-day'
 
 export class WarrantyService {
   // Obtener todas las garantías con paginación
@@ -254,24 +255,10 @@ export class WarrantyService {
 
       // Aplicar filtros de fecha si existen
       if (startDate) {
-        // Usar inicio del día en hora local (sin conversión UTC)
-        const startLocal = new Date(
-          startDate.getFullYear(),
-          startDate.getMonth(),
-          startDate.getDate(),
-          0, 0, 0, 0
-        )
-        query = query.gte('created_at', startLocal.toISOString())
+        query = query.gte('created_at', bogotaDayRangeForInstant(startDate).start.toISOString())
       }
       if (endDate) {
-        // Usar final del día en hora local (sin conversión UTC)
-        const endLocal = new Date(
-          endDate.getFullYear(),
-          endDate.getMonth(),
-          endDate.getDate(),
-          23, 59, 59, 999
-        )
-        query = query.lte('created_at', endLocal.toISOString())
+        query = query.lt('created_at', bogotaDayRangeForInstant(endDate).endExclusive.toISOString())
       }
 
       const { data: warranties, error: warrantiesError } = await query.limit(10000)
