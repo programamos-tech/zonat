@@ -444,16 +444,9 @@ export function UserManagement() {
     }
   }
 
-  // Aplicar permisos predefinidos del rol
-  // Solo aplica permisos cuando se está creando un usuario nuevo, no al editar
+  // Al elegir rol (crear o editar) se aplican los permisos de ese rol.
+  // Si solo se cambia el rol en edición, el acceso tiene que coincidir con el rol nuevo.
   const applyRolePermissions = (role: string) => {
-    // Si estamos editando, solo cambiar el rol sin tocar los permisos
-    if (selectedUser || isEditModalOpen) {
-      setFormData(prev => ({ ...prev, role }))
-      return
-    }
-    
-    // Si estamos creando, aplicar permisos del rol inmediatamente
     const permissions = rolePermissions[role as keyof typeof rolePermissions] || []
     setFormData(prev => ({ ...prev, role, permissions }))
   }
