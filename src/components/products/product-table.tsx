@@ -119,12 +119,12 @@ export function ProductTable({
   const handleExportPrices = async () => {
     setExportingPrices(true)
     try {
-      const rows = await ProductsService.listAllProductsForPriceExport()
+      const { stores, rows } = await ProductsService.listAllProductsForPriceExport()
       if (rows.length === 0) {
         toast.error('No hay productos para exportar')
         return
       }
-      downloadProductsPriceCsv(buildProductsPriceCsv(rows))
+      downloadProductsPriceCsv(buildProductsPriceCsv(rows, stores))
       toast.success(`CSV con ${rows.length} productos`)
     } catch {
       toast.error('No se pudo exportar el CSV')

@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import { AuthService } from './auth-service'
 import { StoresService } from './stores-service'
 import { getCurrentUserStoreId, isMainStoreUser } from './store-helper'
+import type { ProductExportStore, ProductPriceRow } from './products-price-csv'
 
 // Tipo para filtros de stock (funciona tanto para tienda principal como microtiendas)
 export type StockFilter =
@@ -932,15 +933,38 @@ export class ProductsService {
     return results
   }
 
-  /** Catálogo completo con precio de compra y de venta de la tienda activa. */
-  static async listAllProductsForPriceExport(): Promise<
-    Array<{ name: string; reference: string | null; cost: number; price: number }>
-  > {
+  /** Catálogo completo con precios de la tienda activa y stock de cada tienda. */
+  static async listAllProductsForPriceExport(): Promise<{
+    stores: ProductExportStore[]
+    rows: ProductPriceRow[]
+  }> {
     const PAGE = 1000
     const CHUNK = 200
     const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
     const currentStoreId = getCurrentUserStoreId()
     const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+
+    const { data: storeRows, error: storesError } = await supabase
+      .from('stores')
+      .select('id, name')
+      .eq('is_active', true)
+      .is('deleted_at', null)
+      .order('name', { ascending: true })
+
+    if (storesError) {
+      throw new Error(storesError.message)
+    }
+
+    const storeList = (storeRows ?? []) as Array<{ id: string; name: string | null }>
+    const mainStore = storeList.find((store) => store.id === MAIN_STORE_ID)
+    const mainName = mainStore?.name?.trim() || 'Zona T'
+    const stores: ProductExportStore[] = [
+      { id: `${MAIN_STORE_ID}:local`, label: `${mainName} local` },
+      { id: `${MAIN_STORE_ID}:bodega`, label: `${mainName} bodega` },
+      ...storeList
+        .filter((store) => store.id !== MAIN_STORE_ID)
+        .map((store) => ({ id: store.id, label: store.name?.trim() || 'Tienda' })),
+    ]
 
     const raw: Array<{
       id: string
@@ -948,13 +972,15 @@ export class ProductsService {
       reference: string | null
       cost: number | null
       price: number | null
+      stockStore: number
+      stockWarehouse: number
     }> = []
 
     let from = 0
     while (true) {
       const { data, error } = await supabase
         .from('products')
-        .select('id, name, reference, cost, price')
+        .select('id, name, reference, cost, price, stock_store, stock_warehouse')
         .order('name', { ascending: true })
         .range(from, from + PAGE - 1)
 
@@ -970,12 +996,16 @@ export class ProductsService {
           reference: string | null
           cost: number | null
           price: number | null
+          stock_store: number | null
+          stock_warehouse: number | null
         }) => ({
           id: row.id,
           name: row.name ?? '',
           reference: row.reference ?? null,
           cost: row.cost ?? null,
           price: row.price ?? null,
+          stockStore: Number(row.stock_store) || 0,
+          stockWarehouse: Number(row.stock_warehouse) || 0,
         }))
       )
 
@@ -1002,7 +1032,39 @@ export class ProductsService {
       }
     }
 
-    return raw.map((product) => {
+    const quantityByProduct = new Map<string, Map<string, number>>()
+    from = 0
+    while (true) {
+      const { data, error } = await supabase
+        .from('store_stock')
+        .select('id, product_id, store_id, quantity')
+        .order('id', { ascending: true })
+        .range(from, from + PAGE - 1)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+      if (!data?.length) break
+
+      for (const item of data as Array<{
+        product_id: string
+        store_id: string
+        quantity: number | null
+      }>) {
+        if (!item.product_id || !item.store_id || item.store_id === MAIN_STORE_ID) continue
+        let byStore = quantityByProduct.get(item.product_id)
+        if (!byStore) {
+          byStore = new Map()
+          quantityByProduct.set(item.product_id, byStore)
+        }
+        byStore.set(item.store_id, Number(item.quantity) || 0)
+      }
+
+      if (data.length < PAGE) break
+      from += PAGE
+    }
+
+    const rows = raw.map((product) => {
       let cost = product.cost != null && Number(product.cost) > 0 ? Number(product.cost) : 0
       let price = product.price != null ? Number(product.price) : 0
       if (!isMainStore && currentStoreId) {
@@ -1013,13 +1075,27 @@ export class ProductsService {
           price = storePrices.price !== null ? Number(storePrices.price) : price
         }
       }
+
+      const byStore = quantityByProduct.get(product.id)
+      const stock: Record<string, number> = {
+        [`${MAIN_STORE_ID}:local`]: product.stockStore,
+        [`${MAIN_STORE_ID}:bodega`]: product.stockWarehouse,
+      }
+      for (const store of stores) {
+        if (store.id.startsWith(`${MAIN_STORE_ID}:`)) continue
+        stock[store.id] = byStore?.get(store.id) ?? 0
+      }
+
       return {
         name: product.name,
         reference: product.reference,
         cost,
         price,
+        stock,
       }
     })
+
+    return { stores, rows }
   }
 
   /** Productos completos por IDs, en el orden de `ids` (para rejilla POS / más vendidos). */
