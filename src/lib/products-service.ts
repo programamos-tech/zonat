@@ -932,6 +932,96 @@ export class ProductsService {
     return results
   }
 
+  /** Catálogo completo con precio de compra y de venta de la tienda activa. */
+  static async listAllProductsForPriceExport(): Promise<
+    Array<{ name: string; reference: string | null; cost: number; price: number }>
+  > {
+    const PAGE = 1000
+    const CHUNK = 200
+    const MAIN_STORE_ID = '00000000-0000-0000-0000-000000000001'
+    const currentStoreId = getCurrentUserStoreId()
+    const isMainStore = !currentStoreId || currentStoreId === MAIN_STORE_ID
+
+    const raw: Array<{
+      id: string
+      name: string
+      reference: string | null
+      cost: number | null
+      price: number | null
+    }> = []
+
+    let from = 0
+    while (true) {
+      const { data, error } = await supabase
+        .from('products')
+        .select('id, name, reference, cost, price')
+        .order('name', { ascending: true })
+        .range(from, from + PAGE - 1)
+
+      if (error) {
+        throw new Error(error.message)
+      }
+      if (!data?.length) break
+
+      raw.push(
+        ...data.map((row: {
+          id: string
+          name: string | null
+          reference: string | null
+          cost: number | null
+          price: number | null
+        }) => ({
+          id: row.id,
+          name: row.name ?? '',
+          reference: row.reference ?? null,
+          cost: row.cost ?? null,
+          price: row.price ?? null,
+        }))
+      )
+
+      if (data.length < PAGE) break
+      from += PAGE
+    }
+
+    const costPriceMap = new Map<string, { cost: number | null; price: number | null }>()
+    if (!isMainStore && currentStoreId && raw.length > 0) {
+      for (let i = 0; i < raw.length; i += CHUNK) {
+        const ids = raw.slice(i, i + CHUNK).map((row) => row.id)
+        const { data: storeStockData, error } = await supabaseAdmin
+          .from('store_stock')
+          .select('product_id, cost, price')
+          .eq('store_id', currentStoreId)
+          .in('product_id', ids)
+
+        if (error) {
+          throw new Error(error.message)
+        }
+        storeStockData?.forEach((item: { product_id: string; cost: number | null; price: number | null }) => {
+          costPriceMap.set(item.product_id, { cost: item.cost, price: item.price })
+        })
+      }
+    }
+
+    return raw.map((product) => {
+      let cost = product.cost != null && Number(product.cost) > 0 ? Number(product.cost) : 0
+      let price = product.price != null ? Number(product.price) : 0
+      if (!isMainStore && currentStoreId) {
+        const storePrices = costPriceMap.get(product.id)
+        if (storePrices) {
+          const storeCost = storePrices.cost != null ? Number(storePrices.cost) : 0
+          cost = storeCost > 0 ? storeCost : cost
+          price = storePrices.price !== null ? Number(storePrices.price) : price
+        }
+      }
+      return {
+        name: product.name,
+        reference: product.reference,
+        cost,
+        price,
+      }
+    })
+  }
+
   /** Productos completos por IDs, en el orden de `ids` (para rejilla POS / más vendidos). */
   static async getFullProductsByIds(ids: string[]): Promise<Product[]> {
     if (ids.length === 0) return []

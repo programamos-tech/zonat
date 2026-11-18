@@ -17,9 +17,12 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
+  Download,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Product, Category } from '@/types'
-import type { StockFilter } from '@/lib/products-service'
+import { ProductsService, type StockFilter } from '@/lib/products-service'
+import { buildProductsPriceCsv, downloadProductsPriceCsv } from '@/lib/products-price-csv'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
 import { usePermissions } from '@/hooks/usePermissions'
 import { useAuth } from '@/contexts/auth-context'
@@ -110,6 +113,25 @@ export function ProductTable({
   const canTransfer = isVendedor ? false : canDoProductActionsSincelejo && hasPermission('products', 'edit')
 
   const [searchTerm, setSearchTerm] = useState('')
+  const [exportingPrices, setExportingPrices] = useState(false)
+  const canExportPrices = !isVendedor && hasPermission('products', 'view')
+
+  const handleExportPrices = async () => {
+    setExportingPrices(true)
+    try {
+      const rows = await ProductsService.listAllProductsForPriceExport()
+      if (rows.length === 0) {
+        toast.error('No hay productos para exportar')
+        return
+      }
+      downloadProductsPriceCsv(buildProductsPriceCsv(rows))
+      toast.success(`CSV con ${rows.length} productos`)
+    } catch {
+      toast.error('No se pudo exportar el CSV')
+    } finally {
+      setExportingPrices(false)
+    }
+  }
 
   const handleSearch = (term: string) => {
     onSearch(term)
@@ -230,6 +252,20 @@ export function ProductTable({
                   <Button onClick={onManageCategories} size="sm" variant="secondary" className="flex-1 sm:flex-none">
                     <Tag className="h-3.5 w-3.5 shrink-0" />
                     <span className="hidden md:inline">Categorías</span>
+                  </Button>
+                )}
+                {canExportPrices && (
+                  <Button
+                    type="button"
+                    onClick={handleExportPrices}
+                    disabled={exportingPrices}
+                    variant="secondary"
+                    size="sm"
+                    className="flex-1 sm:flex-none"
+                  >
+                    <Download className={cn('h-3.5 w-3.5 shrink-0', exportingPrices && 'animate-pulse')} />
+                    <span className="hidden sm:inline">{exportingPrices ? 'Exportando…' : 'Exportar CSV'}</span>
+                    <span className="sm:hidden">CSV</span>
                   </Button>
                 )}
                 {onRefresh && (
